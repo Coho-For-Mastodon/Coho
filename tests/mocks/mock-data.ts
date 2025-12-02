@@ -144,3 +144,17 @@ export const mockInstanceInfo = {
     thumbnail: '/assets/icons/icon-192-maskable.png',
     description: '<p>Mock description for the local test instance.</p>',
 };
+
+export const mockTrendingTags = [
+    {
+        name: 'coho',
+        url: 'https://tech.lgbt/tags/coho',
+        history: [
+            {
+                day: '1668297600',
+                uses: '100',
+                accounts: '50',
+            },
+        ],
+    },
+];

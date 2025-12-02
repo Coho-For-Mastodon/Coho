@@ -147,7 +147,7 @@ export class Timeline extends LitElement {
       }
 
       .timeline-list-item {
-        margin-bottom: 30px;
+        margin-bottom: 0px;
         width: 100%;
       }
 

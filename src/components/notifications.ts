@@ -191,9 +191,8 @@ export class Notifications extends LitElement {
     const observer = new IntersectionObserver((entries, observer) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
-          const { getNotifications } = await import(
-            '../services/notifications'
-          );
+          const { getNotifications } =
+            await import('../services/notifications');
           const notificationsData = await getNotifications();
           console.log(notificationsData);
 
@@ -221,9 +220,8 @@ export class Notifications extends LitElement {
   }
 
   async clear() {
-    const { getNotifications, clearNotifications } = await import(
-      '../services/notifications'
-    );
+    const { getNotifications, clearNotifications } =
+      await import('../services/notifications');
     await clearNotifications();
 
     const notificationsData = await getNotifications();
@@ -234,9 +232,8 @@ export class Notifications extends LitElement {
 
   async sub(flag: boolean) {
     console.log('flag', flag);
-    const { subToPush, unsubToPush } = await import(
-      '../services/notifications'
-    );
+    const { subToPush, unsubToPush } =
+      await import('../services/notifications');
 
     if (flag === false) {
       await unsubToPush();

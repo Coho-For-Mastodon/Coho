@@ -174,9 +174,8 @@ export class SearchPage extends LitElement {
     console.log(search);
     this.searchData = search.searchData;
 
-    const { getTrendingStatuses, getTrendingLinks } = await import(
-      '../services/timeline'
-    );
+    const { getTrendingStatuses, getTrendingLinks } =
+      await import('../services/timeline');
 
     const trendingStatuses = await getTrendingStatuses();
     console.log('trendingStatuses', trendingStatuses);

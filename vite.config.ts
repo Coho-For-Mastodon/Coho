@@ -153,9 +153,7 @@ export default defineConfig({
     wasm(),
     copy({
       targets: [
-        { src: 'light.css', dest: 'dist/' },
         { src: 'dark.css', dest: 'dist/' },
-        { src: 'global.css', dest: 'dist/' },
         { src: 'src/styles/md-tokens.css', dest: 'dist/code/' },
       ],
     }),
