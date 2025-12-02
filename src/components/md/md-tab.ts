@@ -135,6 +135,7 @@ export class MdTab extends LitElement {
       opacity: 0;
       transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
       pointer-events: none;
+      border-radius: inherit;
     }
 
     button:hover::before {
