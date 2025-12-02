@@ -58,6 +58,8 @@ export class AppHome extends LitElement {
 
   @state() hasNewNotifications: boolean = false;
 
+  @state() trendingTags: any[] = [];
+
   // Lazy loading states for tabs
   @state() bookmarksLoaded: boolean = false;
   @state() favoritesLoaded: boolean = false;
@@ -70,6 +72,9 @@ export class AppHome extends LitElement {
   @state() rightClickLoaded: boolean = false;
 
   @state() activeTab: string = 'general';
+
+  @state() tabsOrientation: 'horizontal' | 'vertical' = 'vertical';
+  @state() tabsPlacement: 'top' | 'bottom' | 'start' | 'end' = 'start';
 
   static get styles() {
     return [
@@ -88,16 +93,31 @@ export class AppHome extends LitElement {
         app-favorites,
         app-bookmarks,
         search-page {
-          margin-left: 40px;
-          margin-right: 40px;
+          margin-left: 0;
+          margin-right: 0;
         }
 
         md-tabs {
           height: calc(100vh - 80px);
+          grid-column: 1 / 3;
+        }
+
+        md-tab {
+          width: 220px;
+        }
+
+        .new-post-container {
+          padding: 16px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .new-post-btn {
+          width: 100%;
         }
 
         md-tab-panel {
-          overflow: auto;
+          overflow: visible;
         }
 
         md-tab md-icon {
@@ -307,13 +327,14 @@ export class AppHome extends LitElement {
 
         md-toolbar {
           width: 100%;
-          margin-top: 33px;
+          margin-top: 0;
           padding-top: 8px;
           background: transparent;
           margin-bottom: 6px;
-          top: 13px;
+          top: 0;
           padding-right: 10px;
-          position: fixed;
+          position: sticky;
+          z-index: 10;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -325,7 +346,55 @@ export class AppHome extends LitElement {
         main {
           padding-top: 54px;
           display: grid;
-          grid-template-columns: 65vw 35vw;
+          grid-template-columns: 250px minmax(0, 1fr) 320px;
+          gap: 24px;
+          max-width: 1600px;
+          margin: 0 auto;
+        }
+
+
+
+        #right-sidebar {
+          position: sticky;
+          top: 20px;
+          height: calc(100vh - 40px);
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          padding-right: 16px;
+        }
+
+
+
+        .sidebar-card {
+          background: transparent;
+          border: 1px solid var(--md-sys-color-outline-variant);
+          border-radius: 16px;
+          padding: 16px;
+        }
+
+        .sidebar-card h3 {
+          margin-top: 0;
+          margin-bottom: 12px;
+          font-size: 1.1rem;
+        }
+
+        .trending-item {
+          display: flex;
+          flex-direction: column;
+          padding: 8px 0;
+          cursor: pointer;
+        }
+
+        .trending-item .tag {
+          font-weight: bold;
+          font-size: 1rem;
+        }
+
+        .trending-item .count {
+          font-size: 0.85rem;
+          color: var(--md-sys-color-on-surface-variant);
         }
 
         main.focus {
@@ -343,45 +412,51 @@ export class AppHome extends LitElement {
           font-weight: bold;
         }
 
-        #profile {
-          padding: 12px;
-          padding-top: 14px;
-          border-radius: 6px;
-          height: fit-content;
-
+        #profile-card-content {
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
+          align-items: center;
+          text-align: center;
+          gap: 8px;
         }
 
-        /* Desktop New Post button - Extended FAB style */
-        #profile md-button {
-          position: fixed;
-          left: 34px;
-          bottom: 23px;
-          box-shadow: var(
-            --md-sys-elevation-level3,
-            0px 4px 8px 3px rgba(0, 0, 0, 0.15),
-            0px 1px 3px 0px rgba(0, 0, 0, 0.3)
-          );
-          transition: box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
+        #profile-card-content img,
+        #profile-card-content md-skeleton#profile-avatar {
+          height: 80px;
+          width: 80px;
+          border-radius: 50%;
+          border: 2px solid var(--md-sys-color-primary);
         }
 
-        #profile md-button:hover {
-          box-shadow: var(
-            --md-sys-elevation-level4,
-            0px 6px 10px 4px rgba(0, 0, 0, 0.15),
-            0px 2px 3px 0px rgba(0, 0, 0, 0.3)
-          );
+        #profile-card-content h3 {
+          margin: 0;
+          font-size: 1.1rem;
+        }
+
+        #profile-card-content p {
+          margin: 0;
+          color: var(--md-sys-color-on-surface-variant);
+          font-size: 0.9rem;
+        }
+
+        .profile-stats {
+          display: flex;
+          gap: 12px;
+          margin-top: 8px;
+          justify-content: center;
+          width: 100%;
+        }
+
+        .profile-stats md-badge {
+          cursor: pointer;
         }
 
         #username-block {
           display: flex;
           align-items: center;
-          margin-top: 8px;
-          justify-content: space-between;
-          width: fit-content;
+          justify-content: center;
           gap: 8px;
+          width: 100%;
         }
 
         sl-radio {
@@ -537,15 +612,22 @@ export class AppHome extends LitElement {
         }
 
         @media (max-width: 820px) {
-          #profile {
+          #profile,
+          #left-sidebar,
+          #right-sidebar {
             display: none;
           }
 
           md-tab {
             flex: 1;
+            width: auto;
           }
 
           .tab-label {
+            display: none;
+          }
+
+          .new-post-container {
             display: none;
           }
 
@@ -658,6 +740,15 @@ export class AppHome extends LitElement {
   async firstUpdated() {
     const urlParams = new URLSearchParams(window.location.search);
 
+    // Initialize tabs state based on screen size
+    if (window.matchMedia('(max-width: 820px)').matches) {
+      this.tabsOrientation = 'horizontal';
+      this.tabsPlacement = 'bottom';
+    } else {
+      this.tabsOrientation = 'vertical';
+      this.tabsPlacement = 'start';
+    }
+
     setTimeout(async () => {
       if (urlParams.has('name')) {
         const name = urlParams.get('name');
@@ -673,8 +764,14 @@ export class AppHome extends LitElement {
       init();
     });
 
-    const { resetLastPageID } = await import('../services/timeline');
+    const { resetLastPageID, getTrendingTags } = await import('../services/timeline');
     await resetLastPageID();
+
+    try {
+      this.trendingTags = await getTrendingTags();
+    } catch (err) {
+      console.error('Error fetching trending tags', err);
+    }
 
     window.requestIdleCallback(
       async () => {
@@ -694,11 +791,11 @@ export class AppHome extends LitElement {
 
     window.matchMedia('(max-width: 820px)').addEventListener('change', (e) => {
       if (e.matches) {
-        const tabGroup = this.shadowRoot?.querySelector('md-tabs');
-        tabGroup?.setAttribute('placement', 'bottom');
+        this.tabsOrientation = 'horizontal';
+        this.tabsPlacement = 'bottom';
       } else {
-        const tabGroup = this.shadowRoot?.querySelector('md-tabs');
-        tabGroup?.setAttribute('placement', 'start');
+        this.tabsOrientation = 'vertical';
+        this.tabsPlacement = 'start';
       }
     });
 
@@ -1341,18 +1438,10 @@ export class AppHome extends LitElement {
         <md-tabs
           @tab-change="${(e: CustomEvent) => this.handleTabChange(e)}"
           .active="${this.activeTab}"
-          orientation="${window.matchMedia('(max-width: 820px)').matches
-        ? 'horizontal'
-        : 'vertical'}"
-          .placement="${window.matchMedia('(max-width: 820px)').matches
-        ? 'bottom'
-        : 'start'}"
+          orientation="${this.tabsOrientation}"
+          placement="${this.tabsPlacement}"
         >
-          <md-tab
-            @click="${() => this.reloadHome()}"
-            slot="nav"
-            panel="general"
-          >
+          <md-tab slot="nav" panel="general" @click="${() => this.reloadHome()}">
             <md-icon slot="icon" src="/assets/home-outline.svg"></md-icon>
             <span class="tab-label">Home</span>
           </md-tab>
@@ -1361,27 +1450,36 @@ export class AppHome extends LitElement {
             <span class="tab-label">Explore</span>
           </md-tab>
           <md-tab slot="nav" panel="notifications">
-            <md-icon
-              slot="icon"
-              src="/assets/notifications-outline.svg"
-            ></md-icon>
+            <md-icon slot="icon" src="/assets/notifications-outline.svg"></md-icon>
             <span class="tab-label">Notifications</span>
             ${this.hasNewNotifications
         ? html`<span class="notification-dot"></span>`
         : nothing}
           </md-tab>
-          <!-- <md-tab slot="nav" panel="messages">
-            <md-icon slot="icon" src="/assets/chatbox-outline.svg"></md-icon>
-            <span class="tab-label">Messages</span>
-          </md-tab> -->
-          <md-tab id="bookmarks-tab" slot="nav" panel="bookmarks">
+          <md-tab slot="nav" panel="bookmarks">
             <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
             <span class="tab-label">Bookmarks</span>
           </md-tab>
-          <md-tab id="faves-tab" slot="nav" panel="faves">
+          <md-tab slot="nav" panel="faves">
             <md-icon slot="icon" src="/assets/heart-outline.svg"></md-icon>
             <span class="tab-label">Favorites</span>
           </md-tab>
+
+          <div slot="nav" class="new-post-container">
+             <md-button
+                variant="filled"
+                size="large"
+                class="new-post-btn"
+                @click="${() => this.openNewDialog()}"
+            >
+                New Post
+                <md-icon slot="suffix" src="/assets/add-outline.svg"></md-icon>
+            </md-button>
+          </div>
+
+          <md-tab slot="nav" panel="media" style="display: none;"></md-tab>
+          <md-tab slot="nav" panel="messages" style="display: none;"></md-tab>
+          <md-tab slot="nav" panel="custom" style="display: none;"></md-tab>
 
           <md-tab-panel name="general">
             <app-timeline
@@ -1428,96 +1526,103 @@ export class AppHome extends LitElement {
           </md-tab-panel>
         </md-tabs>
 
+        <div id="right-sidebar">
+            <div class="sidebar-card">
+              <div id="profile-card-content">
+                ${this.user && this.user.avatar
+        ? html`<img src="${this.user.avatar}" />`
+        : html`<md-skeleton
+                      id="profile-avatar"
+                      shape="circle"
+                      width="80px"
+                      height="80px"
+                    ></md-skeleton>`}
+
+                <div id="username-block">
+                  <h3>
+                    ${this.user
+        ? this.user.display_name
+        : html`<md-skeleton
+                          width="100px"
+                          height="25px"
+                        ></md-skeleton>`}
+                  </h3>
+
+                  <div id="user-actions">
+                    <md-dropdown>
+                      <md-icon-button
+                        slot="trigger"
+                        src="/assets/settings-outline.svg"
+                      ></md-icon-button>
+                      <md-menu>
+                        <md-menu-item @click="${() => this.viewMyProfile()}">
+                          <md-icon
+                            slot="prefix"
+                            src="/assets/eye-outline.svg"
+                          ></md-icon>
+                          View My Profile
+                        </md-menu-item>
+                        <md-menu-item @click="${() => this.shareMyProfile()}">
+                          <md-icon
+                            slot="prefix"
+                            src="/assets/share-social-outline.svg"
+                          ></md-icon>
+                          Share My Profile
+                        </md-menu-item>
+                        <md-menu-item @click="${() => this.editMyProfile()}">
+                          Edit My Profile
+                        </md-menu-item>
+                      </md-menu>
+                    </md-dropdown>
+                  </div>
+                </div>
+
+                <p id="user-url">
+                  ${this.user
+        ? this.user.url
+        : html`<md-skeleton width="100px" height="19px"></md-skeleton>`}
+                </p>
+
+                <div class="profile-stats">
+                  <md-badge
+                    variant="outlined"
+                    clickable
+                    @click="${() => this.goToFollowers()}"
+                    >${this.user ? this.user.followers_count : '0'} followers
+                  </md-badge>
+                  <md-badge
+                    variant="outlined"
+                    clickable
+                    @click="${() => this.goToFollowing()}"
+                    >${this.user ? this.user.following_count : '0'} following
+                  </md-badge>
+                </div>
+              </div>
+            </div>
+
+            ${this.trendingTags && this.trendingTags.length > 0
+        ? html`
+                <div class="sidebar-card">
+                    <h3>Trending Tags</h3>
+                    ${this.trendingTags.slice(0, 5).map(
+          (tag: any) => html`
+                        <div class="trending-item" @click="${() =>
+              router.navigate(`/hashtag?tag=${tag.name}`)}">
+                            <span class="tag">#${tag.name}</span>
+                            <span class="count">${tag.history?.[0]?.uses || 0} posts today</span>
+                        </div>
+                    `
+        )}
+                </div>
+            `
+        : nothing}
+        </div>
+
         <div id="mobile-actions">
           <md-button variant="fab" @click="${() => this.openNewDialog()}">
             <md-icon src="/assets/add-outline.svg"></md-icon>
           </md-button>
         </div>
-
-        <div id="profile">
-          <div id="profile-top">
-            ${this.user && this.user.avatar
-        ? html`<img src="${this.user.avatar}" />`
-        : html`<md-skeleton
-                  id="profile-avatar"
-                  shape="circle"
-                  width="88px"
-                  height="88px"
-                ></md-skeleton>`}
-            <div id="username-block">
-              <h3>
-                ${this.user
-        ? this.user.display_name
-        : html`<md-skeleton
-                      width="100px"
-                      height="25px"
-                    ></md-skeleton>`}
-              </h3>
-
-              <div id="user-actions">
-                <md-dropdown>
-                  <md-icon-button
-                    slot="trigger"
-                    src="/assets/settings-outline.svg"
-                  ></md-icon-button>
-                  <md-menu>
-                    <md-menu-item @click="${() => this.viewMyProfile()}">
-                      <md-icon
-                        slot="prefix"
-                        src="/assets/eye-outline.svg"
-                      ></md-icon>
-                      View My Profile
-                    </md-menu-item>
-                    <md-menu-item @click="${() => this.shareMyProfile()}">
-                      <md-icon
-                        slot="prefix"
-                        src="/assets/share-social-outline.svg"
-                      ></md-icon>
-                      Share My Profile
-                    </md-menu-item>
-                    <md-menu-item @click="${() => this.editMyProfile()}">
-                      Edit My Profile
-                    </md-menu-item>
-                    <!-- <md-menu-item>
-                      Add an existing Account
-                    </md-menu-item> -->
-                  </md-menu>
-                </md-dropdown>
-              </div>
-            </div>
-
-            <p id="user-url">
-              ${this.user
-        ? this.user.url
-        : html`<md-skeleton width="100px" height="19px"></md-skeleton>`}
-            </p>
-
-            <md-badge
-              variant="outlined"
-              clickable
-              @click="${() => this.goToFollowers()}"
-              >${this.user ? this.user.followers_count : '0'} followers
-            </md-badge>
-            <md-badge
-              variant="outlined"
-              clickable
-              @click="${() => this.goToFollowing()}"
-              >${this.user ? this.user.following_count : '0'} following
-            </md-badge>
-          </div>
-
-          <md-button
-            pill
-            variant="filled"
-            @click="${() => this.openNewDialog()}"
-          >
-            New Post
-
-            <md-icon slot="suffix" src="/assets/add-outline.svg"></md-icon>
-          </md-button>
-        </div>
-
-        <!-- <mammoth-bot></mammoth-bot> -->
       </main>
 
       <md-toast

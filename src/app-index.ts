@@ -13,15 +13,15 @@ export class AppIndex extends LitElement {
   static get styles() {
     return css`
       main {
-        padding-left: 16px;
-        padding-right: 16px;
+        padding-left: 0;
+        padding-right: 0;
         padding-bottom: 16px;
       }
 
       @media (max-width: 820px) {
         main {
-          padding-left: 8px;
-          padding-right: 8px;
+          padding-left: 0;
+          padding-right: 0;
         }
       }
 

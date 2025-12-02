@@ -28,7 +28,7 @@ export class MdTabs extends LitElement {
   /**
    * Orientation of tabs: horizontal (top/bottom) or vertical (side)
    */
-  @property({ type: String }) orientation: 'horizontal' | 'vertical' =
+  @property({ type: String, reflect: true }) orientation: 'horizontal' | 'vertical' =
     'horizontal';
 
   /**
@@ -36,7 +36,7 @@ export class MdTabs extends LitElement {
    * - top/bottom for horizontal orientation
    * - start/end for vertical orientation (side navigation)
    */
-  @property({ type: String }) placement: 'top' | 'bottom' | 'start' | 'end' =
+  @property({ type: String, reflect: true }) placement: 'top' | 'bottom' | 'start' | 'end' =
     'top';
 
   /**

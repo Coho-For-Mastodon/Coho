@@ -47,7 +47,7 @@ export class TimelineItem extends LitElement {
 
         width: 100%;
 
-        margin-bottom: 10px;
+        margin-bottom: 0;
         -webkit-tap-highlight-color: transparent;
       }
 
@@ -59,6 +59,18 @@ export class TimelineItem extends LitElement {
         animation-fill-mode: forwards;
 
         cursor: pointer;
+
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      image-carousel {
+        margin-left: -12px;
+        margin-right: -12px;
+        width: calc(100% + 24px);
+        display: block;
+        margin-top: 12px;
+        margin-bottom: 12px;
       }
 
       md-card::part(header) {

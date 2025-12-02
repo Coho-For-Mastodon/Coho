@@ -533,6 +533,22 @@ export const getTrendingStatuses = async (): Promise<Post[]> => {
   return data;
 };
 
+export const getTrendingTags = async (): Promise<any[]> => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+
+  const response = await fetch(`https://${server}/api/v1/trends/tags`, {
+    method: 'GET',
+    headers: new Headers({
+      Authorization: `Bearer ${accessToken}`,
+    }),
+  });
+
+  const data = await response.json();
+
+  return data;
+};
+
 async function handlePeriodic(): Promise<unknown> {
   const registration: ServiceWorkerRegistration =
     await navigator.serviceWorker.ready;
