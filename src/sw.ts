@@ -26,6 +26,9 @@ declare const self: ServiceWorkerGlobalScope & {
 // Make idb-keyval available on self for backwards compatibility
 self.idbKeyval = { get, set };
 
+// Detect development mode - Vite dev server serves from localhost with HMR
+const IS_DEV = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
 interface WidgetDefinition {
   msAcTemplate: string;
   data: string;
@@ -42,14 +45,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-    | 'mention'
-    | 'reblog'
-    | 'favourite'
-    | 'follow'
-    | 'poll'
-    | 'follow_request'
-    | 'status'
-    | 'update';
+  | 'mention'
+  | 'reblog'
+  | 'favourite'
+  | 'follow'
+  | 'poll'
+  | 'follow_request'
+  | 'status'
+  | 'update';
   account: {
     id: string;
     display_name: string;
@@ -66,14 +69,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-    | 'mention'
-    | 'reblog'
-    | 'favourite'
-    | 'follow'
-    | 'poll'
-    | 'follow_request'
-    | 'status'
-    | 'update';
+  | 'mention'
+  | 'reblog'
+  | 'favourite'
+  | 'follow'
+  | 'poll'
+  | 'follow_request'
+  | 'status'
+  | 'update';
   icon: string;
   title: string;
   body: string;
@@ -85,13 +88,18 @@ interface NotificationAction {
   title: string;
 }
 
-// Enable navigation preload for supporting browsers
-navigationPreload.enable();
+// Enable navigation preload for supporting browsers (production only)
+if (!IS_DEV) {
+  navigationPreload.enable();
+}
 
+// Navigation route - use NetworkOnly in dev to avoid caching
 const navigationRoute = new NavigationRoute(
-  new NetworkFirst({
-    cacheName: 'navigations',
-  })
+  IS_DEV
+    ? new NetworkOnly()
+    : new NetworkFirst({
+      cacheName: 'navigations',
+    })
 );
 
 registerRoute(navigationRoute);
@@ -400,6 +408,12 @@ const warmFavoritesCache = async (): Promise<void> => {
 };
 
 const warmCache = async (): Promise<void> => {
+  // Skip cache warming in development mode
+  if (IS_DEV) {
+    console.log('[SW] Development mode: cache warming skipped');
+    return;
+  }
+
   console.log('[SW] Starting cache warming...');
 
   // Run all cache warming operations in parallel for better performance
@@ -458,185 +472,193 @@ async function shareTargetHandler({
 
 registerRoute('/share', shareTargetHandler as any, 'POST');
 
-// register a route for /
-registerRoute(
-  'index.html',
-  new NetworkFirst({
-    cacheName: 'root',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        // max age is 5 days
-        maxAgeSeconds: 60 * 60 * 24 * 5,
-      }),
-    ],
-  }),
-  'GET'
-);
+// Only register caching routes in production
+if (!IS_DEV) {
+  // register a route for /
+  registerRoute(
+    'index.html',
+    new NetworkFirst({
+      cacheName: 'root',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          // max age is 5 days
+          maxAgeSeconds: 60 * 60 * 24 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
 
-// background sync
-registerRoute(
-  ({ request }) => request.url.includes('/boost?id'),
-  new NetworkOnly({
-    plugins: [bgSyncPlugin],
-  }),
-  'POST'
-);
+  // background sync
+  registerRoute(
+    ({ request }) => request.url.includes('/boost?id'),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
 
-registerRoute(
-  ({ request }) => request.url.includes('/reblog?id'),
-  new NetworkOnly({
-    plugins: [bgSyncPlugin],
-  }),
-  'POST'
-);
+  registerRoute(
+    ({ request }) => request.url.includes('/reblog?id'),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
 
-registerRoute(
-  ({ request }) => request.url.includes('/bookmark?id'),
-  new NetworkOnly({
-    plugins: [bgSyncPlugin],
-  }),
-  'POST'
-);
+  registerRoute(
+    ({ request }) => request.url.includes('/bookmark?id'),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
 
-registerRoute(
-  ({ request }) => request.url.includes('/status?status'),
-  new NetworkOnly({
-    plugins: [bgSyncPlugin],
-  }),
-  'POST'
-);
+  registerRoute(
+    ({ request }) => request.url.includes('/status?status'),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
 
-// avatar photos
-registerRoute(
-  ({ request }) => request.url.includes('/accounts/avatars'),
-  new CacheFirst({
-    cacheName: 'avatar',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-      }),
-    ],
-  })
-);
+  // avatar photos
+  registerRoute(
+    ({ request }) => request.url.includes('/accounts/avatars'),
+    new CacheFirst({
+      cacheName: 'avatar',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    })
+  );
 
-registerRoute(
-  ({ request }) => request.url.includes('/user?code'),
-  new CacheFirst({
-    cacheName: 'user',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-      }),
-    ],
-  })
-);
+  registerRoute(
+    ({ request }) => request.url.includes('/user?code'),
+    new CacheFirst({
+      cacheName: 'user',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    })
+  );
 
-// Network first for timeline
-registerRoute(
-  ({ request }) => request.url.includes('timelines/home'),
-  new NetworkFirst({
-    cacheName: 'timeline',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        // max age is 5 minutes
-        maxAgeSeconds: 60 * 5,
-      }),
-    ],
-  }),
-  'GET'
-);
+  // Network first for timeline
+  registerRoute(
+    ({ request }) => request.url.includes('timelines/home'),
+    new NetworkFirst({
+      cacheName: 'timeline',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          // max age is 5 minutes
+          maxAgeSeconds: 60 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
 
-// Network first for notifications
-registerRoute(
-  ({ request }) => request.url.includes('/api/v1/notifications'),
-  new NetworkFirst({
-    cacheName: 'notifications',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        // max age is 5 minutes
-        maxAgeSeconds: 60 * 5,
-      }),
-    ],
-  }),
-  'GET'
-);
+  // Network first for notifications
+  registerRoute(
+    ({ request }) => request.url.includes('/api/v1/notifications'),
+    new NetworkFirst({
+      cacheName: 'notifications',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          // max age is 5 minutes
+          maxAgeSeconds: 60 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
 
-registerRoute(
-  ({ request }) =>
-    request.url.includes(
-      'https://us-central1-coho-mastodon.cloudfunctions.net/search'
-    ),
-  new NetworkFirst({
-    cacheName: 'search',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        // max age is 5 minutes
-        maxAgeSeconds: 60 * 5,
-      }),
-    ],
-  }),
-  'GET'
-);
+  registerRoute(
+    ({ request }) =>
+      request.url.includes(
+        'https://us-central1-coho-mastodon.cloudfunctions.net/search'
+      ),
+    new NetworkFirst({
+      cacheName: 'search',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          // max age is 5 minutes
+          maxAgeSeconds: 60 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
 
-// for bookmarks https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks
-registerRoute(
-  ({ request }) =>
-    request.url.includes(
-      'https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks'
-    ),
-  new NetworkFirst({
-    cacheName: 'bookmarks',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        // max age is 5 minutes
-        maxAgeSeconds: 60 * 5,
-      }),
-    ],
-  }),
-  'GET'
-);
+  // for bookmarks https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks
+  registerRoute(
+    ({ request }) =>
+      request.url.includes(
+        'https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks'
+      ),
+    new NetworkFirst({
+      cacheName: 'bookmarks',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          // max age is 5 minutes
+          maxAgeSeconds: 60 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
 
-// for https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites
-registerRoute(
-  ({ request }) =>
-    request.url.includes(
-      'https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites'
-    ),
-  new NetworkFirst({
-    cacheName: 'favorites',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        // max age is 5 minutes
-        maxAgeSeconds: 60 * 5,
-      }),
-    ],
-  }),
-  'GET'
-);
+  // for https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites
+  registerRoute(
+    ({ request }) =>
+      request.url.includes(
+        'https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites'
+      ),
+    new NetworkFirst({
+      cacheName: 'favorites',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          // max age is 5 minutes
+          maxAgeSeconds: 60 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
 
-// cache first for local assets
-registerRoute(
-  ({ request }) =>
-    request.destination === 'image' && request.url.includes('/assets/icons/'),
-  new CacheFirst({
-    cacheName: 'images',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        // max age is 5 days
-        maxAgeSeconds: 60 * 60 * 24 * 5,
-      }),
-    ],
-  }),
-  'GET'
-);
+  // cache first for local assets
+  registerRoute(
+    ({ request }) =>
+      request.destination === 'image' && request.url.includes('/assets/icons/'),
+    new CacheFirst({
+      cacheName: 'images',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          // max age is 5 days
+          maxAgeSeconds: 60 * 60 * 24 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
+}
 
-precacheAndRoute(self.__WB_MANIFEST || []);
+// Only precache in production - in dev, manifest is empty/undefined
+if (!IS_DEV && self.__WB_MANIFEST) {
+  precacheAndRoute(self.__WB_MANIFEST);
+} else if (IS_DEV) {
+  console.log('[SW] Development mode: caching disabled');
+}

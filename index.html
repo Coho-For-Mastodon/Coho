@@ -866,7 +866,12 @@
           });
         };
 
-        navigator.serviceWorker.register('/sw.js').then((reg) => {
+        // In dev mode, vite-plugin-pwa serves the SW at a different path with type: module
+        const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        const swUrl = isDev ? '/dev-sw.js?dev-sw' : '/sw.js';
+        const swOptions = isDev ? { type: 'module' } : undefined;
+
+        navigator.serviceWorker.register(swUrl, swOptions).then((reg) => {
           registration = reg;
 
           reg.addEventListener('updatefound', () => {
@@ -881,6 +886,8 @@
               }
             });
           });
+        }).catch((error) => {
+          console.log('[SW] Registration failed:', error);
         });
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
