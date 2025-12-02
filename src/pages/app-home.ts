@@ -25,6 +25,10 @@ import { styles } from '../styles/shared-styles';
 import { router } from '../utils/router';
 // import { resetLastPageID } from '../services/timeline';
 import { Post } from '../interfaces/Post';
+import {
+  checkNewNotifications,
+  markNotificationsRead,
+} from '../services/notifications';
 
 @customElement('app-home')
 export class AppHome extends LitElement {
@@ -51,6 +55,8 @@ export class AppHome extends LitElement {
   @state() openTweet: Post | null = null;
 
   @state() homeLoad: boolean = false;
+
+  @state() hasNewNotifications: boolean = false;
 
   // Lazy loading states for tabs
   @state() bookmarksLoaded: boolean = false;
@@ -97,6 +103,17 @@ export class AppHome extends LitElement {
         md-tab md-icon {
           width: 1.8em;
           height: 1.8em;
+        }
+
+        .notification-dot {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 8px;
+          height: 8px;
+          background-color: var(--md-sys-color-primary);
+          border-radius: 50%;
+          z-index: 10;
         }
 
         /* Dark mode support for tabs */
@@ -669,6 +686,8 @@ export class AppHome extends LitElement {
 
           this.handleDataSaverMode(settings.data_saver || false);
         }
+
+        this.hasNewNotifications = await checkNewNotifications();
       },
       { timeout: 3000 }
     );
@@ -1058,6 +1077,11 @@ export class AppHome extends LitElement {
         break;
       case 'notifications':
         await this.loadNotifications();
+        this.hasNewNotifications = false;
+        await markNotificationsRead();
+        if ('clearAppBadge' in navigator) {
+          (navigator as any).clearAppBadge();
+        }
         break;
       case 'search':
         await this.loadSearch();
@@ -1342,6 +1366,9 @@ export class AppHome extends LitElement {
               src="/assets/notifications-outline.svg"
             ></md-icon>
             <span class="tab-label">Notifications</span>
+            ${this.hasNewNotifications
+              ? html`<span class="notification-dot"></span>`
+              : nothing}
           </md-tab>
           <!-- <md-tab slot="nav" panel="messages">
             <md-icon slot="icon" src="/assets/chatbox-outline.svg"></md-icon>

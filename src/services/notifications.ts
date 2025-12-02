@@ -42,6 +42,69 @@ export const clearNotifications = async () => {
   return data;
 };
 
+export const checkNewNotifications = async (): Promise<boolean> => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+
+  try {
+    const response = await fetch(
+      `https://${server}/api/v1/notifications?limit=1`,
+      {
+        method: 'GET',
+        headers: new Headers({
+          Authorization: `Bearer ${accessToken}`,
+        }),
+      }
+    );
+
+    if (!response.ok) return false;
+
+    const data = await response.json();
+    if (data && data.length > 0) {
+      const latestId = data[0].id;
+      const lastReadId = localStorage.getItem('lastReadNotificationId');
+
+      if (!lastReadId) {
+        // First run, mark as read to avoid initial badge
+        localStorage.setItem('lastReadNotificationId', latestId);
+        return false;
+      }
+
+      return latestId !== lastReadId;
+    }
+  } catch (e) {
+    console.error('Error checking notifications', e);
+  }
+
+  return false;
+};
+
+export const markNotificationsRead = async () => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+
+  try {
+    const response = await fetch(
+      `https://${server}/api/v1/notifications?limit=1`,
+      {
+        method: 'GET',
+        headers: new Headers({
+          Authorization: `Bearer ${accessToken}`,
+        }),
+      }
+    );
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    if (data && data.length > 0) {
+      localStorage.setItem('lastReadNotificationId', data[0].id);
+    }
+  } catch (e) {
+    console.error('Error marking notifications read', e);
+  }
+};
+
 function urlBase64ToUint8Array(key: string) {
   const padding = '='.repeat((4 - (key.length % 4)) % 4);
   const base64 = (key + padding).replace(/-/g, '+').replace(/_/g, '/');

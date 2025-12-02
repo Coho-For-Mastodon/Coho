@@ -657,8 +657,11 @@ if (!IS_DEV) {
 }
 
 // Only precache in production - in dev, manifest is empty/undefined
-if (!IS_DEV && self.__WB_MANIFEST) {
-  precacheAndRoute(self.__WB_MANIFEST);
+if (!IS_DEV) {
+  const manifest = self.__WB_MANIFEST;
+  if (manifest) {
+    precacheAndRoute(manifest);
+  }
 } else if (IS_DEV) {
   console.log('[SW] Development mode: caching disabled');
 }

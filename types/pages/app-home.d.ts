@@ -34,6 +34,7 @@ export declare class AppHome extends LitElement {
     summary: string;
     openTweet: Post | null;
     homeLoad: boolean;
+    hasNewNotifications: boolean;
     bookmarksLoaded: boolean;
     favoritesLoaded: boolean;
     notificationsLoaded: boolean;
