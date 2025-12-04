@@ -11,10 +11,11 @@ import './md/md-button';
 
 import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
+import { Notification } from '../interfaces/Notification';
 
 @customElement('app-notifications')
 export class Notifications extends LitElement {
-  @state() notifications = [];
+  @state() notifications: Notification[] = [];
   @state() subbed: boolean = false;
   @state() activeSegment: string = 'all';
 

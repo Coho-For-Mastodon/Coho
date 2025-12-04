@@ -7,7 +7,7 @@ import './md/md-skeleton-card';
 
 @customElement('app-bookmarks')
 export class Bookmarks extends LitElement {
-  @state() bookmarks = [];
+  @state() bookmarks: Post[] = [];
   @state() isLoading = true;
 
   static styles = [

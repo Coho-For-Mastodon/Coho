@@ -1,1 +1,1 @@
-export declare const getMessages: () => Promise<any>;
+export { getMessages } from '../mastodon';

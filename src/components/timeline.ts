@@ -1,12 +1,13 @@
 import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import {
-  getLastPlaceTimeline,
-  getPaginatedHomeTimeline,
   getPreviewTimeline,
-  mixTimeline,
   enrichPostsWithReplyContext,
+  getPaginatedHomeTimeline,
+  mixTimeline,
+  getLastPlaceTimeline,
 } from '../services/timeline';
+import { Post } from '../interfaces/Post';
 import {
   saveTimelineCache,
   getTimelineCache,
@@ -29,7 +30,6 @@ import '../components/timeline-item';
 import '../components/search';
 import '../components/md/md-select';
 import '../components/md/md-option';
-import { Post } from '../interfaces/Post';
 
 import { router } from '../utils/router';
 

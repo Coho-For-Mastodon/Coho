@@ -1,4 +1,5 @@
 import { LitElement, PropertyValues } from 'lit';
+import { Post } from '../interfaces/Post';
 import '../components/md/md-dialog';
 import '../components/md/md-button';
 import '../components/md/md-icon';
@@ -9,7 +10,6 @@ import '../components/timeline-item';
 import '../components/search';
 import '../components/md/md-select';
 import '../components/md/md-option';
-import { Post } from '../interfaces/Post';
 export declare class Timeline extends LitElement {
     timeline: Post[];
     loadingData: boolean;

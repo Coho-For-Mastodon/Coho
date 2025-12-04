@@ -1,32 +1,12 @@
-import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
+import { Post } from '../interfaces/Post';
+import {
+  getBookmarks as mastodonGetBookmarks,
+  addBookmark as mastodonAddBookmark,
+} from '../mastodon';
 
-// Helper functions to always get fresh values from localStorage
-const getServer = () => localStorage.getItem('server') || '';
-const getAccessToken = () => localStorage.getItem('accessToken') || '';
-
-export const getBookmarks = async () => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getBookmarks?code=${accessToken}&server=${server}`
-  );
-  const data = await response.json();
-  return data;
+export const getBookmarks = async (): Promise<Post[]> => {
+  const data = await mastodonGetBookmarks();
+  return data as unknown as Post[];
 };
 
-export const addBookmark = async (id: string) => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/bookmark?id=${id}&code=${accessToken}&server=${server}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  const data = await response.json();
-  return data;
-};
+export const addBookmark = mastodonAddBookmark;

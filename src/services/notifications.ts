@@ -1,109 +1,24 @@
-// Helper functions to always get fresh values from localStorage
-const getServer = () => localStorage.getItem('server') || '';
-const getAccessToken = () => localStorage.getItem('accessToken') || '';
+import type { Notification as MastodonNotification } from '../interfaces/Notification';
+import {
+  getNotifications as mastodonGetNotifications,
+  clearNotifications as mastodonClearNotifications,
+  checkNewNotifications as mastodonCheckNewNotifications,
+  markNotificationsRead as mastodonMarkNotificationsRead,
+} from '../mastodon';
 
-export const getNotifications = async () => {
-  // const notifyResponse = await fetch(`http://localhost:8000/notifications?code=${accessToken}&server=${server}`);
-  // const data = await notifyResponse.json();
-  // return data;
+import { getClientConfig } from '../mastodon/config/client';
 
-  // get notifications from mastodon api
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const notifyResponse = await fetch(`https://${server}/api/v1/notifications`, {
-    method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-  });
-
-  const data = await notifyResponse.json();
-  return data;
+// Core notification functions with proper type casting
+export const getNotifications = async (): Promise<MastodonNotification[]> => {
+  const data = await mastodonGetNotifications();
+  return data as unknown as MastodonNotification[];
 };
 
-export const clearNotifications = async () => {
-  // const response = await fetch(`https://mammothserver.azurewebsites.net/clearNotifications?code=${accessToken}&server=${server}`, {
-  //     method: 'POST',
-  // });
-  // const data = await response.json();
-  // return data;
+export const clearNotifications = mastodonClearNotifications;
+export const checkNewNotifications = mastodonCheckNewNotifications;
+export const markNotificationsRead = mastodonMarkNotificationsRead;
 
-  // clear notifications from mastodon api
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(`https://${server}/api/v1/notifications/clear`, {
-    method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-  });
-
-  const data = await response.json();
-  return data;
-};
-
-export const checkNewNotifications = async (): Promise<boolean> => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-
-  try {
-    const response = await fetch(
-      `https://${server}/api/v1/notifications?limit=1`,
-      {
-        method: 'GET',
-        headers: new Headers({
-          Authorization: `Bearer ${accessToken}`,
-        }),
-      }
-    );
-
-    if (!response.ok) return false;
-
-    const data = await response.json();
-    if (data && data.length > 0) {
-      const latestId = data[0].id;
-      const lastReadId = localStorage.getItem('lastReadNotificationId');
-
-      if (!lastReadId) {
-        // First run, mark as read to avoid initial badge
-        localStorage.setItem('lastReadNotificationId', latestId);
-        return false;
-      }
-
-      return latestId !== lastReadId;
-    }
-  } catch (e) {
-    console.error('Error checking notifications', e);
-  }
-
-  return false;
-};
-
-export const markNotificationsRead = async () => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-
-  try {
-    const response = await fetch(
-      `https://${server}/api/v1/notifications?limit=1`,
-      {
-        method: 'GET',
-        headers: new Headers({
-          Authorization: `Bearer ${accessToken}`,
-        }),
-      }
-    );
-
-    if (!response.ok) return;
-
-    const data = await response.json();
-    if (data && data.length > 0) {
-      localStorage.setItem('lastReadNotificationId', data[0].id);
-    }
-  } catch (e) {
-    console.error('Error marking notifications read', e);
-  }
-};
+// App-specific push notification functions
 
 function urlBase64ToUint8Array(key: string) {
   const padding = '='.repeat((4 - (key.length % 4)) % 4);
@@ -124,14 +39,13 @@ export const subToPush = async () => {
   let vapidKey: string | undefined;
   let subscription: PushSubscription | null | undefined;
 
-  const accessToken = getAccessToken();
-  const server = getServer();
+  const { url, accessToken } = getClientConfig();
 
   // First, try to get VAPID key from app credentials
   // This is the correct way according to Mastodon docs
   try {
     const appResponse = await fetch(
-      `https://${server}/api/v1/apps/verify_credentials`,
+      `https://${url}/api/v1/apps/verify_credentials`,
       {
         method: 'GET',
         headers: new Headers({
@@ -153,7 +67,7 @@ export const subToPush = async () => {
   if (!vapidKey) {
     try {
       const existingSubResponse = await fetch(
-        `https://${server}/api/v1/push/subscription`,
+        `https://${url}/api/v1/push/subscription`,
         {
           method: 'GET',
           headers: new Headers({
@@ -202,7 +116,7 @@ export const subToPush = async () => {
   // Convert subscription to the format Mastodon expects
   const subscriptionJSON = subscription.toJSON();
 
-  const response = await fetch(`https://${server}/api/v1/push/subscription`, {
+  const response = await fetch(`https://${url}/api/v1/push/subscription`, {
     method: 'POST',
     headers: new Headers({
       'Authorization': `Bearer ${accessToken}`,
@@ -251,7 +165,8 @@ export const subToPush = async () => {
       const minInterval = 12 * 60 * 60 * 1000;
 
       if (registration) {
-        await registration.periodicSync.register('get-notifications', {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (registration as any).periodicSync.register('get-notifications', {
           minInterval,
         });
       }
@@ -291,10 +206,9 @@ export const modifyPush = async (flags?: string[]) => {
     };
   }
 
-  const accessToken = getAccessToken();
-  const server = getServer();
+  const { url, accessToken } = getClientConfig();
 
-  const response = await fetch(`https://${server}/api/v1/push/subscription`, {
+  const response = await fetch(`https://${url}/api/v1/push/subscription`, {
     method: 'PUT',
     headers: new Headers({
       'Authorization': `Bearer ${accessToken}`,
@@ -317,10 +231,9 @@ export const unsubToPush = async () => {
     return;
   }
 
-  const accessToken = getAccessToken();
-  const server = getServer();
+  const { url, accessToken } = getClientConfig();
 
-  const response = await fetch(`https://${server}/api/v1/push/subscription`, {
+  const response = await fetch(`https://${url}/api/v1/push/subscription`, {
     method: 'DELETE',
     headers: new Headers({
       'Authorization': `Bearer ${accessToken}`,

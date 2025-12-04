@@ -6,7 +6,7 @@ import './md/md-skeleton-card';
 
 @customElement('app-favorites')
 export class Favorites extends LitElement {
-  @state() favorites = [];
+  @state() favorites: Post[] = [];
   @state() isLoading = true;
 
   static styles = [

@@ -6,8 +6,9 @@ import './md/md-switch';
 import './md/md-button';
 import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
+import { Notification } from '../interfaces/Notification';
 export declare class Notifications extends LitElement {
-    notifications: never[];
+    notifications: Notification[];
     subbed: boolean;
     activeSegment: string;
     static styles: import("lit").CSSResult[];
