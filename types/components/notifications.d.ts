@@ -4,11 +4,12 @@ import './timeline-item';
 import './md/md-dialog';
 import './md/md-switch';
 import './md/md-button';
-import '@shoelace-style/shoelace/dist/components/divider/divider';
+import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
 export declare class Notifications extends LitElement {
     notifications: never[];
     subbed: boolean;
+    activeSegment: string;
     static styles: import("lit").CSSResult[];
     firstUpdated(): Promise<void>;
     clear(): Promise<void>;

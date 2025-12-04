@@ -9,8 +9,7 @@ import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/report-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
-import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
-import '@shoelace-style/shoelace/dist/components/badge/badge.js';
+import '../components/md/md-skeleton';
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 export declare class AppProfile extends LitElement {

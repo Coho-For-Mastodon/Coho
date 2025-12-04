@@ -8,7 +8,7 @@ import './md/md-icon-button.js';
 import './md/md-select.js';
 import './md/md-option.js';
 import './media-edit-dialog.js';
-import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import './md/md-skeleton.js';
 interface LocalAttachment {
     id: string;
     preview_url: string;

@@ -9,8 +9,6 @@ import './md/md-dialog';
 import './md/md-switch';
 import './md/md-button';
 
-import '@shoelace-style/shoelace/dist/components/divider/divider';
-
 import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
 

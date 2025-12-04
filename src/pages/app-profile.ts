@@ -27,7 +27,6 @@ import '../components/report-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
 
 import '../components/md/md-skeleton';
-import '@shoelace-style/shoelace/dist/components/badge/badge.js';
 
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';

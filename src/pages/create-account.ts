@@ -2,7 +2,6 @@ import { LitElement, html, css, PropertyValueMap } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { getServers } from '../services/account';
 
-import '@shoelace-style/shoelace/dist/components/badge/badge.js';
 import '../components/md/md-dialog.js';
 import '../components/md/md-button.js';
 import '../components/md/md-badge.js';
@@ -146,7 +145,7 @@ export class CreateAccount extends LitElement {
       <app-header ?enableBack=${true}></app-header>
 
       <md-dialog id="create-dialog" label="Create Account">
-        <span .innerHTML="${this.fullDesc}"></span>
+        <span .innerHTML="${this.fullDesc || ""}"></span>
 
         <md-button
           @click="${() => this.doRegister()}"

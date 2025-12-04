@@ -5,9 +5,6 @@ import { getPreviewTimeline } from '../services/timeline';
 import '../components/preview-timeline';
 import '../components/md/md-text-field';
 
-import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
-import '@shoelace-style/shoelace/dist/components/button/button.js';
-
 @customElement('app-explore')
 export class AppExplore extends LitElement {
   @state() timeline: any[] = [];

@@ -1,5 +1,5 @@
 import { LitElement } from 'lit';
-import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import './md/md-skeleton';
 import '@lit-labs/virtualizer';
 import '../components/timeline-item';
 import '../components/search';

@@ -1,6 +1,7 @@
 import { LitElement, PropertyValueMap } from 'lit';
-import '@shoelace-style/shoelace/dist/components/badge/badge.js';
 import '../components/md/md-dialog.js';
+import '../components/md/md-button.js';
+import '../components/md/md-badge.js';
 export declare class CreateAccount extends LitElement {
     servers: any[];
     chosenServer: string | undefined;
