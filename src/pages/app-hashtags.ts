@@ -70,7 +70,11 @@ export class AppHashtags extends LitElement {
       <main>
         <h3>${this.tag ? `#${this.tag}` : ''}</h3>
 
-        <app-timeline .data=${this.data} .header=${false} .autoLoad=${false}></app-timeline>
+        <app-timeline
+          .data=${this.data}
+          .header=${false}
+          .autoLoad=${false}
+        ></app-timeline>
       </main>
     `;
   }

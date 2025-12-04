@@ -22,12 +22,12 @@ import { customElement, property } from 'lit/decorators.js';
  */
 @customElement('md-segmented-button')
 export class MdSegmentedButton extends LitElement {
-    /**
-     * Currently selected segment value
-     */
-    @property({ type: String, reflect: true }) value: string = '';
+  /**
+   * Currently selected segment value
+   */
+  @property({ type: String, reflect: true }) value: string = '';
 
-    static styles = css`
+  static styles = css`
     :host {
       display: block;
       width: 100%;
@@ -61,73 +61,81 @@ export class MdSegmentedButton extends LitElement {
     }
   `;
 
-    connectedCallback() {
-        super.connectedCallback();
-        this.addEventListener('segment-selected', this._handleSegmentSelected as EventListener);
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener(
+      'segment-selected',
+      this._handleSegmentSelected as EventListener
+    );
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener(
+      'segment-selected',
+      this._handleSegmentSelected as EventListener
+    );
+  }
+
+  firstUpdated() {
+    this._updateSegments();
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('value')) {
+      this._updateSegments();
+    }
+  }
+
+  private _handleSegmentSelected(e: CustomEvent) {
+    e.stopPropagation();
+    const value = e.detail.value;
+    if (value && value !== this.value) {
+      this.value = value;
+      this._updateSegments();
+
+      this.dispatchEvent(
+        new CustomEvent('segment-change', {
+          detail: { value },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
+  }
+
+  private _updateSegments() {
+    const slot = this.shadowRoot?.querySelector('slot');
+    if (!slot) return;
+
+    const segments = slot
+      .assignedElements()
+      .filter(
+        (el) => el.tagName.toLowerCase() === 'md-segment'
+      ) as HTMLElement[];
+
+    // Auto-select first segment if no value set
+    if (!this.value && segments.length > 0) {
+      this.value = (segments[0] as MdSegment).value || '';
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
-        this.removeEventListener('segment-selected', this._handleSegmentSelected as EventListener);
-    }
+    segments.forEach((segment) => {
+      const seg = segment as MdSegment;
+      if (seg.value === this.value) {
+        segment.setAttribute('selected', '');
+      } else {
+        segment.removeAttribute('selected');
+      }
+    });
+  }
 
-    firstUpdated() {
-        this._updateSegments();
-    }
-
-    updated(changedProperties: Map<string, unknown>) {
-        if (changedProperties.has('value')) {
-            this._updateSegments();
-        }
-    }
-
-    private _handleSegmentSelected(e: CustomEvent) {
-        e.stopPropagation();
-        const value = e.detail.value;
-        if (value && value !== this.value) {
-            this.value = value;
-            this._updateSegments();
-
-            this.dispatchEvent(
-                new CustomEvent('segment-change', {
-                    detail: { value },
-                    bubbles: true,
-                    composed: true,
-                })
-            );
-        }
-    }
-
-    private _updateSegments() {
-        const slot = this.shadowRoot?.querySelector('slot');
-        if (!slot) return;
-
-        const segments = slot.assignedElements().filter(
-            (el) => el.tagName.toLowerCase() === 'md-segment'
-        ) as HTMLElement[];
-
-        // Auto-select first segment if no value set
-        if (!this.value && segments.length > 0) {
-            this.value = (segments[0] as MdSegment).value || '';
-        }
-
-        segments.forEach((segment) => {
-            const seg = segment as MdSegment;
-            if (seg.value === this.value) {
-                segment.setAttribute('selected', '');
-            } else {
-                segment.removeAttribute('selected');
-            }
-        });
-    }
-
-    render() {
-        return html`
+  render() {
+    return html`
       <div class="container" role="group">
         <slot @slotchange=${this._updateSegments}></slot>
       </div>
     `;
-    }
+  }
 }
 
 /**
@@ -142,22 +150,22 @@ export class MdSegmentedButton extends LitElement {
  */
 @customElement('md-segment')
 export class MdSegment extends LitElement {
-    /**
-     * Value identifier for this segment
-     */
-    @property({ type: String, reflect: true }) value: string = '';
+  /**
+   * Value identifier for this segment
+   */
+  @property({ type: String, reflect: true }) value: string = '';
 
-    /**
-     * Whether this segment is selected
-     */
-    @property({ type: Boolean, reflect: true }) selected: boolean = false;
+  /**
+   * Whether this segment is selected
+   */
+  @property({ type: Boolean, reflect: true }) selected: boolean = false;
 
-    /**
-     * Whether this segment is disabled
-     */
-    @property({ type: Boolean, reflect: true }) disabled: boolean = false;
+  /**
+   * Whether this segment is disabled
+   */
+  @property({ type: Boolean, reflect: true }) disabled: boolean = false;
 
-    static styles = css`
+  static styles = css`
     :host {
       display: inline-flex;
     }
@@ -189,16 +197,24 @@ export class MdSegment extends LitElement {
     }
 
     button:focus-visible {
-      outline: 2px solid var(--sl-color-primary-600, var(--md-sys-color-primary, #6750a4));
+      outline: 2px solid
+        var(--sl-color-primary-600, var(--md-sys-color-primary, #6750a4));
       outline-offset: 2px;
     }
 
     button:active:not(:disabled) {
-      background: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 12%, transparent);
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface, #1d1b20) 12%,
+        transparent
+      );
     }
 
     :host([selected]) button {
-      background: var(--sl-color-primary-600, var(--md-sys-color-primary, #6750a4));
+      background: var(
+        --sl-color-primary-600,
+        var(--md-sys-color-primary, #6750a4)
+      );
       color: white;
     }
 
@@ -224,26 +240,29 @@ export class MdSegment extends LitElement {
       }
 
       :host([selected]) button {
-        background: var(--sl-color-primary-600, var(--md-sys-color-primary, #6750a4));
+        background: var(
+          --sl-color-primary-600,
+          var(--md-sys-color-primary, #6750a4)
+        );
         color: white;
       }
     }
   `;
 
-    private _handleClick() {
-        if (this.disabled) return;
+  private _handleClick() {
+    if (this.disabled) return;
 
-        this.dispatchEvent(
-            new CustomEvent('segment-selected', {
-                detail: { value: this.value },
-                bubbles: true,
-                composed: true,
-            })
-        );
-    }
+    this.dispatchEvent(
+      new CustomEvent('segment-selected', {
+        detail: { value: this.value },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
 
-    render() {
-        return html`
+  render() {
+    return html`
       <button
         role="radio"
         aria-checked="${this.selected}"
@@ -254,12 +273,12 @@ export class MdSegment extends LitElement {
         <slot></slot>
       </button>
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'md-segmented-button': MdSegmentedButton;
-        'md-segment': MdSegment;
-    }
+  interface HTMLElementTagNameMap {
+    'md-segmented-button': MdSegmentedButton;
+    'md-segment': MdSegment;
+  }
 }

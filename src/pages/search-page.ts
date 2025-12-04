@@ -206,21 +206,21 @@ export class SearchPage extends LitElement {
 
         <md-segmented-button
           .value="${this.activeSegment}"
-          @segment-change="${(e: CustomEvent) => this.activeSegment = e.detail.value}"
+          @segment-change="${(e: CustomEvent) =>
+            (this.activeSegment = e.detail.value)}"
         >
           <md-segment value="accounts">Accounts</md-segment>
           <md-segment value="trending">Trending</md-segment>
           <md-segment value="news">News</md-segment>
-
         </md-segmented-button>
 
         <div class="panel ${this.activeSegment === 'accounts' ? 'active' : ''}">
           ${this.searchData && this.searchData.accounts
-        ? html`
+            ? html`
                 <ul>
                   ${this.searchData && this.searchData.accounts
-            ? this.searchData.accounts.map((account: any) => {
-              return html`<li
+                    ? this.searchData.accounts.map((account: any) => {
+                        return html`<li
                           @click="${() => this.openAccount(account.id)}"
                         >
                           <div class="account">
@@ -228,11 +228,11 @@ export class SearchPage extends LitElement {
                             ${account.username}
                           </div>
                         </li>`;
-            })
-            : null}
+                      })
+                    : null}
                 </ul>
               `
-        : html`
+            : html`
                 <div class="account">
                   <md-skeleton></md-skeleton>
                 </div>
@@ -258,20 +258,20 @@ export class SearchPage extends LitElement {
         <div class="panel ${this.activeSegment === 'trending' ? 'active' : ''}">
           <ul>
             ${this.trending
-        ? this.trending.map((status: any) => {
-          return html`<timeline-item
+              ? this.trending.map((status: any) => {
+                  return html`<timeline-item
                     .tweet="${status}"
                   ></timeline-item>`;
-        })
-        : null}
+                })
+              : null}
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'news' ? 'active' : ''}">
           <ul id="newsList">
             ${this.trendingLinks
-        ? this.trendingLinks.map((status: any) => {
-          return html` <li>
+              ? this.trendingLinks.map((status: any) => {
+                  return html` <li>
                     <img src="${status.image}" alt="${status.description}" />
 
                     <h3>${status.title}</h3>
@@ -279,28 +279,28 @@ export class SearchPage extends LitElement {
 
                     <p>${status.description}</p>
                   </li>`;
-        })
-        : null}
+                })
+              : null}
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'hashtags' ? 'active' : ''}">
           ${this.searchData && this.searchData.hashtags
-        ? html`
+            ? html`
                 <ul>
                   ${this.searchData && this.searchData.hashtags
-            ? this.searchData.hashtags.map((hashtag: any) => {
-              return html`<li
+                    ? this.searchData.hashtags.map((hashtag: any) => {
+                        return html`<li
                           @click="${() =>
-                  this.handleHashtagClick(hashtag.name)}"
+                            this.handleHashtagClick(hashtag.name)}"
                         >
                           <div class="account">#${hashtag.name}</div>
                         </li>`;
-            })
-            : null}
+                      })
+                    : null}
                 </ul>
               `
-        : null}
+            : null}
         </div>
       </main>
     `;

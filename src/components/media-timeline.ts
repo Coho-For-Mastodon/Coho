@@ -159,7 +159,7 @@ export class MediaTimeline extends LitElement {
           <timeline-item
             ?show="${true}"
             @replies="${($event: any) =>
-          this.handleReplies($event.detail.data)}"
+              this.handleReplies($event.detail.data)}"
             .tweet="${tweet}"
           ></timeline-item>
         `) as any}"

@@ -27,7 +27,8 @@ declare const self: ServiceWorkerGlobalScope & {
 self.idbKeyval = { get, set };
 
 // Detect development mode - Vite dev server serves from localhost with HMR
-const IS_DEV = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const IS_DEV =
+  location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
 interface WidgetDefinition {
   msAcTemplate: string;
@@ -45,14 +46,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   account: {
     id: string;
     display_name: string;
@@ -69,14 +70,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   icon: string;
   title: string;
   body: string;
@@ -98,8 +99,8 @@ const navigationRoute = new NavigationRoute(
   IS_DEV
     ? new NetworkOnly()
     : new NetworkFirst({
-      cacheName: 'navigations',
-    })
+        cacheName: 'navigations',
+      })
 );
 
 registerRoute(navigationRoute);

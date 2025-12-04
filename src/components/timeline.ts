@@ -870,11 +870,11 @@ export class Timeline extends LitElement {
         label="Image Preview"
       >
         ${this.imgPreview
-        ? html`<img
+          ? html`<img
               src="${this.imgPreview}"
               style="width:100%;border-radius:6px;"
             />`
-        : null}
+          : null}
       </md-dialog>
 
       ${this.header
@@ -883,7 +883,7 @@ export class Timeline extends LitElement {
               pill
               .value="${this.timelineType}"
               @change="${($event: any) =>
-            this.changeTimelineType($event.detail.value)}"
+                this.changeTimelineType($event.detail.value)}"
               placeholder="Home"
             >
               <md-option value="for you">for you</md-option>
@@ -898,9 +898,9 @@ export class Timeline extends LitElement {
               id="refresh-manual-button"
               circle
               @click="${() => {
-            clearTimelineCache(this.timelineType);
-            this.refreshTimeline(true);
-          }}"
+                clearTimelineCache(this.timelineType);
+                this.refreshTimeline(true);
+              }}"
             >
               <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
             </md-icon-button>
@@ -921,26 +921,26 @@ export class Timeline extends LitElement {
               scroller
               .items=${this.timeline as Post[]}
               .renderItem=${((tweet: Post) =>
-            html`<div class="timeline-list-item">
+                html`<div class="timeline-list-item">
                   <timeline-item
                     @open="${($event: CustomEvent) =>
-                this.handleOpen($event.detail.tweet)}"
+                      this.handleOpen($event.detail.tweet)}"
                     @summarize="${($event: any) => this.handleSummary($event)}"
                     @translating="${($event: any) =>
-                this.handleTranslating($event)}"
+                      this.handleTranslating($event)}"
                     tweetID="${tweet.id}"
                     @delete="${() => this.refreshTimeline()}"
                     @analyze="${($event: any) =>
-                this.showAnalyze(
-                  $event.detail.data,
-                  $event.detail.imageData,
-                  $event.detail.tweet
-                )}"
+                      this.showAnalyze(
+                        $event.detail.data,
+                        $event.detail.imageData,
+                        $event.detail.tweet
+                      )}"
                     @openimage="${($event: any) =>
-                this.showImage($event.detail.imageURL)}"
+                      this.showImage($event.detail.imageURL)}"
                     ?show="${true}"
                     @replies="${($event: any) =>
-                this.handleReplies($event.detail.data)}"
+                      this.handleReplies($event.detail.data)}"
                     .tweet="${tweet}"
                   ></timeline-item>
                   <md-divider

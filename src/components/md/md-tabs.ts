@@ -28,16 +28,20 @@ export class MdTabs extends LitElement {
   /**
    * Orientation of tabs: horizontal (top/bottom) or vertical (side)
    */
-  @property({ type: String, reflect: true }) orientation: 'horizontal' | 'vertical' =
-    'horizontal';
+  @property({ type: String, reflect: true }) orientation:
+    | 'horizontal'
+    | 'vertical' = 'horizontal';
 
   /**
    * Placement of tab bar
    * - top/bottom for horizontal orientation
    * - start/end for vertical orientation (side navigation)
    */
-  @property({ type: String, reflect: true }) placement: 'top' | 'bottom' | 'start' | 'end' =
-    'top';
+  @property({ type: String, reflect: true }) placement:
+    | 'top'
+    | 'bottom'
+    | 'start'
+    | 'end' = 'top';
 
   /**
    * Active panel name

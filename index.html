@@ -292,24 +292,27 @@
         const swUrl = isDev ? '/dev-sw.js?dev-sw' : '/sw.js';
         const swOptions = isDev ? { type: 'module' } : undefined;
 
-        navigator.serviceWorker.register(swUrl, swOptions).then((reg) => {
-          registration = reg;
+        navigator.serviceWorker
+          .register(swUrl, swOptions)
+          .then((reg) => {
+            registration = reg;
 
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
 
-            newWorker.addEventListener('statechange', async () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                const updateAccepted = await promptForUpdate();
-                if (updateAccepted) {
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+              newWorker.addEventListener('statechange', async () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  const updateAccepted = await promptForUpdate();
+                  if (updateAccepted) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  }
                 }
-              }
+              });
             });
+          })
+          .catch((error) => {
+            console.log('[SW] Registration failed:', error);
           });
-        }).catch((error) => {
-          console.log('[SW] Registration failed:', error);
-        });
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           window.location.reload();

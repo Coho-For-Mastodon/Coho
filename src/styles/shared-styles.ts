@@ -16,6 +16,4 @@ export const styles = css`
   md-button::part(control) {
     border: none;
   }
-
-
 `;
