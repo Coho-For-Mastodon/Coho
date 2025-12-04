@@ -14,7 +14,6 @@ Coho is a Progressive Web App (PWA) client for Mastodon. It emphasizes offline c
 
 ## Features
 
-
 - **Simple**: Coho keeps things simple, with a clean UI that keeps the core of what you need up front.
 - **Cross Platform**: Fully responsive design that works seamlessly on mobile, tablets, and desktop.
 - **PWA**: Installable on all devices (iOS, Android, Windows, macOS, Linux).
@@ -24,32 +23,33 @@ Coho is a Progressive Web App (PWA) client for Mastodon. It emphasizes offline c
 - **Theming**: Choose your primary color and switch between Dark and Light modes.
 - **Wellness Mode**: Take control of your digital well-being by hiding likes, boost counts, and other metrics for a calmer experience.
 
-
-
 # Technical
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: [Lit](https://lit.dev/) (Web Components), TypeScript
 - **UI Components**: Custom MD3 components
 - **Build Tool**: [Vite](https://vitejs.dev/)
 - **Backend**: Firebase Functions (TypeScript)
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
+
 - Node.js (v22 or higher)
 - npm
 
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/jgw96/Otter.git
    cd Otter
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
