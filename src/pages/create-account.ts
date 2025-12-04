@@ -4,6 +4,8 @@ import { getServers } from '../services/account';
 
 import '@shoelace-style/shoelace/dist/components/badge/badge.js';
 import '../components/md/md-dialog.js';
+import '../components/md/md-button.js';
+import '../components/md/md-badge.js';
 
 @customElement('create-account')
 export class CreateAccount extends LitElement {
@@ -179,13 +181,13 @@ export class CreateAccount extends LitElement {
 
         <ul>
           ${this.servers.map((server) => {
-            return html`
+      return html`
               <li>
                 <img src="${server.thumbnail}" alt="${server.name} thumbnail" />
                 <div class="info">
                   <div class="tags">
-                    <sl-badge apperance="accent"
-                      >${server.users} users</sl-badge
+                    <md-badge apperance="accent"
+                      >${server.users} users</md-badge
                     >
                   </div>
                   <span class="name">${server.name}</span>
@@ -198,7 +200,7 @@ export class CreateAccount extends LitElement {
                 >
               </li>
             `;
-          })}
+    })}
         </ul>
       </main>
     `;

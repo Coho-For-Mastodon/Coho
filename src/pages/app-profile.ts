@@ -26,7 +26,7 @@ import '../components/md/md-icon-button';
 import '../components/report-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
 
-import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import '../components/md/md-skeleton';
 import '@shoelace-style/shoelace/dist/components/badge/badge.js';
 
 import '../components/md/md-badge';
@@ -79,13 +79,12 @@ export class AppProfile extends LitElement {
         height: 200px;
       }
 
-      h3 sl-skeleton {
+      h3 md-skeleton {
         width: 186px;
         height: 22px;
-        border-radius: 8px;
       }
 
-      #user-url sl-skeleton {
+      #user-url md-skeleton {
         width: 300px;
       }
 
@@ -97,15 +96,14 @@ export class AppProfile extends LitElement {
         height: 100px;
       }
 
-      #bio-placeholder sl-skeleton {
+      #bio-placeholder md-skeleton {
         height: 12px;
         width: 100%;
       }
 
-      #avatar-block sl-skeleton {
+      #avatar-block md-skeleton {
         height: -webkit-fill-available;
         width: -webkit-fill-available;
-        border-radius: 8px;
       }
 
       sl-badge {
@@ -255,10 +253,9 @@ export class AppProfile extends LitElement {
         height: 400px;
       }
 
-      #fake-profile sl-skeleton {
+      #fake-profile md-skeleton {
         display: block;
         height: 400px;
-        --border-radius: 4px;
       }
 
       #username-block {
@@ -566,8 +563,8 @@ export class AppProfile extends LitElement {
         <div id="edit-input-block">
           <md-text-area id="content"></md-text-area>
 
-          <sl-button type="primary" @click=${() => this.confirmEdit()}
-            >Save</sl-button
+          <md-button @click=${() => this.confirmEdit()}
+            >Save</md-button
           >
         </div>
       </md-dialog>
@@ -576,38 +573,38 @@ export class AppProfile extends LitElement {
         <div id="profile">
           <div id="profile-top">
             ${this.user
-              ? html`
+        ? html`
                   <div
                     id="avatar-block"
                     style=${styleMap({
-                      backgroundImage: `url(${this.user.header})`,
-                    })}
+          backgroundImage: `url(${this.user.header})`,
+        })}
                   >
                     <img src="${this.user.avatar}" />
                   </div>
                 `
-              : html`<div id="avatar-block"><sl-skeleton></sl-skeleton></div>`}
+        : html`<div id="avatar-block"><md-skeleton></md-skeleton></div>`}
             <div id="username-block">
               <h3>
                 ${this.user
-                  ? this.user.display_name
-                  : html`<sl-skeleton></sl-skeleton>`}
+        ? this.user.display_name
+        : html`<md-skeleton></md-skeleton>`}
               </h3>
             </div>
 
             <p id="user-url">
-              ${this.user ? this.user.url : html`<sl-skeleton></sl-skeleton>`}
+              ${this.user ? this.user.url : html`<md-skeleton></md-skeleton>`}
             </p>
 
             ${this.user && this.user.note
-              ? html`
+        ? html`
                   <div .innerHTML=${this.user ? this.user.note : ''}></div>
                 `
-              : html`
+        : html`
                   <div id="bio-placeholder">
-                    <sl-skeleton></sl-skeleton>
-                    <sl-skeleton></sl-skeleton>
-                    <sl-skeleton></sl-skeleton>
+                    <md-skeleton></md-skeleton>
+                    <md-skeleton></md-skeleton>
+                    <md-skeleton></md-skeleton>
                   </div>
                 `}
 
@@ -624,8 +621,8 @@ export class AppProfile extends LitElement {
 
             <div id="fields">
               ${this.user
-                ? this.user.fields.map(
-                    (field: any) => html`
+        ? this.user.fields.map(
+          (field: any) => html`
                       <div>
                         <md-badge variant="outlined">
                           <span
@@ -639,29 +636,29 @@ export class AppProfile extends LitElement {
                         </md-badge>
                       </div>
                     `
-                  )
-                : null}
+        )
+        : null}
             </div>
 
             <div id="profile-card-actions">
               ${!this.isOwnProfile
-                ? html`
+        ? html`
                     ${this.followed && this.following
-                      ? html`<md-button
+            ? html`<md-button
                           variant="filled"
                           id="unfollow"
                           @click="${() => this.unfollow()}"
                           >Mutuals</md-button
                         >`
-                      : this.followed
-                        ? html`<md-button
+            : this.followed
+              ? html`<md-button
                             id="unfollow"
                             @click="${() => this.unfollow()}"
                             variant="filled"
                             pill
                             >Unfollow</md-button
                           >`
-                        : html`<md-button
+              : html`<md-button
                             pill
                             variant="filled"
                             @click="${() => this.follow()}"
@@ -675,14 +672,14 @@ export class AppProfile extends LitElement {
                       ></md-icon-button>
                       <md-menu>
                         ${this.muted
-                          ? html`<md-menu-item @click="${() => this.unmute()}">
+            ? html`<md-menu-item @click="${() => this.unmute()}">
                               <md-icon
                                 slot="prefix"
                                 name="volume-mute"
                               ></md-icon>
                               Unmute @${this.user?.acct}
                             </md-menu-item>`
-                          : html`<md-menu-item @click="${() => this.mute()}">
+            : html`<md-menu-item @click="${() => this.mute()}">
                               <md-icon
                                 slot="prefix"
                                 name="volume-mute"
@@ -690,11 +687,11 @@ export class AppProfile extends LitElement {
                               Mute @${this.user?.acct}
                             </md-menu-item>`}
                         ${this.blocked
-                          ? html`<md-menu-item @click="${() => this.unblock()}">
+            ? html`<md-menu-item @click="${() => this.unblock()}">
                               <md-icon slot="prefix" name="ban"></md-icon>
                               Unblock @${this.user?.acct}
                             </md-menu-item>`
-                          : html`<md-menu-item @click="${() => this.block()}">
+            : html`<md-menu-item @click="${() => this.block()}">
                               <md-icon slot="prefix" name="ban"></md-icon>
                               Block @${this.user?.acct}
                             </md-menu-item>`}
@@ -705,13 +702,13 @@ export class AppProfile extends LitElement {
                       </md-menu>
                     </md-dropdown>
                   `
-                : null}
+        : null}
             </div>
           </div>
         </div>
 
         ${this.showMiniProfile && this.user
-          ? html`
+        ? html`
               <div id="mini-profile">
                 <div id="avatar-mini">
                   <img src="${this.user.avatar}" />
@@ -720,22 +717,22 @@ export class AppProfile extends LitElement {
                 </div>
 
                 ${!this.isOwnProfile
-                  ? this.followed
-                    ? html`<md-button pill disabled>Following</md-button>`
-                    : html`<md-button
+            ? this.followed
+              ? html`<md-button pill disabled>Following</md-button>`
+              : html`<md-button
                         pill
                         variant="filled"
                         @click="${() => this.follow()}"
                         >Follow</md-button
                       >`
-                  : null}
+            : null}
               </div>
             `
-          : null}
+        : null}
 
         <ul class="scrollbar-hidden">
           ${this.posts.map(
-            (post) => html`
+          (post) => html`
               <li>
                 <timeline-item
                   @edit="${($event: any) => this.editPost($event.detail.tweet)}"
@@ -744,7 +741,7 @@ export class AppProfile extends LitElement {
                 ></timeline-item>
               </li>
             `
-          )}
+        )}
         </ul>
 
         <report-dialog

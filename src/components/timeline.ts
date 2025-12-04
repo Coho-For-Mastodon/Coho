@@ -197,9 +197,8 @@ export class Timeline extends LitElement {
         justify-content: flex-end;
       }
 
-      .fake sl-skeleton {
+      .fake md-skeleton {
         height: 302px;
-        --border-radius: var(--sl-border-radius-medium);
       }
 
       .fake {

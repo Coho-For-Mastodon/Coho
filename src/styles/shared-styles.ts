@@ -17,7 +17,5 @@ export const styles = css`
     border: none;
   }
 
-  fluent-tab-panel {
-    margin-top: 16px;
-  }
+
 `;

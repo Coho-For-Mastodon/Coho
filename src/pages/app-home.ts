@@ -231,10 +231,9 @@ export class AppHome extends LitElement {
           justify-content: center;
         }
 
-        #reply-drawer sl-skeleton {
+        #reply-drawer md-skeleton {
           height: 8em;
           width: 8em;
-          --sl-border-radius-default: 4px;
         }
 
         .img-preview {
@@ -261,7 +260,7 @@ export class AppHome extends LitElement {
         #context-menu {
           z-index: 10000;
           width: 150px;
-          background: #1blala;
+          background: #1b1a1a;
           border-radius: 5px;
           position: fixed;
           transform: scale(0.9);
@@ -1437,13 +1436,6 @@ export class AppHome extends LitElement {
                 <p>No comments yet.</p>
               </div>
             `}
-
-        <div slot="footer" id="reply-post-actions">
-          <sl-input placeholder="Reply"></sl-input>
-          <md-button variant="filled" @click="${() => this.replyToAStatus()}"
-            >Reply</md-button
-          >
-        </div>
       </otter-drawer>
 
       <main>

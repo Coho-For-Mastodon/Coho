@@ -11,22 +11,14 @@ import './md/md-button';
 
 import '@shoelace-style/shoelace/dist/components/divider/divider';
 
-// import fluent tabs
-import {
-  fluentTabs,
-  fluentTab,
-  fluentTabPanel,
-  provideFluentDesignSystem,
-} from '@fluentui/web-components';
+import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
-provideFluentDesignSystem().register(fluentTabs());
-provideFluentDesignSystem().register(fluentTab());
-provideFluentDesignSystem().register(fluentTabPanel());
 
 @customElement('app-notifications')
 export class Notifications extends LitElement {
   @state() notifications = [];
   @state() subbed: boolean = false;
+  @state() activeSegment: string = 'all';
 
   static styles = [
     css`
@@ -45,18 +37,22 @@ export class Notifications extends LitElement {
         --md-dialog-max-height: 92vh;
       }
 
-      @media (prefers-color-scheme: dark) {
-        fluent-tab {
-          color: white;
-        }
+      md-segmented-button {
+        margin-bottom: 16px;
+      }
 
+      .panel {
+        display: none;
+      }
+
+      .panel.active {
+        display: block;
+      }
+
+      @media (prefers-color-scheme: dark) {
         li {
           color: white;
         }
-      }
-
-      fluent-tab-panel {
-        margin-top: 16px;
       }
 
       #notify-inner {
@@ -273,197 +269,200 @@ export class Notifications extends LitElement {
         >
       </div>
 
-      <fluent-tabs orientation="horizontal">
-        <fluent-tab slot="nav" panel="all">All</fluent-tab>
-        <fluent-tab slot="nav" panel="mentions">Mentions</fluent-tab>
-        <fluent-tab slot="nav" panel="follows">Follows</fluent-tab>
+      <md-segmented-button
+        .value="${this.activeSegment}"
+        @segment-change="${(e: CustomEvent) => this.activeSegment = e.detail.value}"
+      >
+        <md-segment value="all">All</md-segment>
+        <md-segment value="mentions">Mentions</md-segment>
+        <md-segment value="follows">Follows</md-segment>
+      </md-segmented-button>
 
-        <fluent-tab-panel name="all">
-          <ul>
-            ${this.notifications && this.notifications.length > 0
+      <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
+        <ul>
+          ${this.notifications && this.notifications.length > 0
         ? this.notifications.map((notification: any) => {
           return html`
-                    ${notification.type === 'follow'
+                  ${notification.type === 'follow'
               ? html`
-                          <li class="follow">
-                            <div>
-                              <user-profile
-                                small
-                                .account=${notification.account}
-                              ></user-profile>
+                        <li class="follow">
+                          <div>
+                            <user-profile
+                              small
+                              .account=${notification.account}
+                            ></user-profile>
 
-                              <p>followed you</p>
-                            </div>
-                          </li>
-                        `
+                            <p>followed you</p>
+                          </div>
+                        </li>
+                      `
               : null}
-                    ${notification.type === 'reblog'
+                  ${notification.type === 'reblog'
               ? html`
-                          <li
-                            class="reblog"
-                            @click="${() => this.openPost(notification.status)}"
-                          >
-                            <div>
-                              <user-profile
-                                small
-                                .account=${notification.account}
-                              ></user-profile>
+                        <li
+                          class="reblog"
+                          @click="${() => this.openPost(notification.status)}"
+                        >
+                          <div>
+                            <user-profile
+                              small
+                              .account=${notification.account}
+                            ></user-profile>
 
-                              <p>boosted your post</p>
-                            </div>
+                            <p>boosted your post</p>
+                          </div>
 
-                            <div
-                              class="content-item"
-                              .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
-                            ></div>
-                          </li>
-                        `
+                          <div
+                            class="content-item"
+                            .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
+                          ></div>
+                        </li>
+                      `
               : null}
-                    ${notification.type === 'favourite'
+                  ${notification.type === 'favourite'
               ? html`
-                          <li
-                            class="favourite"
-                            @click="${() => this.openPost(notification.status)}"
-                          >
-                            <div>
-                              <user-profile
-                                small
-                                .account=${notification.account}
-                              ></user-profile>
+                        <li
+                          class="favourite"
+                          @click="${() => this.openPost(notification.status)}"
+                        >
+                          <div>
+                            <user-profile
+                              small
+                              .account=${notification.account}
+                            ></user-profile>
 
-                              <p>liked your post</p>
-                            </div>
+                            <p>liked your post</p>
+                          </div>
 
-                            <div
-                              class="content-item"
-                              .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
-                            ></div>
-                          </li>
-                        `
+                          <div
+                            class="content-item"
+                            .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
+                          ></div>
+                        </li>
+                      `
               : null}
-                    ${notification.type === 'mention'
+                  ${notification.type === 'mention'
               ? html`
-                          <li
-                            class="mention"
-                            @click="${() => this.openPost(notification.status)}"
-                          >
-                            <div>
-                              <user-profile
-                                small
-                                .account=${notification.account}
-                              ></user-profile>
+                        <li
+                          class="mention"
+                          @click="${() => this.openPost(notification.status)}"
+                        >
+                          <div>
+                            <user-profile
+                              small
+                              .account=${notification.account}
+                            ></user-profile>
 
-                              <p>mentioned you</p>
-                            </div>
+                            <p>mentioned you</p>
+                          </div>
 
-                            <div
-                              class="content-item"
-                              .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
-                            ></div>
-                          </li>
-                        `
+                          <div
+                            class="content-item"
+                            .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
+                          ></div>
+                        </li>
+                      `
               : null}
-                    ${notification.type === 'update'
+                  ${notification.type === 'update'
               ? html`
-                          <li
-                            class="edit"
-                            @click="${() => this.openPost(notification.status)}"
-                          >
-                            <div>
-                              <user-profile
-                                small
-                                .account=${notification.account}
-                              ></user-profile>
+                        <li
+                          class="edit"
+                          @click="${() => this.openPost(notification.status)}"
+                        >
+                          <div>
+                            <user-profile
+                              small
+                              .account=${notification.account}
+                            ></user-profile>
 
-                              <p>edited a post</p>
-                            </div>
+                            <p>edited a post</p>
+                          </div>
 
-                            <div
-                              class="content-item"
-                              .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
-                            ></div>
-                          </li>
-                        `
+                          <div
+                            class="content-item"
+                            .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
+                          ></div>
+                        </li>
+                      `
               : null}
-                  `;
+                `;
         })
         : html`
-                  <li id="no">
-                    <img src="/assets/notify-done.svg" alt="no notifications" />
-                    <p>No notifications</p>
-                  </li>
-                `}
-          </ul>
-        </fluent-tab-panel>
+                <li id="no">
+                  <img src="/assets/notify-done.svg" alt="no notifications" />
+                  <p>No notifications</p>
+                </li>
+              `}
+        </ul>
+      </div>
 
-        <fluent-tab-panel name="mentions">
-          <ul>
-            ${this.notifications && this.notifications.length > 0
+      <div class="panel ${this.activeSegment === 'mentions' ? 'active' : ''}">
+        <ul>
+          ${this.notifications && this.notifications.length > 0
         ? this.notifications.map((notification: any) => {
           return html`
-                    ${notification.type === 'mention'
+                  ${notification.type === 'mention'
               ? html`
-                          <li
-                            class="mention"
-                            @click="${() => this.openPost(notification.status)}"
-                          >
-                            <div>
-                              <user-profile
-                                small
-                                .account=${notification.account}
-                              ></user-profile>
+                        <li
+                          class="mention"
+                          @click="${() => this.openPost(notification.status)}"
+                        >
+                          <div>
+                            <user-profile
+                              small
+                              .account=${notification.account}
+                            ></user-profile>
 
-                              <p>mentioned you</p>
-                            </div>
+                            <p>mentioned you</p>
+                          </div>
 
-                            <div
-                              class="content-item"
-                              .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
-                            ></div>
-                          </li>
-                        `
+                          <div
+                            class="content-item"
+                            .innerHTML="${parseEmojis(notification.status.content || '', notification.status.emojis || [])}"
+                          ></div>
+                        </li>
+                      `
               : null}
-                  `;
+                `;
         })
         : html`
-                  <li id="no">
-                    <img src="/assets/notify-done.svg" alt="no notifications" />
-                    <p>No notifications</p>
-                  </li>
-                `}
-          </ul>
-        </fluent-tab-panel>
+                <li id="no">
+                  <img src="/assets/notify-done.svg" alt="no notifications" />
+                  <p>No notifications</p>
+                </li>
+              `}
+        </ul>
+      </div>
 
-        <fluent-tab-panel name="follows">
-          <ul>
-            ${this.notifications && this.notifications.length > 0
+      <div class="panel ${this.activeSegment === 'follows' ? 'active' : ''}">
+        <ul>
+          ${this.notifications && this.notifications.length > 0
         ? this.notifications.map((notification: any) => {
           return html`
-                    ${notification.type === 'follow'
+                  ${notification.type === 'follow'
               ? html`
-                          <li class="follow">
-                            <div>
-                              <user-profile
-                                small
-                                .account=${notification.account}
-                              ></user-profile>
+                        <li class="follow">
+                          <div>
+                            <user-profile
+                              small
+                              .account=${notification.account}
+                            ></user-profile>
 
-                              <p>followed you</p>
-                            </div>
-                          </li>
-                        `
+                            <p>followed you</p>
+                          </div>
+                        </li>
+                      `
               : null}
-                  `;
+                `;
         })
         : html`
-                  <li id="no">
-                    <img src="/assets/notify-done.svg" alt="no notifications" />
-                    <p>No notifications</p>
-                  </li>
-                `}
-          </ul>
-        </fluent-tab-panel>
-      </fluent-tabs>
+                <li id="no">
+                  <img src="/assets/notify-done.svg" alt="no notifications" />
+                  <p>No notifications</p>
+                </li>
+              `}
+        </ul>
+      </div>
     `;
   }
 }

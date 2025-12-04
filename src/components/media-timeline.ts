@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { getPaginatedHomeTimeline } from '../services/timeline';
 
-import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import './md/md-skeleton';
 import '@lit-labs/virtualizer';
 import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 
@@ -71,9 +71,8 @@ export class MediaTimeline extends LitElement {
         justify-content: flex-end;
       }
 
-      .fake sl-skeleton {
+      .fake md-skeleton {
         height: 241px;
-        --border-radius: var(--sl-border-radius-medium);
       }
 
       .fake {
@@ -160,7 +159,7 @@ export class MediaTimeline extends LitElement {
           <timeline-item
             ?show="${true}"
             @replies="${($event: any) =>
-              this.handleReplies($event.detail.data)}"
+          this.handleReplies($event.detail.data)}"
             .tweet="${tweet}"
           ></timeline-item>
         `) as any}"

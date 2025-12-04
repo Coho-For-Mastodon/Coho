@@ -5,24 +5,16 @@ import '../components/search';
 import '../components/media-timeline';
 import { router } from '../utils/router';
 
-import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import '../components/md/md-skeleton';
 
-// import fluent tabs
-import {
-  fluentTabs,
-  fluentTab,
-  fluentTabPanel,
-  provideFluentDesignSystem,
-} from '@fluentui/web-components';
-provideFluentDesignSystem().register(fluentTabs());
-provideFluentDesignSystem().register(fluentTab());
-provideFluentDesignSystem().register(fluentTabPanel());
+import '../components/md/md-segmented-button';
 
 @customElement('search-page')
 export class SearchPage extends LitElement {
   @state() searchData: any | undefined;
   @state() trending: any[] | undefined;
   @state() trendingLinks: any[] | undefined;
+  @state() activeSegment: string = 'accounts';
 
   static styles = [
     css`
@@ -34,14 +26,23 @@ export class SearchPage extends LitElement {
       }
 
       @media (prefers-color-scheme: dark) {
-        fluent-tab {
-          color: white;
-        }
       }
 
-      fluent-tab-panel {
-        margin-top: 16px;
+      md-segmented-button {
+        margin-bottom: 16px;
+      }
+
+      .panel {
+        display: none;
         animation: slideFromLeft 0.3s ease-in-out;
+      }
+
+      .panel.active {
+        display: block;
+      }
+
+      app-search {
+        margin-bottom: 16px;
       }
 
       main {
@@ -56,12 +57,12 @@ export class SearchPage extends LitElement {
         border-radius: 50%;
       }
 
-      sl-skeleton {
+      md-skeleton {
         height: 20px;
         width: 138px;
       }
 
-      .account sl-skeleton {
+      .account md-skeleton {
         margin-bottom: 10px;
       }
 
@@ -203,101 +204,104 @@ export class SearchPage extends LitElement {
           @search="${($event: any) => this.handleSearch($event.detail)}"
         ></app-search>
 
-        <fluent-tabs placement="top">
-          <fluent-tab slot="nav" panel="accounts">Accounts</fluent-tab>
-          <fluent-tab slot="nav" panel="trending">Trending</fluent-tab>
-          <fluent-tab slot="nav" panel="news">News</fluent-tab>
-          <fluent-tab slot="nav" panel="hashtags">Hashtags</fluent-tab>
+        <md-segmented-button
+          .value="${this.activeSegment}"
+          @segment-change="${(e: CustomEvent) => this.activeSegment = e.detail.value}"
+        >
+          <md-segment value="accounts">Accounts</md-segment>
+          <md-segment value="trending">Trending</md-segment>
+          <md-segment value="news">News</md-segment>
 
-          <fluent-tab-panel name="accounts">
-            ${this.searchData && this.searchData.accounts
-              ? html`
-                  <ul>
-                    ${this.searchData && this.searchData.accounts
-                      ? this.searchData.accounts.map((account: any) => {
-                          return html`<li
-                            @click="${() => this.openAccount(account.id)}"
-                          >
-                            <div class="account">
-                              <img class="avatar" src="${account.avatar}" />
-                              ${account.username}
-                            </div>
-                          </li>`;
-                        })
-                      : null}
-                  </ul>
-                `
-              : html`
-                  <div class="account">
-                    <sl-skeleton></sl-skeleton>
-                  </div>
+        </md-segmented-button>
 
-                  <div class="account">
-                    <sl-skeleton></sl-skeleton>
-                  </div>
+        <div class="panel ${this.activeSegment === 'accounts' ? 'active' : ''}">
+          ${this.searchData && this.searchData.accounts
+        ? html`
+                <ul>
+                  ${this.searchData && this.searchData.accounts
+            ? this.searchData.accounts.map((account: any) => {
+              return html`<li
+                          @click="${() => this.openAccount(account.id)}"
+                        >
+                          <div class="account">
+                            <img class="avatar" src="${account.avatar}" />
+                            ${account.username}
+                          </div>
+                        </li>`;
+            })
+            : null}
+                </ul>
+              `
+        : html`
+                <div class="account">
+                  <md-skeleton></md-skeleton>
+                </div>
 
-                  <div class="account">
-                    <sl-skeleton></sl-skeleton>
-                  </div>
+                <div class="account">
+                  <md-skeleton></md-skeleton>
+                </div>
 
-                  <div class="account">
-                    <sl-skeleton></sl-skeleton>
-                  </div>
+                <div class="account">
+                  <md-skeleton></md-skeleton>
+                </div>
 
-                  <div class="account">
-                    <sl-skeleton></sl-skeleton>
-                  </div>
-                `}
-          </fluent-tab-panel>
+                <div class="account">
+                  <md-skeleton></md-skeleton>
+                </div>
 
-          <fluent-tab-panel name="trending">
-            <ul>
-              ${this.trending
-                ? this.trending.map((status: any) => {
-                    return html`<timeline-item
-                      .tweet="${status}"
-                    ></timeline-item>`;
-                  })
-                : null}
-            </ul>
-          </fluent-tab-panel>
+                <div class="account">
+                  <md-skeleton></md-skeleton>
+                </div>
+              `}
+        </div>
 
-          <fluent-tab-panel name="news">
-            <ul id="newsList">
-              ${this.trendingLinks
-                ? this.trendingLinks.map((status: any) => {
-                    return html` <li>
-                      <img src="${status.image}" alt="${status.description}" />
+        <div class="panel ${this.activeSegment === 'trending' ? 'active' : ''}">
+          <ul>
+            ${this.trending
+        ? this.trending.map((status: any) => {
+          return html`<timeline-item
+                    .tweet="${status}"
+                  ></timeline-item>`;
+        })
+        : null}
+          </ul>
+        </div>
 
-                      <h3>${status.title}</h3>
-                      <a href="${status.url}" target="_blank">${status.url}</a>
+        <div class="panel ${this.activeSegment === 'news' ? 'active' : ''}">
+          <ul id="newsList">
+            ${this.trendingLinks
+        ? this.trendingLinks.map((status: any) => {
+          return html` <li>
+                    <img src="${status.image}" alt="${status.description}" />
 
-                      <p>${status.description}</p>
-                    </li>`;
-                  })
-                : null}
-            </ul>
-          </fluent-tab-panel>
+                    <h3>${status.title}</h3>
+                    <a href="${status.url}" target="_blank">${status.url}</a>
 
-          <fluent-tab-panel name="hashtags">
-            ${this.searchData && this.searchData.hashtags
-              ? html`
-                  <ul>
-                    ${this.searchData && this.searchData.hashtags
-                      ? this.searchData.hashtags.map((hashtag: any) => {
-                          return html`<li
-                            @click="${() =>
-                              this.handleHashtagClick(hashtag.name)}"
-                          >
-                            <div class="account">#${hashtag.name}</div>
-                          </li>`;
-                        })
-                      : null}
-                  </ul>
-                `
-              : null}
-          </fluent-tab-panel>
-        </fluent-tabs>
+                    <p>${status.description}</p>
+                  </li>`;
+        })
+        : null}
+          </ul>
+        </div>
+
+        <div class="panel ${this.activeSegment === 'hashtags' ? 'active' : ''}">
+          ${this.searchData && this.searchData.hashtags
+        ? html`
+                <ul>
+                  ${this.searchData && this.searchData.hashtags
+            ? this.searchData.hashtags.map((hashtag: any) => {
+              return html`<li
+                          @click="${() =>
+                  this.handleHashtagClick(hashtag.name)}"
+                        >
+                          <div class="account">#${hashtag.name}</div>
+                        </li>`;
+            })
+            : null}
+                </ul>
+              `
+        : null}
+        </div>
       </main>
     `;
   }

@@ -29,13 +29,6 @@ export class Favorites extends LitElement {
         overflow-y: scroll;
         overflow-x: hidden;
       }
-
-      @media (max-width: 820px) {
-        ul {
-          padding-left: 10px;
-          padding-right: 10px;
-        }
-      }
     `,
   ];
 
@@ -69,10 +62,10 @@ export class Favorites extends LitElement {
     return html`
       <ul class="scrollbar-hidden">
         ${this.isLoading
-          ? html`<md-skeleton-card count="5"></md-skeleton-card>`
-          : this.favorites.map((favorite: Post) => {
-              return html` <timeline-item .tweet=${favorite}></timeline-item> `;
-            })}
+        ? html`<md-skeleton-card count="5"></md-skeleton-card>`
+        : this.favorites.map((favorite: Post) => {
+          return html` <timeline-item .tweet=${favorite}></timeline-item> `;
+        })}
       </ul>
     `;
   }
