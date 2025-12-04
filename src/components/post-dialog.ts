@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 
 import './md/md-dialog.js';
 import './md/md-button.js';
@@ -11,6 +11,11 @@ import './md/md-select.js';
 import './md/md-option.js';
 import './media-edit-dialog.js';
 import './md/md-skeleton.js';
+
+import type { MdDialog } from './md/md-dialog.js';
+import type { MdTextArea } from './md/md-text-area.js';
+import type { MdTextField } from './md/md-text-field.js';
+
 import {
   publishPost,
   uploadImageFromBlob,
@@ -67,6 +72,12 @@ export class PostDialog extends LitElement {
   @state() proofreaderAvailable: boolean = false;
 
   aiBlob: Blob | undefined;
+
+  // DOM element references using @query for type safety
+  @query('#notify-dialog') private notifyDialog!: MdDialog;
+  @query('md-text-area') private postTextArea!: MdTextArea;
+  @query('md-text-field') private promptTextField!: MdTextField;
+  @query('#sensitive-input') private sensitiveInput!: MdTextField;
 
   static styles = [
     css`
@@ -421,8 +432,7 @@ export class PostDialog extends LitElement {
   }
 
   public async openNewDialog() {
-    const dialog = this.shadowRoot?.getElementById('notify-dialog') as any;
-    dialog.show();
+    this.notifyDialog?.show();
 
     const urlParams = new URLSearchParams(window.location.search);
 
@@ -575,8 +585,7 @@ export class PostDialog extends LitElement {
   }
 
   async publish() {
-    const status = (this.shadowRoot?.querySelector('md-text-area') as any)
-      .value;
+    const status = this.postTextArea?.value;
     console.log(status);
 
     let spoilerText = '';
@@ -590,10 +599,7 @@ export class PostDialog extends LitElement {
 
         if (this.attachments.length > 0) {
           if (this.sensitive === true) {
-            const sensitiveInput = this.shadowRoot?.getElementById(
-              'sensitive-input'
-            ) as any;
-            spoilerText = sensitiveInput.value;
+            spoilerText = this.sensitiveInput?.value ?? '';
           }
 
           await publishPost(
@@ -608,13 +614,12 @@ export class PostDialog extends LitElement {
           this.generatedImage = undefined;
           this.aiBlob = undefined;
 
-          (this.shadowRoot?.querySelector('md-text-area') as any)!.value = '';
+          if (this.postTextArea) {
+            this.postTextArea.value = '';
+          }
         } else {
           if (this.sensitive === true) {
-            const sensitiveInput = this.shadowRoot?.getElementById(
-              'sensitive-input'
-            ) as any;
-            spoilerText = sensitiveInput.value;
+            spoilerText = this.sensitiveInput?.value ?? '';
           }
 
           await publishPost(
@@ -629,11 +634,12 @@ export class PostDialog extends LitElement {
           this.generatedImage = undefined;
           this.aiBlob = undefined;
 
-          (this.shadowRoot?.querySelector('md-text-area') as any)!.value = '';
+          if (this.postTextArea) {
+            this.postTextArea.value = '';
+          }
         }
 
-        const dialog = this.shadowRoot?.getElementById('notify-dialog') as any;
-        dialog.hide();
+        this.notifyDialog?.hide();
 
         worker.terminate();
 
@@ -678,24 +684,23 @@ export class PostDialog extends LitElement {
   }
 
   async generateStatus() {
-    const textarea = this.shadowRoot?.querySelector('md-text-field') as any;
-    const publishText = this.shadowRoot?.querySelector('md-text-area') as any;
+    const prompt = this.promptTextField?.value;
 
-    const prompt = textarea.value;
-
-    publishText.value = 'Generating post...';
+    if (this.postTextArea) {
+      this.postTextArea.value = 'Generating post...';
+    }
 
     this.generatingPost = true;
 
     const data = await createAPost(prompt);
 
-    if (data && data.choices[0]) {
+    if (data && data.choices[0] && this.postTextArea) {
       const generated = data.choices[0].message.content.trim();
       /// remove quotes from generated text
-      publishText.value = generated.replace(/"/g, '');
-      publishText.value = data.choices[0].message.content.trim();
-    } else {
-      publishText.value = 'Failed to generate post.';
+      this.postTextArea.value = generated.replace(/"/g, '');
+      this.postTextArea.value = data.choices[0].message.content.trim();
+    } else if (this.postTextArea) {
+      this.postTextArea.value = 'Failed to generate post.';
     }
 
     this.generatingPost = false;
@@ -711,8 +716,7 @@ export class PostDialog extends LitElement {
   }
 
   async doProofread() {
-    const textarea = this.shadowRoot?.querySelector('md-text-area') as any;
-    const text = textarea?.value;
+    const text = this.postTextArea?.value;
 
     if (!text || text.trim().length === 0) return;
 
@@ -732,9 +736,8 @@ export class PostDialog extends LitElement {
   applyCorrections() {
     if (!this.proofreadResult) return;
 
-    const textarea = this.shadowRoot?.querySelector('md-text-area') as any;
-    if (textarea) {
-      textarea.value = this.proofreadResult.correctedInput;
+    if (this.postTextArea) {
+      this.postTextArea.value = this.proofreadResult.correctedInput;
       this.charCount = this.proofreadResult.correctedInput.length;
       this.hasStatus = this.proofreadResult.correctedInput.length > 0;
     }

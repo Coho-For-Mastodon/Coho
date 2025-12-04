@@ -15,6 +15,13 @@ import {
   clearTimelineCache,
 } from '../services/timeline-cache';
 
+import type {
+  RepliesDetail,
+  HandleSummaryDetail,
+  HandleTranslatingDetail,
+  OpenPostDetail,
+} from '../types/events';
+
 // @ts-expect-error fix
 import TimelineWorker from '../utils/timeline-worker?worker';
 
@@ -767,7 +774,7 @@ export class Timeline extends LitElement {
 
     // fire custom event
     this.dispatchEvent(
-      new CustomEvent('replies', {
+      new CustomEvent<RepliesDetail>('replies', {
         detail: {
           data,
         },
@@ -828,10 +835,10 @@ export class Timeline extends LitElement {
     await set('timelineType', type);
   }
 
-  handleSummary($event: any) {
+  handleSummary($event: CustomEvent<HandleSummaryDetail>) {
     // keep passing it up
     this.dispatchEvent(
-      new CustomEvent('handle-summary', {
+      new CustomEvent<HandleSummaryDetail>('handle-summary', {
         detail: {
           data: $event.detail.data,
         },
@@ -839,10 +846,10 @@ export class Timeline extends LitElement {
     );
   }
 
-  handleTranslating($event: any) {
+  handleTranslating($event: CustomEvent<HandleTranslatingDetail>) {
     // keep passing it up
     this.dispatchEvent(
-      new CustomEvent('handle-translating', {
+      new CustomEvent<HandleTranslatingDetail>('handle-translating', {
         detail: {
           tweet: $event.detail.tweet,
         },
@@ -852,9 +859,9 @@ export class Timeline extends LitElement {
     );
   }
 
-  handleOpen(tweet: any) {
+  handleOpen(tweet: Post) {
     this.dispatchEvent(
-      new CustomEvent('open', {
+      new CustomEvent<OpenPostDetail>('open', {
         detail: {
           tweet,
         },

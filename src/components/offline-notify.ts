@@ -1,12 +1,16 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 
 import './md/md-toast.js';
+import type { MdToast } from './md/md-toast.js';
 
 @customElement('offline-notify')
 export class OfflineNotify extends LitElement {
   @state() public network_status: boolean = true;
   @state() back_online: boolean = false;
+
+  @query('#offline-toast') private offlineToast!: MdToast;
+  @query('#back-online-toast') private backOnlineToast!: MdToast;
 
   static styles = [
     css`
@@ -44,16 +48,14 @@ export class OfflineNotify extends LitElement {
   }
 
   showOfflineToast() {
-    const toast = this.shadowRoot?.getElementById('offline-toast') as any;
-    if (toast) {
-      toast.show();
+    if (this.offlineToast) {
+      this.offlineToast.show();
     }
   }
 
   showBackOnlineToast() {
-    const toast = this.shadowRoot?.getElementById('back-online-toast') as any;
-    if (toast) {
-      toast.show();
+    if (this.backOnlineToast) {
+      this.backOnlineToast.show();
     }
   }
 

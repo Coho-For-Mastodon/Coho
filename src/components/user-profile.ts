@@ -5,10 +5,11 @@ import { classMap } from 'lit/directives/class-map.js';
 // import { enableVibrate } from '../utils/handle-vibrate';
 import { router } from '../utils/router';
 import { parseEmojis } from '../utils/emoji-parser';
+import { Account } from '../mastodon';
 
 @customElement('user-profile')
 export class UserProfile extends LitElement {
-  @property() account: any | undefined = undefined;
+  @property({ type: Object }) account: Account | undefined = undefined;
 
   @property({ type: Boolean }) small: boolean = false;
   @property({ type: Boolean }) boosted: boolean = false;
@@ -35,15 +36,15 @@ export class UserProfile extends LitElement {
         gap: 10px;
       }
 
-      .headerBlock img {
+      .headerBlock img#avatar {
         height: 50px;
         width: 50px;
         border-radius: 50%;
         contain: strict;
 
-        content-visibility: auto;
+         border: solid var(--sl-color-primary-600) 2px;
 
-        border: solid var(--sl-color-primary-600) 2px;
+        content-visibility: auto;
       }
 
       .headerBlock p {
@@ -154,24 +155,24 @@ export class UserProfile extends LitElement {
       <div
         @click="${() => this.openUser()}"
         class=${classMap({
-          small: this.small === true,
-          headerBlock: true,
-          boosted: this.boosted,
-        })}
+      small: this.small === true,
+      headerBlock: true,
+      boosted: this.boosted,
+    })}
         slot="header"
       >
         <img
           id="avatar"
           src="/assets/icons/new-icons/icon-72x72.webp"
-          data-src="${this.account.avatar_static}"
+          data-src="${this.account?.avatar_static || '/assets/icons/new-icons/icon-72x72.webp'}"
         />
         <div>
           <h4
             .innerHTML="${parseEmojis(
-              this.account?.display_name || 'Loading...',
-              this.account?.emojis || [],
-              true
-            )}"
+      this.account?.display_name || 'Loading...',
+      this.account?.emojis || [],
+      true
+    )}"
           ></h4>
           <p>${this.account?.acct || 'Loading...'}</p>
         </div>

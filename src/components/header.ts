@@ -6,6 +6,12 @@ import './md/md-icon-button.js';
 
 import { enableVibrate } from '../utils/handle-vibrate';
 
+import type {
+  OpenSettingsEvent,
+  OpenThemingEvent,
+  OpenBotDrawerEvent,
+} from '../types/events';
+
 @customElement('app-header')
 export class AppHeader extends LitElement {
   @property({ type: String }) title = 'Otter';
@@ -129,17 +135,23 @@ export class AppHeader extends LitElement {
 
   openSettings() {
     // fire custom event
-    this.dispatchEvent(new CustomEvent('open-settings'));
+    this.dispatchEvent(
+      new CustomEvent('open-settings') as OpenSettingsEvent
+    );
   }
 
   handleTheming() {
     // fire custom event
-    this.dispatchEvent(new CustomEvent('open-theming'));
+    this.dispatchEvent(
+      new CustomEvent('open-theming') as OpenThemingEvent
+    );
   }
 
   openBotDrawer() {
     // fire custom event
-    this.dispatchEvent(new CustomEvent('open-bot-drawer'));
+    this.dispatchEvent(
+      new CustomEvent('open-bot-drawer') as OpenBotDrawerEvent
+    );
   }
 
   async goBack() {

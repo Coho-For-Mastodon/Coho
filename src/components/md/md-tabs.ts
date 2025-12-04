@@ -1,6 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
 
+import type { TabChangeDetail } from '../../types/events';
+import type { MdTab } from './md-tab';
+import type { MdTabPanel } from './md-tab-panel';
+
 /**
  * MD3 Tabs Container
  *
@@ -231,7 +235,7 @@ export class MdTabs extends LitElement {
     }
   }
 
-  private _handleTabSelected(e: CustomEvent) {
+  private _handleTabSelected(e: CustomEvent<{ panel: string }>) {
     e.stopPropagation();
     const panel = e.detail.panel;
     if (panel && panel !== this._activePanel) {
@@ -240,7 +244,7 @@ export class MdTabs extends LitElement {
 
       // Emit tab-change event
       this.dispatchEvent(
-        new CustomEvent('tab-change', {
+        new CustomEvent<TabChangeDetail>('tab-change', {
           detail: { panel },
           bubbles: true,
           composed: true,
@@ -249,18 +253,20 @@ export class MdTabs extends LitElement {
     }
   }
 
-  private _getTabs(): any[] {
+  private _getTabs(): MdTab[] {
     if (!this.navSlot) return [];
     return this.navSlot
       .assignedElements()
-      .filter((el) => el.tagName.toLowerCase() === 'md-tab');
+      .filter((el): el is MdTab => el.tagName.toLowerCase() === 'md-tab');
   }
 
-  private _getPanels(): any[] {
+  private _getPanels(): MdTabPanel[] {
     if (!this.panelSlot) return [];
     return this.panelSlot
       .assignedElements()
-      .filter((el) => el.tagName.toLowerCase() === 'md-tab-panel');
+      .filter(
+        (el): el is MdTabPanel => el.tagName.toLowerCase() === 'md-tab-panel'
+      );
   }
 
   private _updatePanels() {
@@ -268,7 +274,7 @@ export class MdTabs extends LitElement {
     const panels = this._getPanels();
 
     // Update tabs active state and data attributes for Firefox
-    tabs.forEach((tab: any) => {
+    tabs.forEach((tab) => {
       // Set orientation and placement data attributes for Firefox compatibility
       tab.setAttribute('data-orientation', this.orientation);
       tab.setAttribute('data-placement', this.placement);
@@ -281,7 +287,7 @@ export class MdTabs extends LitElement {
     });
 
     // Update panels visibility
-    panels.forEach((panel: any) => {
+    panels.forEach((panel) => {
       if (panel.name === this._activePanel) {
         panel.setAttribute('active', '');
       } else {

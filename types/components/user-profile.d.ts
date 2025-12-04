@@ -1,6 +1,7 @@
 import { LitElement } from 'lit';
+import { Account } from '../mastodon';
 export declare class UserProfile extends LitElement {
-    account: any | undefined;
+    account: Account | undefined;
     small: boolean;
     boosted: boolean;
     static styles: import("lit").CSSResult[];

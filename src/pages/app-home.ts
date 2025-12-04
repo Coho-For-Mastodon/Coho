@@ -1,5 +1,5 @@
 import { LitElement, css, html, nothing } from 'lit';
-import { property, customElement, state } from 'lit/decorators.js';
+import { property, customElement, state, query } from 'lit/decorators.js';
 
 import '../components/timeline';
 import '../components/timeline-item';
@@ -21,6 +21,10 @@ import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/md/md-toast';
 
+import type { OtterDrawer } from '../components/otter-drawer';
+import type { MdDialog } from '../components/md/md-dialog';
+import type { MdToast } from '../components/md/md-toast';
+
 import { styles } from '../styles/shared-styles';
 import { router } from '../utils/router';
 // import { resetLastPageID } from '../services/timeline';
@@ -29,6 +33,11 @@ import {
   checkNewNotifications,
   markNotificationsRead,
 } from '../services/notifications';
+import type {
+  TabChangeEvent,
+  HandleSummaryEvent,
+  HandleTranslatingEvent,
+} from '../types/events';
 
 @customElement('app-home')
 export class AppHome extends LitElement {
@@ -75,6 +84,15 @@ export class AppHome extends LitElement {
 
   @state() tabsOrientation: 'horizontal' | 'vertical' = 'vertical';
   @state() tabsPlacement: 'top' | 'bottom' | 'start' | 'end' = 'start';
+
+  // DOM element references using @query for type safety
+  @query('#settings-drawer') private settingsDrawer!: OtterDrawer;
+  @query('#replies-drawer') private repliesDrawer!: OtterDrawer;
+  @query('#theming-drawer') private themingDrawer!: OtterDrawer;
+  @query('#bot-drawer') private botDrawer!: OtterDrawer;
+  @query('#translation-toast') private translationToast!: MdToast;
+  @query('#summary-dialog') private summaryDialog!: MdDialog;
+  @query('#open-tweet-dialog') private openTweetDialog!: MdDialog;
 
   static get styles() {
     return [
@@ -939,8 +957,7 @@ export class AppHome extends LitElement {
 
   async openSettingsDrawer() {
     await this.loadUserTerms();
-    const drawer = this.shadowRoot?.getElementById('settings-drawer') as any;
-    await drawer.show();
+    await this.settingsDrawer?.show();
 
     const { getInstanceInfo } = await import('../services/account');
 
@@ -948,13 +965,12 @@ export class AppHome extends LitElement {
     console.log('instanceInfo', this.instanceInfo);
   }
 
-  async handleReplies(replies: any[], id: string) {
+  async handleReplies(replies: Post[], id: string) {
     this.replies = replies;
 
     this.replyID = id;
 
-    const drawer = this.shadowRoot?.getElementById('replies-drawer') as any;
-    await drawer.show();
+    await this.repliesDrawer?.show();
   }
 
   async replyToAStatus() {
@@ -970,8 +986,7 @@ export class AppHome extends LitElement {
 
   async openThemingDrawer() {
     await this.loadAppTheme();
-    const drawer = this.shadowRoot?.getElementById('theming-drawer') as any;
-    await drawer.show();
+    await this.themingDrawer?.show();
   }
 
   doFocusMode() {
@@ -1055,23 +1070,20 @@ export class AppHome extends LitElement {
   }
 
   openBotDrawer() {
-    const drawer = this.shadowRoot?.getElementById('bot-drawer') as any;
-    drawer.show();
+    this.botDrawer?.show();
   }
 
-  showSummary($event: any) {
+  showSummary($event: HandleSummaryEvent) {
     console.log('show summary', $event.detail.data);
     const summary = $event.detail.data;
     this.summary = summary;
 
     // Hide translation toast if it's open
-    const toast = this.shadowRoot?.getElementById('translation-toast') as any;
-    if (toast && toast.open) {
-      toast.hide();
+    if (this.translationToast?.open) {
+      this.translationToast.hide();
     }
 
-    const dialog = this.shadowRoot?.getElementById('summary-dialog') as any;
-    dialog.show();
+    this.summaryDialog?.show();
   }
 
   onMoveHandler(ev: any, dialog: any) {
@@ -1095,8 +1107,7 @@ export class AppHome extends LitElement {
 
     this.openTweet = tweet;
 
-    const dialog = this.shadowRoot?.getElementById('open-tweet-dialog') as any;
-    await dialog.show();
+    await this.openTweetDialog?.show();
   }
 
   async disconnectedCallback() {
@@ -1165,7 +1176,7 @@ export class AppHome extends LitElement {
     }
   }
 
-  async handleTabChange(event: CustomEvent) {
+  async handleTabChange(event: TabChangeEvent) {
     const panel = event.detail.panel;
     this.activeTab = panel;
 
@@ -1191,14 +1202,13 @@ export class AppHome extends LitElement {
     }
   }
 
-  async handleTranslating(_event: any) {
+  async handleTranslating(_event: HandleTranslatingEvent) {
     console.log('handle translating event received');
     // Show translation toast
-    const toast = this.shadowRoot?.getElementById('translation-toast') as any;
-    console.log('Toast element:', toast, 'Open:', toast?.open);
-    if (toast) {
-      toast.show();
-      console.log('After show(), Open:', toast.open);
+    console.log('Toast element:', this.translationToast, 'Open:', this.translationToast?.open);
+    if (this.translationToast) {
+      this.translationToast.show();
+      console.log('After show(), Open:', this.translationToast.open);
     } else {
       console.error('Toast element not found!');
     }
