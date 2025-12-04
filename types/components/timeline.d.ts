@@ -1,4 +1,4 @@
-import { LitElement } from 'lit';
+import { LitElement, PropertyValues } from 'lit';
 import '../components/md/md-dialog';
 import '../components/md/md-button';
 import '../components/md/md-icon';
@@ -25,6 +25,10 @@ export declare class Timeline extends LitElement {
     private _threshold;
     private _hapticTriggered;
     timelineType: 'home' | 'public' | 'media' | 'for you' | 'home and some trending';
+    data: Post[] | undefined;
+    header: boolean;
+    autoLoad: boolean;
+    protected willUpdate(changedProperties: PropertyValues): void;
     static styles: import("lit").CSSResult[];
     firstUpdated(): void;
     private _setupPullToRefresh;

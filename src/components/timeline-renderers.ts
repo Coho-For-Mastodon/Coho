@@ -1,6 +1,7 @@
 import { html } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { Post } from '../interfaces/Post';
+import { parseEmojis } from '../utils/emoji-parser';
 
 import '../components/user-profile';
 import '../components/md/md-card';
@@ -14,6 +15,8 @@ import '../components/md/md-menu-item';
 
 export interface TimelineItemHandlers {
   viewSensitive: () => void;
+  viewThreadSensitive: (id: string) => void;
+  viewReplySensitive: () => void;
   replies: () => void;
   bookmark: (id: string) => void;
   favorite: (id: string) => void;
@@ -55,7 +58,11 @@ export function renderSensitive(
   return html`
     <div class="sensitive">
       <span>Sensitive Content</span>
-      <p>${state.tweet?.spoiler_text || 'No spoiler text provided'}</p>
+      <p>
+        ${state.tweet?.reblog
+      ? state.tweet.reblog.spoiler_text
+      : state.tweet?.spoiler_text || 'No spoiler text provided'}
+      </p>
 
       <md-button variant="text" pill @click="${() => handlers.viewSensitive()}">
         View
@@ -83,7 +90,34 @@ export function renderReplyContext(
 
     <md-card part="card" @click="${() => handlers.openParentPost()}" style="margin-bottom: 16px;">
       <user-profile .account="${state.tweet?.reply_to.account}"></user-profile>
-      <div .innerHTML="${state.tweet?.reply_to.content}"></div>
+      ${state.tweet?.reply_to.sensitive
+      ? html`
+            <div class="sensitive">
+              <span>Sensitive Content</span>
+              <p>
+                ${state.tweet?.reply_to.spoiler_text ||
+        'No spoiler text provided'}
+              </p>
+
+              <md-button
+                variant="text"
+                pill
+                @click="${(e: Event) => {
+          e.stopPropagation();
+          handlers.viewReplySensitive();
+        }}"
+              >
+                View
+                <md-icon slot="suffix" name="eye"></md-icon>
+              </md-button>
+            </div>
+          `
+      : html`<div
+            .innerHTML="${parseEmojis(
+        state.tweet?.reply_to.content || '',
+        state.tweet?.reply_to.emojis || []
+      )}"
+          ></div>`}
 
       <div class="actions" slot="footer">
         ${state.show === true
@@ -227,7 +261,7 @@ export function renderRegularTweet(
 
       <div
         @click="${handlers.openPost}"
-        .innerHTML="${state.tweet?.content || ''}"
+        .innerHTML="${parseEmojis(state.tweet?.content || '', state.tweet?.emojis || [])}"
       ></div>
 
       ${state.tweet && state.tweet.media_attachments.length > 0
@@ -329,16 +363,6 @@ export function renderReblog(
 
   return html`
     <md-card slot="card">
-      ${state.tweet.reblog.media_attachments.length > 0
-      ? html`
-            <image-carousel
-              .images="${state.tweet.reblog.media_attachments}"
-              slot="image"
-            >
-            </image-carousel>
-          `
-      : html``}
-
       <div class="header-block reblog-header" slot="header">
         <user-profile
           ?small="${true}"
@@ -412,8 +436,38 @@ export function renderReblog(
 
       <div
         @click="${() => handlers.openPost()}"
-        .innerHTML="${state.tweet.reblog.content || ''}"
+        .innerHTML="${parseEmojis(state.tweet.reblog.content || '', state.tweet.reblog.emojis || [])}"
       ></div>
+
+      ${state.tweet.reblog.media_attachments.length > 0
+      ? html`
+            <image-carousel
+              .images="${state.tweet.reblog.media_attachments}"
+            >
+            </image-carousel>
+          `
+      : html``}
+
+      ${state.tweet.reblog.card
+      ? html`
+              <div
+                @click="${() =>
+          handlers.openLinkCard(state.tweet?.reblog?.card?.url || '')}"
+                class="link-card"
+              >
+                <img
+                  src="${state.tweet.reblog.card.image ||
+        '/assets/bookmark-outline.svg'}"
+                  alt="${state.tweet.reblog.card.title}"
+                />
+
+                <div class="link-card-content">
+                  <h4>${state.tweet.reblog.card.title}</h4>
+                  <p>${state.tweet.reblog.card.description}</p>
+                </div>
+              </div>
+            `
+      : null}
 
       <div class="actions" slot="footer">
         ${state.show === true
@@ -488,7 +542,26 @@ export function renderThread(
                 .account="${threadPost.account}"
               ></user-profile>
             </div>
-            <div .innerHTML="${threadPost.content}"></div>
+            ${threadPost.sensitive
+        ? html`
+                  <div class="sensitive">
+                    <span>Sensitive Content</span>
+                    <p>
+                      ${threadPost.spoiler_text || 'No spoiler text provided'}
+                    </p>
+
+                    <md-button
+                      variant="text"
+                      pill
+                      @click="${() =>
+            handlers.viewThreadSensitive(threadPost.id)}"
+                    >
+                      View
+                      <md-icon slot="suffix" name="eye"></md-icon>
+                    </md-button>
+                  </div>
+                `
+        : html`<div .innerHTML="${threadPost.content}"></div>`}
             <div class="actions" slot="footer">
               <md-button
                 variant="text"

@@ -10,6 +10,8 @@ import '../components/md/md-menu';
 import '../components/md/md-menu-item';
 export interface TimelineItemHandlers {
     viewSensitive: () => void;
+    viewThreadSensitive: (id: string) => void;
+    viewReplySensitive: () => void;
     replies: () => void;
     bookmark: (id: string) => void;
     favorite: (id: string) => void;

@@ -118,6 +118,8 @@ export class MdTabs extends LitElement {
       padding: 16px 8px;
       gap: 4px;
       align-self: flex-start;
+
+      padding-top: 0;
     }
 
     :host([orientation='vertical'][placement='end']) .tab-bar {

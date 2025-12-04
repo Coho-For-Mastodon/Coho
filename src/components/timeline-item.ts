@@ -121,33 +121,51 @@ export class TimelineItem extends LitElement {
       }
 
       .link-card {
-        align-items: center;
         display: flex;
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        align-items: stretch;
+        gap: 0;
 
         background: #ffffff0d;
-        border-radius: 6px;
+        border-radius: 12px;
 
         overflow: hidden;
+        height: 100px;
       }
 
       .link-card h4 {
-        margin-bottom: 0;
+        margin-bottom: 4px;
         margin-top: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .link-card img {
-        min-height: 120px;
-        border-radius: 6px;
-        width: 100%;
+        height: 100%;
+        width: 100px;
+        min-width: 100px;
+        border-radius: 0;
         object-fit: cover;
       }
 
       .link-card-content {
-        width: -webkit-fill-available;
-        padding-left: 12px;
-        padding-right: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 10px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .link-card p {
+        margin: 0;
+        font-size: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: var(--md-sys-color-on-surface-variant);
       }
 
       @media (prefers-color-scheme: light) {
@@ -179,8 +197,6 @@ export class TimelineItem extends LitElement {
       img {
         opacity: 1;
         transition: opacity 0.3s ease-in-out;
-
-        contain: content;
       }
 
       .status-link-card {
@@ -290,7 +306,7 @@ export class TimelineItem extends LitElement {
         justify-content: flex-start;
         align-items: center;
         color: var(--primary-color);
-        margin-top: 6px;
+        margin-top: 0px;
 
         font-size: var(--md-sys-typescale-body-medium-font-size);
         gap: 8px;
@@ -626,6 +642,25 @@ export class TimelineItem extends LitElement {
   viewSensitive() {
     if (this.tweet) {
       this.tweet.sensitive = false;
+      if (this.tweet.reblog) {
+        this.tweet.reblog.sensitive = false;
+      }
+      this.requestUpdate();
+    }
+  }
+
+  viewThreadSensitive(id: string) {
+    const index = this.threadPosts.findIndex((p) => p.id === id);
+    if (index > -1) {
+      const newPosts = [...this.threadPosts];
+      newPosts[index] = { ...newPosts[index], sensitive: false };
+      this.threadPosts = newPosts;
+    }
+  }
+
+  viewReplySensitive() {
+    if (this.tweet && this.tweet.reply_to) {
+      this.tweet.reply_to.sensitive = false;
       this.requestUpdate();
     }
   }
@@ -776,6 +811,8 @@ export class TimelineItem extends LitElement {
   getHandlers(): TimelineItemHandlers {
     return {
       viewSensitive: () => this.viewSensitive(),
+      viewThreadSensitive: (id: string) => this.viewThreadSensitive(id),
+      viewReplySensitive: () => this.viewReplySensitive(),
       replies: () => this.replies(),
       bookmark: (id: string) => this.bookmark(id),
       favorite: (id: string) => this.favorite(id),
@@ -816,7 +853,10 @@ export class TimelineItem extends LitElement {
     const state = this.getState();
     const handlers = this.getHandlers();
 
-    if (this.tweet.sensitive) {
+    if (
+      this.tweet.sensitive ||
+      (this.tweet.reblog && this.tweet.reblog.sensitive)
+    ) {
       return renderSensitive(state, handlers);
     }
 

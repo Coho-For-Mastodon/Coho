@@ -45,6 +45,7 @@ export class MdTabPanel extends LitElement {
       height: 100%;
       overflow: hidden;
       padding: 16px;
+      padding-top: 0;
       box-sizing: border-box;
     }
 

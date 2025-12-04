@@ -100,6 +100,7 @@ export class AppHome extends LitElement {
         md-tabs {
           height: calc(100vh - 80px);
           grid-column: 1 / 3;
+          gap: 48px;
         }
 
         md-tab {
@@ -204,6 +205,10 @@ export class AppHome extends LitElement {
           border-radius: 6px;
           padding: 10px;
           margin-top: 12px;
+
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
 
         #settings-profile-inner img {
@@ -347,8 +352,8 @@ export class AppHome extends LitElement {
           padding-top: 54px;
           display: grid;
           grid-template-columns: 250px minmax(0, 1fr) 320px;
-          gap: 24px;
-          max-width: 1600px;
+          gap: 48px;
+          max-width: 1280px;
           margin: 0 auto;
         }
 
@@ -372,6 +377,8 @@ export class AppHome extends LitElement {
           border: 1px solid var(--md-sys-color-outline-variant);
           border-radius: 16px;
           padding: 16px;
+
+          animation: fadeIn 0.3s ease-in-out;
         }
 
         .sidebar-card h3 {
@@ -418,6 +425,8 @@ export class AppHome extends LitElement {
           align-items: center;
           text-align: center;
           gap: 8px;
+
+          width: 100%;
         }
 
         #profile-card-content img,
@@ -444,11 +453,12 @@ export class AppHome extends LitElement {
           gap: 12px;
           margin-top: 8px;
           justify-content: center;
-          width: 100%;
+          width: -webkit-fill-available;
         }
 
         .profile-stats md-badge {
           cursor: pointer;
+          width: -webkit-fill-available;
         }
 
         #username-block {
@@ -456,7 +466,7 @@ export class AppHome extends LitElement {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          width: 100%;
+          width: -webkit-fill-available;
         }
 
         sl-radio {
@@ -597,10 +607,15 @@ export class AppHome extends LitElement {
           }
 
           main {
-            grid-template-columns: auto;
+            grid-template-columns: 1fr;
+            max-width: 850px;
           }
 
-          #profile {
+          md-tabs {
+            grid-column: 1;
+          }
+
+          #right-sidebar {
             display: none;
           }
 
@@ -680,13 +695,14 @@ export class AppHome extends LitElement {
           md-tabs {
             height: 100%;
             width: 100%;
+            gap: 0;
           }
 
           md-tab-panel {
             height: 100%;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            padding-top: 40px;
+            padding-top: 50px;
             scrollbar-color: var(--md-sys-scrollbar-thumb-color)
               var(--md-sys-color-background);
           }
@@ -702,22 +718,6 @@ export class AppHome extends LitElement {
           left: 12px;
         }
 
-        @media (min-width: 1250px) {
-          app-timeline,
-          app-bookmarks,
-          app-notifications,
-          app-favorites,
-          app-bookmarks,
-          search-page {
-            margin-left: 70px;
-            margin-right: 70px;
-          }
-
-          main {
-            grid-template-columns: 61vw 39vw;
-          }
-        }
-
         @media (horizontal-viewport-segments: 2) {
           #welcomeBar {
             flex-direction: row;
@@ -727,6 +727,15 @@ export class AppHome extends LitElement {
 
           #welcomeCard {
             margin-right: 64px;
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
           }
         }
       `,
@@ -1331,18 +1340,21 @@ export class AppHome extends LitElement {
 
             <p id="user-url">${this.user ? this.user.url : 'Loading...'}</p>
 
-            <md-badge
-              variant="filled"
-              clickable
-              @click="${() => this.goToFollowers()}"
-              >${this.user ? this.user.followers_count : '0'} followers
-            </md-badge>
-            <md-badge
-              variant="filled"
-              clickable
-              @click="${() => this.goToFollowing()}"
-              >${this.user ? this.user.following_count : '0'} following
-            </md-badge>
+            <div>
+              <md-badge
+                variant="filled"
+                clickable
+                @click="${() => this.goToFollowers()}"
+                >${this.user ? this.user.followers_count : '0'} followers
+              </md-badge>
+              <md-badge
+                variant="filled"
+                clickable
+                @click="${() => this.goToFollowing()}"
+                >${this.user ? this.user.following_count : '0'} following
+              </md-badge>
+            </div>
+
           </div>
         </div>
 

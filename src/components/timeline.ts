@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import {
   getLastPlaceTimeline,
@@ -58,6 +58,16 @@ export class Timeline extends LitElement {
     | 'media'
     | 'for you'
     | 'home and some trending' = 'home';
+
+  @property({ type: Array }) data: Post[] | undefined;
+  @property({ type: Boolean }) header: boolean = true;
+  @property({ type: Boolean }) autoLoad: boolean = true;
+
+  protected willUpdate(changedProperties: PropertyValues) {
+    if (changedProperties.has('data') && this.data) {
+      this.timeline = this.data;
+    }
+  }
 
   static styles = [
     css`
@@ -340,6 +350,10 @@ export class Timeline extends LitElement {
   }
 
   _handleTouchStart(e: TouchEvent) {
+    if (!this.autoLoad) {
+      return;
+    }
+
     const scrollContainer = this._getScrollContainer();
     if (!scrollContainer) {
       this._isPulling = false;
@@ -458,6 +472,10 @@ export class Timeline extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
 
+    if (!this.autoLoad) {
+      return;
+    }
+
     const { get } = await import('idb-keyval');
     const savedTimelineType = await get('timelineType');
 
@@ -527,6 +545,10 @@ export class Timeline extends LitElement {
 
   /** Handle visibility changes from lit-virtualizer to trigger load more */
   private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
+    if (!this.autoLoad) {
+      return;
+    }
+
     const { last } = e;
     // Load more when we're close to the end
     if (
@@ -542,6 +564,11 @@ export class Timeline extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+
+    if (!this.autoLoad) {
+      return;
+    }
+
     // Save timeline to cache when navigating away
     if (this.timeline.length > 0) {
       console.log('Saving timeline to cache on disconnect');
@@ -554,6 +581,10 @@ export class Timeline extends LitElement {
   }
 
   public async refreshTimeline(skipCache: boolean = true) {
+    if (!this.autoLoad) {
+      return;
+    }
+
     console.log('refreshing timeline', this.timelineType);
 
     // Save current timeline data before refreshing
@@ -847,33 +878,35 @@ export class Timeline extends LitElement {
         : null}
       </md-dialog>
 
-      <div id="timeline-header">
-        <md-select
-          pill
-          .value="${this.timelineType}"
-          @change="${($event: any) =>
-        this.changeTimelineType($event.detail.value)}"
-          placeholder="Home"
-        >
-          <md-option value="for you">for you</md-option>
-          <md-option value="home and some trending"
-            >Home and some trending</md-option
-          >
-          <md-option value="home">Home</md-option>
-          <md-option value="public">public</md-option>
-        </md-select>
+      ${this.header
+        ? html`<div id="timeline-header">
+            <md-select
+              pill
+              .value="${this.timelineType}"
+              @change="${($event: any) =>
+            this.changeTimelineType($event.detail.value)}"
+              placeholder="Home"
+            >
+              <md-option value="for you">for you</md-option>
+              <md-option value="home and some trending"
+                >Home and some trending</md-option
+              >
+              <md-option value="home">Home</md-option>
+              <md-option value="public">public</md-option>
+            </md-select>
 
-        <md-icon-button
-          id="refresh-manual-button"
-          circle
-          @click="${() => {
-        clearTimelineCache(this.timelineType);
-        this.refreshTimeline(true);
-      }}"
-        >
-          <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
-        </md-icon-button>
-      </div>
+            <md-icon-button
+              id="refresh-manual-button"
+              circle
+              @click="${() => {
+            clearTimelineCache(this.timelineType);
+            this.refreshTimeline(true);
+          }}"
+            >
+              <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
+            </md-icon-button>
+          </div>`
+        : null}
 
       <div id="refresh-indicator">
         <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>

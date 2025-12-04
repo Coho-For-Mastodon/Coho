@@ -11,11 +11,28 @@ export class AppHashtags extends LitElement {
     css`
       :host {
         display: block;
+        height: 100vh;
       }
 
       main {
         padding-top: 60px;
         padding: 10px;
+        height: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        margin-top: 12px;
+        /* margin-left: 20vw; */
+        align-items: center;
+        /* margin-right: 20vw; */
+      }
+
+      app-timeline {
+        flex: 1;
+        overflow: hidden;
+
+        width: 100%;
+        max-width: 56vw;
       }
 
       @media (max-width: 820px) {
@@ -53,7 +70,7 @@ export class AppHashtags extends LitElement {
       <main>
         <h3>${this.tag ? `#${this.tag}` : ''}</h3>
 
-        <app-timeline .data=${this.data}></app-timeline>
+        <app-timeline .data=${this.data} .header=${false} .autoLoad=${false}></app-timeline>
       </main>
     `;
   }

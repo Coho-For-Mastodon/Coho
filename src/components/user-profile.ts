@@ -4,6 +4,7 @@ import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 // import { enableVibrate } from '../utils/handle-vibrate';
 import { router } from '../utils/router';
+import { parseEmojis } from '../utils/emoji-parser';
 
 @customElement('user-profile')
 export class UserProfile extends LitElement {
@@ -153,10 +154,10 @@ export class UserProfile extends LitElement {
       <div
         @click="${() => this.openUser()}"
         class=${classMap({
-          small: this.small === true,
-          headerBlock: true,
-          boosted: this.boosted,
-        })}
+      small: this.small === true,
+      headerBlock: true,
+      boosted: this.boosted,
+    })}
         slot="header"
       >
         <img
@@ -165,7 +166,7 @@ export class UserProfile extends LitElement {
           data-src="${this.account.avatar_static}"
         />
         <div>
-          <h4>${this.account?.display_name || 'Loading...'}</h4>
+          <h4 .innerHTML="${parseEmojis(this.account?.display_name || 'Loading...', this.account?.emojis || [], true)}"></h4>
           <p>${this.account?.acct || 'Loading...'}</p>
         </div>
       </div>

@@ -28,3 +28,4 @@ export declare const searchTimeline: (query: string) => Promise<any>;
 export declare const getHashtagTimeline: (hashtag: string) => Promise<Post[]>;
 export declare const getAStatus: (id: string) => Promise<Post>;
 export declare const getTrendingStatuses: () => Promise<Post[]>;
+export declare const getTrendingTags: () => Promise<any[]>;

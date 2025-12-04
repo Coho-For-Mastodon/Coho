@@ -152,18 +152,12 @@ export class ImageCarousel extends LitElement {
     }
   }
 
-  private calculateImageHeight(image: any): string {
-    // Get the container width (assume full width for simplicity)
-    // Use aspect ratio to calculate height
+  private getImageStyle(image: any): string {
     const meta = image.meta?.small || image.meta?.original;
     if (meta?.aspect) {
-      // Common max height to prevent super tall images
-      const maxHeight = 500;
-      const calculatedHeight = Math.min(400 / meta.aspect, maxHeight);
-      return `${calculatedHeight}px`;
+      return `aspect-ratio: ${meta.aspect}`;
     }
-    // Default fallback height
-    return '300px';
+    return 'height: 300px';
   }
 
   private handleImageLoad(e: Event) {
@@ -192,87 +186,49 @@ export class ImageCarousel extends LitElement {
     );
   }
 
-  generateTemplateBasedOnType(image: any) {
-    switch (image.type) {
-      case 'image': {
-        const height = this.calculateImageHeight(image);
-        const blurhashUrl = this.blurhashUrls.get(image.id);
-        return html`
-          <div
-            class="image-container"
-            style="height: ${height}"
-            @click="${() => this.openInBox(image)}"
-          >
-            ${blurhashUrl
-              ? html`<img
-                  class="blurhash-canvas"
-                  src="${blurhashUrl}"
-                  aria-hidden="true"
-                  alt=""
-                />`
-              : ''}
-            <img
-              class="real-image"
-              loading="lazy"
-              src="${image.url}"
-              alt="${image.description}"
-              @load="${() => this.handleImageLoad(image.id)}"
-            />
-          </div>
-        `;
-      }
-      case 'video':
-        return html`<video controls src="${image.url}"></video>`;
-      case 'gifv':
-        return html`<video autoplay loop src="${image.url}"></video>`;
-      default:
-        return null;
-    }
-  }
-
   render() {
     return html`
       <div id="list">
         ${this.images.map((image) => {
-          if (image.type === 'image') {
-            const height = this.calculateImageHeight(image);
-            const blurhashUrl = this.blurhashUrls.get(image.id);
-            return html`
+      if (image.type === 'image') {
+        const style = this.getImageStyle(image);
+        const blurhashUrl = this.blurhashUrls.get(image.id);
+        return html`
               <div
                 class="image-container"
-                style="height: ${height}"
+                style="${style}"
                 @click="${() => this.openInBox(image)}"
               >
                 ${blurhashUrl
-                  ? html`<img
+            ? html`<img
                       class="blurhash-canvas"
                       src="${blurhashUrl}"
                       aria-hidden="true"
                     />`
-                  : null}
+            : null}
                 <img
-                  src="${image.preview_url}"
+                  src="${image.url}"
                   alt="${image.description || 'Image'}"
                   @load="${this.handleImageLoad}"
                   class="${blurhashUrl ? '' : 'loaded'}"
                 />
               </div>
             `;
-          } else if (image.type === 'video') {
-            return html`
+      } else if (image.type === 'video') {
+        return html`
               <div>
                 <video controls src="${image.url}"></video>
               </div>
             `;
-          } else if (image.type === 'gifv') {
-            return html`
+      } else if (image.type === 'gifv') {
+        return html`
               <div>
                 <video autoplay loop src="${image.url}"></video>
               </div>
             `;
-          }
-          return null;
-        })}
+      }
+      return null;
+    })}
       </div>
     `;
   }

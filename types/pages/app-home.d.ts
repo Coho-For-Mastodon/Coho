@@ -35,6 +35,7 @@ export declare class AppHome extends LitElement {
     openTweet: Post | null;
     homeLoad: boolean;
     hasNewNotifications: boolean;
+    trendingTags: any[];
     bookmarksLoaded: boolean;
     favoritesLoaded: boolean;
     notificationsLoaded: boolean;
@@ -43,6 +44,8 @@ export declare class AppHome extends LitElement {
     userTermsLoaded: boolean;
     rightClickLoaded: boolean;
     activeTab: string;
+    tabsOrientation: 'horizontal' | 'vertical';
+    tabsPlacement: 'top' | 'bottom' | 'start' | 'end';
     static get styles(): import("lit").CSSResult[];
     constructor();
     firstUpdated(): Promise<void>;

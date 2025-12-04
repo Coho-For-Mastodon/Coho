@@ -8,9 +8,8 @@ export declare class ImageCarousel extends LitElement {
     updated(changedProperties: Map<string, any>): void;
     disconnectedCallback(): void;
     private generateBlurhashes;
-    private calculateImageHeight;
+    private getImageStyle;
     private handleImageLoad;
     openInBox(image: any): Promise<void>;
-    generateTemplateBasedOnType(image: any): import("lit-html").TemplateResult<1> | null;
     render(): import("lit-html").TemplateResult<1>;
 }

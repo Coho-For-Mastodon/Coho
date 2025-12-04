@@ -35,6 +35,7 @@ export class MdBadge extends LitElement {
       transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
       user-select: none;
       height: 1em;
+      min-width: 98px;
     }
 
     .badge.filled {

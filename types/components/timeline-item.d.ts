@@ -33,6 +33,8 @@ export declare class TimelineItem extends LitElement {
     deleteStatus(): Promise<void>;
     initEditStatus(): Promise<void>;
     viewSensitive(): void;
+    viewThreadSensitive(id: string): void;
+    viewReplySensitive(): void;
     openLinkCard(url: string): void;
     summarizePost(postContent: string | null): Promise<void>;
     translatePost(postContent: string | null): Promise<void>;
