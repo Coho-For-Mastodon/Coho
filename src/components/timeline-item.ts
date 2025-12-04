@@ -103,17 +103,17 @@ export class TimelineItem extends LitElement {
         z-index: 1;
         display: flex;
         align-items: center;
+        text-align: center;
         justify-content: center;
         flex-direction: column;
         border-radius: 6px;
-        padding-top: 8px;
-        padding-bottom: 8px;
+        padding: 22px;
       }
 
       .sensitive span {
         font-weight: bold;
         display: block;
-        width: 136px;
+        width: 142px;
       }
 
       .sensitive p {
