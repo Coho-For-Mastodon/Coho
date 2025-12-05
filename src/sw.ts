@@ -3,7 +3,7 @@
 import { NetworkOnly, CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { precacheAndRoute } from 'workbox-precaching';
+import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import * as navigationPreload from 'workbox-navigation-preload';
 import { get, set } from 'idb-keyval';
@@ -128,6 +128,53 @@ self.addEventListener('message', (event) => {
     // Warm cache on app boot if network conditions are good
     event.waitUntil(warmCache());
   }
+});
+
+// Clean up old caches when a new service worker activates
+// This prevents version mismatches between cached HTML/JS/CSS
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      // Claim all clients immediately so the new SW controls all tabs
+      await self.clients.claim();
+
+      // Get list of cache names managed by workbox
+      const workboxCaches = [
+        'navigations',
+        'root',
+        'timeline',
+        'notifications',
+        'search',
+        'bookmarks',
+        'favorites',
+        'avatar',
+        'user',
+        'images',
+      ];
+
+      // Get all cache names
+      const cacheNames = await caches.keys();
+
+      // Delete any runtime caches that aren't in our current workbox list
+      // This ensures stale data doesn't persist across updates
+      await Promise.all(
+        cacheNames.map(async (cacheName) => {
+          // Skip workbox precache (handled by workbox-precaching)
+          if (cacheName.includes('workbox-precache')) {
+            return;
+          }
+
+          // For our named caches, just clear them on update to get fresh data
+          if (workboxCaches.includes(cacheName)) {
+            console.log(`[SW] Clearing cache on update: ${cacheName}`);
+            await caches.delete(cacheName);
+          }
+        })
+      );
+
+      console.log('[SW] Activated and cleaned up old caches');
+    })()
+  );
 });
 
 // Listen to the widgetinstall event.
@@ -675,6 +722,10 @@ if (!IS_DEV) {
 
 // Only precache in production - in dev, manifest is empty/undefined
 if (!IS_DEV) {
+  // Clean up any outdated precache entries from previous SW versions
+  // This prevents version mismatches that can cause Trusted Types errors
+  cleanupOutdatedCaches();
+
   const manifest = self.__WB_MANIFEST;
   if (manifest) {
     precacheAndRoute(manifest);
