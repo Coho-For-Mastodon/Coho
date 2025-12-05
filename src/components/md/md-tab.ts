@@ -82,22 +82,57 @@ export class MdTab extends LitElement {
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Vertical orientation (side nav) - horizontal icon+label layout */
+    /* Vertical orientation (side nav) - stacked icon/label layout like MD3 nav rail */
     :host([data-orientation='vertical']) button {
-      flex-direction: row;
-      justify-content: flex-start;
-      gap: 12px;
-      padding: 12px 16px;
-      min-height: 48px;
-      width: 100%;
-      font-size: 14px;
-      line-height: 20px;
-      letter-spacing: 0.1px;
-      border-radius: 28px;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px 12px;
+      min-height: 56px;
+      width: 80px;
+      font-size: 12px;
+      line-height: 16px;
+      letter-spacing: 0.5px;
+      border-radius: 0;
+      background: transparent;
     }
 
     :host([data-orientation='vertical']) {
       flex: none;
+      width: 80px;
+    }
+
+    /* Icon container with pill background for vertical nav */
+    :host([data-orientation='vertical']) .icon-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 32px;
+      border-radius: 16px;
+      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    :host([data-orientation='vertical']:hover) .icon-container {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600)) 8%,
+        transparent
+      );
+    }
+
+    :host([active][data-orientation='vertical']) .icon-container {
+      background: var(--md-sys-color-secondary-container, color-mix(
+        in srgb,
+        var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
+        transparent
+      ));
+    }
+
+    /* Icon container - default (horizontal) */
+    .icon-container {
+      display: contents;
     }
 
     /* Icon slot */
@@ -138,12 +173,18 @@ export class MdTab extends LitElement {
       border-radius: inherit;
     }
 
-    button:hover::before {
+    /* Only show button hover overlay for horizontal tabs */
+    :host(:not([data-orientation='vertical'])) button:hover::before {
       opacity: 0.08;
     }
 
-    button:active::before {
+    :host(:not([data-orientation='vertical'])) button:active::before {
       opacity: 0.12;
+    }
+
+    /* Disable button overlay for vertical tabs - hover is on icon-container instead */
+    :host([data-orientation='vertical']) button::before {
+      display: none;
     }
 
     /* Focus visible ring */
@@ -195,13 +236,9 @@ export class MdTab extends LitElement {
       display: none;
     }
 
-    /* Vertical active state - use background highlight instead of indicator */
+    /* Vertical active state - handled by icon-container pill, no full button background */
     :host([active][data-orientation='vertical']) button {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-primary, var(--sl-color-primary-600)) 12%,
-        transparent
-      );
+      background: transparent;
     }
 
     :host([active]) .indicator {
@@ -293,7 +330,9 @@ export class MdTab extends LitElement {
         @click="${this._handleClick}"
         @keydown="${this._handleKeyDown}"
       >
-        <slot name="icon"></slot>
+        <span class="icon-container">
+          <slot name="icon"></slot>
+        </span>
         <slot></slot>
         <span class="indicator"></span>
       </button>

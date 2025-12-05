@@ -56,9 +56,9 @@ export class SearchPage extends LitElement {
       }
 
       main {
-        padding-left: 10px;
-        padding-right: 10px;
-        padding-top: 10px;
+        padding-left: 0px;
+        padding-right: 0px;
+        padding-top: 0px;
       }
 
       .avatar {

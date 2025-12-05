@@ -28,8 +28,8 @@ export class AppExplore extends LitElement {
         display: grid;
         grid-template-columns: 67vw 30vw;
         gap: 10px;
-        padding-left: 10px;
-        padding-right: 10px;
+        padding-left: 0px;
+        padding-right: 0px;
       }
 
       #sign-up-block {

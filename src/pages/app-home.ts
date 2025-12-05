@@ -121,26 +121,38 @@ export class AppHome extends LitElement {
         search-page {
           margin-left: 0;
           margin-right: 0;
+          max-width: 600px;
         }
 
         md-tabs {
-          height: calc(100vh - 80px);
+          height: calc(100vh - 54px);
           grid-column: 1 / 3;
-          gap: 48px;
+          gap: 32px;
+          margin-top: -54px;
+          padding-top: 54px;
+        }
+
+        md-tab-panel {
+          max-width: 600px;
         }
 
         md-tab {
-          width: 220px;
+          width: 80px;
+          flex: none;
         }
 
         .new-post-container {
-          padding: 16px;
-          width: 100%;
+          padding: 16px 12px;
+          width: 80px;
           box-sizing: border-box;
+          display: flex;
+          justify-content: center;
+          margin-top: 8px;
         }
 
-        .new-post-btn {
-          width: 100%;
+        .new-post-btn md-icon {
+          width: 24px;
+          height: 24px;
         }
 
         md-tab-panel {
@@ -180,7 +192,7 @@ export class AppHome extends LitElement {
         }
 
         md-menu-item {
-          --neutral-fill-stealth-hover: #181818;
+          --neutral-fill-stealth-hover: #141314;
         }
 
         #open-tweet-dialog {
@@ -376,9 +388,8 @@ export class AppHome extends LitElement {
         main {
           padding-top: 54px;
           display: grid;
-          grid-template-columns: 250px minmax(0, 1fr) 320px;
-          gap: 48px;
-          max-width: 1280px;
+          grid-template-columns: 80px 1fr 320px;
+          gap: 32px;
           margin: 0 auto;
         }
 
@@ -629,7 +640,6 @@ export class AppHome extends LitElement {
 
           main {
             grid-template-columns: 1fr;
-            max-width: 850px;
           }
 
           md-tabs {
@@ -653,6 +663,21 @@ export class AppHome extends LitElement {
           #right-sidebar {
             display: none;
           }
+
+          app-timeline,
+        app-bookmarks,
+        app-notifications,
+        app-favorites,
+        app-bookmarks,
+        search-page {
+          margin-left: 0;
+          margin-right: 0;
+          max-width: unset;
+        }
+
+        md-tab-panel {
+          max-width: unset;
+        }
 
           md-tab {
             flex: 1;
@@ -705,6 +730,7 @@ export class AppHome extends LitElement {
             display: block;
             padding-top: 0;
             margin-top: initial;
+            margin-left: 0;
             position: fixed;
             top: 0;
             left: 0;
@@ -714,6 +740,7 @@ export class AppHome extends LitElement {
           }
 
           md-tabs {
+            position: static;
             height: 100%;
             width: 100%;
             gap: 0;
@@ -1501,13 +1528,12 @@ export class AppHome extends LitElement {
 
           <div slot="nav" class="new-post-container">
             <md-button
-              variant="filled"
-              size="large"
+              variant="fab"
               class="new-post-btn"
               @click="${() => this.openNewDialog()}"
+              title="New Post"
             >
-              New Post
-              <md-icon slot="suffix" src="/assets/add-outline.svg"></md-icon>
+              <md-icon src="/assets/add-outline.svg"></md-icon>
             </md-button>
           </div>
 

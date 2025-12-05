@@ -111,23 +111,31 @@ export class MdTabs extends LitElement {
       border-bottom: none;
       border-top: 1px solid
         var(--md-sys-color-outline-variant, var(--sl-color-neutral-200));
+        background: var(--md-sys-color-surface-container, #f3f3f6);
     }
 
-    /* Vertical tab bar (side navigation) */
+    /* Vertical tab bar (side navigation) - MD3 navigation rail style */
     :host([orientation='vertical']) .tab-bar {
       flex-direction: column;
+      align-items: center;
       border-bottom: none;
       border-right: none;
-      min-width: fit-content;
-      max-width: fit-content;
+      width: 80px;
+      min-width: 80px;
+      max-width: 80px;
+      flex-shrink: 0;
       overflow-y: visible;
       overflow-x: hidden;
-      background: transparent;
-      padding: 16px 8px;
-      gap: 4px;
-      align-self: flex-start;
-
-      padding-top: 0;
+      background: var(--md-sys-color-surface-container, #f3f3f6);
+      padding: 12px 0;
+      padding-top: 66px;
+      gap: 0;
+      align-self: stretch;
+      height: calc(100% + 54px);
+      margin-top: -74px;
+      border-radius: 0;
+      padding-left: 12px;
+      padding-right: 12px;
     }
 
     :host([orientation='vertical'][placement='end']) .tab-bar {
@@ -151,15 +159,16 @@ export class MdTabs extends LitElement {
 
     /* Dark mode */
     @media (prefers-color-scheme: dark) {
-      .tab-bar {
-        background: transparent;
-      }
-
       :host([orientation='horizontal']) .tab-bar {
+        background: transparent;
         border-color: var(
           --md-sys-color-outline-variant,
           var(--sl-color-neutral-700)
         );
+      }
+
+      :host([orientation='vertical']) .tab-bar {
+        background: var(--md-sys-color-surface-container, #1e1e24);
       }
     }
 
@@ -184,8 +193,12 @@ export class MdTabs extends LitElement {
       }
 
       :host([orientation='vertical']) .tab-bar {
-        min-width: fit-content;
-        max-width: fit-content;
+        width: 80px;
+        min-width: 80px;
+        max-width: 80px;
+        height: 100%;
+        margin-top: 0;
+        padding-top: 12px;
       }
     }
   `;

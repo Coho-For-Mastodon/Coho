@@ -11,7 +11,7 @@ export declare class MdDialog extends LitElement {
     dialog: HTMLDialogElement;
     static styles: import("lit").CSSResult;
     render(): import("lit-html").TemplateResult<1>;
-    updated(changedProperties: Map<string, any>): void;
+    updated(changedProperties: Map<PropertyKey, unknown>): void;
     show(): void;
     hide(): Promise<void>;
     private _handleCancel;

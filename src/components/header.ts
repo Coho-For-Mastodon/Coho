@@ -25,7 +25,6 @@ export class AppHeader extends LitElement {
         justify-content: space-between;
         align-items: center;
         background: transparent;
-        backdrop-filter: blur(40px);
         color: white;
         padding-right: 5px;
         position: fixed;
@@ -91,7 +90,7 @@ export class AppHeader extends LitElement {
         }
 
         header {
-          padding-left: 20px;
+          padding-left: 38px;
         }
       }
 
@@ -171,7 +170,7 @@ export class AppHeader extends LitElement {
       <header>
         <div id="back-button-block">
           ${this.enableBack
-            ? html`<md-icon-button
+        ? html`<md-icon-button
                 @click="${() => this.goBack()}"
                 title="back"
                 size="small"
@@ -193,15 +192,15 @@ export class AppHeader extends LitElement {
                   />
                 </svg>
               </md-icon-button>`
-            : null}
+        : null}
           ${!this.enableBack
-            ? html`<img
+        ? html`<img
                 src="/assets/icons/new-icons/icon-48x48.webp"
                 alt="App Icon"
                 width="28"
                 height="28"
               />`
-            : nothing}
+        : nothing}
         </div>
 
         <div id="actions">

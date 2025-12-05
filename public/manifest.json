@@ -7,10 +7,10 @@
   "display": "standalone",
   "start_url": "/",
   "short_name": "Coho",
-  "theme_color": "#181818",
+  "theme_color": "#141314",
   "description": "Discover a simpler way to socialize online with Coho, the Mastodon app that prioritizes ease-of-use and clean design. Experience the open-source, decentralized social network without the clutter. Join communities, share your thoughts, and connect with like-minded individuals all with just a few taps. Say goodbye to overwhelming feeds and complicated features, Coho simplifies the social media experience.",
   "orientation": "portrait",
-  "background_color": "#181818",
+  "background_color": "#141314",
   "related_applications": [],
   "prefer_related_applications": false,
   "display_override": [

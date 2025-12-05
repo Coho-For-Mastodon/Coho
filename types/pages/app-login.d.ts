@@ -13,10 +13,12 @@ export declare class AppLogin extends LitElement {
     firstUpdated(): Promise<void>;
     login(): Promise<void>;
     openIntro(): Promise<void>;
-    scrollToItem(scroller: any, width: number): void;
+    scrollToItem(scroller: Element, width: number): void;
     next(): void;
     getStarted(): Promise<void>;
-    handleServerInput(event: any): void;
+    handleServerInput(event: Event | CustomEvent<{
+        value: string;
+    }>): void;
     searchInstances(query: string): Promise<void>;
     handleServerSelect(event: CustomEvent): void;
     joinMastodon(): Promise<void>;
