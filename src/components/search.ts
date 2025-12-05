@@ -5,9 +5,16 @@ import './md/md-text-field';
 
 import { router } from '../utils/router';
 
+interface SearchData {
+  query?: string;
+  accounts?: Array<{ id: string; avatar: string; display_name: string; acct: string }>;
+  statuses?: unknown[];
+  hashtags?: unknown[];
+}
+
 @customElement('app-search')
 export class Search extends LitElement {
-  @state() searchData: any | undefined;
+  @state() searchData: SearchData | undefined;
   static styles = [
     css`
       :host {
@@ -103,7 +110,7 @@ export class Search extends LitElement {
   render() {
     return html`
       <md-text-field
-        @change="${($event: any) => this.handleSearch($event.target.value)}"
+        @change="${(e: Event) => this.handleSearch((e.target as HTMLInputElement).value)}"
         placeholder="Search"
         type="search"
         pill

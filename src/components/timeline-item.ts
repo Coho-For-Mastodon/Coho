@@ -1,10 +1,11 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
-import { getSettings } from '../services/settings';
+import { getSettings, Settings } from '../services/settings';
 
 import { router } from '../utils/router';
 import { Post } from '../interfaces/Post';
+import type { Account } from '../mastodon/types';
 import {
   renderSensitive,
   renderRegularTweet,
@@ -29,9 +30,9 @@ export class TimelineItem extends LitElement {
   @state() threadPosts: Post[] = [];
   @state() loadingThread: boolean = false;
 
-  @state() settings: any | undefined;
+  @state() settings: Settings | undefined;
 
-  @state() currentUser: any;
+  @state() currentUser: Account | null = null;
 
   @state() showReportDialog: boolean = false;
   @state() reportAccountId: string = '';

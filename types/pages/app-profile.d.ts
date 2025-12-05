@@ -9,12 +9,13 @@ import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/report-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
+import type { Account } from '../mastodon/types';
 import '../components/md/md-skeleton';
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 export declare class AppProfile extends LitElement {
-    user: any | undefined;
-    posts: any[];
+    user: Account | undefined;
+    posts: Post[];
     followed: boolean;
     following: boolean;
     muted: boolean;
@@ -23,6 +24,9 @@ export declare class AppProfile extends LitElement {
     selectedPost: Post | undefined;
     isOwnProfile: boolean;
     showReportDialog: boolean;
+    private previewContent;
+    private editDialog;
+    private contentTextArea;
     static styles: import("lit").CSSResult[];
     firstUpdated(): Promise<void>;
     follow(): Promise<void>;

@@ -6,14 +6,28 @@ import '../components/md/md-dialog.js';
 import '../components/md/md-button.js';
 import '../components/md/md-badge.js';
 
+interface ServerInfo {
+  name: string;
+  thumbnail?: string;
+  users?: number;
+  info: {
+    full_description?: string;
+    short_description?: string;
+    usage?: {
+      users?: { total: number };
+    };
+    categories?: string[];
+  };
+}
+
 @customElement('create-account')
 export class CreateAccount extends LitElement {
-  @state() servers: any[] = [];
+  @state() servers: ServerInfo[] = [];
   @state() chosenServer: string | undefined = '';
   @state() fullDesc: string | undefined = '';
   @state() registered: boolean = false;
 
-  @state() filledValues: any[] = [];
+  @state() filledValues: string[] = [];
 
   static styles = [
     css`
@@ -106,7 +120,7 @@ export class CreateAccount extends LitElement {
     this.servers = servers.instances;
   }
 
-  startRegister(serverInfo: any) {
+  startRegister(serverInfo: ServerInfo) {
     this.chosenServer = serverInfo.name;
     this.fullDesc = serverInfo.info.full_description;
     const dialog = this.shadowRoot?.querySelector('#create-dialog');
@@ -180,7 +194,7 @@ export class CreateAccount extends LitElement {
 
         <ul>
           ${this.servers.map((server) => {
-            return html`
+      return html`
               <li>
                 <img src="${server.thumbnail}" alt="${server.name} thumbnail" />
                 <div class="info">
@@ -199,7 +213,7 @@ export class CreateAccount extends LitElement {
                 >
               </li>
             `;
-          })}
+    })}
         </ul>
       </main>
     `;

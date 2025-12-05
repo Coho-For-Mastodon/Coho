@@ -9,6 +9,7 @@ import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 import '../components/timeline-item';
 import '../components/search';
 import { Post } from '../interfaces/Post';
+import type { RepliesEvent } from '../types/events';
 
 @customElement('media-timeline')
 export class MediaTimeline extends LitElement {
@@ -155,14 +156,14 @@ export class MediaTimeline extends LitElement {
       <lit-virtualizer
         scroller
         .items="${this.timeline as Post[]}"
-        .renderItem="${((tweet: Post) => html`
+        .renderItem="${(tweet: Post) => html`
           <timeline-item
             ?show="${true}"
-            @replies="${($event: any) =>
-              this.handleReplies($event.detail.data)}"
+            @replies="${(e: RepliesEvent) =>
+          this.handleReplies(e.detail.data)}"
             .tweet="${tweet}"
           ></timeline-item>
-        `) as any}"
+        `}"
         @visibilityChanged="${this._handleVisibilityChanged}"
       >
       </lit-virtualizer>

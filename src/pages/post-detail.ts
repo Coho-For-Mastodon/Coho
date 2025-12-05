@@ -1,5 +1,5 @@
 import { LitElement, html, css, nothing } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property, state, query } from 'lit/decorators.js';
 
 import '../components/header';
 import '../components/timeline-item';
@@ -11,14 +11,17 @@ import { getReplies } from '../services/timeline';
 
 import { replyToPost } from '../services/posts';
 import { classMap } from 'lit/directives/class-map.js';
+import type { MdTextArea } from '../components/md/md-text-area';
 
 @customElement('post-detail')
 export class PostDetail extends LitElement {
   @state() tweet: Post | null = null;
-  @state() replies: any[] = [];
+  @state() replies: Post[] = [];
   @state() replyingTo: Post | null = null;
 
   @property({ type: Object }) passed_tweet: Post | null = null;
+
+  @query('md-text-area') private replyTextArea!: MdTextArea;
 
   static styles = [
     css`
@@ -242,17 +245,16 @@ export class PostDetail extends LitElement {
   }
 
   async handleReply() {
-    const textArea = this.shadowRoot?.querySelector('md-text-area') as any;
     const tweetToReplyTo = this.replyingTo || this.tweet;
 
-    if (textArea.value && tweetToReplyTo && tweetToReplyTo.id) {
-      await replyToPost(tweetToReplyTo.id, textArea.value);
+    if (this.replyTextArea?.value && tweetToReplyTo && tweetToReplyTo.id) {
+      await replyToPost(tweetToReplyTo.id, this.replyTextArea.value);
 
       await this.loadReplies();
 
       this.replies = [...this.replies];
 
-      textArea.value = '';
+      this.replyTextArea.value = '';
       this.replyingTo = null;
     }
   }
@@ -261,9 +263,8 @@ export class PostDetail extends LitElement {
     e.preventDefault();
     this.replyingTo = e.detail.tweet;
 
-    const textArea = this.shadowRoot?.querySelector('md-text-area') as any;
-    if (textArea) {
-      textArea.focus();
+    if (this.replyTextArea) {
+      this.replyTextArea.focus();
     }
   }
 
@@ -278,7 +279,7 @@ export class PostDetail extends LitElement {
           <timeline-item id="main" .tweet="${this.tweet!}"></timeline-item>
           <div id="post-actions">
             ${this.replyingTo
-              ? html`
+        ? html`
                   <div id="replying-to-indicator">
                     <span>Replying to @${this.replyingTo.account.acct}</span>
                     <md-icon-button
@@ -287,7 +288,7 @@ export class PostDetail extends LitElement {
                     ></md-icon-button>
                   </div>
                 `
-              : nothing}
+        : nothing}
             <md-text-area
               variant="outlined"
               placeholder="Reply to this post..."
@@ -309,15 +310,15 @@ export class PostDetail extends LitElement {
 
           <ul>
             ${this.replies.map(
-              (reply) => html`
+          (reply) => html`
                 <timeline-item
                   .tweet="${reply}"
                   ?show="${true}"
                   @reply-clicked="${(e: CustomEvent) =>
-                    this.handleReplyClick(e)}"
+              this.handleReplyClick(e)}"
                 ></timeline-item>
               `
-            )}
+        )}
           </ul>
         </div>
       </main>

@@ -7,9 +7,10 @@ import '../components/md/md-text-area';
 import { Post } from '../interfaces/Post';
 export declare class PostDetail extends LitElement {
     tweet: Post | null;
-    replies: any[];
+    replies: Post[];
     replyingTo: Post | null;
     passed_tweet: Post | null;
+    private replyTextArea;
     static styles: import("lit").CSSResult[];
     connectedCallback(): Promise<void>;
     firstUpdated(): Promise<void>;

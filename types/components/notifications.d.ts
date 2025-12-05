@@ -15,6 +15,6 @@ export declare class Notifications extends LitElement {
     firstUpdated(): Promise<void>;
     clear(): Promise<void>;
     sub(flag: boolean): Promise<void>;
-    openPost(tweet: Post): Promise<void>;
+    openPost(tweet: Post | undefined): Promise<void>;
     render(): import("lit-html").TemplateResult<1>;
 }

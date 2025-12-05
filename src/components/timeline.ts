@@ -20,10 +20,36 @@ import type {
   HandleSummaryDetail,
   HandleTranslatingDetail,
   OpenPostDetail,
+  SelectChangeDetail,
+  AnalyzeEventDetail,
+  OpenImageDetail,
 } from '../types/events';
 
 // @ts-expect-error fix
 import TimelineWorker from '../utils/timeline-worker?worker';
+
+// Types for analyze feature
+interface AnalyzeEntity {
+  text: string;
+  category: string;
+  confidenceScore: number;
+}
+
+interface AnalyzeData {
+  results?: {
+    documents?: Array<{
+      entities?: AnalyzeEntity[];
+    }>;
+  };
+}
+
+interface ImageAnalyzeData {
+  descriptionResult?: {
+    values?: Array<{
+      text: string;
+    }>;
+  };
+}
 
 import '../components/md/md-dialog';
 import '../components/md/md-button';
@@ -48,7 +74,7 @@ export class Timeline extends LitElement {
 
   @state() imgPreview: string | undefined = undefined;
 
-  @state() analyzeData: any | undefined = undefined;
+  @state() analyzeData: AnalyzeEntity[] | null = null;
   @state() imageDesc: string | undefined = undefined;
   @state() analyzeTweet: Post | null = null;
 
@@ -797,28 +823,32 @@ export class Timeline extends LitElement {
     }
   }
 
-  async showAnalyze(data: any, imageData: any, tweet: any) {
+  async showAnalyze(
+    data: AnalyzeData,
+    imageData: ImageAnalyzeData | null,
+    tweet: Post
+  ) {
     this.analyzeData = null;
     this.imageDesc = undefined;
     this.analyzeTweet = null;
 
     if (
       data.results &&
-      data.results?.documents[0] &&
+      data.results?.documents?.[0] &&
       data.results.documents[0].entities &&
       data.results.documents[0].entities?.length !== 0
     ) {
       this.analyzeData = data.results.documents[0].entities;
     }
 
-    if (imageData) {
+    if (imageData?.descriptionResult?.values?.[0]) {
       this.imageDesc = imageData.descriptionResult.values[0].text;
     }
 
     this.analyzeTweet = tweet;
 
-    const dialog = this.shadowRoot?.querySelector('#analyze') as any;
-    await dialog.show();
+    const dialog = this.shadowRoot?.querySelector('#analyze') as HTMLElement & { show(): void };
+    await dialog?.show();
   }
 
   async changeTimelineType(
@@ -877,11 +907,11 @@ export class Timeline extends LitElement {
         label="Image Preview"
       >
         ${this.imgPreview
-          ? html`<img
+        ? html`<img
               src="${this.imgPreview}"
               style="width:100%;border-radius:6px;"
             />`
-          : null}
+        : null}
       </md-dialog>
 
       ${this.header
@@ -889,8 +919,15 @@ export class Timeline extends LitElement {
             <md-select
               pill
               .value="${this.timelineType}"
-              @change="${($event: any) =>
-                this.changeTimelineType($event.detail.value)}"
+              @change="${(e: CustomEvent<SelectChangeDetail>) =>
+            this.changeTimelineType(
+              e.detail.value as
+              | 'home'
+              | 'public'
+              | 'media'
+              | 'for you'
+              | 'home and some trending'
+            )}"
               placeholder="Home"
             >
               <md-option value="for you">for you</md-option>
@@ -905,9 +942,9 @@ export class Timeline extends LitElement {
               id="refresh-manual-button"
               circle
               @click="${() => {
-                clearTimelineCache(this.timelineType);
-                this.refreshTimeline(true);
-              }}"
+            clearTimelineCache(this.timelineType);
+            this.refreshTimeline(true);
+          }}"
             >
               <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
             </md-icon-button>
@@ -926,33 +963,37 @@ export class Timeline extends LitElement {
               part="list"
               class="scrollbar-hidden"
               scroller
-              .items=${this.timeline as Post[]}
-              .renderItem=${((tweet: Post) =>
-                html`<div class="timeline-list-item">
+              .items=${this.timeline}
+              .renderItem=${
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ((tweet: Post) =>
+            html`<div class="timeline-list-item">
                   <timeline-item
                     @open="${($event: CustomEvent) =>
-                      this.handleOpen($event.detail.tweet)}"
-                    @summarize="${($event: any) => this.handleSummary($event)}"
-                    @translating="${($event: any) =>
-                      this.handleTranslating($event)}"
+                this.handleOpen($event.detail.tweet)}"
+                    @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
+                this.handleSummary($event)}"
+                    @translating="${($event: CustomEvent<HandleTranslatingDetail>) =>
+                this.handleTranslating($event)}"
                     tweetID="${tweet.id}"
                     @delete="${() => this.refreshTimeline()}"
-                    @analyze="${($event: any) =>
-                      this.showAnalyze(
-                        $event.detail.data,
-                        $event.detail.imageData,
-                        $event.detail.tweet
-                      )}"
-                    @openimage="${($event: any) =>
-                      this.showImage($event.detail.imageURL)}"
+                    @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
+                this.showAnalyze(
+                  $event.detail.data as AnalyzeData,
+                  $event.detail.imageData as ImageAnalyzeData | null,
+                  $event.detail.tweet
+                )}"
+                    @openimage="${($event: CustomEvent<OpenImageDetail>) =>
+                this.showImage($event.detail.imageURL)}"
                     ?show="${true}"
-                    @replies="${($event: any) =>
-                      this.handleReplies($event.detail.data)}"
+                    @replies="${($event: CustomEvent<RepliesDetail>) =>
+                this.handleReplies($event.detail.data)}"
                     .tweet="${tweet}"
                   ></timeline-item>
                   <md-divider
                     style="margin-top: 12px; margin-bottom: 12px;"
                   ></md-divider>
+                  <!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
                 </div>`) as any}
               @visibilityChanged=${this._handleVisibilityChanged}
             >

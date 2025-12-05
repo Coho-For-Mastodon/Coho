@@ -89,7 +89,7 @@ export class RightClick extends LitElement {
         });
 
         scope.addEventListener('click', (e) => {
-          if ((e.target as any)!.offsetParent != contextMenu) {
+          if ((e.target as HTMLElement)?.offsetParent !== contextMenu) {
             contextMenu.classList.remove('visible');
           }
         });

@@ -162,8 +162,8 @@ export class MdCheckbox extends LitElement {
       <div
         class="control"
         role="checkbox"
-        aria-checked=${(this.checked ? 'true' : 'false') as any}
-        aria-disabled=${(this.disabled ? 'true' : 'false') as any}
+        aria-checked=${this.checked ? 'true' : 'false'}
+        aria-disabled=${this.disabled ? 'true' : 'false'}
         tabindex="${this.disabled ? -1 : 0}"
         @click=${this._onClick}
         @keydown=${this._onKeyDown}

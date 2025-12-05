@@ -1,10 +1,11 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { getBlurhashWorker } from '../services/blurhash-worker';
+import type { MediaAttachment } from '../types/interfaces/MediaAttachment';
 
 @customElement('image-carousel')
 export class ImageCarousel extends LitElement {
-  @property({ type: Array }) images: any[] = [];
+  @property({ type: Array }) images: MediaAttachment[] = [];
   @state() blurhashUrls: Map<string, string> = new Map();
 
   constructor() {
@@ -152,7 +153,7 @@ export class ImageCarousel extends LitElement {
     }
   }
 
-  private getImageStyle(image: any): string {
+  private getImageStyle(image: MediaAttachment): string {
     const meta = image.meta?.small || image.meta?.original;
     if (meta?.aspect) {
       return `aspect-ratio: ${meta.aspect}`;
@@ -168,7 +169,7 @@ export class ImageCarousel extends LitElement {
     }, 100);
   }
 
-  async openInBox(image: any) {
+  async openInBox(image: MediaAttachment) {
     console.log('show image', image);
 
     window.dispatchEvent(
@@ -190,22 +191,22 @@ export class ImageCarousel extends LitElement {
     return html`
       <div id="list">
         ${this.images.map((image) => {
-          if (image.type === 'image') {
-            const style = this.getImageStyle(image);
-            const blurhashUrl = this.blurhashUrls.get(image.id);
-            return html`
+      if (image.type === 'image') {
+        const style = this.getImageStyle(image);
+        const blurhashUrl = this.blurhashUrls.get(image.id);
+        return html`
               <div
                 class="image-container"
                 style="${style}"
                 @click="${() => this.openInBox(image)}"
               >
                 ${blurhashUrl
-                  ? html`<img
+            ? html`<img
                       class="blurhash-canvas"
                       src="${blurhashUrl}"
                       aria-hidden="true"
                     />`
-                  : null}
+            : null}
                 <img
                   src="${image.url}"
                   alt="${image.description || 'Image'}"
@@ -214,21 +215,21 @@ export class ImageCarousel extends LitElement {
                 />
               </div>
             `;
-          } else if (image.type === 'video') {
-            return html`
+      } else if (image.type === 'video') {
+        return html`
               <div>
                 <video controls src="${image.url}"></video>
               </div>
             `;
-          } else if (image.type === 'gifv') {
-            return html`
+      } else if (image.type === 'gifv') {
+        return html`
               <div>
                 <video autoplay loop src="${image.url}"></video>
               </div>
             `;
-          }
-          return null;
-        })}
+      }
+      return null;
+    })}
       </div>
     `;
   }

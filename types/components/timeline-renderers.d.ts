@@ -1,4 +1,6 @@
 import { Post } from '../interfaces/Post';
+import type { Settings } from '../services/settings';
+import type { Account } from '../mastodon/types';
 import '../components/user-profile';
 import '../components/md/md-card';
 import '../components/md/md-icon';
@@ -31,8 +33,8 @@ export interface TimelineItemHandlers {
 export interface TimelineItemState {
     tweet: Post | undefined;
     show: boolean;
-    currentUser: any;
-    settings: any;
+    currentUser: Account | null;
+    settings: Settings | undefined;
     isBookmarked: boolean;
     isBoosted: boolean;
     isReblogged: boolean;

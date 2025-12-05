@@ -1,12 +1,21 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 
 import '../components/md/md-text-area';
 import { requestMammothBot } from '../services/ai';
+import type { MdTextArea } from './md/md-text-area';
+
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
 
 @customElement('mammoth-bot')
 export class MammothBot extends LitElement {
-  @state() previousMessages: any[] = [];
+  @state() previousMessages: ChatMessage[] = [];
+
+  @query('md-text-area') private textArea!: MdTextArea;
+  @query('ul') private messageList!: HTMLUListElement;
 
   static styles = [
     css`
@@ -121,7 +130,7 @@ export class MammothBot extends LitElement {
   ];
 
   async handleInput() {
-    const value = (this.shadowRoot?.querySelector('md-text-area') as any).value;
+    const value = this.textArea?.value ?? '';
     console.log('value', value);
 
     this.previousMessages = [
@@ -132,21 +141,22 @@ export class MammothBot extends LitElement {
       },
     ];
 
-    const textarea = this.shadowRoot?.querySelector('md-text-area') as any;
-    textarea.value = '';
+    if (this.textArea) {
+      this.textArea.value = '';
+    }
 
     const data = await requestMammothBot(value, this.previousMessages);
     console.log('data', data);
 
-    const response = data.choices[0].message;
+    const response = data.choices[0].message as ChatMessage;
 
     this.previousMessages = [...this.previousMessages, response];
 
     // scroll list to last item in the list
-    const list = this.shadowRoot?.querySelector('ul') as any;
-    list.scrollTop = list.scrollHeight;
-
-    list.scrollTo(0, list.scrollHeight);
+    if (this.messageList) {
+      this.messageList.scrollTop = this.messageList.scrollHeight;
+      this.messageList.scrollTo(0, this.messageList.scrollHeight);
+    }
   }
 
   copyContent(content: string) {
@@ -158,8 +168,8 @@ export class MammothBot extends LitElement {
     return html`
       <span>alpha</span>
       <ul>
-        ${this.previousMessages.map((message: any) => {
-          return html`
+        ${this.previousMessages.map((message) => {
+      return html`
             <li>
               <div class="wrapper">
                 <div class="role">${message.role}</div>
@@ -174,7 +184,7 @@ export class MammothBot extends LitElement {
               <div>${message.content}</div>
             </li>
           `;
-        })}
+    })}
       </ul>
 
       <md-text-area

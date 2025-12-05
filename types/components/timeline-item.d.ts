@@ -1,5 +1,7 @@
 import { LitElement } from 'lit';
+import { Settings } from '../services/settings';
 import { Post } from '../interfaces/Post';
+import type { Account } from '../mastodon/types';
 import { TimelineItemHandlers, TimelineItemState } from './timeline-renderers';
 import './report-dialog';
 import type { ReportSubmitDetail } from './report-dialog';
@@ -13,8 +15,8 @@ export declare class TimelineItem extends LitElement {
     threadExpanded: boolean;
     threadPosts: Post[];
     loadingThread: boolean;
-    settings: any | undefined;
-    currentUser: any;
+    settings: Settings | undefined;
+    currentUser: Account | null;
     showReportDialog: boolean;
     reportAccountId: string;
     reportAccountAcct: string;

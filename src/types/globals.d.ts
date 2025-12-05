@@ -1,10 +1,10 @@
-export {};
+export { };
 
 declare global {
   interface Window {
     summarizer: {
       capabilities(): Promise<{ available: string }>;
-      create(options: any): Promise<SummarizerSession>;
+      create(options: unknown): Promise<SummarizerSession>;
     };
     LanguageDetector: {
       create(): Promise<LanguageDetectorSession>;
@@ -19,6 +19,39 @@ declare global {
         targetLanguage: string;
       }): Promise<TranslatorSession>;
     };
+    EyeDropper: {
+      new(): EyeDropper;
+    };
+  }
+
+  // EyeDropper API
+  interface EyeDropper {
+    open(): Promise<{ sRGBHex: string }>;
+  }
+
+  // Web Share API
+  interface ShareData {
+    title?: string;
+    text?: string;
+    url?: string;
+    files?: File[];
+  }
+
+  interface Navigator {
+    share?(data?: ShareData): Promise<void>;
+    canShare?(data?: ShareData): boolean;
+    setAppBadge?(count?: number): Promise<void>;
+    clearAppBadge?(): Promise<void>;
+    connection?: NetworkInformation;
+  }
+
+  // Network Information API
+  interface NetworkInformation {
+    saveData: boolean;
+    effectiveType: 'slow-2g' | '2g' | '3g' | '4g';
+    downlink: number;
+    rtt: number;
+    onchange?: EventListener;
   }
 
   // Chrome Proofreader API

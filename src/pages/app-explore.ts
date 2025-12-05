@@ -4,10 +4,11 @@ import { getPreviewTimeline } from '../services/timeline';
 
 import '../components/preview-timeline';
 import '../components/md/md-text-field';
+import type { Post } from '../interfaces/Post';
 
 @customElement('app-explore')
 export class AppExplore extends LitElement {
-  @state() timeline: any[] = [];
+  @state() timeline: Post[] = [];
 
   static styles = [
     css`
@@ -94,8 +95,8 @@ export class AppExplore extends LitElement {
   }
 
   async login() {
-    let serverURL = (this.shadowRoot!.querySelector('#server-input') as any)
-      .value;
+    let serverURL = (this.shadowRoot!.querySelector('#server-input') as HTMLInputElement | null)
+      ?.value ?? '';
     if (serverURL.length > 0) {
       if (serverURL.includes('https://')) {
         // remove https://

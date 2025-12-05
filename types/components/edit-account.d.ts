@@ -6,6 +6,14 @@ import './md/md-button';
 export declare class EditAccount extends LitElement {
     newAvatar: File | null;
     newHeader: File | null;
+    private displayNameField;
+    private noteField;
+    private lockedCheckbox;
+    private botCheckbox;
+    private avatarPreview;
+    private headerPreview;
+    private avatarInput;
+    private headerInput;
     static styles: import("lit").CSSResult[];
     firstUpdated(): Promise<void>;
     resetForm(): Promise<void>;

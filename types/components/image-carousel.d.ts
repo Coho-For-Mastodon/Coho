@@ -1,6 +1,7 @@
 import { LitElement } from 'lit';
+import type { MediaAttachment } from '../types/interfaces/MediaAttachment';
 export declare class ImageCarousel extends LitElement {
-    images: any[];
+    images: MediaAttachment[];
     blurhashUrls: Map<string, string>;
     constructor();
     static styles: import("lit").CSSResult[];
@@ -10,6 +11,6 @@ export declare class ImageCarousel extends LitElement {
     private generateBlurhashes;
     private getImageStyle;
     private handleImageLoad;
-    openInBox(image: any): Promise<void>;
+    openInBox(image: MediaAttachment): Promise<void>;
     render(): import("lit-html").TemplateResult<1>;
 }

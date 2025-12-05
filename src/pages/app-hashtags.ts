@@ -1,10 +1,11 @@
 import { LitElement, html, css, PropertyValueMap } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { getHashtagTimeline } from '../services/timeline';
+import type { Post } from '../interfaces/Post';
 
 @customElement('app-hashtags')
 export class AppHashtags extends LitElement {
-  @state() data: any[] | undefined;
+  @state() data: Post[] | undefined;
   @state() tag: string | null | undefined;
 
   static styles = [

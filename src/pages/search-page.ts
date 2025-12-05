@@ -8,12 +8,22 @@ import { router } from '../utils/router';
 import '../components/md/md-skeleton';
 
 import '../components/md/md-segmented-button';
+import type { Account } from '../mastodon/types';
+import type { TrendingTag, TrendingLink } from '../mastodon/types/instance';
+import type { Post } from '../interfaces/Post';
+
+interface SearchData {
+  query?: string;
+  accounts?: Account[];
+  statuses?: Post[];
+  hashtags?: TrendingTag[];
+}
 
 @customElement('search-page')
 export class SearchPage extends LitElement {
-  @state() searchData: any | undefined;
-  @state() trending: any[] | undefined;
-  @state() trendingLinks: any[] | undefined;
+  @state() searchData: SearchData | undefined;
+  @state() trending: Post[] | undefined;
+  @state() trendingLinks: TrendingLink[] | undefined;
   @state() activeSegment: string = 'accounts';
 
   static styles = [
@@ -171,7 +181,7 @@ export class SearchPage extends LitElement {
     `,
   ];
 
-  async handleSearch(search: any) {
+  async handleSearch(search: { searchData: SearchData }) {
     console.log(search);
     this.searchData = search.searchData;
 
@@ -201,13 +211,13 @@ export class SearchPage extends LitElement {
     return html`
       <main>
         <app-search
-          @search="${($event: any) => this.handleSearch($event.detail)}"
+          @search="${(e: CustomEvent<{ searchData: SearchData }>) => this.handleSearch(e.detail)}"
         ></app-search>
 
         <md-segmented-button
           .value="${this.activeSegment}"
           @segment-change="${(e: CustomEvent) =>
-            (this.activeSegment = e.detail.value)}"
+        (this.activeSegment = e.detail.value)}"
         >
           <md-segment value="accounts">Accounts</md-segment>
           <md-segment value="trending">Trending</md-segment>
@@ -216,11 +226,11 @@ export class SearchPage extends LitElement {
 
         <div class="panel ${this.activeSegment === 'accounts' ? 'active' : ''}">
           ${this.searchData && this.searchData.accounts
-            ? html`
+        ? html`
                 <ul>
                   ${this.searchData && this.searchData.accounts
-                    ? this.searchData.accounts.map((account: any) => {
-                        return html`<li
+            ? this.searchData.accounts.map((account) => {
+              return html`<li
                           @click="${() => this.openAccount(account.id)}"
                         >
                           <div class="account">
@@ -228,11 +238,11 @@ export class SearchPage extends LitElement {
                             ${account.username}
                           </div>
                         </li>`;
-                      })
-                    : null}
+            })
+            : null}
                 </ul>
               `
-            : html`
+        : html`
                 <div class="account">
                   <md-skeleton></md-skeleton>
                 </div>
@@ -258,49 +268,49 @@ export class SearchPage extends LitElement {
         <div class="panel ${this.activeSegment === 'trending' ? 'active' : ''}">
           <ul>
             ${this.trending
-              ? this.trending.map((status: any) => {
-                  return html`<timeline-item
+        ? this.trending.map((status) => {
+          return html`<timeline-item
                     .tweet="${status}"
                   ></timeline-item>`;
-                })
-              : null}
+        })
+        : null}
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'news' ? 'active' : ''}">
           <ul id="newsList">
             ${this.trendingLinks
-              ? this.trendingLinks.map((status: any) => {
-                  return html` <li>
-                    <img src="${status.image}" alt="${status.description}" />
+        ? this.trendingLinks.map((link) => {
+          return html` <li>
+                    <img src="${link.image}" alt="${link.description}" />
 
-                    <h3>${status.title}</h3>
-                    <a href="${status.url}" target="_blank">${status.url}</a>
+                    <h3>${link.title}</h3>
+                    <a href="${link.url}" target="_blank">${link.url}</a>
 
-                    <p>${status.description}</p>
+                    <p>${link.description}</p>
                   </li>`;
-                })
-              : null}
+        })
+        : null}
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'hashtags' ? 'active' : ''}">
           ${this.searchData && this.searchData.hashtags
-            ? html`
+        ? html`
                 <ul>
                   ${this.searchData && this.searchData.hashtags
-                    ? this.searchData.hashtags.map((hashtag: any) => {
-                        return html`<li
+            ? this.searchData.hashtags.map((hashtag) => {
+              return html`<li
                           @click="${() =>
-                            this.handleHashtagClick(hashtag.name)}"
+                  this.handleHashtagClick(hashtag.name)}"
                         >
                           <div class="account">#${hashtag.name}</div>
                         </li>`;
-                      })
-                    : null}
+            })
+            : null}
                 </ul>
               `
-            : null}
+        : null}
         </div>
       </main>
     `;

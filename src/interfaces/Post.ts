@@ -25,7 +25,7 @@ export interface Post {
   application: {
     name: string;
     website: string | null;
-  };
+  } | null;
   account: Account;
   media_attachments: MediaAttachment[];
   mentions: {
@@ -64,7 +64,7 @@ export interface Post {
       votes_count: number;
     }[];
   } | null;
-  reply_to: Post;
+  reply_to?: Post;
   ancestors?: Post[];
   thread_continuation?: Post[]; // Posts that continue this thread
 }

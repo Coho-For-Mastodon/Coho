@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import './md/md-checkbox.js';
+import type { MdCheckbox } from './md/md-checkbox.js';
 
 @customElement('user-terms')
 export class UserTerms extends LitElement {
@@ -36,8 +37,8 @@ export class UserTerms extends LitElement {
     }
   }
 
-  async handleChecked(e: CustomEvent) {
-    const checkbox = e.target as any;
+  async handleChecked(e: CustomEvent<{ checked: boolean }>) {
+    const checkbox = e.target as MdCheckbox;
     const value = checkbox.value;
 
     console.log('checkbox', checkbox);
@@ -70,7 +71,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('news')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="news"
               >News</md-checkbox
             >
@@ -78,7 +79,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('technology')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="technology"
               >Technology</md-checkbox
             >
@@ -86,7 +87,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('sports')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="sports"
               >Sports</md-checkbox
             >
@@ -94,7 +95,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('politics')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="politics"
               >Politics</md-checkbox
             >
@@ -102,7 +103,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('entertainment')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="entertainment"
               >Entertainment</md-checkbox
             >
@@ -110,7 +111,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('business')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="business"
               >Business</md-checkbox
             >
@@ -118,7 +119,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('science')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="science"
               >Science</md-checkbox
             >
@@ -126,7 +127,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('health')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="health"
               >Health</md-checkbox
             >
@@ -134,7 +135,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('travel')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="travel"
               >Travel</md-checkbox
             >
@@ -142,7 +143,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('food')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="food"
               >Food</md-checkbox
             >
@@ -150,7 +151,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('fashion')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="fashion"
               >Fashion</md-checkbox
             >
@@ -158,7 +159,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('lifestyle')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="lifestyle"
               >Lifestyle</md-checkbox
             >
@@ -166,7 +167,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('art')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="art"
               >Art</md-checkbox
             >
@@ -174,7 +175,7 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('music')}"
-              @change="${($event: any) => this.handleChecked($event)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
               value="music"
               >Music</md-checkbox
             >

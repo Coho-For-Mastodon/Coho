@@ -5,6 +5,7 @@ import '../components/md/md-autocomplete';
 import '../components/md/md-button';
 import '../components/md/md-card';
 import type { AutocompleteOption } from '../components/md/md-autocomplete';
+import type { MdDialog } from '../components/md/md-dialog';
 
 // Dynamic import to avoid loading router during SSR
 const getRouter = () => import('../utils/router').then((m) => m.router);
@@ -288,12 +289,12 @@ export class AppLogin extends LitElement {
 
     await this.updateComplete;
 
-    const dialog = this.shadowRoot?.querySelector('md-dialog') as any;
+    const dialog = this.shadowRoot?.querySelector('md-dialog') as MdDialog | null;
 
-    dialog.show();
+    dialog?.show();
   }
 
-  scrollToItem(scroller: any, width: number) {
+  scrollToItem(scroller: Element, width: number) {
     const newWidth = scrollWidth + width;
     scrollWidth = newWidth;
 
@@ -305,20 +306,22 @@ export class AppLogin extends LitElement {
   }
 
   next() {
-    const scroller = this.shadowRoot?.querySelector('#intro-carousel') as any;
+    const scroller = this.shadowRoot?.querySelector('#intro-carousel');
 
-    this.scrollToItem(scroller, 1000);
+    if (scroller) {
+      this.scrollToItem(scroller, 1000);
+    }
   }
 
   async getStarted() {
-    const dialog = this.shadowRoot?.querySelector('md-dialog') as any;
-    await dialog.hide();
+    const dialog = this.shadowRoot?.querySelector('md-dialog') as MdDialog | null;
+    await dialog?.hide();
 
     scrollWidth = 0;
   }
 
-  handleServerInput(event: any) {
-    const value = event.detail?.value || event.target?.value || '';
+  handleServerInput(event: Event | CustomEvent<{ value: string }>) {
+    const value = (event as CustomEvent<{ value: string }>).detail?.value || (event.target as HTMLInputElement)?.value || '';
     this.chosenServer = value;
 
     // Debounce the search
@@ -369,8 +372,17 @@ export class AppLogin extends LitElement {
 
       if (response.ok) {
         const data = await response.json();
-        const apiInstances: AutocompleteOption[] = (data.instances || []).map(
-          (inst: any) => ({
+        interface InstanceResult {
+          name: string;
+          users?: number;
+          thumbnail?: string;
+          info?: {
+            short_description?: string;
+            full_description?: string;
+          };
+        }
+        const apiInstances: AutocompleteOption[] = ((data.instances || []) as InstanceResult[]).map(
+          (inst) => ({
             value: inst.name,
             label: inst.name,
             description:

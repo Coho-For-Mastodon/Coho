@@ -24,11 +24,15 @@ import '../components/md/md-toast';
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
 import type { MdToast } from '../components/md/md-toast';
+import type { Timeline } from '../components/timeline';
+import type { PostDialog } from '../components/post-dialog';
 
 import { styles } from '../styles/shared-styles';
 import { router } from '../utils/router';
 // import { resetLastPageID } from '../services/timeline';
 import { Post } from '../interfaces/Post';
+import type { Account } from '../mastodon/types/account';
+import type { Instance, TrendingTag } from '../mastodon/types/instance';
 import {
   checkNewNotifications,
   markNotificationsRead,
@@ -37,6 +41,8 @@ import type {
   TabChangeEvent,
   HandleSummaryEvent,
   HandleTranslatingEvent,
+  RepliesEvent,
+  ColorChosenEvent,
 } from '../types/events';
 
 @customElement('app-home')
@@ -45,13 +51,13 @@ export class AppHome extends LitElement {
   // check out this link https://lit.dev/docs/components/properties/
   @property() message = 'Welcome!';
 
-  @state() user: any | null = null;
+  @state() user: Account | null = null;
   @state() attachmentID: string | null = null;
   @state() attachmentPreview: string | null = null;
-  @state() replies: any[] = [];
+  @state() replies: Post[] = [];
   @state() replyID: string | null = null;
   @state() primary_color: string = '#000000';
-  @state() instanceInfo: any | null = null;
+  @state() instanceInfo: Instance | null = null;
 
   @state() wellnessMode: boolean = false;
   @state() dataSaverMode: boolean = false;
@@ -67,7 +73,7 @@ export class AppHome extends LitElement {
 
   @state() hasNewNotifications: boolean = false;
 
-  @state() trendingTags: any[] = [];
+  @state() trendingTags: TrendingTag[] = [];
 
   // Lazy loading states for tabs
   @state() bookmarksLoaded: boolean = false;
@@ -93,6 +99,8 @@ export class AppHome extends LitElement {
   @query('#translation-toast') private translationToast!: MdToast;
   @query('#summary-dialog') private summaryDialog!: MdDialog;
   @query('#open-tweet-dialog') private openTweetDialog!: MdDialog;
+  @query('.homeTimeline') private homeTimeline!: Timeline;
+  @query('post-dialog') private postDialog!: PostDialog;
 
   static get styles() {
     return [
@@ -908,8 +916,8 @@ export class AppHome extends LitElement {
   }
 
   share() {
-    if ((navigator as any).share) {
-      (navigator as any).share({
+    if (navigator.share) {
+      navigator.share({
         title: 'PWABuilder pwa-starter',
         text: 'Check out the PWABuilder pwa-starter!',
         url: 'https://github.com/pwa-builder/pwa-starter',
@@ -923,8 +931,7 @@ export class AppHome extends LitElement {
     await import('../components/post-dialog');
     // const dialog = this.shadowRoot?.getElementById('notify-dialog') as any;
     // dialog.show();
-    const dialog: any = this.shadowRoot?.querySelector('post-dialog');
-    dialog?.openNewDialog();
+    this.postDialog?.openNewDialog();
     // }
     // else {
     //   const drawer = this.shadowRoot?.getElementById('reply-drawer') as any;
@@ -948,10 +955,12 @@ export class AppHome extends LitElement {
   }
 
   async goToFollowers() {
+    if (!this.user) return;
     router.navigate(`/followers?id=${this.user.id}`);
   }
 
   async goToFollowing() {
+    if (!this.user) return;
     router.navigate(`/following?id=${this.user.id}`);
   }
 
@@ -974,9 +983,10 @@ export class AppHome extends LitElement {
   }
 
   async replyToAStatus() {
-    const replyValue = (
-      this.shadowRoot?.querySelector('#reply-post-actions sl-input') as any
-    ).value;
+    const replyInput = this.shadowRoot?.querySelector(
+      '#reply-post-actions sl-input'
+    ) as HTMLInputElement | null;
+    const replyValue = replyInput?.value;
 
     if (this.replyID && replyValue) {
       const { reply } = await import('../services/timeline');
@@ -990,18 +1000,23 @@ export class AppHome extends LitElement {
   }
 
   doFocusMode() {
-    const main = this.shadowRoot?.querySelector('main') as any;
+    const main = this.shadowRoot?.querySelector('main');
+    if (!main) return;
 
     main.classList.toggle('focus');
 
-    const profile = this.shadowRoot?.querySelector('#profile') as any;
-    profile.style.display = profile.style.display === 'none' ? 'flex' : 'none';
+    const profile = this.shadowRoot?.querySelector('#profile') as HTMLElement | null;
+    if (profile) {
+      profile.style.display = profile.style.display === 'none' ? 'flex' : 'none';
+    }
 
-    const appTimeline = this.shadowRoot?.querySelector('app-timeline') as any;
-    appTimeline.style.position =
-      appTimeline.style.position === 'fixed' ? 'relative' : 'fixed';
-    appTimeline.style.left = appTimeline.style.left === '11vw' ? '0' : '11vw';
-    appTimeline.style.right = appTimeline.style.right === '11vw' ? '0' : '11vw';
+    const appTimeline = this.shadowRoot?.querySelector('app-timeline') as HTMLElement | null;
+    if (appTimeline) {
+      appTimeline.style.position =
+        appTimeline.style.position === 'fixed' ? 'relative' : 'fixed';
+      appTimeline.style.left = appTimeline.style.left === '11vw' ? '0' : '11vw';
+      appTimeline.style.right = appTimeline.style.right === '11vw' ? '0' : '11vw';
+    }
   }
 
   async handleWellnessMode(check: boolean) {
@@ -1039,9 +1054,10 @@ export class AppHome extends LitElement {
   }
 
   async shareMyProfile() {
+    if (!this.user) return;
     // share my profile
-    if ((navigator as any).share) {
-      await (navigator as any).share({
+    if (navigator.share) {
+      await navigator.share({
         title: 'My Mastodon Profile',
         text: 'Check out my Mastodon profile!',
         url: this.user.url,
@@ -1053,6 +1069,7 @@ export class AppHome extends LitElement {
   }
 
   viewMyProfile() {
+    if (!this.user) return;
     router.navigate(`/account?id=${this.user.id}`);
   }
 
@@ -1065,8 +1082,7 @@ export class AppHome extends LitElement {
     // Clear cache to ensure fresh timeline after posting
     clearTimelineCache();
 
-    const timeline = this.shadowRoot?.querySelector('.homeTimeline') as any;
-    timeline.refreshTimeline(true); // Pass true to skip saving stale cache
+    this.homeTimeline?.refreshTimeline(true); // Pass true to skip saving stale cache
   }
 
   openBotDrawer() {
@@ -1086,7 +1102,7 @@ export class AppHome extends LitElement {
     this.summaryDialog?.show();
   }
 
-  onMoveHandler(ev: any, dialog: any) {
+  onMoveHandler(ev: { deltaX: number }, dialog: HTMLElement & { hide(): void }) {
     console.log('ev', ev);
 
     dialog.style.transform = `translateX(${ev.deltaX}px)`;
@@ -1121,8 +1137,7 @@ export class AppHome extends LitElement {
   }
 
   reloadHome() {
-    const homeTimeline = this.shadowRoot?.querySelector('.homeTimeline') as any;
-    homeTimeline.refreshTimeline();
+    this.homeTimeline?.refreshTimeline();
   }
 
   // Lazy loading methods for tab components
@@ -1192,8 +1207,8 @@ export class AppHome extends LitElement {
         await this.loadNotifications();
         this.hasNewNotifications = false;
         await markNotificationsRead();
-        if ('clearAppBadge' in navigator) {
-          (navigator as any).clearAppBadge();
+        if (navigator.clearAppBadge) {
+          navigator.clearAppBadge();
         }
         break;
       case 'search':
@@ -1279,21 +1294,21 @@ export class AppHome extends LitElement {
 
       <otter-drawer label="Theming" id="theming-drawer">
         ${this.appThemeLoaded
-          ? html`
+        ? html`
               <app-theme
-                @color-chosen="${($event: any) =>
-                  this.handlePrimaryColor($event.detail.color)}"
+                @color-chosen="${($event: ColorChosenEvent) =>
+            this.handlePrimaryColor($event.detail.color)}"
               ></app-theme>
             `
-          : nothing}
+        : nothing}
       </otter-drawer>
 
       <md-dialog id="summary-dialog" label=""> ${this.summary} </md-dialog>
 
       <md-dialog id="open-tweet-dialog">
         ${this.openTweet
-          ? html`<post-detail .passed_tweet="${this.openTweet}"></post-detail>`
-          : null}
+        ? html`<post-detail .passed_tweet="${this.openTweet}"></post-detail>`
+        : null}
       </md-dialog>
 
       <post-dialog @published="${() => this.handleReload()}"></post-dialog>
@@ -1302,8 +1317,8 @@ export class AppHome extends LitElement {
         <div>
           <div id="settings-profile-inner">
             ${this.user && this.user.avatar
-              ? html`<img src="${this.user.avatar}" />`
-              : html`<md-skeleton
+        ? html`<img src="${this.user.avatar}" />`
+        : html`<md-skeleton
                   id="profile-avatar"
                   shape="circle"
                   width="4em"
@@ -1372,8 +1387,8 @@ export class AppHome extends LitElement {
             <h4>Wellness Mode</h4>
 
             <md-switch
-              @sl-change="${($event: any) =>
-                this.handleWellnessMode($event.target.checked)}"
+              @sl-change="${(e: Event) =>
+        this.handleWellnessMode((e.target as HTMLInputElement).checked)}"
               ?checked="${this.wellnessMode}"
             ></md-switch>
           </div>
@@ -1386,8 +1401,8 @@ export class AppHome extends LitElement {
             <h4>Data Saver Mode</h4>
 
             <md-switch
-              @sl-change="${($event: any) =>
-                this.handleDataSaverMode($event.target.checked)}"
+              @sl-change="${(e: Event) =>
+        this.handleDataSaverMode((e.target as HTMLInputElement).checked)}"
               ?checked="${this.dataSaverMode}"
             ></md-switch>
           </div>
@@ -1412,32 +1427,34 @@ export class AppHome extends LitElement {
         </div>
 
         ${this.instanceInfo
-          ? html`
+        ? html`
               <div id="instanceInfo">
                 <h4>Instance Info</h4>
 
-                <img src="${this.instanceInfo.thumbnail}" />
+                ${this.instanceInfo.thumbnail
+            ? html`<img src="${this.instanceInfo.thumbnail}" />`
+            : nothing}
                 <p>${this.instanceInfo.title}</p>
 
                 <div .innerHTML="${this.instanceInfo.description}"></div>
               </div>
             `
-          : null}
+        : null}
       </otter-drawer>
 
       <otter-drawer id="replies-drawer" placement="end" label="Comments">
         ${this.replies.length > 0
-          ? html`<ul>
-              ${this.replies.map((reply: any) => {
-                return html`
+        ? html`<ul>
+              ${this.replies.map((reply) => {
+          return html`
                   <timeline-item
                     ?show="${false}"
                     .tweet="${reply}"
                   ></timeline-item>
                 `;
-              })}
+        })}
             </ul>`
-          : html`
+        : html`
               <div id="no-replies">
                 <p>No comments yet.</p>
               </div>
@@ -1470,8 +1487,8 @@ export class AppHome extends LitElement {
             ></md-icon>
             <span class="tab-label">Notifications</span>
             ${this.hasNewNotifications
-              ? html`<span class="notification-dot"></span>`
-              : nothing}
+        ? html`<span class="notification-dot"></span>`
+        : nothing}
           </md-tab>
           <md-tab slot="nav" panel="bookmarks">
             <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
@@ -1501,14 +1518,14 @@ export class AppHome extends LitElement {
           <md-tab-panel name="general">
             <app-timeline
               @open="${($event: CustomEvent) =>
-                this.handleOpenTweet($event.detail.tweet)}"
-              @handle-summary="${($event: any) => this.showSummary($event)}"
-              @handle-translating="${($event: any) =>
-                this.handleTranslating($event)}"
+        this.handleOpenTweet($event.detail.tweet)}"
+              @handle-summary="${($event: HandleSummaryEvent) => this.showSummary($event)}"
+              @handle-translating="${($event: HandleTranslatingEvent) =>
+        this.handleTranslating($event)}"
               class="homeTimeline"
               timelineType="home"
-              @replies="${($event: any) =>
-                this.handleReplies($event.detail.data, $event.detail.id)}"
+              @replies="${($event: RepliesEvent) =>
+        this.handleReplies($event.detail.data, $event.detail.id ?? '')}"
             ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="media">
@@ -1522,21 +1539,21 @@ export class AppHome extends LitElement {
           </md-tab-panel>
           <md-tab-panel name="bookmarks">
             ${this.bookmarksLoaded
-              ? html`<app-bookmarks></app-bookmarks>`
-              : nothing}
+        ? html`<app-bookmarks></app-bookmarks>`
+        : nothing}
           </md-tab-panel>
           <md-tab-panel name="faves">
             ${this.favoritesLoaded
-              ? html`<app-favorites></app-favorites>`
-              : nothing}
+        ? html`<app-favorites></app-favorites>`
+        : nothing}
           </md-tab-panel>
           <md-tab-panel name="notifications">
             ${this.notificationsLoaded
-              ? html`<app-notifications
+        ? html`<app-notifications
                   @open="${($event: CustomEvent) =>
-                    this.handleOpenTweet($event.detail.tweet)}"
+            this.handleOpenTweet($event.detail.tweet)}"
                 ></app-notifications>`
-              : nothing}
+        : nothing}
           </md-tab-panel>
           <md-tab-panel name="search">
             ${this.searchLoaded ? html`<search-page></search-page>` : nothing}
@@ -1547,8 +1564,8 @@ export class AppHome extends LitElement {
           <div class="sidebar-card">
             <div id="profile-card-content">
               ${this.user && this.user.avatar
-                ? html`<img src="${this.user.avatar}" />`
-                : html`<md-skeleton
+        ? html`<img src="${this.user.avatar}" />`
+        : html`<md-skeleton
                     id="profile-avatar"
                     shape="circle"
                     width="80px"
@@ -1558,8 +1575,8 @@ export class AppHome extends LitElement {
               <div id="username-block">
                 <h3>
                   ${this.user
-                    ? this.user.display_name
-                    : html`<md-skeleton
+        ? this.user.display_name
+        : html`<md-skeleton
                         width="100px"
                         height="25px"
                       ></md-skeleton>`}
@@ -1596,8 +1613,8 @@ export class AppHome extends LitElement {
 
               <p id="user-url">
                 ${this.user
-                  ? this.user.url
-                  : html`<md-skeleton
+        ? this.user.url
+        : html`<md-skeleton
                       width="100px"
                       height="19px"
                     ></md-skeleton>`}
@@ -1621,15 +1638,15 @@ export class AppHome extends LitElement {
           </div>
 
           ${this.trendingTags && this.trendingTags.length > 0
-            ? html`
+        ? html`
                 <div class="sidebar-card">
                   <h3>Trending Tags</h3>
                   ${this.trendingTags.slice(0, 5).map(
-                    (tag: any) => html`
+          (tag) => html`
                       <div
                         class="trending-item"
                         @click="${() =>
-                          router.navigate(`/hashtag?tag=${tag.name}`)}"
+              router.navigate(`/hashtag?tag=${tag.name}`)}"
                       >
                         <span class="tag">#${tag.name}</span>
                         <span class="count"
@@ -1637,10 +1654,10 @@ export class AppHome extends LitElement {
                         >
                       </div>
                     `
-                  )}
+        )}
                 </div>
               `
-            : nothing}
+        : nothing}
         </div>
 
         <div id="mobile-actions">

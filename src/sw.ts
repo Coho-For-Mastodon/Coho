@@ -8,9 +8,15 @@ import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import * as navigationPreload from 'workbox-navigation-preload';
 import { get, set } from 'idb-keyval';
 
+// Type augmentation for Badging API (not yet in all TypeScript libs)
+interface NavigatorBadge {
+  setAppBadge(contents?: number): Promise<void>;
+  clearAppBadge(): Promise<void>;
+}
+
 // Type augmentation for Service Worker
 declare const self: ServiceWorkerGlobalScope & {
-  __WB_MANIFEST: any;
+  __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
   idbKeyval: {
     get: typeof get;
     set: typeof set;
@@ -22,6 +28,9 @@ declare const self: ServiceWorkerGlobalScope & {
     ) => Promise<void>;
   };
 };
+
+// Navigator with Badging API support
+const badgingNavigator = navigator as Navigator & Partial<NavigatorBadge>;
 
 // Make idb-keyval available on self for backwards compatibility
 self.idbKeyval = { get, set };
@@ -89,6 +98,11 @@ interface NotificationAction {
   title: string;
 }
 
+// PeriodicSyncEvent interface (not yet in TypeScript lib)
+interface PeriodicSyncEvent extends ExtendableEvent {
+  tag: string;
+}
+
 // Enable navigation preload for supporting browsers (production only)
 if (!IS_DEV) {
   navigationPreload.enable();
@@ -105,14 +119,14 @@ const navigationRoute = new NavigationRoute(
 
 registerRoute(navigationRoute);
 
-addEventListener('message', (event) => {
+self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 
   if (event.data && event.data.type === 'WARM_CACHE') {
     // Warm cache on app boot if network conditions are good
-    (event as any).waitUntil(warmCache());
+    event.waitUntil(warmCache());
   }
 });
 
@@ -197,7 +211,7 @@ const getNotifications = async (): Promise<void> => {
   if (notifyCheck) {
     // show badge
     if ('setAppBadge' in navigator) {
-      (navigator as any).setAppBadge(data.length);
+      badgingNavigator.setAppBadge?.(data.length);
     }
 
     // build message for notification
@@ -251,7 +265,7 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close();
 
   if ('clearAppBadge' in navigator) {
-    (navigator as any).clearAppBadge();
+    badgingNavigator.clearAppBadge?.();
   }
 
   const notificationData = event.notification.data;
@@ -299,7 +313,7 @@ self.addEventListener('push', async (event: PushEvent) => {
 
   // show badge
   if ('setAppBadge' in navigator) {
-    (navigator as any).setAppBadge(1);
+    badgingNavigator.setAppBadge?.(1);
   }
 
   // Build actions based on notification type
@@ -429,7 +443,7 @@ const warmCache = async (): Promise<void> => {
 
 // periodic background sync
 self.addEventListener('periodicsync', async (event: Event) => {
-  const periodicSyncEvent = event as any; // PeriodicSyncEvent not yet in TypeScript lib
+  const periodicSyncEvent = event as PeriodicSyncEvent;
 
   switch (periodicSyncEvent.tag) {
     case 'get-notifications':
@@ -471,6 +485,8 @@ async function shareTargetHandler({
   return Response.redirect(`/home?name=${mediaFiles[0].name}`, 303);
 }
 
+// Workbox registerRoute expects a specific handler signature that differs from our implementation
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 registerRoute('/share', shareTargetHandler as any, 'POST');
 
 // Only register caching routes in production

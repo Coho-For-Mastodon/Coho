@@ -279,7 +279,7 @@ export class MdTab extends LitElement {
 
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      this._handleClick(e as any);
+      this._handleClick(e as unknown as MouseEvent);
     }
   }
 

@@ -271,7 +271,7 @@ export class AppTheme extends LitElement {
   }
 
   async customColor() {
-    const eyeDropper = new (window as any).EyeDropper();
+    const eyeDropper = new window.EyeDropper();
 
     const color = await eyeDropper.open();
     this.chooseColor(color.sRGBHex);
@@ -331,10 +331,10 @@ export class AppTheme extends LitElement {
             ></div>
 
             ${'EyeDropper' in window
-              ? html`<md-button circle @click="${() => this.customColor()}">
+        ? html`<md-button circle @click="${() => this.customColor()}">
                   <md-icon src="/assets/add-outline.svg"></md-icon>
                 </md-button>`
-              : null}
+        : null}
           </div>
         </div>
       </div>

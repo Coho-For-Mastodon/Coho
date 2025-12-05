@@ -204,7 +204,7 @@ export class Notifications extends LitElement {
           }
 
           if ('clearAppBadge' in navigator) {
-            navigator.clearAppBadge();
+            navigator.clearAppBadge?.();
           }
 
           observer.disconnect();
@@ -244,7 +244,8 @@ export class Notifications extends LitElement {
     }
   }
 
-  async openPost(tweet: Post) {
+  async openPost(tweet: Post | undefined) {
+    if (!tweet) return;
     const serialized = encodeURIComponent(JSON.stringify(tweet));
     await router.navigate(`/home/post?${serialized}`);
   }
@@ -255,7 +256,7 @@ export class Notifications extends LitElement {
         <div id="notify-inner">
           <md-switch
             ?checked="${this.subbed}"
-            @change="${($event: any) => this.sub($event.target.checked)}"
+            @change="${(e: CustomEvent<{ checked: boolean }>) => this.sub(e.detail.checked)}"
             >Notifications</md-switch
           >
         </div>
@@ -271,7 +272,7 @@ export class Notifications extends LitElement {
       <md-segmented-button
         .value="${this.activeSegment}"
         @segment-change="${(e: CustomEvent) =>
-          (this.activeSegment = e.detail.value)}"
+        (this.activeSegment = e.detail.value)}"
       >
         <md-segment value="all">All</md-segment>
         <md-segment value="mentions">Mentions</md-segment>
@@ -281,10 +282,10 @@ export class Notifications extends LitElement {
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
         <ul>
           ${this.notifications && this.notifications.length > 0
-            ? this.notifications.map((notification: any) => {
-                return html`
+        ? this.notifications.map((notification) => {
+          return html`
                   ${notification.type === 'follow'
-                    ? html`
+              ? html`
                         <li class="follow">
                           <div>
                             <user-profile
@@ -296,9 +297,9 @@ export class Notifications extends LitElement {
                           </div>
                         </li>
                       `
-                    : null}
+              : null}
                   ${notification.type === 'reblog'
-                    ? html`
+              ? html`
                         <li
                           class="reblog"
                           @click="${() => this.openPost(notification.status)}"
@@ -315,15 +316,15 @@ export class Notifications extends LitElement {
                           <div
                             class="content-item"
                             .innerHTML="${parseEmojis(
-                              notification.status.content || '',
-                              notification.status.emojis || []
-                            )}"
+                notification.status?.content || '',
+                notification.status?.emojis || []
+              )}"
                           ></div>
                         </li>
                       `
-                    : null}
+              : null}
                   ${notification.type === 'favourite'
-                    ? html`
+              ? html`
                         <li
                           class="favourite"
                           @click="${() => this.openPost(notification.status)}"
@@ -340,15 +341,15 @@ export class Notifications extends LitElement {
                           <div
                             class="content-item"
                             .innerHTML="${parseEmojis(
-                              notification.status.content || '',
-                              notification.status.emojis || []
-                            )}"
+                notification.status?.content || '',
+                notification.status?.emojis || []
+              )}"
                           ></div>
                         </li>
                       `
-                    : null}
+              : null}
                   ${notification.type === 'mention'
-                    ? html`
+              ? html`
                         <li
                           class="mention"
                           @click="${() => this.openPost(notification.status)}"
@@ -365,15 +366,15 @@ export class Notifications extends LitElement {
                           <div
                             class="content-item"
                             .innerHTML="${parseEmojis(
-                              notification.status.content || '',
-                              notification.status.emojis || []
-                            )}"
+                notification.status?.content || '',
+                notification.status?.emojis || []
+              )}"
                           ></div>
                         </li>
                       `
-                    : null}
+              : null}
                   ${notification.type === 'update'
-                    ? html`
+              ? html`
                         <li
                           class="edit"
                           @click="${() => this.openPost(notification.status)}"
@@ -390,16 +391,16 @@ export class Notifications extends LitElement {
                           <div
                             class="content-item"
                             .innerHTML="${parseEmojis(
-                              notification.status.content || '',
-                              notification.status.emojis || []
-                            )}"
+                notification.status?.content || '',
+                notification.status?.emojis || []
+              )}"
                           ></div>
                         </li>
                       `
-                    : null}
+              : null}
                 `;
-              })
-            : html`
+        })
+        : html`
                 <li id="no">
                   <img src="/assets/notify-done.svg" alt="no notifications" />
                   <p>No notifications</p>
@@ -411,10 +412,10 @@ export class Notifications extends LitElement {
       <div class="panel ${this.activeSegment === 'mentions' ? 'active' : ''}">
         <ul>
           ${this.notifications && this.notifications.length > 0
-            ? this.notifications.map((notification: any) => {
-                return html`
+        ? this.notifications.map((notification) => {
+          return html`
                   ${notification.type === 'mention'
-                    ? html`
+              ? html`
                         <li
                           class="mention"
                           @click="${() => this.openPost(notification.status)}"
@@ -431,16 +432,16 @@ export class Notifications extends LitElement {
                           <div
                             class="content-item"
                             .innerHTML="${parseEmojis(
-                              notification.status.content || '',
-                              notification.status.emojis || []
-                            )}"
+                notification.status?.content || '',
+                notification.status?.emojis || []
+              )}"
                           ></div>
                         </li>
                       `
-                    : null}
+              : null}
                 `;
-              })
-            : html`
+        })
+        : html`
                 <li id="no">
                   <img src="/assets/notify-done.svg" alt="no notifications" />
                   <p>No notifications</p>
@@ -452,10 +453,10 @@ export class Notifications extends LitElement {
       <div class="panel ${this.activeSegment === 'follows' ? 'active' : ''}">
         <ul>
           ${this.notifications && this.notifications.length > 0
-            ? this.notifications.map((notification: any) => {
-                return html`
+        ? this.notifications.map((notification) => {
+          return html`
                   ${notification.type === 'follow'
-                    ? html`
+              ? html`
                         <li class="follow">
                           <div>
                             <user-profile
@@ -467,10 +468,10 @@ export class Notifications extends LitElement {
                           </div>
                         </li>
                       `
-                    : null}
+              : null}
                 `;
-              })
-            : html`
+        })
+        : html`
                 <li id="no">
                   <img src="/assets/notify-done.svg" alt="no notifications" />
                   <p>No notifications</p>

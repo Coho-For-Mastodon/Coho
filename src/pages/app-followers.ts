@@ -3,10 +3,11 @@ import { customElement, state } from 'lit/decorators.js';
 import { getUsersFollowers } from '../services/account';
 
 import '../components/user-profile';
+import type { Account } from '../mastodon/types';
 
 @customElement('app-followers')
 export class AppFollowers extends LitElement {
-  @state() followers: any[] = [];
+  @state() followers: Account[] = [];
 
   static styles = [
     css`
@@ -107,17 +108,17 @@ export class AppFollowers extends LitElement {
       <main>
         <h2>Your Followers</h2>
         <ul class="scrollbar-hidden">
-          ${this.followers.map((follower: any) => {
-            return html`
+          ${this.followers.map((follower) => {
+      return html`
               ${follower && follower.id
-                ? html`<li>
+          ? html`<li>
                     <a href="/account?id=${follower.id}">
                       <user-profile .account=${follower}></user-profile>
                     </a>
                   </li>`
-                : null}
+          : null}
             `;
-          })}
+    })}
         </ul>
       </main>
     `;

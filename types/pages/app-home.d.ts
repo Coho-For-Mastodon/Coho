@@ -18,15 +18,18 @@ import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/md/md-toast';
 import { Post } from '../interfaces/Post';
+import type { Account } from '../mastodon/types/account';
+import type { Instance, TrendingTag } from '../mastodon/types/instance';
+import type { TabChangeEvent, HandleSummaryEvent, HandleTranslatingEvent } from '../types/events';
 export declare class AppHome extends LitElement {
     message: string;
-    user: any | null;
+    user: Account | null;
     attachmentID: string | null;
     attachmentPreview: string | null;
-    replies: any[];
+    replies: Post[];
     replyID: string | null;
     primary_color: string;
-    instanceInfo: any | null;
+    instanceInfo: Instance | null;
     wellnessMode: boolean;
     dataSaverMode: boolean;
     sensitiveMode: boolean;
@@ -35,7 +38,7 @@ export declare class AppHome extends LitElement {
     openTweet: Post | null;
     homeLoad: boolean;
     hasNewNotifications: boolean;
-    trendingTags: any[];
+    trendingTags: TrendingTag[];
     bookmarksLoaded: boolean;
     favoritesLoaded: boolean;
     notificationsLoaded: boolean;
@@ -46,6 +49,15 @@ export declare class AppHome extends LitElement {
     activeTab: string;
     tabsOrientation: 'horizontal' | 'vertical';
     tabsPlacement: 'top' | 'bottom' | 'start' | 'end';
+    private settingsDrawer;
+    private repliesDrawer;
+    private themingDrawer;
+    private botDrawer;
+    private translationToast;
+    private summaryDialog;
+    private openTweetDialog;
+    private homeTimeline;
+    private postDialog;
     static get styles(): import("lit").CSSResult[];
     constructor();
     firstUpdated(): Promise<void>;
@@ -57,7 +69,7 @@ export declare class AppHome extends LitElement {
     goToFollowers(): Promise<void>;
     goToFollowing(): Promise<void>;
     openSettingsDrawer(): Promise<void>;
-    handleReplies(replies: any[], id: string): Promise<void>;
+    handleReplies(replies: Post[], id: string): Promise<void>;
     replyToAStatus(): Promise<void>;
     openThemingDrawer(): Promise<void>;
     doFocusMode(): void;
@@ -71,8 +83,12 @@ export declare class AppHome extends LitElement {
     editMyProfile(): void;
     handleReload(): Promise<void>;
     openBotDrawer(): void;
-    showSummary($event: any): void;
-    onMoveHandler(ev: any, dialog: any): void;
+    showSummary($event: HandleSummaryEvent): void;
+    onMoveHandler(ev: {
+        deltaX: number;
+    }, dialog: HTMLElement & {
+        hide(): void;
+    }): void;
     handleOpenTweet(tweet: Post): Promise<void>;
     disconnectedCallback(): Promise<void>;
     reloadHome(): void;
@@ -83,7 +99,7 @@ export declare class AppHome extends LitElement {
     loadAppTheme(): Promise<void>;
     loadUserTerms(): Promise<void>;
     loadRightClick(): Promise<void>;
-    handleTabChange(event: CustomEvent): Promise<void>;
-    handleTranslating(_event: any): Promise<void>;
+    handleTabChange(event: TabChangeEvent): Promise<void>;
+    handleTranslating(_event: HandleTranslatingEvent): Promise<void>;
     render(): import("lit-html").TemplateResult<1>;
 }

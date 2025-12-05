@@ -262,7 +262,7 @@ export class MdDialog extends LitElement {
     `;
   }
 
-  updated(changedProperties: Map<string, any>) {
+  updated(changedProperties: Map<PropertyKey, unknown>) {
     if (changedProperties.has('open')) {
       if (this.open) {
         this.show();

@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 
 import './md/md-text-field';
 import './md/md-text-area';
@@ -7,11 +7,23 @@ import './md/md-checkbox';
 import './md/md-button';
 import { editAccount, getCurrentUser } from '../services/account';
 import { fileOpen } from 'browser-fs-access';
+import type { MdTextField } from './md/md-text-field';
+import type { MdTextArea } from './md/md-text-area';
+import type { MdCheckbox } from './md/md-checkbox';
 
 @customElement('edit-account')
 export class EditAccount extends LitElement {
   @state() newAvatar: File | null = null;
   @state() newHeader: File | null = null;
+
+  @query('#display_name') private displayNameField!: MdTextField;
+  @query('#note') private noteField!: MdTextArea;
+  @query('#locked') private lockedCheckbox!: MdCheckbox;
+  @query('#bot') private botCheckbox!: MdCheckbox;
+  @query('#avatar-preview') private avatarPreview!: HTMLImageElement;
+  @query('#header-preview') private headerPreview!: HTMLImageElement;
+  @query('#avatar') private avatarInput!: HTMLInputElement;
+  @query('#header') private headerInput!: HTMLInputElement;
 
   static styles = [
     css`
@@ -83,64 +95,54 @@ export class EditAccount extends LitElement {
   async resetForm() {
     const currentUser = await getCurrentUser();
 
-    const displayNameField = this.shadowRoot?.querySelector(
-      '#display_name'
-    ) as any;
-    if (displayNameField) {
-      displayNameField.value = currentUser.display_name;
+    if (this.displayNameField) {
+      this.displayNameField.value = currentUser.display_name;
     }
 
-    const noteField = this.shadowRoot?.querySelector('#note') as any;
-    if (noteField) {
-      noteField.value = currentUser.note;
+    if (this.noteField) {
+      this.noteField.value = currentUser.note;
     }
 
-    const lockedCheckbox = this.shadowRoot?.querySelector('#locked') as any;
-    if (lockedCheckbox) {
-      lockedCheckbox.checked = currentUser.locked;
+    if (this.lockedCheckbox) {
+      this.lockedCheckbox.checked = currentUser.locked;
     }
 
-    const botCheckbox = this.shadowRoot?.querySelector('#bot') as any;
-    if (botCheckbox) {
-      botCheckbox.checked = currentUser.bot;
+    if (this.botCheckbox) {
+      this.botCheckbox.checked = currentUser.bot;
     }
 
-    const avatarPreview = this.shadowRoot?.querySelector('#avatar-preview');
-    if (avatarPreview) {
-      avatarPreview.setAttribute('src', currentUser.avatar);
+    if (this.avatarPreview) {
+      this.avatarPreview.src = currentUser.avatar;
     }
 
-    const headerPreview = this.shadowRoot?.querySelector('#header-preview');
-    if (headerPreview) {
-      headerPreview.setAttribute('src', currentUser.header);
+    if (this.headerPreview) {
+      this.headerPreview.src = currentUser.header;
     }
 
-    const avatarInput = this.shadowRoot?.querySelector('#avatar');
-    if (avatarInput) {
-      avatarInput.addEventListener('change', (e) => {
+    if (this.avatarInput) {
+      this.avatarInput.addEventListener('change', (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.addEventListener('load', () => {
-          if (avatarPreview) {
-            avatarPreview.setAttribute('src', reader.result as string);
+          if (this.avatarPreview) {
+            this.avatarPreview.src = reader.result as string;
           }
         });
         reader.readAsDataURL(file);
       });
     }
 
-    const headerInput = this.shadowRoot?.querySelector('#header');
-    if (headerInput) {
-      headerInput.addEventListener('change', (e) => {
+    if (this.headerInput) {
+      this.headerInput.addEventListener('change', (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.addEventListener('load', () => {
-          if (headerPreview) {
-            headerPreview.setAttribute('src', reader.result as string);
+          if (this.headerPreview) {
+            this.headerPreview.src = reader.result as string;
           }
         });
         reader.readAsDataURL(file);
@@ -149,18 +151,11 @@ export class EditAccount extends LitElement {
   }
 
   async submitProfile() {
-    const displayNameField = this.shadowRoot?.querySelector(
-      '#display_name'
-    ) as any;
-    const noteField = this.shadowRoot?.querySelector('#note') as any;
-    const lockedCheckbox = this.shadowRoot?.querySelector('#locked') as any;
-    const botCheckbox = this.shadowRoot?.querySelector('#bot') as any;
-
     const data = {
-      display_name: displayNameField?.value || '',
-      note: noteField?.value || '',
-      locked: lockedCheckbox?.checked ? 'true' : 'false',
-      bot: botCheckbox?.checked ? 'true' : 'false',
+      display_name: this.displayNameField?.value || '',
+      note: this.noteField?.value || '',
+      locked: this.lockedCheckbox?.checked ? 'true' : 'false',
+      bot: this.botCheckbox?.checked ? 'true' : 'false',
       avatar: this.newAvatar,
       header: this.newHeader,
     };

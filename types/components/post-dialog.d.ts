@@ -36,6 +36,10 @@ export declare class PostDialog extends LitElement {
     proofreadResult: ProofreadResult | null;
     proofreaderAvailable: boolean;
     aiBlob: Blob | undefined;
+    private notifyDialog;
+    private postTextArea;
+    private promptTextField;
+    private sensitiveInput;
     static styles: import("lit").CSSResult[];
     protected firstUpdated(): Promise<void>;
     openNewDialog(): Promise<void>;
@@ -48,7 +52,7 @@ export declare class PostDialog extends LitElement {
     doAIImage(prompt: string): Promise<void>;
     openAIPrompt(): Promise<void>;
     generateStatus(): Promise<void>;
-    handleStatus(ev: any): void;
+    handleStatus(ev: Event): void;
     doProofread(): Promise<void>;
     applyCorrections(): void;
     dismissProofread(): void;

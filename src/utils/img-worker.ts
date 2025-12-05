@@ -3,7 +3,11 @@ import { decodeBlurHash } from 'fast-blurhash';
 console.log('🚀 Worker script loaded at', Date.now());
 
 const canvas = new OffscreenCanvas(1, 1);
-const ctx: any = canvas.getContext('2d');
+const ctx = canvas.getContext('2d');
+
+if (!ctx) {
+  throw new Error('Failed to get 2d context from OffscreenCanvas');
+}
 
 self.onmessage = (e) => {
   const workerReceiveTime = Date.now();

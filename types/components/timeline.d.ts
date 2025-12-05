@@ -1,5 +1,25 @@
 import { LitElement, PropertyValues } from 'lit';
 import { Post } from '../interfaces/Post';
+import type { HandleSummaryDetail, HandleTranslatingDetail } from '../types/events';
+interface AnalyzeEntity {
+    text: string;
+    category: string;
+    confidenceScore: number;
+}
+interface AnalyzeData {
+    results?: {
+        documents?: Array<{
+            entities?: AnalyzeEntity[];
+        }>;
+    };
+}
+interface ImageAnalyzeData {
+    descriptionResult?: {
+        values?: Array<{
+            text: string;
+        }>;
+    };
+}
 import '../components/md/md-dialog';
 import '../components/md/md-button';
 import '../components/md/md-icon';
@@ -15,7 +35,7 @@ export declare class Timeline extends LitElement {
     loadingData: boolean;
     lastScrollPosition: number;
     imgPreview: string | undefined;
-    analyzeData: any | undefined;
+    analyzeData: AnalyzeEntity[] | null;
     imageDesc: string | undefined;
     analyzeTweet: Post | null;
     isRefreshing: boolean;
@@ -44,10 +64,11 @@ export declare class Timeline extends LitElement {
     loadMore(): Promise<void>;
     handleReplies(data: Array<Post>): void;
     showImage(imageURL: string): Promise<void>;
-    showAnalyze(data: any, imageData: any, tweet: any): Promise<void>;
+    showAnalyze(data: AnalyzeData, imageData: ImageAnalyzeData | null, tweet: Post): Promise<void>;
     changeTimelineType(type: 'home' | 'public' | 'media' | 'for you' | 'home and some trending'): Promise<void>;
-    handleSummary($event: any): void;
-    handleTranslating($event: any): void;
-    handleOpen(tweet: any): void;
+    handleSummary($event: CustomEvent<HandleSummaryDetail>): void;
+    handleTranslating($event: CustomEvent<HandleTranslatingDetail>): void;
+    handleOpen(tweet: Post): void;
     render(): import("lit-html").TemplateResult<1>;
 }
+export {};

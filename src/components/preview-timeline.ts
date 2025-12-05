@@ -66,11 +66,11 @@ export class PreviewTimeline extends LitElement {
         part="list"
         scroller
         .items="${this.timeline as Post[]}"
-        .renderItem="${((tweet: Post) => html`
+        .renderItem="${(tweet: Post) => html`
           <div class="timeline-item">
             <timeline-item ?show="${false}" .tweet="${tweet}"></timeline-item>
           </div>
-        `) as any}"
+        `}"
         @visibilityChanged="${this._handleVisibilityChanged}"
       >
       </lit-virtualizer>

@@ -6,7 +6,7 @@ import { router } from './utils/router';
 import './pages/app-login';
 import './components/header';
 import './components/image-preview-dialog';
-import { getSettings } from './services/settings';
+import { getSettings, Settings } from './services/settings';
 
 @customElement('app-index')
 export class AppIndex extends LitElement {
@@ -96,7 +96,7 @@ export class AppIndex extends LitElement {
    * Warm the service worker cache for notifications, bookmarks, and favorites
    * Only if user has good network and data saver is off
    */
-  private async warmCacheIfAppropriate(settings: any) {
+  private async warmCacheIfAppropriate(settings: Settings) {
     // Skip if data saver mode is enabled
     if (settings.data_saver) {
       console.log('[App] Cache warming skipped: Data saver enabled');
@@ -114,14 +114,14 @@ export class AppIndex extends LitElement {
 
     // Check network connection quality
     if ('connection' in navigator) {
-      const conn = (navigator as any).connection;
+      const conn = (navigator as { connection?: NetworkInformation }).connection;
 
       // Skip on slow connections (2G, slow-2g) or if saveData is enabled
       if (
-        conn.saveData ||
-        conn.effectiveType === '3g' ||
-        conn.effectiveType === '2g' ||
-        conn.effectiveType === 'slow-2g'
+        conn?.saveData ||
+        conn?.effectiveType === '3g' ||
+        conn?.effectiveType === '2g' ||
+        conn?.effectiveType === 'slow-2g'
       ) {
         console.log(
           '[App] Cache warming skipped: Slow connection or saveData enabled'
@@ -199,7 +199,7 @@ export class AppIndex extends LitElement {
   firstUpdated() {
     router.addEventListener('route-changed', () => {
       if ('startViewTransition' in document) {
-        return (document as any).startViewTransition(() => {
+        (document as Document & { startViewTransition: (callback: () => void) => void }).startViewTransition(() => {
           this.requestUpdate();
         });
       } else {
