@@ -1,16 +1,12 @@
 import { getClientConfig } from '../config/client';
+import { apiFetch } from '../../utils/api-client';
 import { Account, Post } from '../types';
 
 export async function whoBoostedAndFavorited(id: string): Promise<Account[]> {
-  const { url, accessToken } = getClientConfig();
-  const response = await fetch(
+  const { url } = getClientConfig();
+  const response = await apiFetch(
     `https://${url}/api/v1/statuses/${id}/reactions`,
-    {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
+    { method: 'GET' }
   );
 
   const data = await response.json();
@@ -18,14 +14,11 @@ export async function whoBoostedAndFavorited(id: string): Promise<Account[]> {
 }
 
 export async function editPost(id: string, newContent: string): Promise<Post> {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
   const formData = new FormData();
   formData.append('status', newContent);
-  const response = await fetch(`https://${url}/api/v1/statuses/${id}`, {
+  const response = await apiFetch(`https://${url}/api/v1/statuses/${id}`, {
     method: 'PUT',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
     body: formData,
   });
 
@@ -34,12 +27,9 @@ export async function editPost(id: string, newContent: string): Promise<Post> {
 }
 
 export async function deletePost(id: string): Promise<Post> {
-  const { url, accessToken } = getClientConfig();
-  const response = await fetch(`https://${url}/api/v1/statuses/${id}`, {
+  const { url } = getClientConfig();
+  const response = await apiFetch(`https://${url}/api/v1/statuses/${id}`, {
     method: 'DELETE',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -47,12 +37,9 @@ export async function deletePost(id: string): Promise<Post> {
 }
 
 export async function getPostDetail(id: string): Promise<Post> {
-  const { url, accessToken } = getClientConfig();
-  const response = await fetch(`https://${url}/api/v1/statuses/${id}`, {
+  const { url } = getClientConfig();
+  const response = await apiFetch(`https://${url}/api/v1/statuses/${id}`, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -66,7 +53,7 @@ export async function publishPost(
   spoilerText: string = '',
   visibility: string = 'public'
 ): Promise<Post> {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
   const formData = new FormData();
 
   formData.append('status', post && post.length > 0 ? post : '');
@@ -86,11 +73,8 @@ export async function publishPost(
     }
   }
 
-  const response = await fetch(`https://${url}/api/v1/statuses`, {
+  const response = await apiFetch(`https://${url}/api/v1/statuses`, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
     body: formData,
   });
 
@@ -99,17 +83,14 @@ export async function publishPost(
 }
 
 export async function replyToPost(id: string, content: string): Promise<Post> {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
   const formData = new FormData();
 
   formData.append('in_reply_to_id', id);
   formData.append('status', content && content.length > 0 ? content : '');
 
-  const response = await fetch(`https://${url}/api/v1/statuses`, {
+  const response = await apiFetch(`https://${url}/api/v1/statuses`, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
     body: formData,
   });
 

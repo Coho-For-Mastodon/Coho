@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
 import { getSettings, Settings } from '../services/settings';
+import { withOptimisticUpdate } from '../utils/optimistic-updates';
 
 import { router } from '../utils/router';
 import { Post } from '../interfaces/Post';
@@ -396,20 +397,48 @@ export class TimelineItem extends LitElement {
   async favorite(id: string) {
     console.log('favorite', id);
 
-    this.isBoosted = true;
+    if (!this.tweet) return;
 
-    // Update tweet state
-    if (this.tweet) {
-      this.tweet.favourited = true;
-      if (this.tweet.reblog) {
-        this.tweet.reblog.favourites_count++;
-      } else {
-        this.tweet.favourites_count++;
-      }
-    }
+    // Store original state for rollback
+    const originalFavorited = this.isBoosted;
+    const originalTweetFavorited = this.tweet.favourited;
+    const originalCount = this.tweet.reblog
+      ? this.tweet.reblog.favourites_count
+      : this.tweet.favourites_count;
 
     const { boostPost } = await import('../services/timeline');
-    await boostPost(id);
+
+    await withOptimisticUpdate(
+      // Apply optimistic update
+      () => {
+        this.isBoosted = true;
+        if (this.tweet) {
+          this.tweet.favourited = true;
+          if (this.tweet.reblog) {
+            this.tweet.reblog.favourites_count++;
+          } else {
+            this.tweet.favourites_count++;
+          }
+        }
+        this.requestUpdate();
+      },
+      // Execute actual API call
+      () => boostPost(id),
+      // Rollback on failure
+      () => {
+        this.isBoosted = originalFavorited;
+        if (this.tweet) {
+          this.tweet.favourited = originalTweetFavorited;
+          if (this.tweet.reblog) {
+            this.tweet.reblog.favourites_count = originalCount;
+          } else {
+            this.tweet.favourites_count = originalCount;
+          }
+        }
+        this.requestUpdate();
+      },
+      { errorMessage: 'Failed to favorite post.' }
+    );
 
     // fire custom event
     this.dispatchEvent(
@@ -419,27 +448,53 @@ export class TimelineItem extends LitElement {
         },
       })
     );
-
-    this.requestUpdate();
   }
 
   async reblog(id: string) {
     console.log('reblog', id);
 
-    this.isReblogged = true;
+    if (!this.tweet) return;
 
-    // Update tweet state
-    if (this.tweet) {
-      this.tweet.reblogged = true;
-      if (this.tweet.reblog) {
-        this.tweet.reblog.reblogs_count++;
-      } else {
-        this.tweet.reblogs_count++;
-      }
-    }
+    // Store original state for rollback
+    const originalReblogged = this.isReblogged;
+    const originalTweetReblogged = this.tweet.reblogged;
+    const originalCount = this.tweet.reblog
+      ? this.tweet.reblog.reblogs_count
+      : this.tweet.reblogs_count;
 
     const { reblogPost } = await import('../services/timeline');
-    await reblogPost(id);
+
+    await withOptimisticUpdate(
+      // Apply optimistic update
+      () => {
+        this.isReblogged = true;
+        if (this.tweet) {
+          this.tweet.reblogged = true;
+          if (this.tweet.reblog) {
+            this.tweet.reblog.reblogs_count++;
+          } else {
+            this.tweet.reblogs_count++;
+          }
+        }
+        this.requestUpdate();
+      },
+      // Execute actual API call
+      () => reblogPost(id),
+      // Rollback on failure
+      () => {
+        this.isReblogged = originalReblogged;
+        if (this.tweet) {
+          this.tweet.reblogged = originalTweetReblogged;
+          if (this.tweet.reblog) {
+            this.tweet.reblog.reblogs_count = originalCount;
+          } else {
+            this.tweet.reblogs_count = originalCount;
+          }
+        }
+        this.requestUpdate();
+      },
+      { errorMessage: 'Failed to boost post.' }
+    );
 
     // fire custom event
     this.dispatchEvent(
@@ -449,24 +504,40 @@ export class TimelineItem extends LitElement {
         },
       })
     );
-
-    this.requestUpdate();
   }
 
   async bookmark(id: string) {
     console.log('bookmark', id);
 
-    this.isBookmarked = true;
+    if (!this.tweet) return;
 
-    // Update tweet state
-    if (this.tweet) {
-      this.tweet.bookmarked = true;
-    }
+    // Store original state for rollback
+    const originalBookmarked = this.isBookmarked;
+    const originalTweetBookmarked = this.tweet.bookmarked;
 
     const { addBookmark } = await import('../services/bookmarks');
-    await addBookmark(id);
 
-    this.requestUpdate();
+    await withOptimisticUpdate(
+      // Apply optimistic update
+      () => {
+        this.isBookmarked = true;
+        if (this.tweet) {
+          this.tweet.bookmarked = true;
+        }
+        this.requestUpdate();
+      },
+      // Execute actual API call
+      () => addBookmark(id),
+      // Rollback on failure
+      () => {
+        this.isBookmarked = originalBookmarked;
+        if (this.tweet) {
+          this.tweet.bookmarked = originalTweetBookmarked;
+        }
+        this.requestUpdate();
+      },
+      { errorMessage: 'Failed to bookmark post.' }
+    );
   }
 
   async replies() {

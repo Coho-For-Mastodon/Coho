@@ -1,4 +1,5 @@
 import { getClientConfig } from '../config/client';
+import { apiFetch } from '../../utils/api-client';
 import { Post, TrendingTag, TrendingLink } from '../types';
 
 // Cache for reply parent posts to avoid duplicate fetches
@@ -9,18 +10,13 @@ const replyParentCache = new Map<string, Post>();
  */
 const getAStatusDirect = async (id: string): Promise<Post | null> => {
   try {
-    const { url, accessToken } = getClientConfig();
+    const { url } = getClientConfig();
 
-    const response = await fetch(`https://${url}/api/v1/statuses/${id}`, {
+    const response = await apiFetch(`https://${url}/api/v1/statuses/${id}`, {
       method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
+      // Don't trigger logout on 404/403 for status fetches
+      handleUnauthorized: false,
     });
-
-    if (!response.ok) {
-      return null;
-    }
 
     const data = await response.json();
     return data;
@@ -107,7 +103,7 @@ export const getHomeTimeline = async (
   maxId?: string,
   sinceId?: string
 ): Promise<Post[]> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
   let fetchUrl = `https://${url}/api/v1/timelines/home?limit=20`;
 
   if (maxId) {
@@ -117,11 +113,8 @@ export const getHomeTimeline = async (
     fetchUrl += `&since_id=${sinceId}`;
   }
 
-  const response = await fetch(fetchUrl, {
+  const response = await apiFetch(fetchUrl, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -132,7 +125,7 @@ export const getPublicTimeline = async (
   local: boolean = false,
   maxId?: string
 ): Promise<Post[]> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
   let fetchUrl = `https://${url}/api/v1/timelines/public?limit=20`;
 
   if (local) {
@@ -142,11 +135,8 @@ export const getPublicTimeline = async (
     fetchUrl += `&max_id=${maxId}`;
   }
 
-  const response = await fetch(fetchUrl, {
+  const response = await apiFetch(fetchUrl, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -172,13 +162,10 @@ export const getPreviewTimeline = async (maxId?: string): Promise<Post[]> => {
  * Get trending statuses
  */
 export const getTrendingStatuses = async (): Promise<Post[]> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(`https://${url}/api/v1/trends/statuses`, {
+  const response = await apiFetch(`https://${url}/api/v1/trends/statuses`, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -189,13 +176,10 @@ export const getTrendingStatuses = async (): Promise<Post[]> => {
  * Get trending tags
  */
 export const getTrendingTags = async (): Promise<TrendingTag[]> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(`https://${url}/api/v1/trends/tags`, {
+  const response = await apiFetch(`https://${url}/api/v1/trends/tags`, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -206,13 +190,10 @@ export const getTrendingTags = async (): Promise<TrendingTag[]> => {
  * Get trending links
  */
 export const getTrendingLinks = async (): Promise<TrendingLink[]> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(`https://${url}/api/v1/trends/links?limit=10`, {
+  const response = await apiFetch(`https://${url}/api/v1/trends/links?limit=10`, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -226,17 +207,15 @@ export const getHashtagTimeline = async (
   hashtag: string,
   maxId?: string
 ): Promise<Post[]> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
   let fetchUrl = `https://${url}/api/v1/timelines/tag/${hashtag}`;
 
   if (maxId) {
     fetchUrl += `?max_id=${maxId}`;
   }
 
-  const response = await fetch(fetchUrl, {
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
+  const response = await apiFetch(fetchUrl, {
+    method: 'GET',
   });
 
   const data = await response.json();
@@ -247,13 +226,10 @@ export const getHashtagTimeline = async (
  * Get a specific status by ID
  */
 export const getStatus = async (id: string): Promise<Post> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(`https://${url}/api/v1/statuses/${id}`, {
+  const response = await apiFetch(`https://${url}/api/v1/statuses/${id}`, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -266,13 +242,10 @@ export const getStatus = async (id: string): Promise<Post> => {
 export const getStatusContext = async (
   id: string
 ): Promise<{ ancestors: Post[]; descendants: Post[] }> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(`https://${url}/api/v1/statuses/${id}/context`, {
+  const response = await apiFetch(`https://${url}/api/v1/statuses/${id}/context`, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -283,15 +256,14 @@ export const getStatusContext = async (
  * Boost/favorite a post
  */
 export const favoritePost = async (id: string): Promise<Post> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(
+  const response = await apiFetch(
     `https://${url}/api/v1/statuses/${id}/favourite`,
     {
       method: 'POST',
       headers: new Headers({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
       }),
     }
   );
@@ -304,15 +276,14 @@ export const favoritePost = async (id: string): Promise<Post> => {
  * Unfavorite a post
  */
 export const unfavoritePost = async (id: string): Promise<Post> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(
+  const response = await apiFetch(
     `https://${url}/api/v1/statuses/${id}/unfavourite`,
     {
       method: 'POST',
       headers: new Headers({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
       }),
     }
   );
@@ -325,13 +296,12 @@ export const unfavoritePost = async (id: string): Promise<Post> => {
  * Reblog a post
  */
 export const reblogPost = async (id: string): Promise<Post> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(`https://${url}/api/v1/statuses/${id}/reblog`, {
+  const response = await apiFetch(`https://${url}/api/v1/statuses/${id}/reblog`, {
     method: 'POST',
     headers: new Headers({
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
     }),
   });
 
@@ -343,15 +313,14 @@ export const reblogPost = async (id: string): Promise<Post> => {
  * Unreblog a post
  */
 export const unreblogPost = async (id: string): Promise<Post> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(
+  const response = await apiFetch(
     `https://${url}/api/v1/statuses/${id}/unreblog`,
     {
       method: 'POST',
       headers: new Headers({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
       }),
     }
   );
@@ -364,15 +333,14 @@ export const unreblogPost = async (id: string): Promise<Post> => {
  * Bookmark a post
  */
 export const bookmarkPost = async (id: string): Promise<Post> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(
+  const response = await apiFetch(
     `https://${url}/api/v1/statuses/${id}/bookmark`,
     {
       method: 'POST',
       headers: new Headers({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
       }),
     }
   );
@@ -385,15 +353,14 @@ export const bookmarkPost = async (id: string): Promise<Post> => {
  * Unbookmark a post
  */
 export const unbookmarkPost = async (id: string): Promise<Post> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(
+  const response = await apiFetch(
     `https://${url}/api/v1/statuses/${id}/unbookmark`,
     {
       method: 'POST',
       headers: new Headers({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
       }),
     }
   );
@@ -406,16 +373,12 @@ export const unbookmarkPost = async (id: string): Promise<Post> => {
  * Get user's media timeline
  */
 export const getMediaTimeline = async (userId?: string): Promise<Post[]> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
   const currentUser = userId || localStorage.getItem('currentUserID');
 
-  const response = await fetch(
+  const response = await apiFetch(
     `https://${url}/api/v1/accounts/${currentUser}/statuses?only_media=true&limit=40`,
-    {
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
+    { method: 'GET' }
   );
 
   const data = await response.json();
@@ -428,16 +391,13 @@ export const getMediaTimeline = async (userId?: string): Promise<Post[]> => {
 export const saveMarker = async (
   lastReadId: string
 ): Promise<Record<string, unknown>> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
   const formData = new FormData();
   formData.append('home[last_read_id]', lastReadId);
 
-  const response = await fetch(`https://${url}/api/v1/markers`, {
+  const response = await apiFetch(`https://${url}/api/v1/markers`, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
     body: formData,
   });
 
@@ -449,16 +409,11 @@ export const saveMarker = async (
  * Get markers for last read position
  */
 export const getMarkers = async (): Promise<Record<string, unknown>> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
-  const response = await fetch(
+  const response = await apiFetch(
     `https://${url}/api/v1/markers?timeline[]=home`,
-    {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
+    { method: 'GET' }
   );
 
   const data = await response.json();

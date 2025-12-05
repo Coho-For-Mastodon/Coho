@@ -13,7 +13,7 @@ export declare const resetLastPageID: () => Promise<void>;
 export declare const getLastPlaceTimeline: () => Promise<Post[] | undefined>;
 export declare const getPaginatedHomeTimeline: (type?: string) => Promise<Post[]>;
 export declare const getPublicTimeline: () => Promise<Post[]>;
-export declare const boostPost: (id: string) => Promise<import("../mastodon").Post>;
+export declare const boostPost: (id: string) => Promise<any>;
 export declare const reblogPost: (id: string) => Promise<any>;
 export declare const getReplies: (id: string) => Promise<{
     ancestors: Post[];

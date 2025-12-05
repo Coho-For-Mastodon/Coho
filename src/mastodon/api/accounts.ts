@@ -1,4 +1,5 @@
 import { getClientConfig } from '../config/client';
+import { apiFetch } from '../../utils/api-client';
 import { Account, Post } from '../types';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../../config/firebase';
 
@@ -11,7 +12,7 @@ export const editAccount = async (
   header: File | string
 ) => {
   const currentUser = await getCurrentUser();
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
   const formData = new FormData();
 
@@ -22,13 +23,10 @@ export const editAccount = async (
   formData.append('locked', String(locked || currentUser.locked));
   formData.append('bot', String(bot || currentUser.bot));
 
-  const response = await fetch(
+  const response = await apiFetch(
     `https://${url}/api/v1/accounts/update_credentials`,
     {
       method: 'PATCH',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
       body: formData,
     }
   );
@@ -64,14 +62,13 @@ export const getCurrentUser = async (): Promise<Account> => {
     return currentUser;
   }
 
-  const { url, accessToken } = getClientConfig();
-  const response = await fetch(
+  const { url } = getClientConfig();
+  const response = await apiFetch(
     'https://' + url + '/api/v1/accounts/verify_credentials',
     {
       method: 'GET',
       headers: new Headers({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
       }),
     }
   );
@@ -90,18 +87,15 @@ export const getUsersPosts = async (
   id: string,
   excludeReplies = true
 ): Promise<Post[]> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
   let fetchUrl = `https://${url}/api/v1/accounts/${id}/statuses?limit=20`;
   if (excludeReplies) {
     fetchUrl += '&exclude_replies=true';
   }
 
-  const response = await fetch(fetchUrl, {
+  const response = await apiFetch(fetchUrl, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();

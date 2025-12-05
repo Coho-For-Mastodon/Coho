@@ -97,6 +97,7 @@ export class AppHome extends LitElement {
   @query('#theming-drawer') private themingDrawer!: OtterDrawer;
   @query('#bot-drawer') private botDrawer!: OtterDrawer;
   @query('#translation-toast') private translationToast!: MdToast;
+  @query('#error-toast') private errorToast!: MdToast;
   @query('#summary-dialog') private summaryDialog!: MdDialog;
   @query('#open-tweet-dialog') private openTweetDialog!: MdDialog;
   @query('.homeTimeline') private homeTimeline!: Timeline;
@@ -411,6 +412,9 @@ export class AppHome extends LitElement {
           padding: 16px;
 
           animation: fadeIn 0.3s ease-in-out;
+
+          background: var(--md-sys-color-surface-container, #1e1e24);
+          border: none;
         }
 
         .sidebar-card h3 {
@@ -806,6 +810,9 @@ export class AppHome extends LitElement {
       this.tabsPlacement = 'start';
     }
 
+    // Set up global toast listener for error notifications
+    this.setupGlobalToastListener();
+
     setTimeout(async () => {
       if (urlParams.has('name')) {
         const name = urlParams.get('name');
@@ -910,6 +917,19 @@ export class AppHome extends LitElement {
       this.user = user;
     });
     // }, 1200);
+  }
+
+  /**
+   * Set up listener for global toast events from optimistic updates
+   */
+  private setupGlobalToastListener() {
+    window.addEventListener('app-toast', ((event: CustomEvent<{ message: string; variant: string }>) => {
+      if (this.errorToast && event.detail) {
+        this.errorToast.message = event.detail.message;
+        this.errorToast.variant = event.detail.variant as 'error' | 'warning' | 'info' | 'success';
+        this.errorToast.show();
+      }
+    }) as EventListener);
   }
 
   async shareTarget(name: string) {
@@ -1699,6 +1719,16 @@ export class AppHome extends LitElement {
         position="bottom"
         duration="0"
         message="Translating post..."
+      >
+      </md-toast>
+
+      <md-toast
+        id="error-toast"
+        variant="error"
+        position="bottom"
+        duration="4000"
+        closable
+        message=""
       >
       </md-toast>
     `;

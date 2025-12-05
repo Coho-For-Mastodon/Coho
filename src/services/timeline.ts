@@ -13,7 +13,6 @@ import {
   getTrendingLinks as mastodonGetTrendingLinks,
   getHashtagTimeline as mastodonGetHashtagTimeline,
   getStatus as mastodonGetStatus,
-  favoritePost as mastodonFavoritePost,
   getMediaTimeline as mastodonGetMediaTimeline,
   saveMarker as mastodonSaveMarker,
   enrichPostsWithReplyContext as mastodonEnrichPostsWithReplyContext,
@@ -230,8 +229,23 @@ export const getPublicTimeline = async (): Promise<Post[]> => {
   return mastodonGetPublicTimeline(false) as unknown as Promise<Post[]>;
 };
 
-// Use mastodon library's favoritePost (named boostPost for backwards compat)
-export const boostPost = mastodonFavoritePost;
+// Use Firebase function for boostPost (favorite) - this route has background sync support
+export const boostPost = async (id: string) => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+  // Use Firebase function URL so service worker can queue for background sync when offline
+  const response = await fetch(
+    `${FIREBASE_FUNCTIONS_BASE_URL}/boost?id=${id}&code=${accessToken}&server=${server}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  const data = await response.json();
+  return data;
+};
 
 // Use mastodon library's reblogPost but with Firebase fallback
 export const reblogPost = async (id: string) => {

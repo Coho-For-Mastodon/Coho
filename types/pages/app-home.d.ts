@@ -54,6 +54,7 @@ export declare class AppHome extends LitElement {
     private themingDrawer;
     private botDrawer;
     private translationToast;
+    private errorToast;
     private summaryDialog;
     private openTweetDialog;
     private homeTimeline;
@@ -61,6 +62,10 @@ export declare class AppHome extends LitElement {
     static get styles(): import("lit").CSSResult[];
     constructor();
     firstUpdated(): Promise<void>;
+    /**
+     * Set up listener for global toast events from optimistic updates
+     */
+    private setupGlobalToastListener;
     shareTarget(name: string): Promise<void>;
     handlePrimaryColor(color: string): void;
     share(): void;

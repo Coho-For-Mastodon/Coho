@@ -57,7 +57,7 @@ export class MdAutocomplete extends LitElement {
       min-height: 40px;
       padding: 12px 16px;
       border: none;
-      border-radius: 4px 4px 0 0;
+      border-radius: 52px;
       background-color: var(--md-sys-color-surface-container-highest, #e6e0e9);
       font-family:
         'Roboto',
@@ -69,11 +69,8 @@ export class MdAutocomplete extends LitElement {
       line-height: 24px;
       letter-spacing: 0.5px;
       color: var(--md-sys-color-on-surface, #1d1b20);
-      border-bottom: 1px solid var(--md-sys-color-on-surface-variant, #49454f);
       transition:
-        background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-        border-bottom-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-        border-bottom-width 0.2s cubic-bezier(0.2, 0, 0, 1);
+        background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
       box-sizing: border-box;
     }
 
@@ -466,15 +463,15 @@ export class MdAutocomplete extends LitElement {
         />
         <div class="dropdown ${showDropdown ? 'open' : ''}" role="listbox">
           ${this.loading
-            ? html`<div class="loading-indicator">Loading...</div>`
-            : this.options.length === 0
-              ? html`<div class="no-results">No results found</div>`
-              : this.options.map(
-                  (option, index) => html`
+        ? html`<div class="loading-indicator">Loading...</div>`
+        : this.options.length === 0
+          ? html`<div class="no-results">No results found</div>`
+          : this.options.map(
+            (option, index) => html`
                     <div
                       class="dropdown-item ${index === this._highlightedIndex
-                        ? 'highlighted'
-                        : ''}"
+                ? 'highlighted'
+                : ''}"
                       role="option"
                       aria-selected="${index === this._highlightedIndex}"
                       @click="${() => this._selectOption(option)}"
@@ -482,28 +479,28 @@ export class MdAutocomplete extends LitElement {
                     >
                       <div class="item-content">
                         ${option.icon
-                          ? html`<img
+                ? html`<img
                               class="item-icon"
                               src="${option.icon}"
                               alt=""
                               loading="lazy"
                               @error="${(e: Event) =>
-                                ((e.target as HTMLImageElement).style.display =
-                                  'none')}"
+                  ((e.target as HTMLImageElement).style.display =
+                    'none')}"
                             />`
-                          : null}
+                : null}
                         <div class="item-text">
                           <div class="item-label">${option.label}</div>
                           ${option.description
-                            ? html`<div class="item-description">
+                ? html`<div class="item-description">
                                 ${option.description}
                               </div>`
-                            : null}
+                : null}
                         </div>
                       </div>
                     </div>
                   `
-                )}
+          )}
         </div>
       </div>
     `;

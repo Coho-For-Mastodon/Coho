@@ -1,13 +1,11 @@
 import { getClientConfig } from '../config/client';
+import { apiFetch } from '../../utils/api-client';
 import { Notification } from '../types';
 
 export const getNotifications = async (): Promise<Notification[]> => {
-  const { url, accessToken } = getClientConfig();
-  const notifyResponse = await fetch(`https://${url}/api/v1/notifications`, {
+  const { url } = getClientConfig();
+  const notifyResponse = await apiFetch(`https://${url}/api/v1/notifications`, {
     method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await notifyResponse.json();
@@ -15,12 +13,9 @@ export const getNotifications = async (): Promise<Notification[]> => {
 };
 
 export const clearNotifications = async () => {
-  const { url, accessToken } = getClientConfig();
-  const response = await fetch(`https://${url}/api/v1/notifications/clear`, {
+  const { url } = getClientConfig();
+  const response = await apiFetch(`https://${url}/api/v1/notifications/clear`, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
 
   const data = await response.json();
@@ -28,20 +23,17 @@ export const clearNotifications = async () => {
 };
 
 export const checkNewNotifications = async (): Promise<boolean> => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `https://${url}/api/v1/notifications?limit=1`,
       {
         method: 'GET',
-        headers: new Headers({
-          Authorization: `Bearer ${accessToken}`,
-        }),
+        // Don't redirect to login on failure for background checks
+        handleUnauthorized: false,
       }
     );
-
-    if (!response.ok) return false;
 
     const data = await response.json();
     if (data && data.length > 0) {
@@ -64,20 +56,16 @@ export const checkNewNotifications = async (): Promise<boolean> => {
 };
 
 export const markNotificationsRead = async () => {
-  const { url, accessToken } = getClientConfig();
+  const { url } = getClientConfig();
 
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `https://${url}/api/v1/notifications?limit=1`,
       {
         method: 'GET',
-        headers: new Headers({
-          Authorization: `Bearer ${accessToken}`,
-        }),
+        handleUnauthorized: false,
       }
     );
-
-    if (!response.ok) return;
 
     const data = await response.json();
     if (data && data.length > 0) {
