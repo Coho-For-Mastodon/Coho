@@ -105,14 +105,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-    | 'mention'
-    | 'reblog'
-    | 'favourite'
-    | 'follow'
-    | 'poll'
-    | 'follow_request'
-    | 'status'
-    | 'update';
+  | 'mention'
+  | 'reblog'
+  | 'favourite'
+  | 'follow'
+  | 'poll'
+  | 'follow_request'
+  | 'status'
+  | 'update';
   account: {
     id: string;
     display_name: string;
@@ -129,14 +129,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-    | 'mention'
-    | 'reblog'
-    | 'favourite'
-    | 'follow'
-    | 'poll'
-    | 'follow_request'
-    | 'status'
-    | 'update';
+  | 'mention'
+  | 'reblog'
+  | 'favourite'
+  | 'follow'
+  | 'poll'
+  | 'follow_request'
+  | 'status'
+  | 'update';
   icon: string;
   title: string;
   body: string;
@@ -325,7 +325,7 @@ const getNotifications = async (): Promise<void> => {
     // show notification
     await self.registration.showNotification(title, {
       body: message,
-      icon: '/assets/icons/new-icons/icon-256x256.webp',
+      icon: '/assets/icons/new-icons/icon-256x256.png',
       tag: 'coho',
       renotify: false,
       actions: actions,
@@ -446,9 +446,9 @@ self.addEventListener('push', async (event: PushEvent) => {
   event.waitUntil(
     self.registration.showNotification(payload.title || 'Coho', {
       body: payload.body || 'You have a new notification',
-      icon: payload.icon || '/assets/icons/new-icons/icon-256x256.webp',
+      icon: payload.icon || '/assets/icons/new-icons/icon-256x256.png',
       tag: payload.notification_id || 'coho',
-      badge: '/assets/icons/new-icons/icon-256x256.webp',
+      badge: '/assets/icons/new-icons/icon-256x256.png',
       renotify: true,
       actions: actions,
       data: {

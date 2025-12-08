@@ -556,7 +556,7 @@ export class AppLogin extends LitElement {
         <md-card class="login-card" variant="elevated">
           <div class="login-header">
             <img
-              src="/assets/icons/new-icons/icon-144x144.webp"
+              src="/assets/icons/new-icons/icon-144x144.png"
               alt="Coho Logo"
               class="logo"
             />
