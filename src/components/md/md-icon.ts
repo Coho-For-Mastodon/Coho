@@ -159,7 +159,7 @@ export class MdIcon extends LitElement {
     }
   `;
 
-  async updated(changedProperties: Map<string, any>) {
+  async updated(changedProperties: Map<string, unknown>) {
     // Priority: name > src
     if (changedProperties.has('name') || changedProperties.has('src')) {
       if (this.name) {
@@ -290,15 +290,15 @@ export class MdIcon extends LitElement {
       <div
         part="base"
         class="${Object.entries(classes)
-          .filter(([_, v]) => v)
-          .map(([k]) => k)
-          .join(' ')}"
+        .filter(([_, v]) => v)
+        .map(([k]) => k)
+        .join(' ')}"
         role="img"
         aria-label="${this.label || 'icon'}"
       >
         ${this.svgContent
-          ? html`<div part="svg">${unsafeSVG(this.svgContent)}</div>`
-          : html`<slot></slot>`}
+        ? html`<div part="svg">${unsafeSVG(this.svgContent)}</div>`
+        : html`<slot></slot>`}
       </div>
     `;
   }

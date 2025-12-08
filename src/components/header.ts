@@ -129,7 +129,7 @@ export class AppHeader extends LitElement {
   }
 
   protected firstUpdated(
-    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+    _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
   ): void {
     // Debug: Check display mode for window controls overlay
     const isWCO = window.matchMedia(

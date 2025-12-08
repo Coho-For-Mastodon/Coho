@@ -149,6 +149,11 @@ interface ImportMetaEnv {
   readonly VITE_INSTANCES_SOCIAL_TOKEN?: string;
 }
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
+// Augment the global ImportMeta interface
+declare global {
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
 }
+
+export {};

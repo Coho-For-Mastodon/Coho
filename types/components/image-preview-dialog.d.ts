@@ -20,8 +20,9 @@ export declare class ImagePreviewDialog extends LitElement {
     static styles: import("lit").CSSResult;
     connectedCallback(): void;
     disconnectedCallback(): void;
-    updated(changedProperties: Map<string, any>): void;
+    updated(changedProperties: Map<string, unknown>): void;
     private handlePreviewImage;
+    private handleGenerateAlt;
     private close;
     private handleBackdropClick;
     private handleTouchStart;

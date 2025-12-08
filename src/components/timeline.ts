@@ -24,8 +24,6 @@ import type {
   OpenImageDetail,
 } from '../types/events';
 
-// @ts-expect-error fix
-import TimelineWorker from '../utils/timeline-worker?worker';
 
 // Types for analyze feature
 interface AnalyzeEntity {
@@ -1031,9 +1029,7 @@ export class Timeline extends LitElement {
               class="scrollbar-hidden"
               scroller
               .items=${this.timeline}
-              .renderItem=${
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ((tweet: Post) =>
+              .renderItem=${((tweet: Post) =>
                   html`<div class="timeline-list-item">
                     <timeline-item
                       @open="${($event: CustomEvent) =>
@@ -1062,8 +1058,7 @@ export class Timeline extends LitElement {
                     <md-divider
                       style="margin-top: 12px; margin-bottom: 12px;"
                     ></md-divider>
-                    <!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
-                  </div>`) as any
+                  </div>`) as unknown
               }
               @visibilityChanged=${this._handleVisibilityChanged}
             >

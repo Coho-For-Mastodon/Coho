@@ -18,7 +18,10 @@ const allowedOrigins = [
   'http://localhost:3000',
 ];
 
-const applyCors = (request: any, response: any) => {
+const applyCors = (
+  request: { headers: { origin?: string } },
+  response: { set: (key: string, value: string) => void }
+) => {
   const origin = request.headers.origin;
   if (allowedOrigins.includes(origin)) {
     response.set('Access-Control-Allow-Origin', origin);
@@ -912,7 +915,10 @@ export const authenticate = onRequest(async (request, response) => {
       }),
     });
 
-    const data: any = await apiResponse.json();
+    const data = (await apiResponse.json()) as {
+      client_id: string;
+      client_secret: string;
+    };
 
     const clientID = data.client_id;
     const clientSecret = data.client_secret;
@@ -998,7 +1004,7 @@ export const getClient = onRequest(async (request, response) => {
       }),
     });
 
-    const data: any = await apiResponse.json();
+    const data = (await apiResponse.json()) as { access_token?: string };
 
     if (data.access_token) {
       response.json({ access_token: data.access_token });

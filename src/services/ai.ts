@@ -275,7 +275,7 @@ export const generateAltText = async (
       imageBlob = imageSource;
     }
 
-    // @ts-ignore - LanguageModel is a Chrome experimental API
+    // @ts-expect-error - LanguageModel is a Chrome experimental API
     const session = await LanguageModel.create({
       expectedInputs: [{ type: 'image' }],
     });

@@ -6,7 +6,7 @@ export declare class AppHeader extends LitElement {
     enableBack: boolean;
     static get styles(): import("lit").CSSResult;
     constructor();
-    protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void;
+    protected firstUpdated(_changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>): void;
     openSettings(): void;
     handleTheming(): void;
     openBotDrawer(): void;

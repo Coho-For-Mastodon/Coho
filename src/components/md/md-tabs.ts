@@ -237,7 +237,7 @@ export class MdTabs extends LitElement {
     this._updatePanels();
   }
 
-  updated(changedProperties: Map<string, any>) {
+  updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('active') && this.active) {
       this._activePanel = this.active;
       this._updatePanels();

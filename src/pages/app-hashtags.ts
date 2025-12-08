@@ -46,7 +46,7 @@ export class AppHashtags extends LitElement {
   ];
 
   protected async firstUpdated(
-    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+    _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
   ) {
     // get tag from url
     const params = new URLSearchParams(window.location.search);

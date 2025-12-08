@@ -99,7 +99,7 @@ export class ImageCarousel extends LitElement {
     console.log('image-carousel firstUpdated, images:', this.images);
   }
 
-  updated(changedProperties: Map<string, any>) {
+  updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('images') && this.images.length > 0) {
       console.log('Images updated, generating blurhashes');
       this.generateBlurhashes();

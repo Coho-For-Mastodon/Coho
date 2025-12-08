@@ -182,7 +182,7 @@ export async function pickMedia(): Promise<File[]> {
       multiple: true,
     });
     return Array.isArray(files) ? files : [files];
-  } catch (err) {
+  } catch {
     return [];
   }
 }

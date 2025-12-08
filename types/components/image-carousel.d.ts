@@ -6,7 +6,7 @@ export declare class ImageCarousel extends LitElement {
     constructor();
     static styles: import("lit").CSSResult[];
     firstUpdated(): void;
-    updated(changedProperties: Map<string, any>): void;
+    updated(changedProperties: Map<string, unknown>): void;
     disconnectedCallback(): void;
     private generateBlurhashes;
     private getImageStyle;

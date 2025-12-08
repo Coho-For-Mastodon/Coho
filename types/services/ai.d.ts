@@ -15,3 +15,13 @@ export declare const isProofreaderAvailable: () => Promise<boolean>;
  * Returns corrections for grammar, spelling, and punctuation errors
  */
 export declare const proofread: (text: string) => Promise<ProofreadResult | null>;
+/**
+ * Check if Chrome's Prompt API (LanguageModel) is available
+ */
+export declare const isPromptAPIAvailable: () => boolean;
+/**
+ * Generate alt text for an image using Chrome's on-device Prompt API
+ * @param imageSource - URL string or Blob of the image
+ * @returns Generated alt text or null if generation fails
+ */
+export declare const generateAltText: (imageSource: string | Blob) => Promise<string | null>;

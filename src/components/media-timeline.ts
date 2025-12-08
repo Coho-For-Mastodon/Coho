@@ -119,7 +119,7 @@ export class MediaTimeline extends LitElement {
     const timelineDataMedia = await getPaginatedHomeTimeline();
 
     // filter out tweets that don't have media
-    const updatedTimeline = (timelineDataMedia as Array<any>).filter(
+    const updatedTimeline = (timelineDataMedia as Post[]).filter(
       (tweet: Post) => tweet.media_attachments.length > 0
     );
     console.log(timelineDataMedia);
@@ -130,7 +130,7 @@ export class MediaTimeline extends LitElement {
   async loadMore() {
     const timelineData = await getPaginatedHomeTimeline();
     // filter out tweets that don't have media
-    const updatedTimeline = (timelineData as Array<any>).filter(
+    const updatedTimeline = (timelineData as Post[]).filter(
       (tweet: Post) => tweet.media_attachments.length > 0
     );
     console.log(timelineData);

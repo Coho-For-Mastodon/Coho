@@ -112,7 +112,7 @@ export class CreateAccount extends LitElement {
   ];
 
   protected async firstUpdated(
-    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+    _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
   ) {
     const servers = await getServers();
     console.log('servers', servers);

@@ -43,7 +43,7 @@ export declare class MdTabs extends LitElement {
     connectedCallback(): void;
     disconnectedCallback(): void;
     firstUpdated(): void;
-    updated(changedProperties: Map<string, any>): void;
+    updated(changedProperties: Map<string, unknown>): void;
     private _handleTabSelected;
     private _getTabs;
     private _getPanels;

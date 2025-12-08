@@ -176,7 +176,7 @@ export class ImagePreviewDialog extends LitElement {
     );
   }
 
-  updated(changedProperties: Map<string, any>) {
+  updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('open')) {
       if (this.open) {
         if (this.dialog && !this.dialog.open) this.dialog.showModal();
@@ -414,13 +414,13 @@ export class ImagePreviewDialog extends LitElement {
             />
           </div>
           ${this.alt
-            ? html`<div
+        ? html`<div
                 class="caption"
                 @click="${(e: Event) => e.stopPropagation()}"
               >
                 ${this.alt}
               </div>`
-            : ''}
+        : ''}
         </div>
       </dialog>
     `;

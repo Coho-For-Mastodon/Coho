@@ -64,7 +64,7 @@ export const checkFollowing = async (id: string) => {
     const data = await response.json();
 
     return data;
-  } catch (err) {
+  } catch {
     const server = getServer();
     if (server) {
       await initAuth(server);
@@ -253,8 +253,8 @@ export const authToClient = async (code: string, state: string) => {
       console.error('Invalid token response:', data);
       throw new Error(
         data.error ||
-          data.details?.error_description ||
-          'Failed to get access token'
+        data.details?.error_description ||
+        'Failed to get access token'
       );
     }
 

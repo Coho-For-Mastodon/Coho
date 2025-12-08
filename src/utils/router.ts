@@ -8,8 +8,6 @@ if (!('URLPattern' in globalThis)) {
 import { Router } from '@thepassle/app-tools/router.js';
 // @ts-expect-error fix
 import { lazy } from '@thepassle/app-tools/router/plugins/lazy.js';
-// @ts-expect-error fix
-import { title } from '@thepassle/app-tools/router/plugins/title.js';
 import { myPlugin } from './transition-plugin.js';
 
 export const router = new Router({
