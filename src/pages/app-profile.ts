@@ -13,6 +13,7 @@ import {
   blockUser,
   unblockUser,
   reportUser,
+  type ProfilePostsFilter,
 } from '../services/account';
 
 import '../components/timeline-item';
@@ -30,6 +31,8 @@ import type { MdTextArea } from '../components/md/md-text-area';
 import type { Account } from '../mastodon/types';
 
 import '../components/md/md-skeleton';
+import '../components/md/md-segmented-button';
+import '../components/md/md-divider';
 
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
@@ -47,6 +50,8 @@ export class AppProfile extends LitElement {
   @state() selectedPost: Post | undefined = undefined;
   @state() isOwnProfile: boolean = false;
   @state() showReportDialog: boolean = false;
+  @state() activeSegment: ProfilePostsFilter = 'posts';
+  @state() loadingPosts: boolean = false;
 
   @query('#preview-content') private previewContent!: HTMLElement;
   @query('#edit') private editDialog!: MdDialog;
@@ -127,15 +132,32 @@ export class AppProfile extends LitElement {
         gap: 4px;
       }
 
+      md-segmented-button {
+        margin-bottom: 8px;
+      }
+
+      .posts-loading {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
       #fields {
         display: flex;
-        overflow-x: auto;
-        margin-top: 12px;
-
-        flex-direction: row;
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 8px;
         margin-top: 1em;
+
+        border-top: solid 1px grey;
+        padding-top: 8px;
+        margin-top: 1.4em;
+      }
+
+      .field-row {
+        display: grid;
+        grid-template-columns: minmax(100px, auto) 1fr;
         gap: 12px;
+        align-items: baseline;
+        padding: 4px 0;
       }
 
       #mutuals {
@@ -184,18 +206,28 @@ export class AppProfile extends LitElement {
       }
 
       .field-name {
-        font-weight: bold;
-        margin-right: 4px;
-        border-right: solid white 2px;
-        padding-right: 6px;
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        font-size: var(--md-sys-typescale-body-small-font-size, 12px);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .field-value {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+        color: var(--md-sys-color-on-surface, #e6e1e5);
       }
 
       .field-value a {
-        max-width: 12em;
-        overflow-x: hidden;
-        display: block;
-        white-space: nowrap;
-        text-overflow: ellipsis;
+        color: var(--md-sys-color-primary, var(--sl-color-primary-600));
+        text-decoration: none;
+      }
+
+      .field-value a:hover {
+        text-decoration: underline;
       }
 
       main {
@@ -280,13 +312,6 @@ export class AppProfile extends LitElement {
         width: 5em;
         border-radius: 4px;
         object-fit: cover;
-      }
-
-      #fields sl-badge span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 400px;
       }
 
       #fields img {
@@ -483,10 +508,21 @@ export class AppProfile extends LitElement {
   }
 
   async reloadPosts() {
-    const postsData = await getUsersPosts(this.id);
+    if (!this.user) return;
+    this.loadingPosts = true;
+    const postsData = await getUsersPosts(this.user.id, this.activeSegment);
     console.log(postsData);
 
     this.posts = postsData;
+    this.loadingPosts = false;
+  }
+
+  async handleSegmentChange(e: CustomEvent<{ value: string }>) {
+    const newSegment = e.detail.value as ProfilePostsFilter;
+    if (newSegment === this.activeSegment) return;
+
+    this.activeSegment = newSegment;
+    await this.reloadPosts();
   }
 
   async unfollow() {
@@ -594,6 +630,7 @@ export class AppProfile extends LitElement {
                   </div>
                 `
         : html`<div id="avatar-block"><md-skeleton></md-skeleton></div>`}
+
             <div id="username-block">
               <h3>
                 ${this.user
@@ -629,26 +666,24 @@ export class AppProfile extends LitElement {
               >
             </div>
 
-            <div id="fields">
+            ${this.user && this.user.fields && this.user.fields.length > 0 ? html`<div id="fields">
               ${this.user
-        ? this.user.fields.map(
-          (field) => html`
-                      <div>
-                        <md-badge variant="outlined">
-                          <span
-                            class="field-name"
-                            .innerHTML="${field.name}"
-                          ></span>
-                          <span
-                            class="field-value"
-                            .innerHTML="${field.value}"
-                          ></span>
-                        </md-badge>
+          ? this.user.fields.map(
+            (field) => html`
+                      <div class="field-row">
+                        <span
+                          class="field-name"
+                          .innerHTML="${field.name}"
+                        ></span>
+                        <span
+                          class="field-value"
+                          .innerHTML="${field.value}"
+                        ></span>
                       </div>
                     `
-        )
-        : null}
-            </div>
+          )
+          : null}
+            </div>` : null}
 
             <div id="profile-card-actions">
               ${!this.isOwnProfile
@@ -740,15 +775,30 @@ export class AppProfile extends LitElement {
             `
         : null}
 
-        <ul class="scrollbar-hidden">
+        <md-segmented-button
+          .value="${this.activeSegment}"
+          @segment-change="${(e: CustomEvent) => this.handleSegmentChange(e)}"
+        >
+          <md-segment value="posts">Posts</md-segment>
+          <md-segment value="posts_replies">Posts & Replies</md-segment>
+          <md-segment value="media">Media</md-segment>
+        </md-segmented-button>
+
+        <ul
+          class="scrollbar-hidden ${this.loadingPosts ? 'posts-loading' : ''}"
+        >
           ${this.posts.map(
           (post) => html`
               <li>
                 <timeline-item
-                  @edit="${(e: CustomEvent<{ tweet: Post }>) => this.editPost(e.detail.tweet)}"
+                  @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+              this.editPost(e.detail.tweet)}"
                   @delete="${() => this.reloadPosts()}"
                   .tweet=${post}
                 ></timeline-item>
+                <md-divider
+                  style="margin-top: 12px; margin-bottom: 12px;"
+                ></md-divider>
               </li>
             `
         )}

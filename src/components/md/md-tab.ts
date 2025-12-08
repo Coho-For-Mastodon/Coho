@@ -106,7 +106,8 @@ export class MdTab extends LitElement {
 
     /* Icon container with pill background for vertical nav and mobile bottom nav */
     :host([data-orientation='vertical']) .icon-container,
-    :host([data-orientation='horizontal'][data-placement='bottom']) .icon-container {
+    :host([data-orientation='horizontal'][data-placement='bottom'])
+      .icon-container {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -117,7 +118,8 @@ export class MdTab extends LitElement {
     }
 
     :host([data-orientation='vertical']:hover) .icon-container,
-    :host([data-orientation='horizontal'][data-placement='bottom']:hover) .icon-container {
+    :host([data-orientation='horizontal'][data-placement='bottom']:hover)
+      .icon-container {
       background: color-mix(
         in srgb,
         var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600)) 8%,
@@ -126,12 +128,16 @@ export class MdTab extends LitElement {
     }
 
     :host([active][data-orientation='vertical']) .icon-container,
-    :host([active][data-orientation='horizontal'][data-placement='bottom']) .icon-container {
-      background: var(--md-sys-color-secondary-container, color-mix(
-        in srgb,
-        var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
-        transparent
-      ));
+    :host([active][data-orientation='horizontal'][data-placement='bottom'])
+      .icon-container {
+      background: var(
+        --md-sys-color-secondary-container,
+        color-mix(
+          in srgb,
+          var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
+          transparent
+        )
+      );
     }
 
     /* Icon container - default (horizontal top) */
@@ -188,7 +194,8 @@ export class MdTab extends LitElement {
 
     /* Disable button overlay for vertical tabs - hover is on icon-container instead */
     :host([data-orientation='vertical']) button::before,
-    :host([data-orientation='horizontal'][data-placement='bottom']) button::before {
+    :host([data-orientation='horizontal'][data-placement='bottom'])
+      button::before {
       display: none;
     }
 
@@ -241,7 +248,8 @@ export class MdTab extends LitElement {
 
     /* Vertical active state - handled by icon-container pill, no full button background */
     :host([active][data-orientation='vertical']) button,
-    :host([active][data-orientation='horizontal'][data-placement='bottom']) button {
+    :host([active][data-orientation='horizontal'][data-placement='bottom'])
+      button {
       background: transparent;
     }
 

@@ -1,4 +1,4 @@
-export { };
+export {};
 
 declare global {
   interface Window {
@@ -20,7 +20,7 @@ declare global {
       }): Promise<TranslatorSession>;
     };
     EyeDropper: {
-      new(): EyeDropper;
+      new (): EyeDropper;
     };
   }
 

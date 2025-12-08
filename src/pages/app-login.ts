@@ -290,7 +290,9 @@ export class AppLogin extends LitElement {
 
     await this.updateComplete;
 
-    const dialog = this.shadowRoot?.querySelector('md-dialog') as MdDialog | null;
+    const dialog = this.shadowRoot?.querySelector(
+      'md-dialog'
+    ) as MdDialog | null;
 
     dialog?.show();
   }
@@ -315,14 +317,19 @@ export class AppLogin extends LitElement {
   }
 
   async getStarted() {
-    const dialog = this.shadowRoot?.querySelector('md-dialog') as MdDialog | null;
+    const dialog = this.shadowRoot?.querySelector(
+      'md-dialog'
+    ) as MdDialog | null;
     await dialog?.hide();
 
     scrollWidth = 0;
   }
 
   handleServerInput(event: Event | CustomEvent<{ value: string }>) {
-    const value = (event as CustomEvent<{ value: string }>).detail?.value || (event.target as HTMLInputElement)?.value || '';
+    const value =
+      (event as CustomEvent<{ value: string }>).detail?.value ||
+      (event.target as HTMLInputElement)?.value ||
+      '';
     this.chosenServer = value;
 
     // Debounce the search
@@ -382,17 +389,17 @@ export class AppLogin extends LitElement {
             full_description?: string;
           };
         }
-        const apiInstances: AutocompleteOption[] = ((data.instances || []) as InstanceResult[]).map(
-          (inst) => ({
-            value: inst.name,
-            label: inst.name,
-            description:
-              inst.info?.short_description ||
-              inst.info?.full_description?.substring(0, 100) ||
-              `${inst.users || '?'} users`,
-            icon: inst.thumbnail,
-          })
-        );
+        const apiInstances: AutocompleteOption[] = (
+          (data.instances || []) as InstanceResult[]
+        ).map((inst) => ({
+          value: inst.name,
+          label: inst.name,
+          description:
+            inst.info?.short_description ||
+            inst.info?.full_description?.substring(0, 100) ||
+            `${inst.users || '?'} users`,
+          icon: inst.thumbnail,
+        }));
 
         // Combine popular matches with API results, removing duplicates
         const seenValues = new Set<string>();
@@ -594,7 +601,9 @@ export class AppLogin extends LitElement {
           <a href="https://github.com/jgw96/mammoth-app#readme" target="_blank">
             Learn More about Coho
           </a>
-          <p style="opacity: 0.5; margin-top: 8px;">Build: ${new Date(__APP_VERSION__).toLocaleString()}</p>
+          <p style="opacity: 0.5; margin-top: 8px;">
+            Build: ${new Date(__APP_VERSION__).toLocaleString()}
+          </p>
         </div>
       </main>
     `;

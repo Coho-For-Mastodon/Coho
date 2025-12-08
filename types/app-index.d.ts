@@ -21,6 +21,22 @@ export declare class AppIndex extends LitElement {
      */
     private applyThemeColor;
     /**
+     * Parse any color format (hex, rgb, rgba) to RGB components
+     */
+    private parseColor;
+    /**
+     * Mix two colors in sRGB color space
+     * @param color1 First color (hex or rgb format)
+     * @param color2 Second color (hex or rgb format)
+     * @param weight Weight of color1 (0-100)
+     */
+    private mixColors;
+    /**
+     * Update the theme-color meta tags with tinted background colors
+     * This affects the Window Controls Overlay / titlebar area
+     */
+    private updateThemeMetaTags;
+    /**
      * Adjust color brightness (from app-theme component)
      */
     private adjustColorBrightness;

@@ -132,9 +132,16 @@ export class AppHeader extends LitElement {
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {
     // Debug: Check display mode for window controls overlay
-    const isWCO = window.matchMedia('(display-mode: window-controls-overlay)').matches;
+    const isWCO = window.matchMedia(
+      '(display-mode: window-controls-overlay)'
+    ).matches;
     console.log('[Header] Window Controls Overlay active:', isWCO);
-    console.log('[Header] titlebar-area-x:', getComputedStyle(document.documentElement).getPropertyValue('env(titlebar-area-x, fallback)'));
+    console.log(
+      '[Header] titlebar-area-x:',
+      getComputedStyle(document.documentElement).getPropertyValue(
+        'env(titlebar-area-x, fallback)'
+      )
+    );
 
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
@@ -145,16 +152,12 @@ export class AppHeader extends LitElement {
 
   openSettings() {
     // fire custom event
-    this.dispatchEvent(
-      new CustomEvent('open-settings') as OpenSettingsEvent
-    );
+    this.dispatchEvent(new CustomEvent('open-settings') as OpenSettingsEvent);
   }
 
   handleTheming() {
     // fire custom event
-    this.dispatchEvent(
-      new CustomEvent('open-theming') as OpenThemingEvent
-    );
+    this.dispatchEvent(new CustomEvent('open-theming') as OpenThemingEvent);
   }
 
   openBotDrawer() {
@@ -181,7 +184,7 @@ export class AppHeader extends LitElement {
       <header>
         <div id="back-button-block">
           ${this.enableBack
-        ? html`<md-icon-button
+            ? html`<md-icon-button
                 @click="${() => this.goBack()}"
                 title="back"
                 size="small"
@@ -203,15 +206,15 @@ export class AppHeader extends LitElement {
                   />
                 </svg>
               </md-icon-button>`
-        : null}
+            : null}
           ${!this.enableBack
-        ? html`<img
+            ? html`<img
                 src="/assets/icons/new-icons/icon-48x48.webp"
                 alt="App Icon"
                 width="28"
                 height="28"
               />`
-        : nothing}
+            : nothing}
         </div>
 
         <div id="actions">

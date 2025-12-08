@@ -8,6 +8,72 @@ import './components/header';
 import './components/image-preview-dialog';
 import { getSettings, Settings } from './services/settings';
 
+// ============================================================================
+// STALE ASSET RECOVERY
+// ============================================================================
+// When the app updates but the browser still has old index.html cached,
+// chunk loads will fail because the hashed filenames have changed.
+// This handler detects such failures and triggers a hard refresh.
+let hasAttemptedRecovery = false;
+
+const handleChunkLoadError = async (error: Error | string) => {
+  const errorMessage = typeof error === 'string' ? error : error?.message || '';
+
+  // Check for common chunk/module load failure patterns
+  const isChunkError =
+    errorMessage.includes('Loading chunk') ||
+    errorMessage.includes('Failed to fetch dynamically imported module') ||
+    errorMessage.includes('error loading dynamically imported module') ||
+    errorMessage.includes('Importing a module script failed') ||
+    // Network errors when fetching JS files
+    (errorMessage.includes('Failed to fetch') && errorMessage.includes('.js'));
+
+  if (isChunkError && !hasAttemptedRecovery) {
+    hasAttemptedRecovery = true;
+    console.error(
+      '[App] Chunk load failed, clearing caches and reloading...',
+      errorMessage
+    );
+
+    try {
+      // Clear all caches to force fresh assets
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
+        console.log('[App] Cleared all caches');
+      }
+
+      // Unregister service worker to ensure clean state
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((reg) => reg.unregister()));
+        console.log('[App] Unregistered service workers');
+      }
+    } catch (e) {
+      console.error('[App] Failed to clear caches:', e);
+    }
+
+    // Hard reload to bypass any remaining caches
+    window.location.reload();
+  }
+};
+
+// Listen for unhandled errors (catches synchronous chunk load failures)
+window.addEventListener(
+  'error',
+  (event) => {
+    handleChunkLoadError(event.message || event.error?.message || '');
+  },
+  true
+);
+
+// Listen for unhandled promise rejections (catches async import() failures)
+window.addEventListener('unhandledrejection', (event) => {
+  const reason = event.reason;
+  const message = reason?.message || String(reason) || '';
+  handleChunkLoadError(message);
+});
+
 @customElement('app-index')
 export class AppIndex extends LitElement {
   static get styles() {
@@ -114,7 +180,8 @@ export class AppIndex extends LitElement {
 
     // Check network connection quality
     if ('connection' in navigator) {
-      const conn = (navigator as { connection?: NetworkInformation }).connection;
+      const conn = (navigator as { connection?: NetworkInformation })
+        .connection;
 
       // Skip on slow connections (2G, slow-2g) or if saveData is enabled
       if (
@@ -167,6 +234,84 @@ export class AppIndex extends LitElement {
     document.body.style.setProperty('--sl-color-primary-600', color);
     document.body.style.setProperty('--md-sys-color-primary', color);
     document.body.style.setProperty('--md-sys-color-outline', color);
+
+    // Update theme-color meta tags with tinted background
+    this.updateThemeMetaTags(color);
+  }
+
+  /**
+   * Parse any color format (hex, rgb, rgba) to RGB components
+   */
+  private parseColor(color: string): { r: number; g: number; b: number } {
+    color = color.trim();
+
+    // Handle rgb/rgba format: rgb(r, g, b) or rgb(r g b)
+    const rgbMatch = color.match(/rgba?\s*\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+    if (rgbMatch) {
+      return {
+        r: parseInt(rgbMatch[1], 10),
+        g: parseInt(rgbMatch[2], 10),
+        b: parseInt(rgbMatch[3], 10),
+      };
+    }
+
+    // Handle hex format
+    let hex = color.replace('#', '');
+    // Handle shorthand hex (#abc -> #aabbcc)
+    if (hex.length === 3) {
+      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    return {
+      r: parseInt(hex.substring(0, 2), 16),
+      g: parseInt(hex.substring(2, 4), 16),
+      b: parseInt(hex.substring(4, 6), 16),
+    };
+  }
+
+  /**
+   * Mix two colors in sRGB color space
+   * @param color1 First color (hex or rgb format)
+   * @param color2 Second color (hex or rgb format)
+   * @param weight Weight of color1 (0-100)
+   */
+  private mixColors(color1: string, color2: string, weight: number): string {
+    const c1 = this.parseColor(color1);
+    const c2 = this.parseColor(color2);
+    const w = weight / 100;
+
+    const r = Math.round(c1.r * w + c2.r * (1 - w));
+    const g = Math.round(c1.g * w + c2.g * (1 - w));
+    const b = Math.round(c1.b * w + c2.b * (1 - w));
+
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+
+  /**
+   * Update the theme-color meta tags with tinted background colors
+   * This affects the Window Controls Overlay / titlebar area
+   */
+  private updateThemeMetaTags(primaryColor: string) {
+    // Calculate tinted backgrounds matching CSS: color-mix(in srgb, primary X%, base)
+    // These match --md-sys-color-background from md-tokens.css:
+    // Dark: color-mix(in srgb, var(--md-sys-color-primary) 5%, #141314)
+    // Light: color-mix(in srgb, var(--md-sys-color-primary) 10%, #ffffff)
+    const lightBackground = this.mixColors(primaryColor, '#ffffff', 10);
+    const darkBackground = this.mixColors(primaryColor, '#141314', 5);
+
+    // Find and update the meta tags
+    const darkMeta = document.querySelector(
+      'meta[name="theme-color"][media="(prefers-color-scheme: dark)"]'
+    );
+    const lightMeta = document.querySelector(
+      'meta[name="theme-color"][media="(prefers-color-scheme: light)"]'
+    );
+
+    if (darkMeta) {
+      darkMeta.setAttribute('content', darkBackground);
+    }
+    if (lightMeta) {
+      lightMeta.setAttribute('content', lightBackground);
+    }
   }
 
   /**
@@ -199,7 +344,11 @@ export class AppIndex extends LitElement {
   firstUpdated() {
     router.addEventListener('route-changed', () => {
       if ('startViewTransition' in document) {
-        (document as Document & { startViewTransition: (callback: () => void) => void }).startViewTransition(() => {
+        (
+          document as Document & {
+            startViewTransition: (callback: () => void) => void;
+          }
+        ).startViewTransition(() => {
           this.requestUpdate();
         });
       } else {

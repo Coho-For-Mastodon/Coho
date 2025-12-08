@@ -5,7 +5,12 @@ import { router } from '../utils/router';
 
 interface SearchData {
   query?: string;
-  accounts?: Array<{ id: string; avatar: string; display_name: string; acct: string }>;
+  accounts?: Array<{
+    id: string;
+    avatar: string;
+    display_name: string;
+    acct: string;
+  }>;
   statuses?: unknown[];
   hashtags?: unknown[];
 }
@@ -43,7 +48,9 @@ export class Search extends LitElement {
       }
 
       .search-bar:focus-within {
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
+        box-shadow:
+          0 1px 3px 0 rgba(0, 0, 0, 0.3),
+          0 4px 8px 3px rgba(0, 0, 0, 0.15);
       }
 
       .leading-icon {
@@ -65,7 +72,11 @@ export class Search extends LitElement {
         flex: 1;
         border: none;
         background: transparent;
-        font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+        font-family:
+          'Roboto',
+          system-ui,
+          -apple-system,
+          sans-serif;
         font-size: 16px;
         font-weight: 400;
         line-height: 24px;
@@ -217,8 +228,16 @@ export class Search extends LitElement {
     return html`
       <div class="search-bar" @click="${this._handleContainerClick}">
         <span class="leading-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor">
-            <path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="24"
+            viewBox="0 -960 960 960"
+            width="24"
+            fill="currentColor"
+          >
+            <path
+              d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+            />
           </svg>
         </span>
         <input
@@ -229,9 +248,12 @@ export class Search extends LitElement {
           @keydown="${this._handleKeyDown}"
         />
         ${this.avatar
-        ? html`<img class="trailing-avatar" src="${this.avatar}" alt="Profile" />`
-        : html``
-      }
+          ? html`<img
+              class="trailing-avatar"
+              src="${this.avatar}"
+              alt="Profile"
+            />`
+          : html``}
       </div>
     `;
   }

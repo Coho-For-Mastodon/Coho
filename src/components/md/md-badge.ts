@@ -127,6 +127,7 @@ export class MdBadge extends LitElement {
     return html`
       <div
         class="badge ${this.variant} ${this.clickable ? 'clickable' : ''}"
+        part="badge"
         @click="${this._handleClick}"
       >
         <slot></slot>

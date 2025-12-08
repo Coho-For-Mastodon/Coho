@@ -138,12 +138,26 @@ export const getAccount = async (id: string) => {
   return data;
 };
 
-export const getUsersPosts = async (id: string) => {
+export type ProfilePostsFilter = 'posts' | 'posts_replies' | 'media';
+
+export const getUsersPosts = async (
+  id: string,
+  filter: ProfilePostsFilter = 'posts'
+) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getUserPosts?id=${id}&code=${accessToken}&server=${server}`
-  );
+
+  let url = `${FIREBASE_FUNCTIONS_BASE_URL}/getUserPosts?id=${id}&code=${accessToken}&server=${server}`;
+
+  // Apply filter parameters based on selected view
+  if (filter === 'posts') {
+    url += '&exclude_replies=true';
+  } else if (filter === 'media') {
+    url += '&only_media=true';
+  }
+  // 'posts_replies' doesn't need any extra params - returns all statuses
+
+  const response = await fetch(url);
   const data = await response.json();
   return data;
 };

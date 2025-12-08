@@ -82,6 +82,13 @@ if (!IS_DEV) {
   registerRoute(navigationRoute);
 }
 
+// ============================================================================
+// SERVICE WORKER LIFECYCLE
+// ============================================================================
+// We do NOT auto-skipWaiting here because old clients don't have coordinated
+// reload logic. Instead, we wait for the client to send SKIP_WAITING message
+// (handled in the message listener below).
+
 interface WidgetDefinition {
   msAcTemplate: string;
   data: string;
@@ -98,14 +105,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   account: {
     id: string;
     display_name: string;
@@ -122,14 +129,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   icon: string;
   title: string;
   body: string;
@@ -150,7 +157,6 @@ interface PeriodicSyncEvent extends ExtendableEvent {
 // the App Shell strategy consolidated.
 // The following block is removed to avoid duplication.
 
-
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -167,6 +173,12 @@ self.addEventListener('message', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
+      // IMPORTANT: Claim clients FIRST before any cleanup
+      // This ensures the new SW controls all tabs as quickly as possible
+      // to prevent stale content from being served during cache cleanup
+      await self.clients.claim();
+      console.log('[SW] Claimed all clients');
+
       // Delete ALL runtime caches to prevent stale content issues
       // This is aggressive but ensures version consistency
       const cacheNames = await caches.keys();
@@ -181,10 +193,15 @@ self.addEventListener('activate', (event) => {
         })
       );
 
-      // Claim all clients immediately so the new SW controls all tabs
-      await self.clients.claim();
-
       console.log('[SW] Activated and cleaned up caches');
+
+      // Notify all clients that the update is ready
+      // This allows clients to do a coordinated reload AFTER the SW is fully ready
+      const clients = await self.clients.matchAll({ type: 'window' });
+      for (const client of clients) {
+        client.postMessage({ type: 'SW_ACTIVATED' });
+      }
+      console.log('[SW] Notified clients of activation');
     })()
   );
 });
@@ -586,7 +603,6 @@ async function shareTargetHandler({
   return Response.redirect(`/home?name=${mediaFiles[0].name}`, 303);
 }
 
-
 const shareRouteHandler: RouteHandlerCallback = async ({ event }) => {
   return shareTargetHandler({ event: event as FetchEvent });
 };
@@ -646,8 +662,7 @@ if (!IS_DEV) {
 
   registerRoute(
     ({ request }) =>
-      request.destination !== 'document' &&
-      request.url.includes('/user?code'),
+      request.destination !== 'document' && request.url.includes('/user?code'),
     new CacheFirst({
       cacheName: 'user',
       plugins: [

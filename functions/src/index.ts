@@ -488,6 +488,8 @@ export const getUserPosts = onRequest(async (request, response) => {
   const accessToken = request.query.code as string;
   const server = `https://${request.query.server}`;
   const id = request.query.id as string;
+  const excludeReplies = request.query.exclude_replies as string;
+  const onlyMedia = request.query.only_media as string;
 
   if (!accessToken || !server || !id) {
     response.status(400).json({ error: 'Missing required parameters' });
@@ -495,15 +497,21 @@ export const getUserPosts = onRequest(async (request, response) => {
   }
 
   try {
-    const apiResponse = await fetch(
-      `${server}/api/v1/accounts/${id}/statuses`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    // Build URL with optional filter parameters
+    let url = `${server}/api/v1/accounts/${id}/statuses?limit=40`;
+    if (excludeReplies === 'true') {
+      url += '&exclude_replies=true';
+    }
+    if (onlyMedia === 'true') {
+      url += '&only_media=true';
+    }
+
+    const apiResponse = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
     const data = await apiResponse.json();
     response.json(data);

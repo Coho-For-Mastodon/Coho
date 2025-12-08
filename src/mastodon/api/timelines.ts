@@ -192,9 +192,12 @@ export const getTrendingTags = async (): Promise<TrendingTag[]> => {
 export const getTrendingLinks = async (): Promise<TrendingLink[]> => {
   const { url } = getClientConfig();
 
-  const response = await apiFetch(`https://${url}/api/v1/trends/links?limit=10`, {
-    method: 'GET',
-  });
+  const response = await apiFetch(
+    `https://${url}/api/v1/trends/links?limit=10`,
+    {
+      method: 'GET',
+    }
+  );
 
   const data = await response.json();
   return data;
@@ -244,9 +247,12 @@ export const getStatusContext = async (
 ): Promise<{ ancestors: Post[]; descendants: Post[] }> => {
   const { url } = getClientConfig();
 
-  const response = await apiFetch(`https://${url}/api/v1/statuses/${id}/context`, {
-    method: 'GET',
-  });
+  const response = await apiFetch(
+    `https://${url}/api/v1/statuses/${id}/context`,
+    {
+      method: 'GET',
+    }
+  );
 
   const data = await response.json();
   return data;
@@ -298,12 +304,15 @@ export const unfavoritePost = async (id: string): Promise<Post> => {
 export const reblogPost = async (id: string): Promise<Post> => {
   const { url } = getClientConfig();
 
-  const response = await apiFetch(`https://${url}/api/v1/statuses/${id}/reblog`, {
-    method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  });
+  const response = await apiFetch(
+    `https://${url}/api/v1/statuses/${id}/reblog`,
+    {
+      method: 'POST',
+      headers: new Headers({
+        'Content-Type': 'application/json',
+      }),
+    }
+  );
 
   const data = await response.json();
   return data;

@@ -71,7 +71,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('news')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="news"
               >News</md-checkbox
             >
@@ -79,7 +80,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('technology')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="technology"
               >Technology</md-checkbox
             >
@@ -87,7 +89,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('sports')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="sports"
               >Sports</md-checkbox
             >
@@ -95,7 +98,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('politics')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="politics"
               >Politics</md-checkbox
             >
@@ -103,7 +107,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('entertainment')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="entertainment"
               >Entertainment</md-checkbox
             >
@@ -111,7 +116,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('business')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="business"
               >Business</md-checkbox
             >
@@ -119,7 +125,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('science')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="science"
               >Science</md-checkbox
             >
@@ -127,7 +134,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('health')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="health"
               >Health</md-checkbox
             >
@@ -135,7 +143,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('travel')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="travel"
               >Travel</md-checkbox
             >
@@ -143,7 +152,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('food')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="food"
               >Food</md-checkbox
             >
@@ -151,7 +161,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('fashion')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="fashion"
               >Fashion</md-checkbox
             >
@@ -159,7 +170,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('lifestyle')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="lifestyle"
               >Lifestyle</md-checkbox
             >
@@ -167,7 +179,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('art')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="art"
               >Art</md-checkbox
             >
@@ -175,7 +188,8 @@ export class UserTerms extends LitElement {
           <li>
             <md-checkbox
               ?checked="${this._interests.includes('music')}"
-              @change="${(e: CustomEvent<{ checked: boolean }>) => this.handleChecked(e)}"
+              @change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleChecked(e)}"
               value="music"
               >Music</md-checkbox
             >
