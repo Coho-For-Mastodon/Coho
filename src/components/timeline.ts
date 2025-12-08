@@ -6,6 +6,7 @@ import {
   getPaginatedHomeTimeline,
   mixTimeline,
   getLastPlaceTimeline,
+  prefetchNextPage,
 } from '../services/timeline';
 import { Post } from '../interfaces/Post';
 import {
@@ -83,6 +84,7 @@ export class Timeline extends LitElement {
   private _pullDistance: number = 0;
   private _threshold: number = 80;
   private _hapticTriggered: boolean = false;
+  private _prefetchedIds = new Set<string>();
 
   @property({ type: String }) timelineType:
     | 'home'
@@ -623,6 +625,16 @@ export class Timeline extends LitElement {
     );
   }
 
+  /** Check if data saver mode is enabled */
+  private _isDataSaverEnabled(): boolean {
+    const connection = (
+      navigator as Navigator & {
+        connection?: { saveData?: boolean };
+      }
+    ).connection;
+    return connection?.saveData === true;
+  }
+
   /** Handle visibility changes from lit-virtualizer to trigger load more */
   private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
     if (!this.autoLoad) {
@@ -630,6 +642,21 @@ export class Timeline extends LitElement {
     }
 
     const { last } = e;
+
+    // Prefetch at 15 items from end (home timeline only, skip if data saver enabled)
+    if (
+      last >= this.timeline.length - 15 &&
+      this.timeline.length > 0 &&
+      this.timelineType === 'home' &&
+      !this._isDataSaverEnabled()
+    ) {
+      const lastPostId = this.timeline[this.timeline.length - 1].id;
+      if (!this._prefetchedIds.has(lastPostId)) {
+        this._prefetchedIds.add(lastPostId);
+        prefetchNextPage(lastPostId, 'home');
+      }
+    }
+
     // Load more when we're close to the end
     if (
       last >= this.timeline.length - 5 &&

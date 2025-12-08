@@ -224,6 +224,31 @@ export const getPaginatedHomeTimeline = async (
   return data;
 };
 
+/**
+ * Prefetch the next page of timeline data.
+ * This is a fire-and-forget operation - the SW will cache the response.
+ * Does not update lastPageID to avoid interfering with normal pagination.
+ */
+export const prefetchNextPage = (maxId: string, type = 'home'): void => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+  const headers = new Headers({
+    Authorization: `Bearer ${accessToken}`,
+  });
+
+  const fetchUrl = `https://${server}/api/v1/timelines/${type}?limit=10&max_id=${maxId}`;
+
+  // Fire-and-forget fetch - SW will cache the response
+  fetch(fetchUrl, {
+    method: 'GET',
+    headers: accessToken.length > 0 ? headers : new Headers({}),
+    // @ts-expect-error - priority is a valid fetch option but not in all TS libs
+    priority: 'low',
+  }).catch(() => {
+    // Silently ignore prefetch errors
+  });
+};
+
 // Use mastodon library's getPublicTimeline
 export const getPublicTimeline = async (): Promise<Post[]> => {
   return mastodonGetPublicTimeline(false) as unknown as Promise<Post[]>;
