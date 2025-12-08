@@ -280,7 +280,8 @@ export const generateAltText = async (
       expectedInputs: [{ type: 'image' }],
     });
 
-    const prompt = 'Give me alt text for the following image. Only return the alt text, no other text or markdown:';
+    const prompt =
+      'Give me alt text for the following image. Only return the alt text, no other text or markdown:';
 
     const result = await session.prompt([
       {

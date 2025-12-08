@@ -184,7 +184,7 @@ export class AppHeader extends LitElement {
       <header>
         <div id="back-button-block">
           ${this.enableBack
-        ? html`<md-icon-button
+            ? html`<md-icon-button
                 @click="${() => this.goBack()}"
                 title="back"
                 size="small"
@@ -206,15 +206,15 @@ export class AppHeader extends LitElement {
                   />
                 </svg>
               </md-icon-button>`
-        : null}
+            : null}
           ${!this.enableBack
-        ? html`<img
+            ? html`<img
                 src="/assets/icons/new-icons/icon-48x48.png"
                 alt="App Icon"
                 width="28"
                 height="28"
               />`
-        : nothing}
+            : nothing}
         </div>
 
         <div id="actions">

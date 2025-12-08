@@ -134,7 +134,8 @@ export class AppProfile extends LitElement {
         width: 128px;
         height: 128px;
         border-radius: 50%;
-        border: 4px solid var(--md-sys-color-surface, var(--md-sys-color-background));
+        border: 4px solid
+          var(--md-sys-color-surface, var(--md-sys-color-background));
         object-fit: cover;
         background: var(--md-sys-color-surface, var(--md-sys-color-background));
       }
@@ -143,7 +144,8 @@ export class AppProfile extends LitElement {
         width: 128px;
         height: 128px;
         border-radius: 50%;
-        border: 4px solid var(--md-sys-color-surface, var(--md-sys-color-background));
+        border: 4px solid
+          var(--md-sys-color-surface, var(--md-sys-color-background));
       }
 
       /* Actions row (follow button, etc.) */
@@ -607,8 +609,12 @@ export class AppProfile extends LitElement {
       <!-- Banner -->
       <div id="banner">
         ${this.user?.header
-        ? html`<img id="banner-img" src="${this.user.header}" alt="Profile banner" />`
-        : html`<md-skeleton id="banner-skeleton"></md-skeleton>`}
+          ? html`<img
+              id="banner-img"
+              src="${this.user.header}"
+              alt="Profile banner"
+            />`
+          : html`<md-skeleton id="banner-skeleton"></md-skeleton>`}
       </div>
 
       <!-- Profile Header -->
@@ -616,17 +622,29 @@ export class AppProfile extends LitElement {
         <!-- Avatar (overlapping banner) -->
         <div id="avatar-container">
           ${this.user?.avatar
-        ? html`<img id="avatar" src="${this.user.avatar}" alt="${this.user.display_name}'s avatar" />`
-        : html`<md-skeleton id="avatar-skeleton"></md-skeleton>`}
+            ? html`<img
+                id="avatar"
+                src="${this.user.avatar}"
+                alt="${this.user.display_name}'s avatar"
+              />`
+            : html`<md-skeleton id="avatar-skeleton"></md-skeleton>`}
         </div>
 
         <!-- Actions row (follow, menu) -->
         <div id="actions-row">
           ${!this.isOwnProfile && this.user
-        ? html`
+            ? html`
                 ${this.followed
-            ? html`<md-button variant="outlined" @click="${() => this.unfollow()}">Following</md-button>`
-            : html`<md-button variant="filled" @click="${() => this.follow()}">Follow</md-button>`}
+                  ? html`<md-button
+                      variant="outlined"
+                      @click="${() => this.unfollow()}"
+                      >Following</md-button
+                    >`
+                  : html`<md-button
+                      variant="filled"
+                      @click="${() => this.follow()}"
+                      >Follow</md-button
+                    >`}
                 <md-dropdown placement="bottom-end">
                   <md-icon-button
                     slot="trigger"
@@ -635,20 +653,20 @@ export class AppProfile extends LitElement {
                   ></md-icon-button>
                   <md-menu>
                     ${this.muted
-            ? html`<md-menu-item @click="${() => this.unmute()}">
+                      ? html`<md-menu-item @click="${() => this.unmute()}">
                           <md-icon slot="prefix" name="volume-mute"></md-icon>
                           Unmute @${this.user?.acct}
                         </md-menu-item>`
-            : html`<md-menu-item @click="${() => this.mute()}">
+                      : html`<md-menu-item @click="${() => this.mute()}">
                           <md-icon slot="prefix" name="volume-mute"></md-icon>
                           Mute @${this.user?.acct}
                         </md-menu-item>`}
                     ${this.blocked
-            ? html`<md-menu-item @click="${() => this.unblock()}">
+                      ? html`<md-menu-item @click="${() => this.unblock()}">
                           <md-icon slot="prefix" name="ban"></md-icon>
                           Unblock @${this.user?.acct}
                         </md-menu-item>`
-            : html`<md-menu-item @click="${() => this.block()}">
+                      : html`<md-menu-item @click="${() => this.block()}">
                           <md-icon slot="prefix" name="ban"></md-icon>
                           Block @${this.user?.acct}
                         </md-menu-item>`}
@@ -659,54 +677,67 @@ export class AppProfile extends LitElement {
                   </md-menu>
                 </md-dropdown>
               `
-        : null}
+            : null}
         </div>
 
         <!-- Profile Info -->
         <div id="profile-info">
           ${this.user
-        ? html`
+            ? html`
                 <h1 id="display-name">${this.user.display_name}</h1>
                 <p id="handle">@${this.user.acct}</p>
 
                 ${this.followed && this.following
-            ? html`<span id="mutuals-badge">
+                  ? html`<span id="mutuals-badge">
                       <md-icon name="people" style="font-size: 14px;"></md-icon>
                       Mutuals
                     </span>`
-            : null}
-
+                  : null}
                 ${this.user.note
-            ? html`<div id="bio" .innerHTML=${this.user.note}></div>`
-            : null}
+                  ? html`<div id="bio" .innerHTML=${this.user.note}></div>`
+                  : null}
 
                 <div id="stats-row">
                   <span class="stat" @click="${() => this.goToFollowing()}">
-                    <span class="stat-count">${(this.user.following_count ?? 0).toLocaleString()}</span>
+                    <span class="stat-count"
+                      >${(
+                        this.user.following_count ?? 0
+                      ).toLocaleString()}</span
+                    >
                     <span class="stat-label">Following</span>
                   </span>
                   <span class="stat" @click="${() => this.goToFollowers()}">
-                    <span class="stat-count">${(this.user.followers_count ?? 0).toLocaleString()}</span>
+                    <span class="stat-count"
+                      >${(
+                        this.user.followers_count ?? 0
+                      ).toLocaleString()}</span
+                    >
                     <span class="stat-label">Followers</span>
                   </span>
                 </div>
 
                 ${this.user.fields && this.user.fields.length > 0
-            ? html`
+                  ? html`
                       <div id="fields">
                         ${this.user.fields.map(
-              (field) => html`
+                          (field) => html`
                             <div class="field-row">
-                              <span class="field-name" .innerHTML="${field.name}"></span>
-                              <span class="field-value" .innerHTML="${field.value}"></span>
+                              <span
+                                class="field-name"
+                                .innerHTML="${field.name}"
+                              ></span>
+                              <span
+                                class="field-value"
+                                .innerHTML="${field.value}"
+                              ></span>
                             </div>
                           `
-            )}
+                        )}
                       </div>
                     `
-            : null}
+                  : null}
               `
-        : html`
+            : html`
                 <md-skeleton id="display-name-skeleton"></md-skeleton>
                 <md-skeleton id="handle-skeleton"></md-skeleton>
                 <div id="bio-skeleton">
@@ -734,16 +765,17 @@ export class AppProfile extends LitElement {
       <div id="posts-container">
         <ul class="${this.loadingPosts ? 'posts-loading' : ''}">
           ${this.posts.map(
-          (post) => html`
+            (post) => html`
               <li>
                 <timeline-item
-                  @edit="${(e: CustomEvent<{ tweet: Post }>) => this.editPost(e.detail.tweet)}"
+                  @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                    this.editPost(e.detail.tweet)}"
                   @delete="${() => this.reloadPosts()}"
                   .tweet=${post}
                 ></timeline-item>
               </li>
             `
-        )}
+          )}
         </ul>
       </div>
 

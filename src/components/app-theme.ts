@@ -407,10 +407,10 @@ export class AppTheme extends LitElement {
             ></div>
 
             ${'EyeDropper' in window
-        ? html`<md-button circle @click="${() => this.customColor()}">
+              ? html`<md-button circle @click="${() => this.customColor()}">
                   <md-icon src="/assets/add-outline.svg"></md-icon>
                 </md-button>`
-        : null}
+              : null}
           </div>
         </div>
       </div>

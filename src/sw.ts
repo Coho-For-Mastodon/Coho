@@ -105,14 +105,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   account: {
     id: string;
     display_name: string;
@@ -129,14 +129,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   icon: string;
   title: string;
   body: string;

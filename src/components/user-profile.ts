@@ -155,25 +155,25 @@ export class UserProfile extends LitElement {
       <div
         @click="${() => this.openUser()}"
         class=${classMap({
-      small: this.small === true,
-      headerBlock: true,
-      boosted: this.boosted,
-    })}
+          small: this.small === true,
+          headerBlock: true,
+          boosted: this.boosted,
+        })}
         slot="header"
       >
         <img
           id="avatar"
           src="/assets/icons/new-icons/icon-72x72.png"
           data-src="${this.account?.avatar_static ||
-      '/assets/icons/new-icons/icon-72x72.png'}"
+          '/assets/icons/new-icons/icon-72x72.png'}"
         />
         <div>
           <h4
             .innerHTML="${parseEmojis(
-        this.account?.display_name || 'Loading...',
-        this.account?.emojis || [],
-        true
-      )}"
+              this.account?.display_name || 'Loading...',
+              this.account?.emojis || [],
+              true
+            )}"
           ></h4>
           <p>${this.account?.acct || 'Loading...'}</p>
         </div>

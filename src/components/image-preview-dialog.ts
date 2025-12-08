@@ -145,7 +145,9 @@ export class ImagePreviewDialog extends LitElement {
     }
 
     .container.swipe-closing {
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition:
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .close-button.swipe-closing {
@@ -281,7 +283,8 @@ export class ImagePreviewDialog extends LitElement {
     // Close if:
     // - Swiped up more than 100px, OR
     // - Swipe velocity is high enough (fast flick)
-    const shouldClose = this.swipeOffset < -100 || (this.swipeOffset < -30 && velocity > 0.5);
+    const shouldClose =
+      this.swipeOffset < -100 || (this.swipeOffset < -30 && velocity > 0.5);
 
     if (shouldClose) {
       this.closeWithSwipeAnimation();
@@ -339,13 +342,15 @@ export class ImagePreviewDialog extends LitElement {
 
   private resetSwipePosition() {
     if (this.container) {
-      this.container.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+      this.container.style.transition =
+        'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
       this.container.style.transform = 'translateY(0)';
       this.container.style.opacity = '1';
     }
 
     if (this.closeButton) {
-      this.closeButton.style.transition = 'opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+      this.closeButton.style.transition =
+        'opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
       this.closeButton.style.opacity = '1';
     }
 
@@ -365,7 +370,10 @@ export class ImagePreviewDialog extends LitElement {
   render() {
     return html`
       <dialog @close="${this.close}" @click="${this.handleBackdropClick}">
-        <md-icon-button class="close-button ${this.isDragging ? 'dragging' : ''}" @click="${this.close}">
+        <md-icon-button
+          class="close-button ${this.isDragging ? 'dragging' : ''}"
+          @click="${this.close}"
+        >
           <md-icon>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -406,13 +414,13 @@ export class ImagePreviewDialog extends LitElement {
             />
           </div>
           ${this.alt
-        ? html`<div
+            ? html`<div
                 class="caption"
                 @click="${(e: Event) => e.stopPropagation()}"
               >
                 ${this.alt}
               </div>`
-        : ''}
+            : ''}
         </div>
       </dialog>
     `;
