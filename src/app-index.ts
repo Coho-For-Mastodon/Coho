@@ -8,6 +8,9 @@ import './components/header';
 import './components/image-preview-dialog';
 import { getSettings, Settings } from './services/settings';
 
+// Log build version for debugging
+console.log('[Coho] Build version:', __APP_VERSION__);
+
 // ============================================================================
 // STALE ASSET RECOVERY
 // ============================================================================

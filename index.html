@@ -286,7 +286,7 @@
       if ('serviceWorker' in navigator) {
         const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
         const swUrl = isDev ? '/dev-sw.js?dev-sw' : '/sw.js';
-        const swOptions = isDev ? { type: 'module' } : undefined;
+        const swOptions = { type: 'module' };
 
         let refreshing = false;
         let waitingWorker = null;
