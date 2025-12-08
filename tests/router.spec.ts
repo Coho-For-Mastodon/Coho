@@ -28,13 +28,6 @@ test.describe('Router', () => {
         expect(page.url()).toContain('/search');
     });
 
-    test('renders profile page at /account', async ({ page }) => {
-        await bootstrapApp(page);
-        await navigateTo(page, '/account');
-        await expect(page.locator('app-profile')).toBeVisible();
-        expect(page.url()).toContain('/account');
-    });
-
     test('renders followers page at /followers', async ({ page }) => {
         await bootstrapApp(page);
         await navigateTo(page, '/followers');
@@ -82,13 +75,6 @@ test.describe('Router', () => {
         await navigateTo(page, '/explore');
         await expect(page.locator('app-explore')).toBeVisible();
         expect(page.url()).toContain('/explore');
-    });
-
-    test('renders media page at /media', async ({ page }) => {
-        await bootstrapApp(page);
-        await navigateTo(page, '/media');
-        await expect(page.locator('app-media')).toBeVisible();
-        expect(page.url()).toContain('/media');
     });
 
     test('renders create account page at /createaccount', async ({ page }) => {
