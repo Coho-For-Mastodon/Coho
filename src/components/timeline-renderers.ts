@@ -125,6 +125,13 @@ export function renderReplyContext(
       )}"
           ></div>`}
 
+      ${state.tweet?.reply_to?.media_attachments && state.tweet.reply_to.media_attachments.length > 0
+      ? html`
+            <image-carousel .images="${state.tweet.reply_to.media_attachments}">
+            </image-carousel>
+          `
+      : html``}
+
       <div class="actions" slot="footer">
         ${state.show === true
       ? html`<md-button
@@ -270,7 +277,7 @@ export function renderRegularTweet(
         .innerHTML="${parseEmojis(state.tweet?.content || '', state.tweet?.emojis || [])}"
       ></div>
 
-      ${state.tweet && state.tweet.media_attachments.length > 0
+      ${state.tweet && state.tweet.media_attachments && state.tweet.media_attachments.length > 0
       ? html`
               <image-carousel .images="${state.tweet.media_attachments}">
               </image-carousel>
@@ -448,7 +455,7 @@ export function renderReblog(
       )}"
       ></div>
 
-      ${state.tweet.reblog.media_attachments.length > 0
+      ${state.tweet.reblog.media_attachments && state.tweet.reblog.media_attachments.length > 0
       ? html`
             <image-carousel .images="${state.tweet.reblog.media_attachments}">
             </image-carousel>
@@ -568,6 +575,13 @@ export function renderThread(
                   </div>
                 `
         : html`<div .innerHTML="${threadPost.content}"></div>`}
+
+            ${threadPost.media_attachments && threadPost.media_attachments.length > 0
+        ? html`
+                  <image-carousel .images="${threadPost.media_attachments}">
+                  </image-carousel>
+                `
+        : html``}
             <div class="actions" slot="footer">
               <md-button
                 variant="text"

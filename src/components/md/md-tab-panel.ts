@@ -105,7 +105,7 @@ export class MdTabPanel extends LitElement {
 
   render() {
     return html`
-      <div class="panel-content" role="tabpanel" aria-hidden="${!this.active}">
+      <div class="panel-content" part="panel-content" role="tabpanel" aria-hidden="${!this.active}">
         <slot></slot>
       </div>
     `;

@@ -115,6 +115,12 @@ export class AppHeader extends LitElement {
           --neutral-fill-stealth-hover: #1b1d26;
         }
       }
+
+      @media (display-mode: window-controls-overlay) {
+        header {
+          padding-left: 0 !important;
+        }
+      }
     `;
   }
 
@@ -125,6 +131,11 @@ export class AppHeader extends LitElement {
   protected firstUpdated(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
   ): void {
+    // Debug: Check display mode for window controls overlay
+    const isWCO = window.matchMedia('(display-mode: window-controls-overlay)').matches;
+    console.log('[Header] Window Controls Overlay active:', isWCO);
+    console.log('[Header] titlebar-area-x:', getComputedStyle(document.documentElement).getPropertyValue('env(titlebar-area-x, fallback)'));
+
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
         enableVibrate(this.shadowRoot);

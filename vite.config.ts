@@ -140,6 +140,7 @@ export default defineConfig({
         globDirectory: 'dist',
         globPatterns: ['**/*.{js,css,html}'],
         // Don't include these in the precache
+        // Note: index.html IS included (by not being ignored) to support the App Shell strategy
         globIgnores: ['**/node_modules/**/*'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
       },
@@ -160,4 +161,7 @@ export default defineConfig({
     }),
     ...(process.env.ANALYZE_BUNDLE ? [visualizer({ open: true })] : []),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(new Date().toISOString()),
+  },
 });

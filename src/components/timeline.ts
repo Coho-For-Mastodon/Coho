@@ -63,6 +63,9 @@ import '../components/timeline-item';
 import '../components/search';
 import '../components/md/md-select';
 import '../components/md/md-option';
+import '../components/md/md-dropdown';
+import '../components/md/md-menu';
+import '../components/md/md-menu-item';
 
 import { router } from '../utils/router';
 
@@ -95,6 +98,23 @@ export class Timeline extends LitElement {
   @property({ type: Array }) data: Post[] | undefined;
   @property({ type: Boolean }) header: boolean = true;
   @property({ type: Boolean }) autoLoad: boolean = true;
+
+  get timelineTitle() {
+    switch (this.timelineType) {
+      case 'home':
+        return 'Home';
+      case 'public':
+        return 'Public';
+      case 'media':
+        return 'Media';
+      case 'for you':
+        return 'For You';
+      case 'home and some trending':
+        return 'Home & Trending';
+      default:
+        return 'Timeline';
+    }
+  }
 
   protected willUpdate(changedProperties: PropertyValues) {
     if (changedProperties.has('data') && this.data) {
@@ -337,6 +357,35 @@ export class Timeline extends LitElement {
         100% {
           opacity: 1;
         }
+      }
+
+      .timeline-title {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        margin-left: -8px;
+        border-radius: 8px;
+        transition: background-color 0.2s;
+        user-select: none;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .timeline-title:hover {
+        background: var(--md-sys-color-surface-container-high, rgba(128, 128, 128, 0.1));
+      }
+
+      .timeline-title svg {
+        width: 24px;
+        height: 24px;
+        fill: var(--md-sys-color-on-surface-variant);
+      }
+
+      md-menu {
+        min-width: 200px;
       }
     `,
   ];
@@ -916,27 +965,41 @@ export class Timeline extends LitElement {
 
       ${this.header
         ? html`<div id="timeline-header">
-            <md-select
-              pill
-              .value="${this.timelineType}"
-              @change="${(e: CustomEvent<SelectChangeDetail>) =>
-            this.changeTimelineType(
-              e.detail.value as
-              | 'home'
-              | 'public'
-              | 'media'
-              | 'for you'
-              | 'home and some trending'
-            )}"
-              placeholder="Home"
-            >
-              <md-option value="for you">for you</md-option>
-              <md-option value="home and some trending"
-                >Home and some trending</md-option
-              >
-              <md-option value="home">Home</md-option>
-              <md-option value="public">public</md-option>
-            </md-select>
+            <md-dropdown>
+              <div slot="trigger" class="timeline-title">
+                <span>${this.timelineTitle}</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M7 10l5 5 5-5z" fill="currentColor" />
+                </svg>
+              </div>
+
+              <md-menu>
+                <md-menu-item @click="${() => this.changeTimelineType('home')}">
+                  Home
+                </md-menu-item>
+                <md-menu-item
+                  @click="${() => this.changeTimelineType('for you')}"
+                >
+                  For You
+                </md-menu-item>
+                <md-menu-item
+                  @click="${() =>
+            this.changeTimelineType('home and some trending')}"
+                >
+                  Home & Trending
+                </md-menu-item>
+                <md-divider></md-divider>
+                <md-menu-item
+                  @click="${() => this.changeTimelineType('public')}"
+                >
+                  Public
+                </md-menu-item>
+              </md-menu>
+            </md-dropdown>
 
             <md-icon-button
               id="refresh-manual-button"
@@ -965,8 +1028,8 @@ export class Timeline extends LitElement {
               scroller
               .items=${this.timeline}
               .renderItem=${
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ((tweet: Post) =>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ((tweet: Post) =>
             html`<div class="timeline-list-item">
                   <timeline-item
                     @open="${($event: CustomEvent) =>

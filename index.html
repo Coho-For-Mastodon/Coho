@@ -20,7 +20,7 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
 
     <!-- These meta tags are Apple-specific, and set the web application to run in full-screen mode with a black status bar. Learn more at https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html-->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Coho" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
@@ -280,10 +280,14 @@
 
           return new Promise((resolve) => {
             const updateButton = document.getElementById('updateButton');
-            updateButton.addEventListener('click', () => {
-              updateToast.style.display = 'none';
-              resolve(true);
-            });
+            updateButton.addEventListener(
+              'click',
+              () => {
+                updateToast.style.display = 'none';
+                resolve(true);
+              },
+              { once: true }
+            );
           });
         };
 
@@ -294,8 +298,16 @@
 
         navigator.serviceWorker
           .register(swUrl, swOptions)
-          .then((reg) => {
+          .then(async (reg) => {
             registration = reg;
+
+            // Check if there's a waiting worker (update already downloaded)
+            if (reg.waiting) {
+              const updateAccepted = await promptForUpdate();
+              if (updateAccepted) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+            }
 
             reg.addEventListener('updatefound', () => {
               const newWorker = reg.installing;
@@ -314,7 +326,13 @@
             console.log('[SW] Registration failed:', error);
           });
 
+        // Handle service worker updates - when a new SW takes control, refresh the page
+        let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
+          // Prevent infinite refresh loops
+          if (refreshing) return;
+          refreshing = true;
+          // Reload the page to get new assets from the updated SW
           window.location.reload();
         });
       }

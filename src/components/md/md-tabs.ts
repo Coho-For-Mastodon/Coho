@@ -111,7 +111,7 @@ export class MdTabs extends LitElement {
       border-bottom: none;
       border-top: 1px solid
         var(--md-sys-color-outline-variant, var(--sl-color-neutral-200));
-        background: var(--md-sys-color-surface-container, #f3f3f6);
+      background: var(--md-sys-color-surface, #f3f3f6);
     }
 
     /* Vertical tab bar (side navigation) - MD3 navigation rail style */
@@ -126,7 +126,7 @@ export class MdTabs extends LitElement {
       flex-shrink: 0;
       overflow-y: visible;
       overflow-x: hidden;
-      background: var(--md-sys-color-surface-container, #f3f3f6);
+      background: transparent;
       padding: 12px 0;
       padding-top: 66px;
       gap: 0;
@@ -167,8 +167,12 @@ export class MdTabs extends LitElement {
         );
       }
 
+      :host([orientation='horizontal'][placement='bottom']) .tab-bar {
+        background: var(--md-sys-color-surface, #1e1e1e);
+      }
+
       :host([orientation='vertical']) .tab-bar {
-        background: var(--md-sys-color-surface-container, #1e1e24);
+        background: transparent;
       }
     }
 

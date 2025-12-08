@@ -10,6 +10,13 @@ const mockLocation = { pathname: '/', search: '', hash: '', href: 'http://localh
 const mockHistory = { pushState: () => { }, replaceState: () => { }, back: () => { }, forward: () => { } };
 const mockStorage = { getItem: () => null, setItem: () => { }, removeItem: () => { }, clear: () => { } };
 
+// Mock the build time constant
+Object.defineProperty(globalThis, '__APP_VERSION__', {
+    value: new Date().toISOString(),
+    writable: true,
+    configurable: true
+});
+
 Object.defineProperty(globalThis, 'window', { value: globalThis, writable: true, configurable: true });
 Object.defineProperty(globalThis, 'location', { value: mockLocation, writable: true, configurable: true });
 Object.defineProperty(globalThis, 'history', { value: mockHistory, writable: true, configurable: true });

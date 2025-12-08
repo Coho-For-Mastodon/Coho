@@ -83,17 +83,18 @@ export class MdTab extends LitElement {
     }
 
     /* Vertical orientation (side nav) - stacked icon/label layout like MD3 nav rail */
-    :host([data-orientation='vertical']) button {
+    :host([data-orientation='vertical']) button,
+    :host([data-orientation='horizontal'][data-placement='bottom']) button {
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 6px;
-      padding: 8px 16px 12px;
+      gap: 4px;
+      padding: 12px 2px 12px;
       min-height: 56px;
-      width: 80px;
-      font-size: 12px;
+      width: 100%;
+      font-size: 11px;
       line-height: 16px;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.1px;
       border-radius: 0;
       background: transparent;
     }
@@ -103,18 +104,20 @@ export class MdTab extends LitElement {
       width: 80px;
     }
 
-    /* Icon container with pill background for vertical nav */
-    :host([data-orientation='vertical']) .icon-container {
+    /* Icon container with pill background for vertical nav and mobile bottom nav */
+    :host([data-orientation='vertical']) .icon-container,
+    :host([data-orientation='horizontal'][data-placement='bottom']) .icon-container {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 56px;
+      width: 64px;
       height: 32px;
       border-radius: 16px;
       transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
     }
 
-    :host([data-orientation='vertical']:hover) .icon-container {
+    :host([data-orientation='vertical']:hover) .icon-container,
+    :host([data-orientation='horizontal'][data-placement='bottom']:hover) .icon-container {
       background: color-mix(
         in srgb,
         var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600)) 8%,
@@ -122,7 +125,8 @@ export class MdTab extends LitElement {
       );
     }
 
-    :host([active][data-orientation='vertical']) .icon-container {
+    :host([active][data-orientation='vertical']) .icon-container,
+    :host([active][data-orientation='horizontal'][data-placement='bottom']) .icon-container {
       background: var(--md-sys-color-secondary-container, color-mix(
         in srgb,
         var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
@@ -130,7 +134,7 @@ export class MdTab extends LitElement {
       ));
     }
 
-    /* Icon container - default (horizontal) */
+    /* Icon container - default (horizontal top) */
     .icon-container {
       display: contents;
     }
@@ -183,7 +187,8 @@ export class MdTab extends LitElement {
     }
 
     /* Disable button overlay for vertical tabs - hover is on icon-container instead */
-    :host([data-orientation='vertical']) button::before {
+    :host([data-orientation='vertical']) button::before,
+    :host([data-orientation='horizontal'][data-placement='bottom']) button::before {
       display: none;
     }
 
@@ -220,11 +225,9 @@ export class MdTab extends LitElement {
       border-radius: 3px 3px 0 0;
     }
 
-    /* Horizontal bottom placement indicator (top) */
+    /* Horizontal bottom placement indicator (top) - Hidden for mobile style pill */
     :host([data-orientation='horizontal'][data-placement='bottom']) .indicator {
-      bottom: auto;
-      top: 0;
-      border-radius: 0 0 3px 3px;
+      display: none;
     }
 
     /* Vertical indicator - hidden since we use background highlight instead */
@@ -237,7 +240,8 @@ export class MdTab extends LitElement {
     }
 
     /* Vertical active state - handled by icon-container pill, no full button background */
-    :host([active][data-orientation='vertical']) button {
+    :host([active][data-orientation='vertical']) button,
+    :host([active][data-orientation='horizontal'][data-placement='bottom']) button {
       background: transparent;
     }
 

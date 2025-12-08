@@ -174,6 +174,7 @@ export class AppLogin extends LitElement {
         font-size: 12px;
         color: var(--md-sys-color-on-surface-variant);
         z-index: 1;
+        text-align: center;
       }
 
       .app-footer a {
@@ -593,6 +594,7 @@ export class AppLogin extends LitElement {
           <a href="https://github.com/jgw96/mammoth-app#readme" target="_blank">
             Learn More about Coho
           </a>
+          <p style="opacity: 0.5; margin-top: 8px;">Build: ${new Date(__APP_VERSION__).toLocaleString()}</p>
         </div>
       </main>
     `;

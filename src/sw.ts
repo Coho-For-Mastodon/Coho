@@ -3,10 +3,14 @@
 import { NetworkOnly, CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
+import {
+  precacheAndRoute,
+  cleanupOutdatedCaches,
+  createHandlerBoundToURL,
+} from 'workbox-precaching';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
-import * as navigationPreload from 'workbox-navigation-preload';
 import { get, set } from 'idb-keyval';
+import { RouteHandlerCallback } from 'workbox-core';
 
 // Type augmentation for Badging API (not yet in all TypeScript libs)
 interface NavigatorBadge {
@@ -39,6 +43,45 @@ self.idbKeyval = { get, set };
 const IS_DEV =
   location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
+// ============================================================================
+// PRECACHING & APP SHELL
+// ============================================================================
+if (!IS_DEV) {
+  // 1. Clean up outdated caches
+  // This runs during the 'activate' phase, after the new SW takes control.
+  // This is safe because we force a reload immediately upon activation.
+  cleanupOutdatedCaches();
+
+  // 2. Precache all assets (including index.html)
+  // This downloads the new index.html + new JS/CSS in the background.
+  const manifest = self.__WB_MANIFEST;
+  if (manifest) {
+    precacheAndRoute(manifest);
+  }
+
+  // 3. Navigation Route - The "Cache First" App Shell
+  // This tells the SW: "For any navigation request, serve the index.html
+  // that was precached in step 1."
+  // This guarantees atomic updates: the index.html served matches the JS/CSS in the cache.
+  try {
+    const handler = createHandlerBoundToURL('/index.html');
+    const navigationRoute = new NavigationRoute(handler, {
+      denylist: [
+        // Exclude specific paths if needed (e.g. backend API routes)
+        /^\/api\//,
+      ],
+    });
+    registerRoute(navigationRoute);
+  } catch (error) {
+    console.error('[SW] Failed to create App Shell handler:', error);
+  }
+} else {
+  console.log('[SW] Development mode: precaching and app shell disabled');
+  // In dev, just pass through to the network
+  const navigationRoute = new NavigationRoute(new NetworkOnly());
+  registerRoute(navigationRoute);
+}
+
 interface WidgetDefinition {
   msAcTemplate: string;
   data: string;
@@ -55,14 +98,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-    | 'mention'
-    | 'reblog'
-    | 'favourite'
-    | 'follow'
-    | 'poll'
-    | 'follow_request'
-    | 'status'
-    | 'update';
+  | 'mention'
+  | 'reblog'
+  | 'favourite'
+  | 'follow'
+  | 'poll'
+  | 'follow_request'
+  | 'status'
+  | 'update';
   account: {
     id: string;
     display_name: string;
@@ -79,14 +122,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-    | 'mention'
-    | 'reblog'
-    | 'favourite'
-    | 'follow'
-    | 'poll'
-    | 'follow_request'
-    | 'status'
-    | 'update';
+  | 'mention'
+  | 'reblog'
+  | 'favourite'
+  | 'follow'
+  | 'poll'
+  | 'follow_request'
+  | 'status'
+  | 'update';
   icon: string;
   title: string;
   body: string;
@@ -103,21 +146,10 @@ interface PeriodicSyncEvent extends ExtendableEvent {
   tag: string;
 }
 
-// Enable navigation preload for supporting browsers (production only)
-if (!IS_DEV) {
-  navigationPreload.enable();
-}
+// Navigation route logic moved to the main PRECACHING block above to keep
+// the App Shell strategy consolidated.
+// The following block is removed to avoid duplication.
 
-// Navigation route - use NetworkOnly in dev to avoid caching
-const navigationRoute = new NavigationRoute(
-  IS_DEV
-    ? new NetworkOnly()
-    : new NetworkFirst({
-        cacheName: 'navigations',
-      })
-);
-
-registerRoute(navigationRoute);
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
@@ -135,44 +167,24 @@ self.addEventListener('message', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      // Claim all clients immediately so the new SW controls all tabs
-      await self.clients.claim();
-
-      // Get list of cache names managed by workbox
-      const workboxCaches = [
-        'navigations',
-        'root',
-        'timeline',
-        'notifications',
-        'search',
-        'bookmarks',
-        'favorites',
-        'avatar',
-        'user',
-        'images',
-      ];
-
-      // Get all cache names
+      // Delete ALL runtime caches to prevent stale content issues
+      // This is aggressive but ensures version consistency
       const cacheNames = await caches.keys();
-
-      // Delete any runtime caches that aren't in our current workbox list
-      // This ensures stale data doesn't persist across updates
       await Promise.all(
-        cacheNames.map(async (cacheName) => {
-          // Skip workbox precache (handled by workbox-precaching)
-          if (cacheName.includes('workbox-precache')) {
-            return;
+        cacheNames.map((cacheName) => {
+          // Keep workbox precache (it's already versioned) but clear runtime caches
+          if (!cacheName.includes('workbox-precache')) {
+            console.log('[SW] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
           }
-
-          // For our named caches, just clear them on update to get fresh data
-          if (workboxCaches.includes(cacheName)) {
-            console.log(`[SW] Clearing cache on update: ${cacheName}`);
-            await caches.delete(cacheName);
-          }
+          return Promise.resolve();
         })
       );
 
-      console.log('[SW] Activated and cleaned up old caches');
+      // Claim all clients immediately so the new SW controls all tabs
+      await self.clients.claim();
+
+      console.log('[SW] Activated and cleaned up caches');
     })()
   );
 });
@@ -316,6 +328,39 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
   }
 
   const notificationData = event.notification.data;
+  const targetUrl = '/home?tab=notifications';
+
+  // Helper to focus existing window or open new one
+  const focusOrOpenWindow = async (url: string) => {
+    const urlObj = new URL(url, self.location.origin);
+
+    // Get all window clients
+    const clientList = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    });
+
+    // Check if there's already a tab open
+    for (const client of clientList) {
+      const clientUrl = new URL(client.url, self.location.origin);
+      // If we have a matching root path, focus it and navigate
+      if (
+        clientUrl.hostname === urlObj.hostname &&
+        'focus' in client &&
+        'navigate' in client
+      ) {
+        await client.focus();
+        return client.navigate(url);
+      }
+    }
+
+    // If no window found, open a new one
+    if (self.clients.openWindow) {
+      return self.clients.openWindow(url);
+    }
+
+    return undefined;
+  };
 
   // Handle follow action - need to fetch notification to get account ID
   if (
@@ -345,18 +390,24 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
         } catch (error) {
           console.error('Failed to follow user:', error);
         }
-        await self.clients.openWindow('/home?tab=notifications');
+        await focusOrOpenWindow(targetUrl);
       })()
     );
     return;
   }
 
-  event.waitUntil(self.clients.openWindow('/home?tab=notifications'));
+  event.waitUntil(focusOrOpenWindow(targetUrl));
 });
 
 self.addEventListener('push', async (event: PushEvent) => {
   // Mastodon sends a single notification payload, not an array
-  const payload = event.data?.json() as MastodonPushPayload;
+  let payload: MastodonPushPayload;
+  try {
+    payload = event.data?.json() as MastodonPushPayload;
+  } catch (err) {
+    console.error('Failed to parse push payload', err);
+    return;
+  }
 
   // show badge
   if ('setAppBadge' in navigator) {
@@ -404,7 +455,8 @@ const warmNotificationsCache = async (): Promise<void> => {
       return;
     }
 
-    const response = await fetch(`https://${server}/api/v1/notifications`, {
+    const url = `https://${server}/api/v1/notifications`;
+    const response = await fetch(url, {
       method: 'GET',
       headers: new Headers({
         Authorization: `Bearer ${accessToken}`,
@@ -412,6 +464,8 @@ const warmNotificationsCache = async (): Promise<void> => {
     });
 
     if (response.ok) {
+      const cache = await caches.open('notifications');
+      await cache.put(url, response.clone());
       console.log('[SW] Notifications cache warmed');
     }
   } catch (error) {
@@ -429,14 +483,14 @@ const warmBookmarksCache = async (): Promise<void> => {
       return;
     }
 
-    const response = await fetch(
-      `https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks?code=${accessToken}&server=${server}`,
-      {
-        method: 'GET',
-      }
-    );
+    const url = `https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks?code=${accessToken}&server=${server}`;
+    const response = await fetch(url, {
+      method: 'GET',
+    });
 
     if (response.ok) {
+      const cache = await caches.open('bookmarks');
+      await cache.put(url, response.clone());
       console.log('[SW] Bookmarks cache warmed');
     }
   } catch (error) {
@@ -454,14 +508,14 @@ const warmFavoritesCache = async (): Promise<void> => {
       return;
     }
 
-    const response = await fetch(
-      `https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites?code=${accessToken}&server=${server}`,
-      {
-        method: 'GET',
-      }
-    );
+    const url = `https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites?code=${accessToken}&server=${server}`;
+    const response = await fetch(url, {
+      method: 'GET',
+    });
 
     if (response.ok) {
+      const cache = await caches.open('favorites');
+      await cache.put(url, response.clone());
       console.log('[SW] Favorites cache warmed');
     }
   } catch (error) {
@@ -532,28 +586,15 @@ async function shareTargetHandler({
   return Response.redirect(`/home?name=${mediaFiles[0].name}`, 303);
 }
 
-// Workbox registerRoute expects a specific handler signature that differs from our implementation
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-registerRoute('/share', shareTargetHandler as any, 'POST');
+
+const shareRouteHandler: RouteHandlerCallback = async ({ event }) => {
+  return shareTargetHandler({ event: event as FetchEvent });
+};
+
+registerRoute('/share', shareRouteHandler, 'POST');
 
 // Only register caching routes in production
 if (!IS_DEV) {
-  // register a route for /
-  registerRoute(
-    'index.html',
-    new NetworkFirst({
-      cacheName: 'root',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          // max age is 5 days
-          maxAgeSeconds: 60 * 60 * 24 * 5,
-        }),
-      ],
-    }),
-    'GET'
-  );
-
   // background sync
   registerRoute(
     ({ request }) => request.url.includes('/boost?id'),
@@ -587,9 +628,11 @@ if (!IS_DEV) {
     'POST'
   );
 
-  // avatar photos
+  // avatar photos - explicitly exclude documents to prevent HTML caching
   registerRoute(
-    ({ request }) => request.url.includes('/accounts/avatars'),
+    ({ request }) =>
+      request.destination !== 'document' &&
+      request.url.includes('/accounts/avatars'),
     new CacheFirst({
       cacheName: 'avatar',
       plugins: [
@@ -602,7 +645,9 @@ if (!IS_DEV) {
   );
 
   registerRoute(
-    ({ request }) => request.url.includes('/user?code'),
+    ({ request }) =>
+      request.destination !== 'document' &&
+      request.url.includes('/user?code'),
     new CacheFirst({
       cacheName: 'user',
       plugins: [
@@ -718,18 +763,4 @@ if (!IS_DEV) {
     }),
     'GET'
   );
-}
-
-// Only precache in production - in dev, manifest is empty/undefined
-if (!IS_DEV) {
-  // Clean up any outdated precache entries from previous SW versions
-  // This prevents version mismatches that can cause Trusted Types errors
-  cleanupOutdatedCaches();
-
-  const manifest = self.__WB_MANIFEST;
-  if (manifest) {
-    precacheAndRoute(manifest);
-  }
-} else if (IS_DEV) {
-  console.log('[SW] Development mode: caching disabled');
 }

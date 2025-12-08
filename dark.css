@@ -1,8 +1,8 @@
 :host,
 .sl-theme-dark {
   /* MD3 Color Tokens - Dark Mode */
-  --md-sys-color-background: #141314;
-  --md-sys-color-surface: #202124;
+  --md-sys-color-background: color-mix(in srgb, var(--md-sys-color-primary) 5%, #141314);
+  --md-sys-color-surface: color-mix(in srgb, var(--md-sys-color-primary) 8%, #202124);
   --md-sys-color-on-background: #e6e1e5;
 
   /* Gray base colors for neutral mapping */

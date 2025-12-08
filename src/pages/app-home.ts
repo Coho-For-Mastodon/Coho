@@ -122,6 +122,7 @@ export class AppHome extends LitElement {
         search-page {
           margin-left: 0;
           margin-right: 0;
+          width: 100%;
           max-width: 600px;
         }
 
@@ -133,8 +134,9 @@ export class AppHome extends LitElement {
           padding-top: 54px;
         }
 
-        md-tab-panel {
-          max-width: 600px;
+        md-tab-panel::part(panel-content) {
+            display: flex;
+            justify-content: center;
         }
 
         md-tab {
@@ -165,6 +167,10 @@ export class AppHome extends LitElement {
           height: 1.8em;
         }
 
+        app-timeline.homeTimeline {
+          width: 100%;
+        }
+
         .notification-dot {
           position: absolute;
           top: 8px;
@@ -178,10 +184,10 @@ export class AppHome extends LitElement {
 
         /* Dark mode support for tabs */
         @media (prefers-color-scheme: dark) {
-          md-tabs {
+          /* md-tabs {
             --md-sys-color-surface: #0f1118;
             --md-sys-color-outline-variant: #2a2d36;
-          }
+          } */
 
           md-tab {
             --md-sys-color-on-surface-variant: #c4c6cf;
@@ -632,7 +638,7 @@ export class AppHome extends LitElement {
 
         #mobile-actions {
           position: fixed;
-          bottom: 72px;
+          bottom: 90px;
           right: 16px;
           display: none;
         }
@@ -650,14 +656,8 @@ export class AppHome extends LitElement {
             grid-column: 1;
           }
 
-          #right-sidebar {
-            display: none;
-          }
-
           #mobile-actions {
-            display: flex;
-            bottom: 46px;
-            right: 46px;
+            display: none;
           }
         }
 
@@ -668,17 +668,6 @@ export class AppHome extends LitElement {
             display: none;
           }
 
-          app-timeline,
-        app-bookmarks,
-        app-notifications,
-        app-favorites,
-        app-bookmarks,
-        search-page {
-          margin-left: 0;
-          margin-right: 0;
-          max-width: unset;
-        }
-
         md-tab-panel {
           max-width: unset;
         }
@@ -688,9 +677,9 @@ export class AppHome extends LitElement {
             width: auto;
           }
 
-          .tab-label {
+          /* .tab-label {
             display: none;
-          }
+          } */
 
           .new-post-container {
             display: none;
@@ -704,6 +693,7 @@ export class AppHome extends LitElement {
           search-page {
             margin-left: initial;
             margin-right: initial;
+            width: 100%;
           }
 
           #open-tweet-dialog::part(panel) {
@@ -1318,7 +1308,7 @@ export class AppHome extends LitElement {
                     slot="prefix"
                     src="/assets/bookmark-outline.svg"
                   ></md-icon>
-                  Bookmarks
+                  Saved
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('faves')}">
                   <md-icon
@@ -1487,6 +1477,10 @@ export class AppHome extends LitElement {
               </div>
             `
         : null}
+
+        <div style="margin-top: 24px; padding-bottom: 24px; text-align: center; opacity: 0.7; font-size: 12px;">
+           <p>Build: ${new Date(__APP_VERSION__).toLocaleString()}</p>
+        </div>
       </otter-drawer>
 
       <otter-drawer id="replies-drawer" placement="end" label="Comments">
@@ -1539,7 +1533,7 @@ export class AppHome extends LitElement {
           </md-tab>
           <md-tab slot="nav" panel="bookmarks">
             <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
-            <span class="tab-label">Bookmarks</span>
+            <span class="tab-label">Saved</span>
           </md-tab>
           <md-tab slot="nav" panel="faves">
             <md-icon slot="icon" src="/assets/heart-outline.svg"></md-icon>
