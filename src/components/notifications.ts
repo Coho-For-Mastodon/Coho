@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { router } from '../utils/router';
 import { parseEmojis } from '../utils/emoji-parser';
@@ -12,12 +12,15 @@ import './md/md-button';
 import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
 import { Notification } from '../interfaces/Notification';
+import type { Account } from '../mastodon/types';
 
 @customElement('app-notifications')
 export class Notifications extends LitElement {
   @state() notifications: Notification[] = [];
   @state() subbed: boolean = false;
   @state() activeSegment: string = 'all';
+  @state() followingMap: Map<string, boolean> = new Map();
+  @state() loadingFollowMap: Map<string, boolean> = new Map();
 
   static styles = [
     css`
@@ -49,7 +52,7 @@ export class Notifications extends LitElement {
       }
 
       @media (prefers-color-scheme: dark) {
-        li {
+        .notification-card {
           color: white;
         }
       }
@@ -68,7 +71,7 @@ export class Notifications extends LitElement {
       ul {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
         padding: 0;
         list-style: none;
         margin-top: 0px;
@@ -82,73 +85,6 @@ export class Notifications extends LitElement {
         display: none;
       }
 
-      .notify-header img {
-        border-radius: 50%;
-        height: 62px;
-      }
-
-      li {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        justify-content: space-between;
-        cursor: pointer;
-
-        background: var(--sl-panel-background-color);
-        border-radius: 6px;
-        padding: 10px;
-        padding-right: 15px;
-        padding-left: 15px;
-      }
-
-      li.follow {
-        gap: 20p;
-        justify-content: space-between;
-        font-weight: bold;
-      }
-
-      li.follow div {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
-
-      li.reblog,
-      li.favourite,
-      li.mention,
-      li.edit {
-        display: flex;
-        flex-direction: column;
-      }
-
-      li.reblog div,
-      li.favourite div,
-      li.mention div,
-      li.edit div {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        width: 100%;
-        font-weight: bold;
-      }
-
-      li.reblog timeline-item,
-      li.favourite timeline-item,
-      li.mention timeline-item,
-      li.edit timeline-item {
-        width: 100%;
-      }
-
-      #no {
-        flex-direction: column;
-        font-size: 1.4em;
-        margin-top: 40px;
-      }
-
-      #no img {
-        height: 400px;
-      }
-
       #notify-actions {
         padding: 8px;
         border-radius: 6px;
@@ -159,19 +95,273 @@ export class Notifications extends LitElement {
         gap: 8px;
       }
 
-      li .content-item {
-        align-items: flex-start !important;
+      /* Notification Card Styles */
+      .notification-card {
+        display: flex;
         flex-direction: column;
-        font-weight: normal;
+        gap: 12px;
+        cursor: pointer;
+        background: var(--sl-panel-background-color);
+        border-radius: 12px;
+        padding: 16px;
+        transition: background 0.2s ease;
       }
 
-      li .content-item p {
-        font-weight: normal;
+      .notification-card:hover {
+        background: var(--sl-panel-background-color-hover, rgba(255, 255, 255, 0.08));
       }
 
-            @media (max-width: 820px) {
-        .notification-item {
-          border-radius: 0;
+      /* Header with notification type indicator */
+      .notification-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .notification-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .notification-icon svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .notification-icon.favourite {
+        background: linear-gradient(135deg, #ff6b6b, #ee5253);
+        color: white;
+      }
+
+      .notification-icon.reblog {
+        background: linear-gradient(135deg, #00d2d3, #01a3a4);
+        color: white;
+      }
+
+      .notification-icon.mention {
+        background: linear-gradient(135deg, #5f27cd, #341f97);
+        color: white;
+      }
+
+      .notification-icon.follow {
+        background: linear-gradient(135deg, #1dd1a1, #10ac84);
+        color: white;
+      }
+
+      .notification-icon.update {
+        background: linear-gradient(135deg, #feca57, #ff9f43);
+        color: white;
+      }
+
+      .notification-meta {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .notification-meta-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .notification-user {
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .notification-action {
+        color: var(--md-sys-color-on-surface-variant, #888);
+        font-size: 0.9em;
+      }
+
+      .notification-time {
+        color: var(--md-sys-color-on-surface-variant, #666);
+        font-size: 0.8em;
+        margin-top: 2px;
+      }
+
+      /* User avatar for follow notifications */
+      .notification-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--sl-color-primary-600);
+        flex-shrink: 0;
+      }
+
+      /* Post preview */
+      .post-preview {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 4px;
+        border-left: 3px solid var(--sl-color-primary-600);
+      }
+
+      @media (prefers-color-scheme: light) {
+        .post-preview {
+          background: rgba(0, 0, 0, 0.05);
+        }
+      }
+
+      .post-preview-content {
+        font-size: 0.95em;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+
+      .post-preview-content p {
+        margin: 0;
+      }
+
+      .post-preview-content a {
+        color: var(--sl-color-primary-600);
+      }
+
+      .post-preview-media {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        overflow-x: auto;
+      }
+
+      .post-preview-media img {
+        max-height: 120px;
+        border-radius: 6px;
+        object-fit: cover;
+      }
+
+      /* Follow notification expanded view */
+      .follow-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .follow-user-info {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+
+      .follow-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--sl-color-primary-600);
+        flex-shrink: 0;
+        cursor: pointer;
+      }
+
+      .follow-details {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .follow-name {
+        font-weight: 600;
+        font-size: 1.1em;
+        margin: 0 0 2px 0;
+        cursor: pointer;
+      }
+
+      .follow-name:hover {
+        text-decoration: underline;
+      }
+
+      .follow-handle {
+        color: var(--md-sys-color-on-surface-variant, #888);
+        font-size: 0.9em;
+        margin: 0 0 8px 0;
+      }
+
+      .follow-bio {
+        font-size: 0.9em;
+        line-height: 1.4;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .follow-bio p {
+        margin: 0;
+      }
+
+      .follow-stats {
+        display: flex;
+        gap: 16px;
+        margin-top: 8px;
+        font-size: 0.85em;
+      }
+
+      .follow-stat {
+        color: var(--md-sys-color-on-surface-variant, #888);
+      }
+
+      .follow-stat strong {
+        color: var(--md-sys-color-on-surface, white);
+      }
+
+      @media (prefers-color-scheme: light) {
+        .follow-stat strong {
+          color: var(--md-sys-color-on-surface, black);
+        }
+      }
+
+      .follow-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .follow-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Empty state */
+      #no {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4em;
+        margin-top: 40px;
+        padding: 20px;
+      }
+
+      #no img {
+        height: 300px;
+        opacity: 0.8;
+      }
+
+      #no p {
+        color: var(--md-sys-color-on-surface-variant, #888);
+      }
+
+      @media (max-width: 820px) {
+        .notification-card {
+          border-radius: 8px;
+        }
+
+        ul {
+          gap: 10px;
+          padding: 0 4px;
+        }
+      }
     `,
   ];
 
@@ -194,6 +384,9 @@ export class Notifications extends LitElement {
 
           this.notifications = notificationsData;
 
+          // Check follow status for all follow notifications
+          await this.checkFollowStatuses();
+
           // check push reg
           const reg = await navigator.serviceWorker.getRegistration();
           if (reg && reg.pushManager) {
@@ -213,6 +406,38 @@ export class Notifications extends LitElement {
     }, options);
 
     observer.observe(this);
+  }
+
+  async checkFollowStatuses() {
+    const followNotifications = this.notifications.filter(
+      (n) => n.type === 'follow'
+    );
+
+    if (followNotifications.length === 0) return;
+
+    const { isFollowingMe } = await import('../services/account');
+
+    // Check all follow statuses in parallel
+    const results = await Promise.all(
+      followNotifications.map(async (n) => {
+        try {
+          const relationships = await isFollowingMe(n.account.id);
+          return {
+            id: n.account.id,
+            following: relationships[0]?.following ?? false,
+          };
+        } catch {
+          return { id: n.account.id, following: false };
+        }
+      })
+    );
+
+    // Update the map
+    const newMap = new Map(this.followingMap);
+    results.forEach(({ id, following }) => {
+      newMap.set(id, following);
+    });
+    this.followingMap = newMap;
   }
 
   async clear() {
@@ -250,30 +475,292 @@ export class Notifications extends LitElement {
     await router.navigate(`/home/post?${serialized}`);
   }
 
+  async openProfile(account: Account) {
+    if (!account) return;
+    await router.navigate(`/account?id=${account.id}`);
+  }
+
+  async followBack(accountId: string, e: Event) {
+    e.stopPropagation();
+
+    // Set loading state
+    const newLoadingMap = new Map(this.loadingFollowMap);
+    newLoadingMap.set(accountId, true);
+    this.loadingFollowMap = newLoadingMap;
+
+    try {
+      const { followUser } = await import('../services/account');
+      await followUser(accountId);
+
+      // Update following map
+      const newFollowingMap = new Map(this.followingMap);
+      newFollowingMap.set(accountId, true);
+      this.followingMap = newFollowingMap;
+    } catch (err) {
+      console.error('Failed to follow user:', err);
+    } finally {
+      // Clear loading state
+      const finalLoadingMap = new Map(this.loadingFollowMap);
+      finalLoadingMap.set(accountId, false);
+      this.loadingFollowMap = finalLoadingMap;
+    }
+  }
+
+  formatTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString();
+  }
+
+  getNotificationIcon(type: string) {
+    switch (type) {
+      case 'favourite':
+        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+      case 'reblog':
+        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`;
+      case 'mention':
+        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>`;
+      case 'follow':
+        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+      case 'update':
+        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
+      default:
+        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>`;
+    }
+  }
+
+  getNotificationActionText(type: string): string {
+    switch (type) {
+      case 'favourite':
+        return 'liked your post';
+      case 'reblog':
+        return 'boosted your post';
+      case 'mention':
+        return 'mentioned you';
+      case 'follow':
+        return 'followed you';
+      case 'update':
+        return 'edited a post';
+      default:
+        return 'interacted with you';
+    }
+  }
+
+  renderPostPreview(status: Post | undefined) {
+    if (!status) return nothing;
+
+    const content = status.content || '';
+    const mediaAttachments = status.media_attachments || [];
+
+    return html`
+      <div class="post-preview">
+        <div
+          class="post-preview-content"
+          .innerHTML="${parseEmojis(content, status.emojis || [])}"
+        ></div>
+        ${mediaAttachments.length > 0
+        ? html`
+              <div class="post-preview-media">
+                ${mediaAttachments.slice(0, 4).map(
+          (media) => html`
+                    <img
+                      src="${media.preview_url}"
+                      alt="${media.description || 'Media attachment'}"
+                    />
+                  `
+        )}
+              </div>
+            `
+        : nothing}
+      </div>
+    `;
+  }
+
+  renderFollowNotification(notification: Notification) {
+    const account = notification.account;
+    const isFollowing = this.followingMap.get(account.id) ?? false;
+    const isLoading = this.loadingFollowMap.get(account.id) ?? false;
+
+    // Strip HTML tags from bio for cleaner preview
+    const bioText = account.note?.replace(/<[^>]*>/g, '') || '';
+
+    return html`
+      <li
+        class="notification-card"
+        @click="${() => this.openProfile(account)}"
+      >
+        <div class="notification-header">
+          <div class="notification-icon follow">
+            ${this.getNotificationIcon('follow')}
+          </div>
+          <div class="notification-meta">
+            <div class="notification-meta-top">
+              <span class="notification-action">New follower</span>
+            </div>
+            <div class="notification-time">
+              ${this.formatTimeAgo(notification.created_at)}
+            </div>
+          </div>
+        </div>
+
+        <div class="follow-card">
+          <div class="follow-user-info">
+            <img
+              class="follow-avatar"
+              src="${account.avatar}"
+              alt="${account.display_name}'s avatar"
+              @click="${(e: Event) => {
+        e.stopPropagation();
+        this.openProfile(account);
+      }}"
+            />
+            <div class="follow-details">
+              <p
+                class="follow-name"
+                .innerHTML="${parseEmojis(
+        account.display_name || account.username,
+        account.emojis || []
+      )}"
+                @click="${(e: Event) => {
+        e.stopPropagation();
+        this.openProfile(account);
+      }}"
+              ></p>
+              <p class="follow-handle">@${account.acct}</p>
+              ${bioText
+        ? html`<p class="follow-bio">${bioText}</p>`
+        : nothing}
+              <div class="follow-stats">
+                <span class="follow-stat">
+                  <strong>${account.followers_count?.toLocaleString() || 0}</strong> followers
+                </span>
+                <span class="follow-stat">
+                  <strong>${account.following_count?.toLocaleString() || 0}</strong> following
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="follow-actions">
+            ${isFollowing
+        ? html`
+                  <md-button variant="outlined" pill size="small" disabled>
+                    Following
+                  </md-button>
+                `
+        : html`
+                  <md-button
+                    variant="filled"
+                    pill
+                    size="small"
+                    class="follow-back-btn"
+                    ?disabled="${isLoading}"
+                    @click="${(e: Event) => this.followBack(account.id, e)}"
+                  >
+                    ${isLoading ? 'Following...' : 'Follow Back'}
+                  </md-button>
+                `}
+          </div>
+        </div>
+      </li>
+    `;
+  }
+
+  renderStatusNotification(notification: Notification) {
+    const account = notification.account;
+    const type = notification.type;
+
+    return html`
+      <li
+        class="notification-card"
+        @click="${() => this.openPost(notification.status)}"
+      >
+        <div class="notification-header">
+          <div class="notification-icon ${type}">
+            ${this.getNotificationIcon(type)}
+          </div>
+          <img
+            class="notification-avatar"
+            src="${account.avatar}"
+            alt="${account.display_name}'s avatar"
+            @click="${(e: Event) => {
+        e.stopPropagation();
+        this.openProfile(account);
+      }}"
+          />
+          <div class="notification-meta">
+            <div class="notification-meta-top">
+              <span
+                class="notification-user"
+                .innerHTML="${parseEmojis(
+        account.display_name || account.username,
+        account.emojis || []
+      )}"
+                @click="${(e: Event) => {
+        e.stopPropagation();
+        this.openProfile(account);
+      }}"
+              ></span>
+              <span class="notification-action">${this.getNotificationActionText(type)}</span>
+            </div>
+            <div class="notification-time">
+              ${this.formatTimeAgo(notification.created_at)}
+            </div>
+          </div>
+        </div>
+        ${this.renderPostPreview(notification.status)}
+      </li>
+    `;
+  }
+
+  renderNotification(notification: Notification) {
+    if (notification.type === 'follow') {
+      return this.renderFollowNotification(notification);
+    }
+    return this.renderStatusNotification(notification);
+  }
+
   render() {
+    const allNotifications = this.notifications || [];
+    const mentionNotifications = allNotifications.filter(
+      (n) => n.type === 'mention'
+    );
+    const followNotifications = allNotifications.filter(
+      (n) => n.type === 'follow'
+    );
+
     return html`
       <div id="notify-actions">
         <div id="notify-inner">
           <md-switch
             ?checked="${this.subbed}"
             @change="${(e: CustomEvent<{ checked: boolean }>) =>
-              this.sub(e.detail.checked)}"
-            >Notifications</md-switch
+        this.sub(e.detail.checked)}"
+            >Push Notifications</md-switch
           >
         </div>
         <md-button
-          variant="filled"
+          variant="outlined"
           pill
           size="small"
           @click="${() => this.clear()}"
-          >Clear</md-button
+          >Clear All</md-button
         >
       </div>
 
       <md-segmented-button
         .value="${this.activeSegment}"
         @segment-change="${(e: CustomEvent) =>
-          (this.activeSegment = e.detail.value)}"
+        (this.activeSegment = e.detail.value)}"
       >
         <md-segment value="all">All</md-segment>
         <md-segment value="mentions">Mentions</md-segment>
@@ -282,201 +769,45 @@ export class Notifications extends LitElement {
 
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
         <ul>
-          ${this.notifications && this.notifications.length > 0
-            ? this.notifications.map((notification) => {
-                return html`
-                  ${notification.type === 'follow'
-                    ? html`
-                        <li class="follow">
-                          <div>
-                            <user-profile
-                              small
-                              .account=${notification.account}
-                            ></user-profile>
-
-                            <p>followed you</p>
-                          </div>
-                        </li>
-                      `
-                    : null}
-                  ${notification.type === 'reblog'
-                    ? html`
-                        <li
-                          class="reblog"
-                          @click="${() => this.openPost(notification.status)}"
-                        >
-                          <div>
-                            <user-profile
-                              small
-                              .account=${notification.account}
-                            ></user-profile>
-
-                            <p>boosted your post</p>
-                          </div>
-
-                          <div
-                            class="content-item"
-                            .innerHTML="${parseEmojis(
-                              notification.status?.content || '',
-                              notification.status?.emojis || []
-                            )}"
-                          ></div>
-                        </li>
-                      `
-                    : null}
-                  ${notification.type === 'favourite'
-                    ? html`
-                        <li
-                          class="favourite"
-                          @click="${() => this.openPost(notification.status)}"
-                        >
-                          <div>
-                            <user-profile
-                              small
-                              .account=${notification.account}
-                            ></user-profile>
-
-                            <p>liked your post</p>
-                          </div>
-
-                          <div
-                            class="content-item"
-                            .innerHTML="${parseEmojis(
-                              notification.status?.content || '',
-                              notification.status?.emojis || []
-                            )}"
-                          ></div>
-                        </li>
-                      `
-                    : null}
-                  ${notification.type === 'mention'
-                    ? html`
-                        <li
-                          class="mention"
-                          @click="${() => this.openPost(notification.status)}"
-                        >
-                          <div>
-                            <user-profile
-                              small
-                              .account=${notification.account}
-                            ></user-profile>
-
-                            <p>mentioned you</p>
-                          </div>
-
-                          <div
-                            class="content-item"
-                            .innerHTML="${parseEmojis(
-                              notification.status?.content || '',
-                              notification.status?.emojis || []
-                            )}"
-                          ></div>
-                        </li>
-                      `
-                    : null}
-                  ${notification.type === 'update'
-                    ? html`
-                        <li
-                          class="edit"
-                          @click="${() => this.openPost(notification.status)}"
-                        >
-                          <div>
-                            <user-profile
-                              small
-                              .account=${notification.account}
-                            ></user-profile>
-
-                            <p>edited a post</p>
-                          </div>
-
-                          <div
-                            class="content-item"
-                            .innerHTML="${parseEmojis(
-                              notification.status?.content || '',
-                              notification.status?.emojis || []
-                            )}"
-                          ></div>
-                        </li>
-                      `
-                    : null}
-                `;
-              })
-            : html`
-                <li id="no">
+          ${allNotifications.length > 0
+        ? allNotifications.map((notification) =>
+          this.renderNotification(notification)
+        )
+        : html`
+                <div id="no">
                   <img src="/assets/notify-done.svg" alt="no notifications" />
-                  <p>No notifications</p>
-                </li>
+                  <p>No notifications yet</p>
+                </div>
               `}
         </ul>
       </div>
 
       <div class="panel ${this.activeSegment === 'mentions' ? 'active' : ''}">
         <ul>
-          ${this.notifications && this.notifications.length > 0
-            ? this.notifications.map((notification) => {
-                return html`
-                  ${notification.type === 'mention'
-                    ? html`
-                        <li
-                          class="mention"
-                          @click="${() => this.openPost(notification.status)}"
-                        >
-                          <div>
-                            <user-profile
-                              small
-                              .account=${notification.account}
-                            ></user-profile>
-
-                            <p>mentioned you</p>
-                          </div>
-
-                          <div
-                            class="content-item"
-                            .innerHTML="${parseEmojis(
-                              notification.status?.content || '',
-                              notification.status?.emojis || []
-                            )}"
-                          ></div>
-                        </li>
-                      `
-                    : null}
-                `;
-              })
-            : html`
-                <li id="no">
-                  <img src="/assets/notify-done.svg" alt="no notifications" />
-                  <p>No notifications</p>
-                </li>
+          ${mentionNotifications.length > 0
+        ? mentionNotifications.map((notification) =>
+          this.renderNotification(notification)
+        )
+        : html`
+                <div id="no">
+                  <img src="/assets/notify-done.svg" alt="no mentions" />
+                  <p>No mentions yet</p>
+                </div>
               `}
         </ul>
       </div>
 
       <div class="panel ${this.activeSegment === 'follows' ? 'active' : ''}">
         <ul>
-          ${this.notifications && this.notifications.length > 0
-            ? this.notifications.map((notification) => {
-                return html`
-                  ${notification.type === 'follow'
-                    ? html`
-                        <li class="follow">
-                          <div>
-                            <user-profile
-                              small
-                              .account=${notification.account}
-                            ></user-profile>
-
-                            <p>followed you</p>
-                          </div>
-                        </li>
-                      `
-                    : null}
-                `;
-              })
-            : html`
-                <li id="no">
-                  <img src="/assets/notify-done.svg" alt="no notifications" />
-                  <p>No notifications</p>
-                </li>
+          ${followNotifications.length > 0
+        ? followNotifications.map((notification) =>
+          this.renderNotification(notification)
+        )
+        : html`
+                <div id="no">
+                  <img src="/assets/notify-done.svg" alt="no followers" />
+                  <p>No new followers yet</p>
+                </div>
               `}
         </ul>
       </div>

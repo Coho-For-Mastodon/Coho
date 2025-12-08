@@ -94,6 +94,7 @@ export class EditAccount extends LitElement {
 
   async resetForm() {
     const currentUser = await getCurrentUser();
+    if (!currentUser) return;
 
     if (this.displayNameField) {
       this.displayNameField.value = currentUser.display_name;

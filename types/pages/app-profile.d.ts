@@ -28,6 +28,8 @@ export declare class AppProfile extends LitElement {
     showReportDialog: boolean;
     activeSegment: ProfilePostsFilter;
     loadingPosts: boolean;
+    loadingProfile: boolean;
+    profileLoadFailed: boolean;
     private previewContent;
     private editDialog;
     private contentTextArea;

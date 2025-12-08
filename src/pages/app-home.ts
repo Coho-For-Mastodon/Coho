@@ -20,6 +20,7 @@ import '../components/md/md-tab-panel';
 import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/md/md-toast';
+import '../components/offline-notify';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -181,6 +182,7 @@ export class AppHome extends LitElement {
           border-radius: 50%;
           z-index: 10;
         }
+
 
         /* Dark mode support for tabs */
         @media (prefers-color-scheme: dark) {
@@ -886,10 +888,8 @@ export class AppHome extends LitElement {
       }
     });
 
-    // Lazy load right-click component when idle
-    window.requestIdleCallback(async () => {
-      await this.loadRightClick();
-    });
+    // Load right-click component immediately
+    this.loadRightClick();
 
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
@@ -904,7 +904,7 @@ export class AppHome extends LitElement {
     // setTimeout(async () => {
     const { getCurrentUser } = await import('../services/account');
     getCurrentUser().then((user) => {
-      this.user = user;
+      this.user = user ?? null;
     });
     // }, 1200);
   }
@@ -1295,46 +1295,28 @@ export class AppHome extends LitElement {
                 <md-menu-item
                   @menu-item-click=${() => router.navigate('/new-post')}
                 >
-                  <md-icon
-                    slot="prefix"
-                    src="/assets/add-outline.svg"
-                  ></md-icon>
+                  <md-icon slot="prefix" name="add"></md-icon>
                   New Post
                 </md-menu-item>
 
                 <md-menu-item @click="${() => this.openATab('search')}">
-                  <md-icon
-                    slot="prefix"
-                    src="/assets/search-outline.svg"
-                  ></md-icon>
+                  <md-icon slot="prefix" name="search"></md-icon>
                   Explore
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('notifications')}">
-                  <md-icon
-                    slot="prefix"
-                    src="/assets/notifications-outline.svg"
-                  ></md-icon>
+                  <md-icon slot="prefix" name="notifications"></md-icon>
                   Notifications
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('messages')}">
-                  <md-icon
-                    slot="prefix"
-                    src="/assets/chatbox-outline.svg"
-                  ></md-icon>
+                  <md-icon slot="prefix" name="chatbox"></md-icon>
                   Messages
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('bookmarks')}">
-                  <md-icon
-                    slot="prefix"
-                    src="/assets/bookmark-outline.svg"
-                  ></md-icon>
+                  <md-icon slot="prefix" name="bookmark"></md-icon>
                   Saved
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('faves')}">
-                  <md-icon
-                    slot="prefix"
-                    src="/assets/heart-outline.svg"
-                  ></md-icon>
+                  <md-icon slot="prefix" name="heart"></md-icon>
                   Favorites
                 </md-menu-item>
               </md-menu>
@@ -1349,23 +1331,26 @@ export class AppHome extends LitElement {
       >
       </app-header>
 
+      <!-- Offline status notifications -->
+      <offline-notify></offline-notify>
+
       <otter-drawer label="Theming" id="theming-drawer">
         ${this.appThemeLoaded
-          ? html`
+        ? html`
               <app-theme
                 @color-chosen="${($event: ColorChosenEvent) =>
-                  this.handlePrimaryColor($event.detail.color)}"
+            this.handlePrimaryColor($event.detail.color)}"
               ></app-theme>
             `
-          : nothing}
+        : nothing}
       </otter-drawer>
 
       <md-dialog id="summary-dialog" label=""> ${this.summary} </md-dialog>
 
       <md-dialog id="open-tweet-dialog">
         ${this.openTweet
-          ? html`<post-detail .passed_tweet="${this.openTweet}"></post-detail>`
-          : null}
+        ? html`<post-detail .passed_tweet="${this.openTweet}"></post-detail>`
+        : null}
       </md-dialog>
 
       <post-dialog @published="${() => this.handleReload()}"></post-dialog>
@@ -1374,8 +1359,8 @@ export class AppHome extends LitElement {
         <div>
           <div id="settings-profile-inner">
             ${this.user && this.user.avatar
-              ? html`<img src="${this.user.avatar}" />`
-              : html`<md-skeleton
+        ? html`<img src="${this.user.avatar}" />`
+        : html`<md-skeleton
                   id="profile-avatar"
                   shape="circle"
                   width="4em"
@@ -1445,9 +1430,9 @@ export class AppHome extends LitElement {
 
             <md-switch
               @sl-change="${(e: Event) =>
-                this.handleWellnessMode(
-                  (e.target as HTMLInputElement).checked
-                )}"
+        this.handleWellnessMode(
+          (e.target as HTMLInputElement).checked
+        )}"
               ?checked="${this.wellnessMode}"
             ></md-switch>
           </div>
@@ -1461,9 +1446,9 @@ export class AppHome extends LitElement {
 
             <md-switch
               @sl-change="${(e: Event) =>
-                this.handleDataSaverMode(
-                  (e.target as HTMLInputElement).checked
-                )}"
+        this.handleDataSaverMode(
+          (e.target as HTMLInputElement).checked
+        )}"
               ?checked="${this.dataSaverMode}"
             ></md-switch>
           </div>
@@ -1488,19 +1473,19 @@ export class AppHome extends LitElement {
         </div>
 
         ${this.instanceInfo
-          ? html`
+        ? html`
               <div id="instanceInfo">
                 <h4>Instance Info</h4>
 
                 ${this.instanceInfo.thumbnail
-                  ? html`<img src="${this.instanceInfo.thumbnail}" />`
-                  : nothing}
+            ? html`<img src="${this.instanceInfo.thumbnail}" />`
+            : nothing}
                 <p>${this.instanceInfo.title}</p>
 
                 <div .innerHTML="${this.instanceInfo.description}"></div>
               </div>
             `
-          : null}
+        : null}
 
         <div
           style="margin-top: 24px; padding-bottom: 24px; text-align: center; opacity: 0.7; font-size: 12px;"
@@ -1511,17 +1496,17 @@ export class AppHome extends LitElement {
 
       <otter-drawer id="replies-drawer" placement="end" label="Comments">
         ${this.replies.length > 0
-          ? html`<ul>
+        ? html`<ul>
               ${this.replies.map((reply) => {
-                return html`
+          return html`
                   <timeline-item
                     ?show="${false}"
                     .tweet="${reply}"
                   ></timeline-item>
                 `;
-              })}
+        })}
             </ul>`
-          : html`
+        : html`
               <div id="no-replies">
                 <p>No comments yet.</p>
               </div>
@@ -1554,8 +1539,8 @@ export class AppHome extends LitElement {
             ></md-icon>
             <span class="tab-label">Notifications</span>
             ${this.hasNewNotifications
-              ? html`<span class="notification-dot"></span>`
-              : nothing}
+        ? html`<span class="notification-dot"></span>`
+        : nothing}
           </md-tab>
           <md-tab slot="nav" panel="bookmarks">
             <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
@@ -1584,15 +1569,15 @@ export class AppHome extends LitElement {
           <md-tab-panel name="general">
             <app-timeline
               @open="${($event: CustomEvent) =>
-                this.handleOpenTweet($event.detail.tweet)}"
+        this.handleOpenTweet($event.detail.tweet)}"
               @handle-summary="${($event: HandleSummaryEvent) =>
-                this.showSummary($event)}"
+        this.showSummary($event)}"
               @handle-translating="${($event: HandleTranslatingEvent) =>
-                this.handleTranslating($event)}"
+        this.handleTranslating($event)}"
               class="homeTimeline"
               timelineType="home"
               @replies="${($event: RepliesEvent) =>
-                this.handleReplies($event.detail.data, $event.detail.id ?? '')}"
+        this.handleReplies($event.detail.data, $event.detail.id ?? '')}"
             ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="media">
@@ -1606,21 +1591,21 @@ export class AppHome extends LitElement {
           </md-tab-panel>
           <md-tab-panel name="bookmarks">
             ${this.bookmarksLoaded
-              ? html`<app-bookmarks></app-bookmarks>`
-              : nothing}
+        ? html`<app-bookmarks></app-bookmarks>`
+        : nothing}
           </md-tab-panel>
           <md-tab-panel name="faves">
             ${this.favoritesLoaded
-              ? html`<app-favorites></app-favorites>`
-              : nothing}
+        ? html`<app-favorites></app-favorites>`
+        : nothing}
           </md-tab-panel>
           <md-tab-panel name="notifications">
             ${this.notificationsLoaded
-              ? html`<app-notifications
+        ? html`<app-notifications
                   @open="${($event: CustomEvent) =>
-                    this.handleOpenTweet($event.detail.tweet)}"
+            this.handleOpenTweet($event.detail.tweet)}"
                 ></app-notifications>`
-              : nothing}
+        : nothing}
           </md-tab-panel>
           <md-tab-panel name="search">
             ${this.searchLoaded ? html`<search-page></search-page>` : nothing}
@@ -1631,8 +1616,8 @@ export class AppHome extends LitElement {
           <div class="sidebar-card">
             <div id="profile-card-content">
               ${this.user && this.user.avatar
-                ? html`<img src="${this.user.avatar}" />`
-                : html`<md-skeleton
+        ? html`<img src="${this.user.avatar}" />`
+        : html`<md-skeleton
                     id="profile-avatar"
                     shape="circle"
                     width="80px"
@@ -1642,8 +1627,8 @@ export class AppHome extends LitElement {
               <div id="username-block">
                 <h3>
                   ${this.user
-                    ? this.user.display_name
-                    : html`<md-skeleton
+        ? this.user.display_name
+        : html`<md-skeleton
                         width="100px"
                         height="25px"
                       ></md-skeleton>`}
@@ -1680,8 +1665,8 @@ export class AppHome extends LitElement {
 
               <p id="user-url">
                 ${this.user
-                  ? this.user.url
-                  : html`<md-skeleton
+        ? this.user.url
+        : html`<md-skeleton
                       width="100px"
                       height="19px"
                     ></md-skeleton>`}
@@ -1705,15 +1690,15 @@ export class AppHome extends LitElement {
           </div>
 
           ${this.trendingTags && this.trendingTags.length > 0
-            ? html`
+        ? html`
                 <div class="sidebar-card">
                   <h3>Trending Tags</h3>
                   ${this.trendingTags.slice(0, 5).map(
-                    (tag) => html`
+          (tag) => html`
                       <div
                         class="trending-item"
                         @click="${() =>
-                          router.navigate(`/hashtag?tag=${tag.name}`)}"
+              router.navigate(`/hashtag?tag=${tag.name}`)}"
                       >
                         <span class="tag">#${tag.name}</span>
                         <span class="count"
@@ -1721,10 +1706,10 @@ export class AppHome extends LitElement {
                         >
                       </div>
                     `
-                  )}
+        )}
                 </div>
               `
-            : nothing}
+        : nothing}
         </div>
 
         <div id="mobile-actions">

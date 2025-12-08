@@ -49,6 +49,10 @@ export declare class PostDialog extends LitElement {
     addAIImageToPost(): Promise<void>;
     removeImage(id: string): void;
     publish(): Promise<void>;
+    /**
+     * Reset the dialog state after publishing or closing
+     */
+    private resetDialogState;
     doAIImage(prompt: string): Promise<void>;
     openAIPrompt(): Promise<void>;
     generateStatus(): Promise<void>;

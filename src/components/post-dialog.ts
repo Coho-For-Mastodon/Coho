@@ -30,6 +30,7 @@ import {
   proofread,
   isProofreaderAvailable,
 } from '../services/ai';
+import { showInfoToast } from '../utils/optimistic-updates';
 
 import MarkdownWorker from '../utils/markdown-worker?worker';
 
@@ -597,53 +598,60 @@ export class PostDialog extends LitElement {
         const html = e.data;
         console.log(html);
 
-        if (this.attachments.length > 0) {
-          if (this.sensitive === true) {
-            spoilerText = this.sensitiveInput?.value ?? '';
+        const isOffline = !navigator.onLine;
+
+        try {
+          if (this.attachments.length > 0) {
+            if (this.sensitive === true) {
+              spoilerText = this.sensitiveInput?.value ?? '';
+            }
+
+            await publishPost(
+              status,
+              this.attachments.map((att) => att.id),
+              this.sensitive,
+              spoilerText,
+              this.visibility
+            );
+          } else {
+            if (this.sensitive === true) {
+              spoilerText = this.sensitiveInput?.value ?? '';
+            }
+
+            await publishPost(
+              status,
+              undefined,
+              this.sensitive,
+              spoilerText,
+              this.visibility
+            );
+          }
+        } catch (error) {
+          console.log('[PostDialog] Publish error:', error);
+
+          // If we're offline, the service worker will queue the request
+          // Show a friendly message and close the dialog
+          if (isOffline) {
+            showInfoToast('Your post will be published when you\'re back online');
+            this.resetDialogState();
+            this.notifyDialog?.hide();
+            worker.terminate();
+            return;
           }
 
-          await publishPost(
-            status,
-            this.attachments.map((att) => att.id),
-            this.sensitive,
-            spoilerText,
-            this.visibility
-          );
-
-          this.attachments = [];
-          this.generatedImage = undefined;
-          this.aiBlob = undefined;
-
-          if (this.postTextArea) {
-            this.postTextArea.value = '';
-          }
-        } else {
-          if (this.sensitive === true) {
-            spoilerText = this.sensitiveInput?.value ?? '';
-          }
-
-          await publishPost(
-            status,
-            undefined,
-            this.sensitive,
-            spoilerText,
-            this.visibility
-          );
-
-          this.attachments = [];
-          this.generatedImage = undefined;
-          this.aiBlob = undefined;
-
-          if (this.postTextArea) {
-            this.postTextArea.value = '';
-          }
+          // If we're online but still got an error, it's a real failure
+          // Don't close the dialog so user can retry
+          worker.terminate();
+          return;
         }
 
+        // Success - reset and close
+        this.resetDialogState();
         this.notifyDialog?.hide();
 
         worker.terminate();
 
-        // fire custom eventt
+        // fire custom event
         this.dispatchEvent(
           new CustomEvent('published', {
             bubbles: true,
@@ -656,6 +664,23 @@ export class PostDialog extends LitElement {
       };
 
       worker.postMessage(status);
+    }
+  }
+
+  /**
+   * Reset the dialog state after publishing or closing
+   */
+  private resetDialogState() {
+    this.attachments = [];
+    this.generatedImage = undefined;
+    this.aiBlob = undefined;
+    this.charCount = 0;
+    this.hasStatus = false;
+    this.sensitive = false;
+    this.proofreadResult = null;
+
+    if (this.postTextArea) {
+      this.postTextArea.value = '';
     }
   }
 

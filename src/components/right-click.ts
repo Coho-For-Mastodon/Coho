@@ -81,9 +81,7 @@ export class RightClick extends LitElement {
 
           contextMenu.classList.remove('visible');
 
-          setTimeout(() => {
-            contextMenu.classList.add('visible');
-          }, 300);
+          contextMenu.classList.add('visible');
 
           event.preventDefault();
         });

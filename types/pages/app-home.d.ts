@@ -17,6 +17,7 @@ import '../components/md/md-tab-panel';
 import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/md/md-toast';
+import '../components/offline-notify';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';

@@ -97,14 +97,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-    | 'mention'
-    | 'reblog'
-    | 'favourite'
-    | 'follow'
-    | 'poll'
-    | 'follow_request'
-    | 'status'
-    | 'update';
+  | 'mention'
+  | 'reblog'
+  | 'favourite'
+  | 'follow'
+  | 'poll'
+  | 'follow_request'
+  | 'status'
+  | 'update';
   account: {
     id: string;
     display_name: string;
@@ -121,14 +121,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-    | 'mention'
-    | 'reblog'
-    | 'favourite'
-    | 'follow'
-    | 'poll'
-    | 'follow_request'
-    | 'status'
-    | 'update';
+  | 'mention'
+  | 'reblog'
+  | 'favourite'
+  | 'follow'
+  | 'poll'
+  | 'follow_request'
+  | 'status'
+  | 'update';
   icon: string;
   title: string;
   body: string;
@@ -600,7 +600,12 @@ registerRoute('/share', shareRouteHandler, 'POST');
 
 // Only register caching routes in production
 if (!IS_DEV) {
-  // background sync
+  // ============================================================================
+  // BACKGROUND SYNC FOR OFFLINE ACTIONS
+  // ============================================================================
+  // These routes queue failed requests and replay them when back online
+
+  // Firebase function routes (boost/favorite, reblog, bookmark)
   registerRoute(
     ({ request }) => request.url.includes('/boost?id'),
     new NetworkOnly({
@@ -625,8 +630,167 @@ if (!IS_DEV) {
     'POST'
   );
 
+  // Firebase function for posting statuses
   registerRoute(
-    ({ request }) => request.url.includes('/status?status'),
+    ({ request }) => request.url.includes('/postStatus'),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Firebase function for following users
+  registerRoute(
+    ({ request }) => request.url.includes('/follow?id'),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API routes - for creating new posts and replies
+  // Matches: https://{server}/api/v1/statuses (POST for new status/reply)
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      url.pathname === '/api/v1/statuses',
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - favorite/unfavorite a post
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/favou?rite$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/unfavou?rite$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - reblog/unreblog a post
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/reblog$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/unreblog$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - bookmark/unbookmark a post
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/bookmark$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/unbookmark$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - follow/unfollow a user
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/follow$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/unfollow$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - mute/unmute a user
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/mute$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/unmute$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - block/unblock a user
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/block$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/unblock$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - report a user
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      url.pathname === '/api/v1/reports',
     new NetworkOnly({
       plugins: [bgSyncPlugin],
     }),
@@ -663,6 +827,24 @@ if (!IS_DEV) {
     })
   );
 
+  // User profile credentials - NetworkFirst to work offline while keeping data fresh
+  // This caches /api/v1/accounts/verify_credentials so the app can load user info offline
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'GET' &&
+      url.pathname === '/api/v1/accounts/verify_credentials',
+    new NetworkFirst({
+      cacheName: 'user-credentials',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 5, // One per logged-in account
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    }),
+    'GET'
+  );
+
   // avatar photos - explicitly exclude documents to prevent HTML caching
   registerRoute(
     ({ request }) =>
@@ -674,6 +856,58 @@ if (!IS_DEV) {
         new ExpirationPlugin({
           maxEntries: 50,
           maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    })
+  );
+
+  // header/banner photos for profiles
+  registerRoute(
+    ({ request }) =>
+      request.destination !== 'document' &&
+      request.url.includes('/accounts/headers'),
+    new CacheFirst({
+      cacheName: 'header-images',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    })
+  );
+
+  // Cache profile images from Mastodon CDNs (files.*, media.*, cdn.*)
+  // These URLs may not follow the /accounts/avatars pattern on all instances
+  registerRoute(
+    ({ request, url }) =>
+      request.destination === 'image' &&
+      (url.hostname.startsWith('files.') ||
+        url.hostname.startsWith('media.') ||
+        url.hostname.startsWith('cdn.')),
+    new CacheFirst({
+      cacheName: 'mastodon-media',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 200,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    })
+  );
+
+  // Cache post media attachments from /media_attachments/ path
+  // This allows viewing previously loaded posts with images while offline
+  registerRoute(
+    ({ request }) =>
+      request.destination === 'image' &&
+      request.url.includes('/media_attachments/'),
+    new CacheFirst({
+      cacheName: 'post-media',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24 * 3, // 3 days (media can be large)
         }),
       ],
     })
@@ -703,6 +937,23 @@ if (!IS_DEV) {
           maxEntries: 50,
           // max age is 5 minutes
           maxAgeSeconds: 60 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
+
+  // Network first for hashtag timelines - enables offline viewing of previously visited hashtags
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'GET' &&
+      /\/api\/v1\/timelines\/tag\//.test(url.pathname),
+    new NetworkFirst({
+      cacheName: 'hashtag-timelines',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 20, // Cache up to 20 different hashtag feeds
+          maxAgeSeconds: 60 * 60 * 24, // 24 hours - hashtags change less frequently
         }),
       ],
     }),

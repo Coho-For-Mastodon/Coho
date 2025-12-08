@@ -50,6 +50,8 @@ export class AppProfile extends LitElement {
   @state() showReportDialog: boolean = false;
   @state() activeSegment: ProfilePostsFilter = 'posts';
   @state() loadingPosts: boolean = false;
+  @state() loadingProfile: boolean = true;
+  @state() profileLoadFailed: boolean = false;
 
   @query('#preview-content') private previewContent!: HTMLElement;
   @query('#edit') private editDialog!: MdDialog;
@@ -435,6 +437,37 @@ export class AppProfile extends LitElement {
       #profile-info {
         animation: fadeIn 0.3s ease-out;
       }
+
+      /* Offline fallback */
+      #offline-message {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 24px;
+        text-align: center;
+        gap: 16px;
+        margin-top: 60px;
+      }
+
+      #offline-message md-icon {
+        font-size: 48px;
+        color: var(--md-sys-color-on-surface-variant);
+      }
+
+      #offline-message h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      #offline-message p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--md-sys-color-on-surface-variant);
+        max-width: 300px;
+      }
     `,
   ];
 
@@ -448,14 +481,26 @@ export class AppProfile extends LitElement {
       const currentUserID = localStorage.getItem('currentUserID');
       this.isOwnProfile = currentUserID === id;
 
+      this.loadingProfile = true;
+      this.profileLoadFailed = false;
+
       const accountData = await getAccount(id);
       console.log(accountData);
-      this.user = accountData;
+
+      if (accountData) {
+        this.user = accountData;
+      } else {
+        // Profile couldn't be loaded (offline with no cache)
+        this.profileLoadFailed = true;
+        this.loadingProfile = false;
+        return;
+      }
 
       const postsData = await getUsersPosts(id);
       console.log(postsData);
 
       this.posts = Array.isArray(postsData) ? postsData : [];
+      this.loadingProfile = false;
 
       // Only check follow status if not viewing own profile
       if (!this.isOwnProfile) {
@@ -468,7 +513,7 @@ export class AppProfile extends LitElement {
 
           const followedCheck = await isFollowingMe(id);
           console.log('followedCheck', followedCheck);
-          if (Array.isArray(followedCheck) && followedCheck[0]) {
+          if (Array.isArray(followedCheck) && followCheck[0]) {
             this.following = followedCheck[0].followed_by;
             this.muted = followedCheck[0].muting;
             this.blocked = followedCheck[0].blocking;
@@ -593,6 +638,24 @@ export class AppProfile extends LitElement {
   }
 
   render() {
+    // Show offline fallback if profile couldn't be loaded
+    if (this.profileLoadFailed) {
+      return html`
+        <app-header ?enableBack="${true}"></app-header>
+        <div id="offline-message">
+          <md-icon name="cloud-offline"></md-icon>
+          <h2>Profile unavailable</h2>
+          <p>
+            This profile hasn't been viewed before and can't be loaded while
+            offline.
+          </p>
+          <md-button variant="filled" @click="${() => window.location.reload()}"
+            >Try again</md-button
+          >
+        </div>
+      `;
+    }
+
     return html`
       <app-header ?enableBack="${true}"></app-header>
 
