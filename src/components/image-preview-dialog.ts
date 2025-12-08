@@ -4,6 +4,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import './md/md-icon-button';
 import './md/md-icon';
 import './md/md-skeleton';
+import { isPromptAPIAvailable, generateAltText } from '../services/ai';
 
 @customElement('image-preview-dialog')
 export class ImagePreviewDialog extends LitElement {
@@ -190,7 +191,19 @@ export class ImagePreviewDialog extends LitElement {
     this.height = e.detail.height;
     this.loaded = false;
     this.open = true;
+
+    if (isPromptAPIAvailable() && (!this.alt || this.alt.trim() === '')) {
+      this.alt = 'Loading alt text...';
+      this.handleGenerateAlt();
+    }
   };
+
+  private async handleGenerateAlt() {
+    const result = await generateAltText(this.src);
+    if (result) {
+      this.alt = result;
+    }
+  }
 
   private close() {
     this.open = false;
@@ -393,13 +406,13 @@ export class ImagePreviewDialog extends LitElement {
             />
           </div>
           ${this.alt
-            ? html`<div
+        ? html`<div
                 class="caption"
                 @click="${(e: Event) => e.stopPropagation()}"
               >
                 ${this.alt}
               </div>`
-            : ''}
+        : ''}
         </div>
       </dialog>
     `;

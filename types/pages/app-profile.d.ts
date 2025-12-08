@@ -1,4 +1,5 @@
 import { LitElement } from 'lit';
+import { type ProfilePostsFilter } from '../services/account';
 import '../components/timeline-item';
 import '../components/md/md-dialog';
 import '../components/md/md-text-area';
@@ -11,6 +12,8 @@ import '../components/report-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
 import type { Account } from '../mastodon/types';
 import '../components/md/md-skeleton';
+import '../components/md/md-segmented-button';
+import '../components/md/md-divider';
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 export declare class AppProfile extends LitElement {
@@ -20,10 +23,11 @@ export declare class AppProfile extends LitElement {
     following: boolean;
     muted: boolean;
     blocked: boolean;
-    showMiniProfile: boolean;
     selectedPost: Post | undefined;
     isOwnProfile: boolean;
     showReportDialog: boolean;
+    activeSegment: ProfilePostsFilter;
+    loadingPosts: boolean;
     private previewContent;
     private editDialog;
     private contentTextArea;
@@ -31,6 +35,9 @@ export declare class AppProfile extends LitElement {
     firstUpdated(): Promise<void>;
     follow(): Promise<void>;
     reloadPosts(): Promise<void>;
+    handleSegmentChange(e: CustomEvent<{
+        value: string;
+    }>): Promise<void>;
     unfollow(): Promise<void>;
     mute(): Promise<void>;
     unmute(): Promise<void>;
@@ -41,5 +48,7 @@ export declare class AppProfile extends LitElement {
     handleReportCancel(): void;
     editPost(tweet: Post): void;
     confirmEdit(): Promise<void>;
+    private goToFollowers;
+    private goToFollowing;
     render(): import("lit-html").TemplateResult<1>;
 }

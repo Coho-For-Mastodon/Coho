@@ -246,6 +246,62 @@ export const proofread = async (
   }
 };
 
+/**
+ * Check if Chrome's Prompt API (LanguageModel) is available
+ */
+export const isPromptAPIAvailable = (): boolean => {
+  return 'LanguageModel' in window;
+};
+
+/**
+ * Generate alt text for an image using Chrome's on-device Prompt API
+ * @param imageSource - URL string or Blob of the image
+ * @returns Generated alt text or null if generation fails
+ */
+export const generateAltText = async (
+  imageSource: string | Blob
+): Promise<string | null> => {
+  try {
+    if (!isPromptAPIAvailable()) {
+      throw new Error('Prompt API (LanguageModel) not available');
+    }
+
+    // Convert URL to Blob if needed
+    let imageBlob: Blob;
+    if (typeof imageSource === 'string') {
+      const response = await fetch(imageSource);
+      imageBlob = await response.blob();
+    } else {
+      imageBlob = imageSource;
+    }
+
+    // @ts-ignore - LanguageModel is a Chrome experimental API
+    const session = await LanguageModel.create({
+      expectedInputs: [{ type: 'image' }],
+    });
+
+    const prompt = 'Give me alt text for the following image. Only return the alt text, no other text or markdown:';
+
+    const result = await session.prompt([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', value: prompt },
+          { type: 'image', value: imageBlob },
+        ],
+      },
+    ]);
+
+    // Clean up
+    session.destroy();
+
+    return result;
+  } catch (error) {
+    console.error('Alt text generation error:', error);
+    return null;
+  }
+};
+
 // export const analyzeStatusImage = async (image: string) => {
 //     const response = await fetch(`${visionEndpoint}/computervision/imageanalysis:analyze?api-version=2022-10-12-preview&features=Read,Description`, {
 //         method: "POST",

@@ -309,6 +309,7 @@ export class TimelineItem extends LitElement {
         align-items: center;
         color: var(--primary-color);
         margin-top: 0px;
+        margin-bottom: 0px;
 
         font-size: var(--md-sys-typescale-body-medium-font-size);
         gap: 8px;
