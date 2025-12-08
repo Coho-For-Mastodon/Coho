@@ -933,12 +933,9 @@ export class AppHome extends LitElement {
     const result = [];
 
     for (const request of await cache.keys()) {
-      // If the request URL matches, add the response to the result
-      if (
-        (request.url.endsWith('.png') && request.url.includes(name)) ||
-        (request.url.endsWith('.jpg') && request.url.includes(name))
-      ) {
-        result.push(await cache.match(name));
+      // If the request URL contains the name, add the response to the result
+      if (request.url.includes(name)) {
+        result.push(await cache.match(request));
       }
     }
 
