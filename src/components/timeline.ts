@@ -20,7 +20,6 @@ import type {
   HandleSummaryDetail,
   HandleTranslatingDetail,
   OpenPostDetail,
-  SelectChangeDetail,
   AnalyzeEventDetail,
   OpenImageDetail,
 } from '../types/events';

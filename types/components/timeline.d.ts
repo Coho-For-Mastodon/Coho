@@ -30,6 +30,9 @@ import '../components/timeline-item';
 import '../components/search';
 import '../components/md/md-select';
 import '../components/md/md-option';
+import '../components/md/md-dropdown';
+import '../components/md/md-menu';
+import '../components/md/md-menu-item';
 export declare class Timeline extends LitElement {
     timeline: Post[];
     loadingData: boolean;
@@ -48,6 +51,7 @@ export declare class Timeline extends LitElement {
     data: Post[] | undefined;
     header: boolean;
     autoLoad: boolean;
+    get timelineTitle(): "Home" | "Public" | "Media" | "For You" | "Home & Trending" | "Timeline";
     protected willUpdate(changedProperties: PropertyValues): void;
     static styles: import("lit").CSSResult[];
     firstUpdated(): void;
