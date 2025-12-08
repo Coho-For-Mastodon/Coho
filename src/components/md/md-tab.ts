@@ -258,6 +258,65 @@ export class MdTab extends LitElement {
       transform: translateX(-50%) scaleX(1);
     }
 
+    /* Mobile - force bottom nav styling for horizontal tabs */
+    @media (max-width: 820px) {
+      :host([data-orientation='horizontal']) button {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        padding: 12px 2px 12px;
+        min-height: 56px;
+        width: 100%;
+        font-size: 11px;
+        line-height: 16px;
+        letter-spacing: 0.1px;
+        border-radius: 0;
+        background: transparent;
+      }
+
+      :host([data-orientation='horizontal']) .icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 32px;
+        border-radius: 16px;
+        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+      }
+
+      :host([data-orientation='horizontal']:hover) .icon-container {
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600)) 8%,
+          transparent
+        );
+      }
+
+      :host([active][data-orientation='horizontal']) .icon-container {
+        background: var(
+          --md-sys-color-secondary-container,
+          color-mix(
+            in srgb,
+            var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
+            transparent
+          )
+        );
+      }
+
+      :host([data-orientation='horizontal']) button::before {
+        display: none;
+      }
+
+      :host([data-orientation='horizontal']) .indicator {
+        display: none;
+      }
+
+      :host([active][data-orientation='horizontal']) button {
+        background: transparent;
+      }
+    }
+
     /* Dark mode */
     @media (prefers-color-scheme: dark) {
       button {
