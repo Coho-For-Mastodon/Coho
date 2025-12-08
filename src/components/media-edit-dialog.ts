@@ -120,16 +120,16 @@ export class MediaEditDialog extends LitElement {
       >
         <div class="preview-container">
           ${!this.imageLoaded
-        ? html`<md-skeleton width="100%" height="300px"></md-skeleton>`
-        : ''}
+            ? html`<md-skeleton width="100%" height="300px"></md-skeleton>`
+            : ''}
           ${this.imageSrc
-        ? html` <img
+            ? html` <img
                 src="${this.imageSrc}"
                 alt="Preview"
                 @load="${this.handleImageLoad}"
                 style="${this.imageLoaded ? '' : 'display: none;'}"
               />`
-        : ''}
+            : ''}
         </div>
 
         <md-text-area
@@ -138,11 +138,11 @@ export class MediaEditDialog extends LitElement {
           rows="4"
           .value="${this.description}"
           @input="${(e: Event) =>
-        (this.description = (e.target as HTMLTextAreaElement).value)}"
+            (this.description = (e.target as HTMLTextAreaElement).value)}"
         ></md-text-area>
 
         ${this.promptAPIAvailable
-        ? html`
+          ? html`
               <div class="generate-alt-container">
                 <md-button
                   variant="text"
@@ -154,7 +154,7 @@ export class MediaEditDialog extends LitElement {
                 </md-button>
               </div>
             `
-        : ''}
+          : ''}
 
         <div slot="footer" class="actions">
           <md-button variant="text" @click="${this.close}">Cancel</md-button>

@@ -414,13 +414,13 @@ export class ImagePreviewDialog extends LitElement {
             />
           </div>
           ${this.alt
-        ? html`<div
+            ? html`<div
                 class="caption"
                 @click="${(e: Event) => e.stopPropagation()}"
               >
                 ${this.alt}
               </div>`
-        : ''}
+            : ''}
         </div>
       </dialog>
     `;

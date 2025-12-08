@@ -253,8 +253,8 @@ export const authToClient = async (code: string, state: string) => {
       console.error('Invalid token response:', data);
       throw new Error(
         data.error ||
-        data.details?.error_description ||
-        'Failed to get access token'
+          data.details?.error_description ||
+          'Failed to get access token'
       );
     }
 

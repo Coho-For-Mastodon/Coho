@@ -24,7 +24,6 @@ import type {
   OpenImageDetail,
 } from '../types/events';
 
-
 // Types for analyze feature
 interface AnalyzeEntity {
   text: string;
@@ -1030,36 +1029,34 @@ export class Timeline extends LitElement {
               scroller
               .items=${this.timeline}
               .renderItem=${((tweet: Post) =>
-                  html`<div class="timeline-list-item">
-                    <timeline-item
-                      @open="${($event: CustomEvent) =>
-                        this.handleOpen($event.detail.tweet)}"
-                      @summarize="${(
-                        $event: CustomEvent<HandleSummaryDetail>
-                      ) => this.handleSummary($event)}"
-                      @translating="${(
-                        $event: CustomEvent<HandleTranslatingDetail>
-                      ) => this.handleTranslating($event)}"
-                      tweetID="${tweet.id}"
-                      @delete="${() => this.refreshTimeline()}"
-                      @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                        this.showAnalyze(
-                          $event.detail.data as AnalyzeData,
-                          $event.detail.imageData as ImageAnalyzeData | null,
-                          $event.detail.tweet
-                        )}"
-                      @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                        this.showImage($event.detail.imageURL)}"
-                      ?show="${true}"
-                      @replies="${($event: CustomEvent<RepliesDetail>) =>
-                        this.handleReplies($event.detail.data)}"
-                      .tweet="${tweet}"
-                    ></timeline-item>
-                    <md-divider
-                      style="margin-top: 12px; margin-bottom: 12px;"
-                    ></md-divider>
-                  </div>`) as unknown
-              }
+                html`<div class="timeline-list-item">
+                  <timeline-item
+                    @open="${($event: CustomEvent) =>
+                      this.handleOpen($event.detail.tweet)}"
+                    @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
+                      this.handleSummary($event)}"
+                    @translating="${(
+                      $event: CustomEvent<HandleTranslatingDetail>
+                    ) => this.handleTranslating($event)}"
+                    tweetID="${tweet.id}"
+                    @delete="${() => this.refreshTimeline()}"
+                    @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
+                      this.showAnalyze(
+                        $event.detail.data as AnalyzeData,
+                        $event.detail.imageData as ImageAnalyzeData | null,
+                        $event.detail.tweet
+                      )}"
+                    @openimage="${($event: CustomEvent<OpenImageDetail>) =>
+                      this.showImage($event.detail.imageURL)}"
+                    ?show="${true}"
+                    @replies="${($event: CustomEvent<RepliesDetail>) =>
+                      this.handleReplies($event.detail.data)}"
+                    .tweet="${tweet}"
+                  ></timeline-item>
+                  <md-divider
+                    style="margin-top: 12px; margin-bottom: 12px;"
+                  ></md-divider>
+                </div>`) as unknown}
               @visibilityChanged=${this._handleVisibilityChanged}
             >
             </lit-virtualizer>
