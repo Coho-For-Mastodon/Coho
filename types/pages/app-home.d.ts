@@ -21,91 +21,97 @@ import '../components/offline-notify';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
-import type { TabChangeEvent, HandleSummaryEvent, HandleTranslatingEvent } from '../types/events';
+import type {
+  TabChangeEvent,
+  HandleSummaryEvent,
+  HandleTranslatingEvent,
+} from '../types/events';
 export declare class AppHome extends LitElement {
-    message: string;
-    user: Account | null;
-    attachmentID: string | null;
-    attachmentPreview: string | null;
-    replies: Post[];
-    replyID: string | null;
-    primary_color: string;
-    instanceInfo: Instance | null;
-    wellnessMode: boolean;
-    dataSaverMode: boolean;
-    sensitiveMode: boolean;
-    attaching: boolean;
-    summary: string;
-    openTweet: Post | null;
-    homeLoad: boolean;
-    hasNewNotifications: boolean;
-    trendingTags: TrendingTag[];
-    bookmarksLoaded: boolean;
-    favoritesLoaded: boolean;
-    notificationsLoaded: boolean;
-    searchLoaded: boolean;
-    appThemeLoaded: boolean;
-    userTermsLoaded: boolean;
-    rightClickLoaded: boolean;
-    activeTab: string;
-    tabsOrientation: 'horizontal' | 'vertical';
-    tabsPlacement: 'top' | 'bottom' | 'start' | 'end';
-    private settingsDrawer;
-    private repliesDrawer;
-    private themingDrawer;
-    private botDrawer;
-    private translationToast;
-    private errorToast;
-    private summaryDialog;
-    private openTweetDialog;
-    private homeTimeline;
-    private postDialog;
-    static get styles(): import("lit").CSSResult[];
-    constructor();
-    firstUpdated(): Promise<void>;
-    /**
-     * Set up listener for global toast events from optimistic updates
-     */
-    private setupGlobalToastListener;
-    shareTarget(name: string): Promise<void>;
-    handlePrimaryColor(color: string): void;
-    share(): void;
-    openNewDialog(): Promise<void>;
-    publish(): Promise<void>;
-    goToFollowers(): Promise<void>;
-    goToFollowing(): Promise<void>;
-    openSettingsDrawer(): Promise<void>;
-    handleReplies(replies: Post[], id: string): Promise<void>;
-    replyToAStatus(): Promise<void>;
-    openThemingDrawer(): Promise<void>;
-    doFocusMode(): void;
-    handleWellnessMode(check: boolean): Promise<void>;
-    handleSensitiveContent(check: boolean): Promise<void>;
-    handleDataSaverMode(mode: boolean): Promise<void>;
-    removeImage(): void;
-    openATab(name: string): void;
-    shareMyProfile(): Promise<void>;
-    viewMyProfile(): void;
-    editMyProfile(): void;
-    handleReload(): Promise<void>;
-    openBotDrawer(): void;
-    showSummary($event: HandleSummaryEvent): void;
-    onMoveHandler(ev: {
-        deltaX: number;
-    }, dialog: HTMLElement & {
-        hide(): void;
-    }): void;
-    handleOpenTweet(tweet: Post): Promise<void>;
-    disconnectedCallback(): Promise<void>;
-    reloadHome(): void;
-    loadBookmarks(): Promise<void>;
-    loadFavorites(): Promise<void>;
-    loadNotifications(): Promise<void>;
-    loadSearch(): Promise<void>;
-    loadAppTheme(): Promise<void>;
-    loadUserTerms(): Promise<void>;
-    loadRightClick(): Promise<void>;
-    handleTabChange(event: TabChangeEvent): Promise<void>;
-    handleTranslating(_event: HandleTranslatingEvent): Promise<void>;
-    render(): import("lit-html").TemplateResult<1>;
+  message: string;
+  user: Account | null;
+  attachmentID: string | null;
+  attachmentPreview: string | null;
+  replies: Post[];
+  replyID: string | null;
+  primary_color: string;
+  instanceInfo: Instance | null;
+  wellnessMode: boolean;
+  dataSaverMode: boolean;
+  sensitiveMode: boolean;
+  attaching: boolean;
+  summary: string;
+  openTweet: Post | null;
+  homeLoad: boolean;
+  hasNewNotifications: boolean;
+  trendingTags: TrendingTag[];
+  bookmarksLoaded: boolean;
+  favoritesLoaded: boolean;
+  notificationsLoaded: boolean;
+  searchLoaded: boolean;
+  appThemeLoaded: boolean;
+  userTermsLoaded: boolean;
+  rightClickLoaded: boolean;
+  activeTab: string;
+  tabsOrientation: 'horizontal' | 'vertical';
+  tabsPlacement: 'top' | 'bottom' | 'start' | 'end';
+  private settingsDrawer;
+  private repliesDrawer;
+  private themingDrawer;
+  private botDrawer;
+  private translationToast;
+  private errorToast;
+  private summaryDialog;
+  private openTweetDialog;
+  private homeTimeline;
+  private postDialog;
+  static get styles(): import('lit').CSSResult[];
+  firstUpdated(): Promise<void>;
+  /**
+   * Set up listener for global toast events from optimistic updates
+   */
+  private setupGlobalToastListener;
+  shareTarget(name: string): Promise<void>;
+  handlePrimaryColor(color: string): void;
+  share(): void;
+  openNewDialog(): Promise<void>;
+  publish(): Promise<void>;
+  goToFollowers(): Promise<void>;
+  goToFollowing(): Promise<void>;
+  openSettingsDrawer(): Promise<void>;
+  handleReplies(replies: Post[], id: string): Promise<void>;
+  replyToAStatus(): Promise<void>;
+  openThemingDrawer(): Promise<void>;
+  doFocusMode(): void;
+  handleWellnessMode(check: boolean): Promise<void>;
+  handleSensitiveContent(check: boolean): Promise<void>;
+  handleDataSaverMode(mode: boolean): Promise<void>;
+  removeImage(): void;
+  openATab(name: string): void;
+  shareMyProfile(): Promise<void>;
+  viewMyProfile(): void;
+  editMyProfile(): void;
+  handleReload(): Promise<void>;
+  openBotDrawer(): void;
+  showSummary($event: HandleSummaryEvent): void;
+  onMoveHandler(
+    ev: {
+      deltaX: number;
+    },
+    dialog: HTMLElement & {
+      hide(): void;
+    }
+  ): void;
+  handleOpenTweet(tweet: Post): Promise<void>;
+  disconnectedCallback(): Promise<void>;
+  reloadHome(): void;
+  loadBookmarks(): Promise<void>;
+  loadFavorites(): Promise<void>;
+  loadNotifications(): Promise<void>;
+  loadSearch(): Promise<void>;
+  loadAppTheme(): Promise<void>;
+  loadUserTerms(): Promise<void>;
+  loadRightClick(): Promise<void>;
+  handleTabChange(event: TabChangeEvent): Promise<void>;
+  handleTranslating(_event: HandleTranslatingEvent): Promise<void>;
+  render(): import('lit-html').TemplateResult<1>;
 }

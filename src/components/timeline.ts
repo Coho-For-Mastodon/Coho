@@ -1080,9 +1080,6 @@ export class Timeline extends LitElement {
                       this.handleReplies($event.detail.data)}"
                     .tweet="${tweet}"
                   ></timeline-item>
-                  <md-divider
-                    style="margin-top: 12px; margin-bottom: 12px;"
-                  ></md-divider>
                 </div>`) as unknown}
               @visibilityChanged=${this._handleVisibilityChanged}
             >

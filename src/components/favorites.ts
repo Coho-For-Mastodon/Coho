@@ -27,6 +27,8 @@ export class Favorites extends LitElement {
         padding: 0;
         list-style: none;
 
+        gap: 16px;
+
         height: 90vh;
         overflow-y: scroll;
         overflow-x: hidden;
@@ -66,12 +68,7 @@ export class Favorites extends LitElement {
         ${this.isLoading
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : this.favorites.map((favorite: Post) => {
-              return html`
-                <timeline-item .tweet=${favorite}></timeline-item>
-                <md-divider
-                  style="margin-top: 12px; margin-bottom: 12px;"
-                ></md-divider>
-              `;
+              return html` <timeline-item .tweet=${favorite}></timeline-item> `;
             })}
       </ul>
     `;

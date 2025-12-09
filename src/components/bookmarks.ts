@@ -27,6 +27,8 @@ export class Bookmarks extends LitElement {
         padding: 0;
         list-style: none;
 
+        gap: 16px;
+
         height: 90vh;
         overflow-y: scroll;
         overflow-x: hidden;
@@ -72,12 +74,7 @@ export class Bookmarks extends LitElement {
         ${this.isLoading
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : this.bookmarks.map((bookmark: Post) => {
-              return html`
-                <timeline-item .tweet=${bookmark}></timeline-item>
-                <md-divider
-                  style="margin-top: 12px; margin-bottom: 12px;"
-                ></md-divider>
-              `;
+              return html` <timeline-item .tweet=${bookmark}></timeline-item> `;
             })}
       </ul>
     `;

@@ -430,7 +430,7 @@ export class SearchPage extends LitElement {
         }
 
         .card-avatar {
-          top: 40px;
+          top: -58px;
           width: 48px;
           height: 48px;
         }

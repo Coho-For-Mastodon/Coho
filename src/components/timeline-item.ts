@@ -66,6 +66,11 @@ export class TimelineItem extends LitElement {
 
         border-radius: 12px;
         overflow: hidden;
+
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        padding: 10px;
+        width: auto;
+        padding-top: 0;
       }
 
       image-carousel {
@@ -239,12 +244,6 @@ export class TimelineItem extends LitElement {
       .status-link-card__title {
         padding: 0;
         margin: 0;
-      }
-
-      md-card {
-        width: 100%;
-        overflow-x: hidden;
-        content-visibility: auto;
       }
 
       md-card a {
