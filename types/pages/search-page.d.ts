@@ -23,6 +23,14 @@ export declare class SearchPage extends LitElement {
     }): Promise<void>;
     openAccount(id: string): void;
     handleHashtagClick(hashtag: string): void;
+    /**
+     * Strip HTML tags from a string (for bio/note display)
+     */
+    private stripHtml;
+    /**
+     * Format large numbers with K/M suffixes
+     */
+    private formatNumber;
     render(): import("lit-html").TemplateResult<1>;
 }
 export {};

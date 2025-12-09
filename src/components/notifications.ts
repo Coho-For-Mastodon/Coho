@@ -647,14 +647,16 @@ export class Notifications extends LitElement {
     const bioText = account.note?.replace(/<[^>]*>/g, '') || '';
 
     return html`
-      <li class="notification-card" @click="${() => this.openProfile(account)}">
+      <li class="notification-card follow" @click="${() => this.openProfile(account)}">
         <div class="notification-header">
           <div class="notification-icon follow">
             ${this.getNotificationIcon('follow')}
           </div>
           <div class="notification-meta">
             <div class="notification-meta-top">
-              <span class="notification-action">New follower</span>
+              <span class="notification-action"
+                >${this.getNotificationActionText('follow')}</span
+              >
             </div>
             <div class="notification-time">
               ${this.formatTimeAgo(notification.created_at)}
@@ -735,7 +737,7 @@ export class Notifications extends LitElement {
 
     return html`
       <li
-        class="notification-card"
+        class="notification-card ${type}"
         @click="${() => this.openPost(notification.status)}"
       >
         <div class="notification-header">

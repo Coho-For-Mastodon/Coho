@@ -90,7 +90,9 @@ export class SearchPage extends LitElement {
         border-radius: 16px;
         overflow: visible;
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
         background: linear-gradient(145deg, #1a1a1d 0%, #2d2d33 100%);
         border: 1px solid rgba(255, 255, 255, 0.06);
       }
@@ -127,7 +129,11 @@ export class SearchPage extends LitElement {
         left: 0;
         right: 0;
         height: 40px;
-        background: linear-gradient(to top, rgba(26, 26, 29, 1) 0%, transparent 100%);
+        background: linear-gradient(
+          to top,
+          rgba(26, 26, 29, 1) 0%,
+          transparent 100%
+        );
         pointer-events: none;
       }
 
@@ -138,17 +144,17 @@ export class SearchPage extends LitElement {
 
       .card-avatar {
         position: absolute;
-    top: -71px;
-    left: -2px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: 3px solid #1a1a1d;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    z-index: 2;
-    object-fit: cover;
-    background: #2d2d33;
-    background: #2d2d33;
+        top: -71px;
+        left: -2px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: 3px solid #1a1a1d;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 2;
+        object-fit: cover;
+        background: #2d2d33;
+        background: #2d2d33;
       }
 
       .card-body {
@@ -250,7 +256,12 @@ export class SearchPage extends LitElement {
       .skeleton-header {
         height: 80px;
         min-height: 80px;
-        background: linear-gradient(90deg, #2d2d33 25%, #3d3d43 50%, #2d2d33 75%);
+        background: linear-gradient(
+          90deg,
+          #2d2d33 25%,
+          #3d3d43 50%,
+          #2d2d33 75%
+        );
         background-size: 200% 100%;
         animation: shimmer 1.5s infinite;
         border-radius: 16px 16px 0 0;
@@ -267,7 +278,12 @@ export class SearchPage extends LitElement {
         width: 56px;
         height: 56px;
         border-radius: 50%;
-        background: linear-gradient(90deg, #2d2d33 25%, #3d3d43 50%, #2d2d33 75%);
+        background: linear-gradient(
+          90deg,
+          #2d2d33 25%,
+          #3d3d43 50%,
+          #2d2d33 75%
+        );
         background-size: 200% 100%;
         animation: shimmer 1.5s infinite;
         position: absolute;
@@ -283,7 +299,12 @@ export class SearchPage extends LitElement {
       .skeleton-line {
         height: 14px;
         border-radius: 4px;
-        background: linear-gradient(90deg, #2d2d33 25%, #3d3d43 50%, #2d2d33 75%);
+        background: linear-gradient(
+          90deg,
+          #2d2d33 25%,
+          #3d3d43 50%,
+          #2d2d33 75%
+        );
         background-size: 200% 100%;
         animation: shimmer 1.5s infinite;
         margin-bottom: 8px;
@@ -309,14 +330,23 @@ export class SearchPage extends LitElement {
         width: 50px;
         height: 30px;
         border-radius: 4px;
-        background: linear-gradient(90deg, #2d2d33 25%, #3d3d43 50%, #2d2d33 75%);
+        background: linear-gradient(
+          90deg,
+          #2d2d33 25%,
+          #3d3d43 50%,
+          #2d2d33 75%
+        );
         background-size: 200% 100%;
         animation: shimmer 1.5s infinite;
       }
 
       @keyframes shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
       }
 
       /* Other lists */
@@ -422,7 +452,11 @@ export class SearchPage extends LitElement {
         }
 
         .card-header::after {
-          background: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, transparent 100%);
+          background: linear-gradient(
+            to top,
+            rgba(255, 255, 255, 1) 0%,
+            transparent 100%
+          );
         }
 
         .card-body {
@@ -465,7 +499,12 @@ export class SearchPage extends LitElement {
         .skeleton-header,
         .skeleton-avatar,
         .skeleton-line {
-          background: linear-gradient(90deg, #e8e8e8 25%, #f4f4f4 50%, #e8e8e8 75%);
+          background: linear-gradient(
+            90deg,
+            #e8e8e8 25%,
+            #f4f4f4 50%,
+            #e8e8e8 75%
+          );
           background-size: 200% 100%;
         }
 
@@ -555,13 +594,13 @@ export class SearchPage extends LitElement {
       <main>
         <app-search
           @search="${(e: CustomEvent<{ searchData: SearchData }>) =>
-        this.handleSearch(e.detail)}"
+            this.handleSearch(e.detail)}"
         ></app-search>
 
         <md-segmented-button
           .value="${this.activeSegment}"
           @segment-change="${(e: CustomEvent) =>
-        (this.activeSegment = e.detail.value)}"
+            (this.activeSegment = e.detail.value)}"
         >
           <md-segment value="accounts">Accounts</md-segment>
           <md-segment value="trending">Trending</md-segment>
@@ -570,72 +609,101 @@ export class SearchPage extends LitElement {
 
         <div class="panel ${this.activeSegment === 'accounts' ? 'active' : ''}">
           ${this.searchData && this.searchData.accounts
-        ? html`
+            ? html`
                 <ul id="accountsList">
                   ${this.searchData.accounts.map((account) => {
-          return html`
+                    return html`
                       <li
                         class="account-card"
                         @click="${() => this.openAccount(account.id)}"
                       >
                         <div class="card-header">
-                          ${account.header && !account.header.includes('missing')
-              ? html`<img class="card-header-image" src="${account.header}" alt="" loading="lazy" />`
-              : null}
+                          ${account.header &&
+                          !account.header.includes('missing')
+                            ? html`<img
+                                class="card-header-image"
+                                src="${account.header}"
+                                alt=""
+                                loading="lazy"
+                              />`
+                            : null}
                         </div>
                         <div class="card-body">
                           <div class="card-avatar-wrapper">
-                            <img class="card-avatar" src="${account.avatar}" alt="${account.display_name || account.username}" loading="lazy" />
+                            <img
+                              class="card-avatar"
+                              src="${account.avatar}"
+                              alt="${account.display_name || account.username}"
+                              loading="lazy"
+                            />
                           </div>
                           <div class="card-identity">
                             <p class="card-display-name">
                               ${account.display_name || account.username}
-                              ${account.bot ? html`<span class="bot-badge">Bot</span>` : null}
+                              ${account.bot
+                                ? html`<span class="bot-badge">Bot</span>`
+                                : null}
                             </p>
                             <p class="card-username">@${account.acct}</p>
                           </div>
-                          <p class="card-bio">${this.stripHtml(account.note)}</p>
+                          <p class="card-bio">
+                            ${this.stripHtml(account.note)}
+                          </p>
                           <div class="card-stats">
                             <div class="stat">
-                              <span class="stat-value">${this.formatNumber(account.followers_count)}</span>
+                              <span class="stat-value"
+                                >${this.formatNumber(
+                                  account.followers_count
+                                )}</span
+                              >
                               <span class="stat-label">Followers</span>
                             </div>
                             <div class="stat">
-                              <span class="stat-value">${this.formatNumber(account.following_count)}</span>
+                              <span class="stat-value"
+                                >${this.formatNumber(
+                                  account.following_count
+                                )}</span
+                              >
                               <span class="stat-label">Following</span>
                             </div>
                             <div class="stat">
-                              <span class="stat-value">${this.formatNumber(account.statuses_count)}</span>
+                              <span class="stat-value"
+                                >${this.formatNumber(
+                                  account.statuses_count
+                                )}</span
+                              >
                               <span class="stat-label">Posts</span>
                             </div>
                           </div>
                         </div>
                       </li>
                     `;
-        })}
+                  })}
                 </ul>
               `
-        : html`
+            : html`
                 <ul id="accountsList">
-                  ${[1, 2, 3, 4, 5, 6].map(() => html`
-                    <li class="account-card-skeleton">
-                      <div class="skeleton-header"></div>
-                      <div class="skeleton-body">
-                        <div class="skeleton-avatar"></div>
-                        <div class="skeleton-content">
-                          <div class="skeleton-line medium"></div>
-                          <div class="skeleton-line short"></div>
-                          <div class="skeleton-line"></div>
-                          <div class="skeleton-line medium"></div>
-                          <div class="skeleton-stats">
-                            <div class="skeleton-stat"></div>
-                            <div class="skeleton-stat"></div>
-                            <div class="skeleton-stat"></div>
+                  ${[1, 2, 3, 4, 5, 6].map(
+                    () => html`
+                      <li class="account-card-skeleton">
+                        <div class="skeleton-header"></div>
+                        <div class="skeleton-body">
+                          <div class="skeleton-avatar"></div>
+                          <div class="skeleton-content">
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-stats">
+                              <div class="skeleton-stat"></div>
+                              <div class="skeleton-stat"></div>
+                              <div class="skeleton-stat"></div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </li>
-                  `)}
+                      </li>
+                    `
+                  )}
                 </ul>
               `}
         </div>
@@ -643,20 +711,20 @@ export class SearchPage extends LitElement {
         <div class="panel ${this.activeSegment === 'trending' ? 'active' : ''}">
           <ul>
             ${this.trending
-        ? this.trending.map((status) => {
-          return html`<timeline-item
+              ? this.trending.map((status) => {
+                  return html`<timeline-item
                     .tweet="${status}"
                   ></timeline-item>`;
-        })
-        : null}
+                })
+              : null}
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'news' ? 'active' : ''}">
           <ul id="newsList">
             ${this.trendingLinks
-        ? this.trendingLinks.map((link) => {
-          return html` <li>
+              ? this.trendingLinks.map((link) => {
+                  return html` <li>
                     <img src="${link.image}" alt="${link.description}" />
 
                     <h3>${link.title}</h3>
@@ -664,28 +732,28 @@ export class SearchPage extends LitElement {
 
                     <p>${link.description}</p>
                   </li>`;
-        })
-        : null}
+                })
+              : null}
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'hashtags' ? 'active' : ''}">
           ${this.searchData && this.searchData.hashtags
-        ? html`
+            ? html`
                 <ul>
                   ${this.searchData && this.searchData.hashtags
-            ? this.searchData.hashtags.map((hashtag) => {
-              return html`<li
+                    ? this.searchData.hashtags.map((hashtag) => {
+                        return html`<li
                           @click="${() =>
-                  this.handleHashtagClick(hashtag.name)}"
+                            this.handleHashtagClick(hashtag.name)}"
                         >
                           <div class="account">#${hashtag.name}</div>
                         </li>`;
-            })
-            : null}
+                      })
+                    : null}
                 </ul>
               `
-        : null}
+            : null}
         </div>
       </main>
     `;

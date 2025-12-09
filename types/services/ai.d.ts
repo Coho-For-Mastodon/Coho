@@ -25,3 +25,21 @@ export declare const isPromptAPIAvailable: () => boolean;
  * @returns Generated alt text or null if generation fails
  */
 export declare const generateAltText: (imageSource: string | Blob) => Promise<string | null>;
+/**
+ * Check if audio transcription via LanguageModel is available
+ */
+export declare const isAudioTranscriptionAvailable: () => boolean;
+/**
+ * Check if on-device translation is available via Chrome's Translator API
+ */
+export declare const isOnDeviceTranslationAvailable: () => boolean;
+/**
+ * Check if on-device summarization is available via Chrome's Summarizer API
+ */
+export declare const isOnDeviceSummarizationAvailable: () => boolean;
+/**
+ * Transcribe audio using Chrome's on-device Prompt API (LanguageModel)
+ * @param audioBlob - Blob containing audio data
+ * @returns Transcribed text or null if transcription fails
+ */
+export declare const transcribeAudio: (audioBlob: Blob) => Promise<string | null>;

@@ -4,6 +4,7 @@ import { Post } from '../interfaces/Post';
 
 import './timeline-item';
 import './md/md-skeleton-card';
+import './md/md-divider';
 
 @customElement('app-bookmarks')
 export class Bookmarks extends LitElement {
@@ -71,7 +72,12 @@ export class Bookmarks extends LitElement {
         ${this.isLoading
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : this.bookmarks.map((bookmark: Post) => {
-              return html` <timeline-item .tweet=${bookmark}></timeline-item> `;
+              return html`
+                <timeline-item .tweet=${bookmark}></timeline-item>
+                <md-divider
+                  style="margin-top: 12px; margin-bottom: 12px;"
+                ></md-divider>
+              `;
             })}
       </ul>
     `;

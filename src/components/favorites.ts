@@ -2,7 +2,9 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Post } from '../interfaces/Post';
 
+import './timeline-item';
 import './md/md-skeleton-card';
+import './md/md-divider';
 
 @customElement('app-favorites')
 export class Favorites extends LitElement {
@@ -64,7 +66,12 @@ export class Favorites extends LitElement {
         ${this.isLoading
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : this.favorites.map((favorite: Post) => {
-              return html` <timeline-item .tweet=${favorite}></timeline-item> `;
+              return html`
+                <timeline-item .tweet=${favorite}></timeline-item>
+                <md-divider
+                  style="margin-top: 12px; margin-bottom: 12px;"
+                ></md-divider>
+              `;
             })}
       </ul>
     `;

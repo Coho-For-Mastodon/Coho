@@ -9,6 +9,7 @@ export declare class MdButton extends LitElement {
     disabled: boolean;
     pill: boolean;
     type: 'button' | 'submit' | 'reset';
+    title: string;
     static styles: import("lit").CSSResult;
     private handleClick;
     render(): import("lit-html").TemplateResult<1>;

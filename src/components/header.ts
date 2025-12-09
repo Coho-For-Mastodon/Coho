@@ -34,6 +34,8 @@ export class AppHeader extends LitElement {
         height: env(titlebar-area-height, 33px);
         app-region: drag;
 
+        backdrop-filter: blur(46px);
+
         width: calc(env(titlebar-area-width, intitial) + -23px);
         padding-top: 4px;
         padding-left: 12px;

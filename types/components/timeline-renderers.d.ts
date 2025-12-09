@@ -41,6 +41,7 @@ export interface TimelineItemState {
     loadingThread: boolean;
     threadExpanded: boolean;
     threadPosts: Post[];
+    isOnDeviceTranslateAvailable: boolean;
 }
 export declare function renderSensitive(state: TimelineItemState, handlers: TimelineItemHandlers): import("lit-html").TemplateResult<1>;
 export declare function renderReplyContext(state: TimelineItemState, handlers: TimelineItemHandlers): import("lit-html").TemplateResult<1> | null;

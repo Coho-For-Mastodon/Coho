@@ -7,7 +7,13 @@ import './md-icon';
  * Material Design 3 Icon Button Component
  *
  * An icon button is a clickable icon that triggers an action.
- * Supports standard, filled, and outlined variants.
+ * Supports standard, filled, filled-tonal, and outlined variants.
+ *
+ * Variants:
+ * - `standard` - Transparent background (default)
+ * - `filled` - Bold primary color background
+ * - `filled-tonal` - Subtle secondary container background
+ * - `outlined` - Transparent with border
  *
  * @slot - Default slot for custom icon content
  *
@@ -28,8 +34,11 @@ export class MdIconButton extends LitElement {
   @property({ type: String }) label?: string;
 
   /** Button variant */
-  @property({ type: String }) variant: 'standard' | 'filled' | 'outlined' =
-    'standard';
+  @property({ type: String }) variant:
+    | 'standard'
+    | 'filled'
+    | 'filled-tonal'
+    | 'outlined' = 'standard';
 
   /** Whether the button is disabled */
   @property({ type: Boolean }) disabled = false;
@@ -71,6 +80,19 @@ export class MdIconButton extends LitElement {
       color: var(--md-sys-color-on-primary, white);
     }
 
+    .icon-button--filled-tonal {
+      background: var(
+        --md-sys-color-secondary-container,
+        rgba(255, 255, 255, 0.12)
+      );
+      color: var(
+        --md-sys-color-on-secondary-container,
+        rgba(255, 255, 255, 0.9)
+      );
+      backdrop-filter: blur(46px);
+      -webkit-backdrop-filter: blur(46px);
+    }
+
     .icon-button--outlined {
       border: 1px solid var(--md-sys-color-outline, rgba(255, 255, 255, 0.12));
     }
@@ -93,6 +115,17 @@ export class MdIconButton extends LitElement {
       box-shadow:
         0px 1px 2px rgba(0, 0, 0, 0.3),
         0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+    }
+
+    .icon-button--filled-tonal:not(:disabled):hover {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12)) 92%,
+        var(--md-sys-color-on-secondary-container, white) 8%
+      );
+      box-shadow:
+        0px 1px 2px rgba(0, 0, 0, 0.2),
+        0px 1px 3px 1px rgba(0, 0, 0, 0.1);
     }
 
     .icon-button--outlined:not(:disabled):hover {
@@ -118,6 +151,14 @@ export class MdIconButton extends LitElement {
         in srgb,
         var(--md-sys-color-primary, var(--sl-color-primary-600)) 88%,
         var(--md-sys-color-on-primary, white) 12%
+      );
+    }
+
+    .icon-button--filled-tonal:not(:disabled):active {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12)) 88%,
+        var(--md-sys-color-on-secondary-container, white) 12%
       );
     }
 
@@ -147,6 +188,14 @@ export class MdIconButton extends LitElement {
           var(--md-sys-color-on-surface, black) 8%,
           transparent
         );
+      }
+
+      .icon-button--filled-tonal {
+        background: var(
+          --md-sys-color-secondary-container,
+          rgba(0, 0, 0, 0.08)
+        );
+        color: var(--md-sys-color-on-secondary-container, rgba(0, 0, 0, 0.8));
       }
 
       .icon-button--outlined {
@@ -239,6 +288,7 @@ export class MdIconButton extends LitElement {
       'icon-button': true,
       'icon-button--standard': this.variant === 'standard',
       'icon-button--filled': this.variant === 'filled',
+      'icon-button--filled-tonal': this.variant === 'filled-tonal',
       'icon-button--outlined': this.variant === 'outlined',
     };
 

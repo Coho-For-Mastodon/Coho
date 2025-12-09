@@ -63,6 +63,7 @@ export class AppProfile extends LitElement {
         display: block;
         overflow-y: auto;
         height: 100vh;
+        scroll-timeline: --page-scroll block;
       }
 
       * {
@@ -92,7 +93,7 @@ export class AppProfile extends LitElement {
         height: 200px;
       }
 
-      /* Banner section */
+      /* Banner section with scroll-driven parallax */
       #banner {
         width: 100%;
         height: 200px;
@@ -105,12 +106,32 @@ export class AppProfile extends LitElement {
         background-size: cover;
         background-position: center;
         position: relative;
+        margin-top: 40px;
+        overflow: hidden;
+        view-timeline-name: --banner-timeline;
+        view-timeline-axis: block;
       }
 
       #banner-img {
         width: 100%;
-        height: 100%;
+        height: 120%;
         object-fit: cover;
+        object-position: center;
+        animation: banner-parallax linear both;
+        animation-timeline: --page-scroll;
+        animation-range: 0px 300px;
+        transform-origin: center top;
+      }
+
+      @keyframes banner-parallax {
+        from {
+          transform: translateY(0) scale(1);
+          filter: brightness(1);
+        }
+        to {
+          transform: translateY(-15%) scale(1.05);
+          filter: brightness(0.85);
+        }
       }
 
       #banner-skeleton {
@@ -130,6 +151,7 @@ export class AppProfile extends LitElement {
         position: absolute;
         top: -64px;
         left: 16px;
+        z-index: 10;
       }
 
       #avatar {
@@ -140,6 +162,24 @@ export class AppProfile extends LitElement {
           var(--md-sys-color-surface, var(--md-sys-color-background));
         object-fit: cover;
         background: var(--md-sys-color-surface, var(--md-sys-color-background));
+        animation: avatar-scale linear both;
+        animation-timeline: --page-scroll;
+        animation-range: 0px 250px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        transition: box-shadow 0.3s ease;
+      }
+
+      #avatar:hover {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      @keyframes avatar-scale {
+        0% {
+          transform: scale(1) translateY(0);
+        }
+        100% {
+          transform: scale(0.85) translateY(-8px);
+        }
       }
 
       #avatar-skeleton {
@@ -361,12 +401,17 @@ export class AppProfile extends LitElement {
       /* Responsive */
       @media (min-width: 640px) {
         #banner {
-          height: 200px;
+          height: 420px;
+        }
+
+        #banner-img {
+          animation-range: 0px 450px;
         }
 
         #avatar {
           width: 134px;
           height: 134px;
+          animation-range: 0px 400px;
         }
 
         #avatar-skeleton {
@@ -380,6 +425,10 @@ export class AppProfile extends LitElement {
 
         #display-name {
           font-size: 22px;
+        }
+
+        #tabs-container {
+          animation-range: 350px 550px;
         }
       }
 
@@ -422,7 +471,7 @@ export class AppProfile extends LitElement {
         }
       }
 
-      /* Animation */
+      /* Scroll-driven animations */
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -436,6 +485,94 @@ export class AppProfile extends LitElement {
 
       #profile-info {
         animation: fadeIn 0.3s ease-out;
+      }
+
+      /* Stats row scroll animation */
+      #stats-row {
+        animation: stats-reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 100%;
+      }
+
+      @keyframes stats-reveal {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* Posts list staggered reveal */
+      ul li {
+        animation: post-reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 40%;
+      }
+
+      @keyframes post-reveal {
+        from {
+          opacity: 0;
+          transform: translateY(30px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      /* Tabs container scroll effect */
+      #tabs-container {
+        animation: tabs-sticky linear both;
+        animation-timeline: --page-scroll;
+        animation-range: 200px 400px;
+      }
+
+      @keyframes tabs-sticky {
+        from {
+          background: transparent;
+        }
+        to {
+          background: color-mix(
+            in srgb,
+            var(--md-sys-color-surface) 90%,
+            transparent
+          );
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+      }
+
+      /* Fallback for browsers without scroll-driven animation support */
+      @supports not (animation-timeline: scroll()) {
+        #banner-img {
+          animation: none;
+          height: 100%;
+          transform: none;
+        }
+
+        #avatar {
+          animation: none;
+          transform: none;
+        }
+
+        #stats-row {
+          animation: none;
+          opacity: 1;
+          transform: none;
+        }
+
+        ul li {
+          animation: none;
+          opacity: 1;
+          transform: none;
+        }
+
+        #tabs-container {
+          animation: none;
+        }
       }
 
       /* Offline fallback */

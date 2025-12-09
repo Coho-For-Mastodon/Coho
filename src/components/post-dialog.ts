@@ -409,8 +409,8 @@ export class PostDialog extends LitElement {
 
       .textarea-inner-buttons {
         position: absolute;
-        top: 2px;
-        right: 2px;
+        top: 6px;
+        right: 6px;
         z-index: 10;
         display: flex;
         gap: 4px;

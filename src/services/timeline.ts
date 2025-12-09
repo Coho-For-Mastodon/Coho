@@ -241,8 +241,7 @@ export const prefetchNextPage = (maxId: string, type = 'home'): void => {
   // Fire-and-forget fetch - SW will cache the response
   fetch(fetchUrl, {
     method: 'GET',
-    headers: accessToken.length > 0 ? headers : new Headers({}),
-    // @ts-expect-error - priority is a valid fetch option but not in all TS libs
+    headers,
     priority: 'low',
   }).catch(() => {
     // Silently ignore prefetch errors
