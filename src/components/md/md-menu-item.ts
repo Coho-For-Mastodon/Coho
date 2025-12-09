@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 
 /**
  * Material Design 3 Menu Item Component
@@ -8,10 +9,12 @@ import { customElement, property } from 'lit/decorators.js';
 @customElement('md-menu-item')
 export class MdMenuItem extends LitElement {
   @property({ type: Boolean }) disabled = false;
+  @property({ type: String, reflect: true }) override title: string = '';
 
   static styles = css`
     :host {
       display: block;
+      position: relative;
     }
 
     .menu-item {
@@ -145,6 +148,38 @@ export class MdMenuItem extends LitElement {
         );
       }
     }
+
+    /* On-device indicator - shown as badge on right side */
+    :host([title])::after {
+      content: attr(title);
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 2px 6px;
+      background: var(
+        --md-sys-color-surface-container-highest,
+        rgba(255, 255, 255, 0.12)
+      );
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+      font-size: 10px;
+      font-weight: 500;
+      white-space: nowrap;
+      border-radius: 8px;
+      pointer-events: none;
+    }
+
+    :host([title=''])::after,
+    :host(:not([title]))::after {
+      display: none;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :host([title])::after {
+        background: rgba(0, 0, 0, 0.08);
+        color: var(--md-sys-color-on-surface-variant, #49454f);
+      }
+    }
   `;
 
   render() {
@@ -153,6 +188,7 @@ export class MdMenuItem extends LitElement {
         class="menu-item ${this.disabled ? 'disabled' : ''}"
         role="menuitem"
         tabindex="${this.disabled ? '-1' : '0'}"
+        title=${ifDefined(this.title || undefined)}
         @click="${this._handleClick}"
         @keydown="${this._handleKeydown}"
       >

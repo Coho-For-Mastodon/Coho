@@ -1,5 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 
 /**
  * Material Design 3 Button Component
@@ -18,6 +19,7 @@ export class MdButton extends LitElement {
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) pill = false;
   @property({ type: String }) type: 'button' | 'submit' | 'reset' = 'button';
+  @property({ type: String, reflect: true }) override title: string = '';
 
   static styles = css`
     :host {
@@ -269,6 +271,47 @@ export class MdButton extends LitElement {
     ::slotted(*) {
       pointer-events: none;
     }
+
+    /* Custom tooltip styles */
+    :host {
+      position: relative;
+    }
+
+    :host([title]:hover)::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 6px;
+      padding: 4px 8px;
+      background: var(--md-sys-color-inverse-surface, #313033);
+      color: var(--md-sys-color-inverse-on-surface, #f4eff4);
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      border-radius: 4px;
+      z-index: 10000;
+      pointer-events: none;
+      opacity: 1;
+      animation: tooltipFadeIn 0.15s ease-out;
+    }
+
+    :host([title=''])::after,
+    :host(:not([title]))::after {
+      display: none;
+    }
+
+    @keyframes tooltipFadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
   `;
 
   private handleClick(e: MouseEvent) {
@@ -316,6 +359,7 @@ export class MdButton extends LitElement {
         class="${classes}"
         ?disabled="${this.disabled}"
         type="${this.type}"
+        title=${ifDefined(this.title || undefined)}
         @click="${this.handleClick}"
       >
         <slot name="prefix"></slot>

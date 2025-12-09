@@ -99,7 +99,10 @@ export const getCurrentUser = async (): Promise<Account> => {
         return cachedUser;
       }
     } catch (cacheErr) {
-      console.log('[mastodon/getCurrentUser] Cache retrieval failed:', cacheErr);
+      console.log(
+        '[mastodon/getCurrentUser] Cache retrieval failed:',
+        cacheErr
+      );
     }
 
     // Re-throw if no cached data available

@@ -48,7 +48,7 @@ customPlugins.push({
         },
       },
       define: {
-        __APP_VERSION__: JSON.stringify(BUILD_VERSION),
+        '__APP_VERSION__': JSON.stringify(BUILD_VERSION),
         'process.env.NODE_ENV': JSON.stringify('production'),
       },
     });

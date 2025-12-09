@@ -275,7 +275,6 @@ export const generateAltText = async (
       imageBlob = imageSource;
     }
 
-    // @ts-expect-error - LanguageModel is a Chrome experimental API
     const session = await LanguageModel.create({
       expectedInputs: [{ type: 'image' }],
     });
@@ -299,6 +298,91 @@ export const generateAltText = async (
     return result;
   } catch (error) {
     console.error('Alt text generation error:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if audio transcription via LanguageModel is available
+ */
+export const isAudioTranscriptionAvailable = (): boolean => {
+  return 'LanguageModel' in window;
+};
+
+/**
+ * Check if on-device translation is available via Chrome's Translator API
+ */
+export const isOnDeviceTranslationAvailable = (): boolean => {
+  return 'Translator' in window;
+};
+
+/**
+ * Check if on-device summarization is available via Chrome's Summarizer API
+ */
+export const isOnDeviceSummarizationAvailable = (): boolean => {
+  return 'summarizer' in window;
+};
+
+/**
+ * Transcribe audio using Chrome's on-device Prompt API (LanguageModel)
+ * @param audioBlob - Blob containing audio data
+ * @returns Transcribed text or null if transcription fails
+ */
+export const transcribeAudio = async (
+  audioBlob: Blob
+): Promise<string | null> => {
+  try {
+    if (!isPromptAPIAvailable()) {
+      throw new Error('Prompt API (LanguageModel) not available');
+    }
+
+    console.log(
+      'Transcribing audio blob:',
+      audioBlob.size,
+      'bytes, type:',
+      audioBlob.type
+    );
+
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    console.log('ArrayBuffer size:', arrayBuffer.byteLength);
+
+    const params = await LanguageModel.params();
+    console.log('LanguageModel params:', params);
+
+    const session = await LanguageModel.create({
+      expectedInputs: [{ type: 'audio' }],
+      temperature: 0.1,
+      topK: params.defaultTopK,
+    });
+
+    let result = '';
+    const stream = session.promptStreaming([
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            value:
+              'Please transcribe the following audio recording word for word. Return only the spoken words, nothing else.',
+          },
+          { type: 'audio', value: arrayBuffer },
+        ],
+      },
+    ]);
+
+    for await (const chunk of stream) {
+      console.log('Transcription chunk:', chunk);
+      // Chunks are individual tokens, concatenate them
+      result += chunk;
+    }
+
+    // Clean up
+    session.destroy();
+
+    console.log('Final transcription result:', result);
+    return result.trim();
+  } catch (error) {
+    console.error('Audio transcription error:', error);
     return null;
   }
 };

@@ -149,6 +149,7 @@ export class MediaEditDialog extends LitElement {
                   size="small"
                   ?disabled="${this.generating}"
                   @click="${this.handleGenerateAlt}"
+                  title="On-device AI"
                 >
                   ${this.generating ? 'Generating...' : 'Generate Alt Text'}
                 </md-button>

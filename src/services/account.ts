@@ -115,7 +115,7 @@ export const getCurrentUser = async (): Promise<Account | undefined> => {
 
     // Try to get cached user from IndexedDB when offline
     try {
-      const cachedUser = await get('currentUser') as Account | undefined;
+      const cachedUser = (await get('currentUser')) as Account | undefined;
       if (cachedUser) {
         console.log('[getCurrentUser] Using cached user data');
         currentUser = cachedUser;
@@ -179,9 +179,9 @@ export const getAccount = async (id: string): Promise<Account | undefined> => {
 
     // Try to get cached profile from IndexedDB when offline
     try {
-      const cachedProfile = (await get(
-        `${PROFILE_CACHE_PREFIX}${id}`
-      )) as Account | undefined;
+      const cachedProfile = (await get(`${PROFILE_CACHE_PREFIX}${id}`)) as
+        | Account
+        | undefined;
       if (cachedProfile) {
         console.log('[getAccount] Using cached profile data');
         return cachedProfile;

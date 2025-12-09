@@ -97,14 +97,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   account: {
     id: string;
     display_name: string;
@@ -121,14 +121,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   icon: string;
   title: string;
   body: string;
@@ -652,8 +652,7 @@ if (!IS_DEV) {
   // Matches: https://{server}/api/v1/statuses (POST for new status/reply)
   registerRoute(
     ({ request, url }) =>
-      request.method === 'POST' &&
-      url.pathname === '/api/v1/statuses',
+      request.method === 'POST' && url.pathname === '/api/v1/statuses',
     new NetworkOnly({
       plugins: [bgSyncPlugin],
     }),
@@ -789,8 +788,7 @@ if (!IS_DEV) {
   // Direct Mastodon API - report a user
   registerRoute(
     ({ request, url }) =>
-      request.method === 'POST' &&
-      url.pathname === '/api/v1/reports',
+      request.method === 'POST' && url.pathname === '/api/v1/reports',
     new NetworkOnly({
       plugins: [bgSyncPlugin],
     }),

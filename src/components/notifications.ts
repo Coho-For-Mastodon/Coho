@@ -108,7 +108,10 @@ export class Notifications extends LitElement {
       }
 
       .notification-card:hover {
-        background: var(--sl-panel-background-color-hover, rgba(255, 255, 255, 0.08));
+        background: var(
+          --sl-panel-background-color-hover,
+          rgba(255, 255, 255, 0.08)
+        );
       }
 
       /* Header with notification type indicator */
@@ -524,17 +527,65 @@ export class Notifications extends LitElement {
   getNotificationIcon(type: string) {
     switch (type) {
       case 'favourite':
-        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+        return html`<svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+          />
+        </svg>`;
       case 'reblog':
-        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>`;
+        return html`<svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"
+          />
+        </svg>`;
       case 'mention':
-        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>`;
+        return html`<svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h5v-2h-5c-4.34 0-8-3.66-8-8s3.66-8 8-8 8 3.66 8 8v1.43c0 .79-.71 1.57-1.5 1.57s-1.5-.78-1.5-1.57V12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5c1.38 0 2.64-.56 3.54-1.47.65.89 1.77 1.47 2.96 1.47 1.97 0 3.5-1.6 3.5-3.57V12c0-5.52-4.48-10-10-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
+          />
+        </svg>`;
       case 'follow':
-        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+        return html`<svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+          />
+        </svg>`;
       case 'update':
-        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
+        return html`<svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+          />
+        </svg>`;
       default:
-        return html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>`;
+        return html`<svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"
+          />
+        </svg>`;
     }
   }
 
@@ -568,19 +619,21 @@ export class Notifications extends LitElement {
           .innerHTML="${parseEmojis(content, status.emojis || [])}"
         ></div>
         ${mediaAttachments.length > 0
-        ? html`
+          ? html`
               <div class="post-preview-media">
-                ${mediaAttachments.slice(0, 4).map(
-          (media) => html`
-                    <img
-                      src="${media.preview_url}"
-                      alt="${media.description || 'Media attachment'}"
-                    />
-                  `
-        )}
+                ${mediaAttachments
+                  .slice(0, 4)
+                  .map(
+                    (media) => html`
+                      <img
+                        src="${media.preview_url}"
+                        alt="${media.description || 'Media attachment'}"
+                      />
+                    `
+                  )}
               </div>
             `
-        : nothing}
+          : nothing}
       </div>
     `;
   }
@@ -594,10 +647,7 @@ export class Notifications extends LitElement {
     const bioText = account.note?.replace(/<[^>]*>/g, '') || '';
 
     return html`
-      <li
-        class="notification-card"
-        @click="${() => this.openProfile(account)}"
-      >
+      <li class="notification-card" @click="${() => this.openProfile(account)}">
         <div class="notification-header">
           <div class="notification-icon follow">
             ${this.getNotificationIcon('follow')}
@@ -619,32 +669,36 @@ export class Notifications extends LitElement {
               src="${account.avatar}"
               alt="${account.display_name}'s avatar"
               @click="${(e: Event) => {
-        e.stopPropagation();
-        this.openProfile(account);
-      }}"
+                e.stopPropagation();
+                this.openProfile(account);
+              }}"
             />
             <div class="follow-details">
               <p
                 class="follow-name"
                 .innerHTML="${parseEmojis(
-        account.display_name || account.username,
-        account.emojis || []
-      )}"
+                  account.display_name || account.username,
+                  account.emojis || []
+                )}"
                 @click="${(e: Event) => {
-        e.stopPropagation();
-        this.openProfile(account);
-      }}"
+                  e.stopPropagation();
+                  this.openProfile(account);
+                }}"
               ></p>
               <p class="follow-handle">@${account.acct}</p>
-              ${bioText
-        ? html`<p class="follow-bio">${bioText}</p>`
-        : nothing}
+              ${bioText ? html`<p class="follow-bio">${bioText}</p>` : nothing}
               <div class="follow-stats">
                 <span class="follow-stat">
-                  <strong>${account.followers_count?.toLocaleString() || 0}</strong> followers
+                  <strong
+                    >${account.followers_count?.toLocaleString() || 0}</strong
+                  >
+                  followers
                 </span>
                 <span class="follow-stat">
-                  <strong>${account.following_count?.toLocaleString() || 0}</strong> following
+                  <strong
+                    >${account.following_count?.toLocaleString() || 0}</strong
+                  >
+                  following
                 </span>
               </div>
             </div>
@@ -652,12 +706,12 @@ export class Notifications extends LitElement {
 
           <div class="follow-actions">
             ${isFollowing
-        ? html`
+              ? html`
                   <md-button variant="outlined" pill size="small" disabled>
                     Following
                   </md-button>
                 `
-        : html`
+              : html`
                   <md-button
                     variant="filled"
                     pill
@@ -693,24 +747,26 @@ export class Notifications extends LitElement {
             src="${account.avatar}"
             alt="${account.display_name}'s avatar"
             @click="${(e: Event) => {
-        e.stopPropagation();
-        this.openProfile(account);
-      }}"
+              e.stopPropagation();
+              this.openProfile(account);
+            }}"
           />
           <div class="notification-meta">
             <div class="notification-meta-top">
               <span
                 class="notification-user"
                 .innerHTML="${parseEmojis(
-        account.display_name || account.username,
-        account.emojis || []
-      )}"
+                  account.display_name || account.username,
+                  account.emojis || []
+                )}"
                 @click="${(e: Event) => {
-        e.stopPropagation();
-        this.openProfile(account);
-      }}"
+                  e.stopPropagation();
+                  this.openProfile(account);
+                }}"
               ></span>
-              <span class="notification-action">${this.getNotificationActionText(type)}</span>
+              <span class="notification-action"
+                >${this.getNotificationActionText(type)}</span
+              >
             </div>
             <div class="notification-time">
               ${this.formatTimeAgo(notification.created_at)}
@@ -744,7 +800,7 @@ export class Notifications extends LitElement {
           <md-switch
             ?checked="${this.subbed}"
             @change="${(e: CustomEvent<{ checked: boolean }>) =>
-        this.sub(e.detail.checked)}"
+              this.sub(e.detail.checked)}"
             >Push Notifications</md-switch
           >
         </div>
@@ -760,7 +816,7 @@ export class Notifications extends LitElement {
       <md-segmented-button
         .value="${this.activeSegment}"
         @segment-change="${(e: CustomEvent) =>
-        (this.activeSegment = e.detail.value)}"
+          (this.activeSegment = e.detail.value)}"
       >
         <md-segment value="all">All</md-segment>
         <md-segment value="mentions">Mentions</md-segment>
@@ -770,10 +826,10 @@ export class Notifications extends LitElement {
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
         <ul>
           ${allNotifications.length > 0
-        ? allNotifications.map((notification) =>
-          this.renderNotification(notification)
-        )
-        : html`
+            ? allNotifications.map((notification) =>
+                this.renderNotification(notification)
+              )
+            : html`
                 <div id="no">
                   <img src="/assets/notify-done.svg" alt="no notifications" />
                   <p>No notifications yet</p>
@@ -785,10 +841,10 @@ export class Notifications extends LitElement {
       <div class="panel ${this.activeSegment === 'mentions' ? 'active' : ''}">
         <ul>
           ${mentionNotifications.length > 0
-        ? mentionNotifications.map((notification) =>
-          this.renderNotification(notification)
-        )
-        : html`
+            ? mentionNotifications.map((notification) =>
+                this.renderNotification(notification)
+              )
+            : html`
                 <div id="no">
                   <img src="/assets/notify-done.svg" alt="no mentions" />
                   <p>No mentions yet</p>
@@ -800,10 +856,10 @@ export class Notifications extends LitElement {
       <div class="panel ${this.activeSegment === 'follows' ? 'active' : ''}">
         <ul>
           ${followNotifications.length > 0
-        ? followNotifications.map((notification) =>
-          this.renderNotification(notification)
-        )
-        : html`
+            ? followNotifications.map((notification) =>
+                this.renderNotification(notification)
+              )
+            : html`
                 <div id="no">
                   <img src="/assets/notify-done.svg" alt="no followers" />
                   <p>No new followers yet</p>

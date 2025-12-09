@@ -17,6 +17,7 @@ import {
 } from './timeline-renderers';
 import './report-dialog';
 import type { ReportSubmitDetail } from './report-dialog';
+import { isOnDeviceTranslationAvailable } from '../services/ai';
 
 @customElement('timeline-item')
 export class TimelineItem extends LitElement {
@@ -39,6 +40,7 @@ export class TimelineItem extends LitElement {
   @state() reportAccountId: string = '';
   @state() reportAccountAcct: string = '';
   @state() reportStatusId: string | undefined;
+  @state() isOnDeviceTranslateAvailable: boolean = false;
 
   device: 'mobile' | 'desktop' = 'mobile';
 
@@ -393,6 +395,7 @@ export class TimelineItem extends LitElement {
 
   async firstUpdated() {
     this.settings = await getSettings();
+    this.isOnDeviceTranslateAvailable = isOnDeviceTranslationAvailable();
   }
 
   async favorite(id: string) {
@@ -917,6 +920,7 @@ export class TimelineItem extends LitElement {
       loadingThread: this.loadingThread,
       threadExpanded: this.threadExpanded,
       threadPosts: this.threadPosts,
+      isOnDeviceTranslateAvailable: this.isOnDeviceTranslateAvailable,
     };
   }
 

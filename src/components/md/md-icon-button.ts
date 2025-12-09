@@ -34,9 +34,13 @@ export class MdIconButton extends LitElement {
   /** Whether the button is disabled */
   @property({ type: Boolean }) disabled = false;
 
+  /** Tooltip text shown on hover */
+  @property({ type: String, reflect: true }) override title: string = '';
+
   static styles = css`
     :host {
       display: inline-flex;
+      position: relative;
     }
 
     .icon-button {
@@ -174,6 +178,43 @@ export class MdIconButton extends LitElement {
       align-items: center;
       justify-content: center;
     }
+
+    /* Custom tooltip styles */
+    :host([title]:hover)::after {
+      content: attr(title);
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 6px;
+      padding: 4px 8px;
+      background: var(--md-sys-color-inverse-surface, #313033);
+      color: var(--md-sys-color-inverse-on-surface, #f4eff4);
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      border-radius: 4px;
+      z-index: 10000;
+      pointer-events: none;
+      opacity: 1;
+      animation: tooltipFadeIn 0.15s ease-out;
+    }
+
+    :host([title=''])::after,
+    :host(:not([title]))::after {
+      display: none;
+    }
+
+    @keyframes tooltipFadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
   `;
 
   private handleClick(e: MouseEvent) {
@@ -212,6 +253,7 @@ export class MdIconButton extends LitElement {
         @click=${this.handleClick}
         @keydown=${this.handleKeyDown}
         aria-label="${this.label || 'icon button'}"
+        title=${ifDefined(this.title || undefined)}
       >
         <div part="icon" class="icon">
           ${this.name

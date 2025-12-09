@@ -96,6 +96,43 @@ declare global {
 
   const Proofreader: Proofreader;
 
+  // Chrome LanguageModel API (Prompt API)
+  interface LanguageModel {
+    params(): Promise<LanguageModelParams>;
+    create(options?: LanguageModelCreateOptions): Promise<LanguageModelSession>;
+  }
+
+  interface LanguageModelParams {
+    defaultTopK: number;
+    maxTopK: number;
+    defaultTemperature: number;
+  }
+
+  interface LanguageModelCreateOptions {
+    expectedInputs?: Array<{ type: 'text' | 'image' | 'audio' }>;
+    temperature?: number;
+    topK?: number;
+    systemPrompt?: string;
+  }
+
+  interface LanguageModelSession {
+    prompt(messages: LanguageModelMessage[]): Promise<string>;
+    promptStreaming(messages: LanguageModelMessage[]): AsyncIterable<string>;
+    destroy(): void;
+  }
+
+  interface LanguageModelMessage {
+    role: 'user' | 'assistant' | 'system';
+    content: LanguageModelContent[] | string;
+  }
+
+  type LanguageModelContent =
+    | { type: 'text'; value: string }
+    | { type: 'image'; value: Blob | ArrayBuffer }
+    | { type: 'audio'; value: ArrayBuffer };
+
+  const LanguageModel: LanguageModel;
+
   interface SummarizerSession {
     summarize(text: string): Promise<string>;
     destroy(): void;

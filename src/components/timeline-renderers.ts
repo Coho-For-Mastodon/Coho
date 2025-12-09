@@ -1,5 +1,6 @@
 import { html } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { Post } from '../interfaces/Post';
 import { parseEmojis } from '../utils/emoji-parser';
 import type { Settings } from '../services/settings';
@@ -51,6 +52,7 @@ export interface TimelineItemState {
   loadingThread: boolean;
   threadExpanded: boolean;
   threadPosts: Post[];
+  isOnDeviceTranslateAvailable: boolean;
 }
 
 export function renderSensitive(
@@ -209,7 +211,7 @@ export function renderRegularTweet(
           <md-dropdown placement="bottom-end">
             <md-icon-button slot="trigger" name="ellipsis-vertical" label="More options" size="small"></md-icon-button>
             <md-menu>
-              <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null)}">
+              <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null)}" title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}>
                 <md-icon slot="prefix" name="language"></md-icon>
                 Translate
               </md-menu-item>
@@ -412,6 +414,9 @@ export function renderReblog(
             <md-menu-item
               @click="${() =>
                 handlers.translatePost(state.tweet?.reblog?.content || null)}"
+              title=${ifDefined(
+                state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined
+              )}
             >
               <md-icon slot="prefix" name="language"></md-icon>
               Translate
