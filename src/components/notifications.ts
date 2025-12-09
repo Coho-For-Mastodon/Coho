@@ -647,7 +647,10 @@ export class Notifications extends LitElement {
     const bioText = account.note?.replace(/<[^>]*>/g, '') || '';
 
     return html`
-      <li class="notification-card follow" @click="${() => this.openProfile(account)}">
+      <li
+        class="notification-card follow"
+        @click="${() => this.openProfile(account)}"
+      >
         <div class="notification-header">
           <div class="notification-icon follow">
             ${this.getNotificationIcon('follow')}
