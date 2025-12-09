@@ -124,7 +124,7 @@ export class CreateAccount extends LitElement {
     this.chosenServer = serverInfo.name;
     this.fullDesc = serverInfo.info.full_description;
     const dialog = this.shadowRoot?.querySelector('#create-dialog');
-    // @ts-expect-error fix
+    // @ts-expect-error - Fluent UI dialog show() method not in base Element types
     dialog?.show();
   }
 
@@ -132,7 +132,7 @@ export class CreateAccount extends LitElement {
     this.registered = true;
 
     const createDialog = this.shadowRoot?.querySelector('#create-dialog');
-    // @ts-expect-error fix
+    // @ts-expect-error - Fluent UI dialog hide() method not in base Element types
     await createDialog?.hide();
 
     console.log('this.chosenServer', this.chosenServer);

@@ -8,10 +8,6 @@ export class ImageCarousel extends LitElement {
   @property({ type: Array }) images: MediaAttachment[] = [];
   @state() blurhashUrls: Map<string, string> = new Map();
 
-  constructor() {
-    super();
-  }
-
   static styles = [
     css`
       :host {

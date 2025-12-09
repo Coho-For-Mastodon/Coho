@@ -134,7 +134,7 @@ export class UserProfile extends LitElement {
   }
 
   async openUser() {
-    // @ts-expect-error fix
+    // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
     this.shadowRoot!.querySelector('.headerBlock')!.viewTransitionName =
       'profile-image';
 
@@ -142,7 +142,7 @@ export class UserProfile extends LitElement {
       await document.startViewTransition();
       router.navigate(`/account?id=${this.account?.id}`);
       setTimeout(() => {
-        // @ts-expect-error fix
+        // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
         this.shadowRoot!.querySelector('.headerBlock')!.viewTransitionName = '';
       }, 800);
     } else {

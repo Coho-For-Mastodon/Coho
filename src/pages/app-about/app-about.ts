@@ -11,10 +11,6 @@ import { styles as sharedStyles } from '../../styles/shared-styles';
 export class AppAbout extends LitElement {
   static styles = [sharedStyles, styles];
 
-  constructor() {
-    super();
-  }
-
   render() {
     return html`
       <app-header ?enableBack="${true}"></app-header>

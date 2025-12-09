@@ -17,7 +17,17 @@
     "lint": "eslint \"src/**/*.{ts,js}\" \"functions/src/**/*.{ts,js}\"",
     "lint:fix": "eslint \"src/**/*.{ts,js}\" \"functions/src/**/*.{ts,js}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\""
+    "format:check": "prettier --check \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,html,json}": [
+      "prettier --write"
+    ]
   },
   "author": "",
   "license": "ISC",
@@ -53,6 +63,8 @@
     "eslint-plugin-lit": "^2.1.1",
     "eslint-plugin-wc": "^3.0.2",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.7.3",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-visualizer": "^6.0.5",

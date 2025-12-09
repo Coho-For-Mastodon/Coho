@@ -126,10 +126,6 @@ export class AppHeader extends LitElement {
     `;
   }
 
-  constructor() {
-    super();
-  }
-
   protected firstUpdated(
     _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
   ): void {
@@ -171,9 +167,9 @@ export class AppHeader extends LitElement {
 
   async goBack() {
     if ('navigation' in window) {
-      // @ts-expect-error fix
+      // @ts-expect-error - Navigation API not yet in TypeScript lib types
       if (window.navigation.canGoBack) {
-        // @ts-expect-error fix
+        // @ts-expect-error - Navigation API not yet in TypeScript lib types
         await window.navigation.back();
       }
     } else {

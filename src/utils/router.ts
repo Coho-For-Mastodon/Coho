@@ -4,9 +4,9 @@ if (!('URLPattern' in globalThis)) {
   await import('urlpattern-polyfill');
 }
 
-// @ts-expect-error fix
+// @ts-expect-error - @thepassle/app-tools has no type declarations
 import { Router } from '@thepassle/app-tools/router.js';
-// @ts-expect-error fix
+// @ts-expect-error - @thepassle/app-tools has no type declarations
 import { lazy } from '@thepassle/app-tools/router/plugins/lazy.js';
 import { myPlugin } from './transition-plugin.js';
 

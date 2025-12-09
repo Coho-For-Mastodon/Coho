@@ -785,10 +785,6 @@ export class AppHome extends LitElement {
     ];
   }
 
-  constructor() {
-    super();
-  }
-
   async firstUpdated() {
     const urlParams = new URLSearchParams(window.location.search);
 

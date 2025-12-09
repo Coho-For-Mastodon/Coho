@@ -116,10 +116,6 @@ export class AppIndex extends LitElement {
     `;
   }
 
-  constructor() {
-    super();
-  }
-
   async connectedCallback() {
     super.connectedCallback();
 
