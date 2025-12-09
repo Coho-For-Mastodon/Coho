@@ -2,6 +2,7 @@ import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
 import { Account, Post } from '../types';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../../config/firebase';
+import { get, set } from 'idb-keyval';
 
 export const editAccount = async (
   display_name: string,
@@ -58,29 +59,55 @@ export const checkFollowing = async (id: string) => {
 let currentUser: Account | null = null;
 
 export const getCurrentUser = async (): Promise<Account> => {
+  // Return in-memory cached user if available
   if (currentUser) {
     return currentUser;
   }
 
   const { url } = getClientConfig();
-  const response = await apiFetch(
-    'https://' + url + '/api/v1/accounts/verify_credentials',
-    {
-      method: 'GET',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-      }),
+
+  try {
+    const response = await apiFetch(
+      'https://' + url + '/api/v1/accounts/verify_credentials',
+      {
+        method: 'GET',
+        headers: new Headers({
+          'Content-Type': 'application/json',
+        }),
+      }
+    );
+
+    const data = await response.json();
+    currentUser = data as Account;
+
+    if (currentUser && currentUser.id) {
+      localStorage.setItem('currentUserID', currentUser.id);
+      // Persist to IndexedDB for offline access
+      await set('currentUser', currentUser);
     }
-  );
 
-  const data = await response.json();
-  currentUser = data as Account;
+    return currentUser;
+  } catch (err) {
+    console.log('[mastodon/getCurrentUser] Network error, trying cache:', err);
 
-  if (currentUser && currentUser.id) {
-    localStorage.setItem('currentUserID', currentUser.id);
+    // Try to get cached user from IndexedDB when offline
+    try {
+      const cachedUser = (await get('currentUser')) as Account | undefined;
+      if (cachedUser) {
+        console.log('[mastodon/getCurrentUser] Using cached user data');
+        currentUser = cachedUser;
+        return cachedUser;
+      }
+    } catch (cacheErr) {
+      console.log(
+        '[mastodon/getCurrentUser] Cache retrieval failed:',
+        cacheErr
+      );
+    }
+
+    // Re-throw if no cached data available
+    throw err;
   }
-
-  return currentUser;
 };
 
 export const getUsersPosts = async (

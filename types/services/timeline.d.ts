@@ -12,6 +12,12 @@ export declare const getTrendingTags: () => Promise<import("../mastodon").Trendi
 export declare const resetLastPageID: () => Promise<void>;
 export declare const getLastPlaceTimeline: () => Promise<Post[] | undefined>;
 export declare const getPaginatedHomeTimeline: (type?: string) => Promise<Post[]>;
+/**
+ * Prefetch the next page of timeline data.
+ * This is a fire-and-forget operation - the SW will cache the response.
+ * Does not update lastPageID to avoid interfering with normal pagination.
+ */
+export declare const prefetchNextPage: (maxId: string, type?: string) => void;
 export declare const getPublicTimeline: () => Promise<Post[]>;
 export declare const boostPost: (id: string) => Promise<any>;
 export declare const reblogPost: (id: string) => Promise<any>;

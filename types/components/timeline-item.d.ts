@@ -21,6 +21,7 @@ export declare class TimelineItem extends LitElement {
     reportAccountId: string;
     reportAccountAcct: string;
     reportStatusId: string | undefined;
+    isOnDeviceTranslateAvailable: boolean;
     device: 'mobile' | 'desktop';
     static styles: import("lit").CSSResult[];
     showThread(): Promise<void>;

@@ -95,8 +95,12 @@ export class AppExplore extends LitElement {
   }
 
   async login() {
-    let serverURL = (this.shadowRoot!.querySelector('#server-input') as HTMLInputElement | null)
-      ?.value ?? '';
+    let serverURL =
+      (
+        this.shadowRoot!.querySelector(
+          '#server-input'
+        ) as HTMLInputElement | null
+      )?.value ?? '';
     if (serverURL.length > 0) {
       if (serverURL.includes('https://')) {
         // remove https://

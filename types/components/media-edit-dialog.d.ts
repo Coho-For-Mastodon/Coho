@@ -9,12 +9,16 @@ export declare class MediaEditDialog extends LitElement {
     description: string;
     mediaId: string;
     imageLoaded: boolean;
+    generating: boolean;
+    promptAPIAvailable: boolean;
+    connectedCallback(): void;
     static styles: import("lit").CSSResult;
-    willUpdate(changedProperties: Map<string, any>): void;
+    willUpdate(changedProperties: Map<string, unknown>): void;
     private handleImageLoad;
     private handleSave;
     private close;
     private handleDialogHide;
     private handleDialogShow;
+    private handleGenerateAlt;
     render(): import("lit-html").TemplateResult<1>;
 }

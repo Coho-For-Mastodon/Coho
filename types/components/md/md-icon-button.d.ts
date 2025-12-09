@@ -4,7 +4,13 @@ import './md-icon';
  * Material Design 3 Icon Button Component
  *
  * An icon button is a clickable icon that triggers an action.
- * Supports standard, filled, and outlined variants.
+ * Supports standard, filled, filled-tonal, and outlined variants.
+ *
+ * Variants:
+ * - `standard` - Transparent background (default)
+ * - `filled` - Bold primary color background
+ * - `filled-tonal` - Subtle secondary container background
+ * - `outlined` - Transparent with border
  *
  * @slot - Default slot for custom icon content
  *
@@ -21,9 +27,11 @@ export declare class MdIconButton extends LitElement {
     /** The label for accessibility */
     label?: string;
     /** Button variant */
-    variant: 'standard' | 'filled' | 'outlined';
+    variant: 'standard' | 'filled' | 'filled-tonal' | 'outlined';
     /** Whether the button is disabled */
     disabled: boolean;
+    /** Tooltip text shown on hover */
+    title: string;
     static styles: import("lit").CSSResult;
     private handleClick;
     private handleKeyDown;

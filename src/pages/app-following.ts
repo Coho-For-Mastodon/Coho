@@ -84,16 +84,16 @@ export class Appfollowing extends LitElement {
         <h2>You are Following</h2>
         <ul class="scrollbar-hidden">
           ${this.following.map((follower) => {
-      return html`
+            return html`
               ${follower && follower.id
-          ? html`<li>
+                ? html`<li>
                     <a href="/account?id=${follower.id}">
                       <user-profile .account=${follower}></user-profile>
                     </a>
                   </li>`
-          : null}
+                : null}
             `;
-    })}
+          })}
         </ul>
       </main>
     `;

@@ -42,7 +42,7 @@ export class UserProfile extends LitElement {
         border-radius: 50%;
         contain: strict;
 
-         border: solid var(--sl-color-primary-600) 2px;
+        border: solid var(--sl-color-primary-600) 2px;
 
         content-visibility: auto;
       }
@@ -134,7 +134,7 @@ export class UserProfile extends LitElement {
   }
 
   async openUser() {
-    // @ts-expect-error fix
+    // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
     this.shadowRoot!.querySelector('.headerBlock')!.viewTransitionName =
       'profile-image';
 
@@ -142,7 +142,7 @@ export class UserProfile extends LitElement {
       await document.startViewTransition();
       router.navigate(`/account?id=${this.account?.id}`);
       setTimeout(() => {
-        // @ts-expect-error fix
+        // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
         this.shadowRoot!.querySelector('.headerBlock')!.viewTransitionName = '';
       }, 800);
     } else {
@@ -155,24 +155,25 @@ export class UserProfile extends LitElement {
       <div
         @click="${() => this.openUser()}"
         class=${classMap({
-      small: this.small === true,
-      headerBlock: true,
-      boosted: this.boosted,
-    })}
+          small: this.small === true,
+          headerBlock: true,
+          boosted: this.boosted,
+        })}
         slot="header"
       >
         <img
           id="avatar"
-          src="/assets/icons/new-icons/icon-72x72.webp"
-          data-src="${this.account?.avatar_static || '/assets/icons/new-icons/icon-72x72.webp'}"
+          src="/assets/icons/new-icons/icon-72x72.png"
+          data-src="${this.account?.avatar_static ||
+          '/assets/icons/new-icons/icon-72x72.png'}"
         />
         <div>
           <h4
             .innerHTML="${parseEmojis(
-      this.account?.display_name || 'Loading...',
-      this.account?.emojis || [],
-      true
-    )}"
+              this.account?.display_name || 'Loading...',
+              this.account?.emojis || [],
+              true
+            )}"
           ></h4>
           <p>${this.account?.acct || 'Loading...'}</p>
         </div>

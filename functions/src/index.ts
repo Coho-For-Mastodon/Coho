@@ -18,7 +18,10 @@ const allowedOrigins = [
   'http://localhost:3000',
 ];
 
-const applyCors = (request: any, response: any) => {
+const applyCors = (
+  request: { headers: { origin?: string } },
+  response: { set: (key: string, value: string) => void }
+) => {
   const origin = request.headers.origin;
   if (allowedOrigins.includes(origin)) {
     response.set('Access-Control-Allow-Origin', origin);
@@ -488,6 +491,8 @@ export const getUserPosts = onRequest(async (request, response) => {
   const accessToken = request.query.code as string;
   const server = `https://${request.query.server}`;
   const id = request.query.id as string;
+  const excludeReplies = request.query.exclude_replies as string;
+  const onlyMedia = request.query.only_media as string;
 
   if (!accessToken || !server || !id) {
     response.status(400).json({ error: 'Missing required parameters' });
@@ -495,15 +500,21 @@ export const getUserPosts = onRequest(async (request, response) => {
   }
 
   try {
-    const apiResponse = await fetch(
-      `${server}/api/v1/accounts/${id}/statuses`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    // Build URL with optional filter parameters
+    let url = `${server}/api/v1/accounts/${id}/statuses?limit=40`;
+    if (excludeReplies === 'true') {
+      url += '&exclude_replies=true';
+    }
+    if (onlyMedia === 'true') {
+      url += '&only_media=true';
+    }
+
+    const apiResponse = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
     const data = await apiResponse.json();
     response.json(data);
@@ -904,7 +915,10 @@ export const authenticate = onRequest(async (request, response) => {
       }),
     });
 
-    const data: any = await apiResponse.json();
+    const data = (await apiResponse.json()) as {
+      client_id: string;
+      client_secret: string;
+    };
 
     const clientID = data.client_id;
     const clientSecret = data.client_secret;
@@ -990,7 +1004,7 @@ export const getClient = onRequest(async (request, response) => {
       }),
     });
 
-    const data: any = await apiResponse.json();
+    const data = (await apiResponse.json()) as { access_token?: string };
 
     if (data.access_token) {
       response.json({ access_token: data.access_token });

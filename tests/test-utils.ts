@@ -29,3 +29,19 @@ export async function seedAuth(page: Page) {
     await page.waitForLoadState('networkidle');
     await page.waitForURL('**/home', { timeout: 15000 });
 }
+
+/**
+ * Navigate to a path using client-side navigation (router.navigate)
+ * instead of full page reload (page.goto) to preserve mock API routes
+ */
+export async function navigateTo(page: Page, path: string) {
+    await page.evaluate((targetPath) => {
+        // Use the app's router for client-side navigation
+        window.history.pushState({}, '', targetPath);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+    }, path);
+
+    // Wait for the route to be rendered
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(100); // Small wait for router to process
+}

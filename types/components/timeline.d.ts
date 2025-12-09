@@ -47,6 +47,7 @@ export declare class Timeline extends LitElement {
     private _pullDistance;
     private _threshold;
     private _hapticTriggered;
+    private _prefetchedIds;
     timelineType: 'home' | 'public' | 'media' | 'for you' | 'home and some trending';
     data: Post[] | undefined;
     header: boolean;
@@ -61,6 +62,8 @@ export declare class Timeline extends LitElement {
     _handleTouchMove(e: TouchEvent): void;
     _handleTouchEnd(): Promise<void>;
     connectedCallback(): Promise<void>;
+    /** Check if data saver mode is enabled */
+    private _isDataSaverEnabled;
     /** Handle visibility changes from lit-virtualizer to trigger load more */
     private _handleVisibilityChanged;
     disconnectedCallback(): void;

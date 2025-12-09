@@ -2,7 +2,9 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Post } from '../interfaces/Post';
 
+import './timeline-item';
 import './md/md-skeleton-card';
+import './md/md-divider';
 
 @customElement('app-favorites')
 export class Favorites extends LitElement {
@@ -24,6 +26,8 @@ export class Favorites extends LitElement {
         margin: 0;
         padding: 0;
         list-style: none;
+
+        gap: 16px;
 
         height: 90vh;
         overflow-y: scroll;

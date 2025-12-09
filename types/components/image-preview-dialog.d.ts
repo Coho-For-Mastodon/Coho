@@ -9,13 +9,26 @@ export declare class ImagePreviewDialog extends LitElement {
     width: number;
     height: number;
     loaded: boolean;
+    private swipeOffset;
+    private isDragging;
+    private isClosingWithSwipe;
+    private startY;
+    private startTime;
     dialog: HTMLDialogElement;
+    container: HTMLElement;
+    closeButton: HTMLElement;
     static styles: import("lit").CSSResult;
     connectedCallback(): void;
     disconnectedCallback(): void;
-    updated(changedProperties: Map<string, any>): void;
+    updated(changedProperties: Map<string, unknown>): void;
     private handlePreviewImage;
+    private handleGenerateAlt;
     private close;
     private handleBackdropClick;
+    private handleTouchStart;
+    private handleTouchMove;
+    private handleTouchEnd;
+    private closeWithSwipeAnimation;
+    private resetSwipePosition;
     render(): import("lit-html").TemplateResult<1>;
 }

@@ -1,10 +1,60 @@
-import { defineConfig } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
+import { defineConfig, build } from 'vite';
 import copy from 'rollup-plugin-copy';
 import wasm from 'vite-plugin-wasm';
 import { visualizer } from 'rollup-plugin-visualizer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let customPlugins = [];
+
+// Build version - shared between main app and service worker
+const BUILD_VERSION = new Date().toISOString();
+
+// Plugin to build the service worker as a self-contained bundle
+// Service workers need all dependencies inlined to avoid import issues
+customPlugins.push({
+  name: 'build-sw',
+  apply: 'build',
+  async closeBundle() {
+    console.log('[build-sw] Building service worker...');
+    await build({
+      configFile: false,
+      build: {
+        emptyOutDir: false,
+        outDir: 'dist',
+        lib: {
+          entry: path.resolve(__dirname, 'src/sw.ts'),
+          formats: ['es'],
+          fileName: () => 'sw.js',
+        },
+        rollupOptions: {
+          output: {
+            // Inline all imports - critical for service workers
+            inlineDynamicImports: true,
+          },
+        },
+        minify: 'terser',
+        terserOptions: {
+          module: true,
+          compress: {
+            drop_console: false, // Keep console logs in SW for debugging
+            drop_debugger: true,
+          },
+          format: {
+            comments: false,
+          },
+        },
+      },
+      define: {
+        '__APP_VERSION__': JSON.stringify(BUILD_VERSION),
+        'process.env.NODE_ENV': JSON.stringify('production'),
+      },
+    });
+    console.log('[build-sw] Service worker built successfully');
+  },
+});
 // Plugin to minify CSS in Lit component tagged templates
 // Note: This handles any remaining inline css`` templates
 // External .css files are automatically minified by Vite's built-in CSS processing
@@ -109,6 +159,7 @@ export default defineConfig({
     },
 
     // Create a dedicated vendor chunk for lit so it can be fetched in parallel
+    // Note: Service worker is built separately by the build-sw plugin to ensure all deps are inlined
     rollupOptions: {
       input: {
         main: 'index.html',
@@ -130,28 +181,6 @@ export default defineConfig({
   },
   plugins: [
     ...customPlugins,
-    VitePWA({
-      strategies: 'injectManifest',
-      srcDir: 'src',
-      filename: 'sw.ts',
-      injectManifest: {
-        swSrc: 'src/sw.ts',
-        swDest: 'dist/sw.js',
-        globDirectory: 'dist',
-        globPatterns: ['**/*.{js,css,html}'],
-        // Don't include these in the precache
-        // Note: index.html IS included (by not being ignored) to support the App Shell strategy
-        globIgnores: ['**/node_modules/**/*'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
-      },
-      injectRegister: false,
-      manifest: false,
-      devOptions: {
-        enabled: true,
-        type: 'module',
-        navigateFallback: 'index.html',
-      },
-    }),
     wasm(),
     copy({
       targets: [
@@ -162,6 +191,6 @@ export default defineConfig({
     ...(process.env.ANALYZE_BUNDLE ? [visualizer({ open: true })] : []),
   ],
   define: {
-    __APP_VERSION__: JSON.stringify(new Date().toISOString()),
+    __APP_VERSION__: JSON.stringify(BUILD_VERSION),
   },
 });

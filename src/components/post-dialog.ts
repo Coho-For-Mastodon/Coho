@@ -29,7 +29,10 @@ import {
   createImage,
   proofread,
   isProofreaderAvailable,
+  isAudioTranscriptionAvailable,
+  transcribeAudio,
 } from '../services/ai';
+import { showInfoToast } from '../utils/optimistic-updates';
 
 import MarkdownWorker from '../utils/markdown-worker?worker';
 
@@ -71,7 +74,16 @@ export class PostDialog extends LitElement {
   @state() proofreadResult: ProofreadResult | null = null;
   @state() proofreaderAvailable: boolean = false;
 
+  // Speech-to-text state
+  @state() isRecording: boolean = false;
+  @state() isTranscribing: boolean = false;
+  @state() speechToTextAvailable: boolean = false;
+
   aiBlob: Blob | undefined;
+
+  // MediaRecorder for speech-to-text
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
 
   // DOM element references using @query for type safety
   @query('#notify-dialog') private notifyDialog!: MdDialog;
@@ -270,18 +282,20 @@ export class PostDialog extends LitElement {
         }
       }
 
-      @media (max-width: 820px) {
-        md-dialog::part(dialog) {
-          min-width: 100vw;
-          min-height: 100vh;
-        }
-
+      @media (max-width: 1200px) {
         .mobile-icon-button {
           display: inline-flex;
         }
 
         .desktop-button {
           display: none;
+        }
+      }
+
+      @media (max-width: 820px) {
+        md-dialog::part(dialog) {
+          min-width: 100vw;
+          min-height: 100vh;
         }
       }
 
@@ -295,52 +309,16 @@ export class PostDialog extends LitElement {
       }
 
       /* Proofreading styles */
-      #proofread-action {
+      .proofread-container {
         position: relative;
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 8px;
-        margin-top: 8px;
-      }
-
-      #proofread-action md-button {
-        font-size: var(--md-sys-typescale-label-small-font-size, 12px);
-        opacity: 0.8;
-      }
-
-      #proofread-action md-button:hover:not([disabled]) {
-        opacity: 1;
-      }
-
-      #proofread-action md-button[disabled] {
-        opacity: 0.4;
-      }
-
-      #proofread-action md-icon {
-        width: 14px;
-        height: 14px;
-        margin-right: 4px;
-      }
-
-      .proofread-result {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: var(--md-sys-typescale-label-small-font-size, 12px);
-        color: var(--md-sys-color-primary, var(--sl-color-primary-600));
-      }
-
-      .proofread-result.no-issues {
-        color: var(--md-sys-color-on-surface-variant, #666);
       }
 
       .proofread-dropdown {
         position: absolute;
-        bottom: 100%;
-        left: 0;
+        top: 100%;
+        right: 0;
         width: 320px;
-        margin-bottom: 4px;
+        margin-top: 4px;
         padding: 8px 0;
         background-color: var(--md-sys-color-surface-container, #2b2930);
         color: var(--md-sys-color-on-surface, #e6e1e5);
@@ -368,6 +346,7 @@ export class PostDialog extends LitElement {
         justify-content: space-between;
         align-items: center;
         padding: 8px 12px;
+        gap: 8px;
       }
 
       .proofread-dropdown-label {
@@ -394,8 +373,21 @@ export class PostDialog extends LitElement {
         color: var(--md-sys-color-on-surface, #e6e1e5);
       }
 
+      .proofread-success {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        font-size: var(--md-sys-typescale-label-small-font-size, 11px);
+        color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        background: var(--md-sys-color-surface-container, #2b2930);
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+
       @media (prefers-color-scheme: light) {
-        .proofread-dropdown {
+        .proofread-dropdown,
+        .proofread-success {
           background-color: var(--md-sys-color-surface-container, #f3edf7);
           color: var(--md-sys-color-on-surface, #1d1b20);
         }
@@ -406,6 +398,84 @@ export class PostDialog extends LitElement {
 
         .proofread-dropdown-content p {
           color: var(--md-sys-color-on-surface, #1d1b20);
+        }
+      }
+
+      /* Speech-to-text styles */
+      .textarea-wrapper {
+        position: relative;
+        width: 100%;
+      }
+
+      .textarea-inner-buttons {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 10;
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+
+      .mic-button,
+      .proofread-button {
+        --md-icon-button-icon-size: 18px;
+        opacity: 0.6;
+        transition: opacity 0.2s ease;
+      }
+
+      .mic-button:hover,
+      .proofread-button:hover {
+        opacity: 1;
+      }
+
+      .proofread-button.proofreading {
+        --md-icon-button-icon-color: #e879f9;
+        opacity: 1 !important;
+        animation: ai-glow 1.5s ease-in-out infinite;
+        border-radius: 50%;
+      }
+
+      .proofread-button[disabled] {
+        opacity: 0.3;
+      }
+
+      .mic-button.recording {
+        --md-icon-button-icon-color: #fff;
+        background-color: #e53935;
+        border-radius: 50%;
+        opacity: 1;
+        animation: recording-pulse 1s ease-in-out infinite;
+      }
+
+      .mic-button.transcribing {
+        --md-icon-button-icon-color: #e879f9;
+        opacity: 1 !important;
+        animation: ai-glow 1.5s ease-in-out infinite;
+        border-radius: 50%;
+      }
+
+      @keyframes recording-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(244, 67, 54, 0);
+        }
+      }
+
+      @keyframes ai-glow {
+        0%,
+        100% {
+          box-shadow: 0 0 2px 1px rgba(232, 121, 249, 0.5);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow:
+            0 0 6px 2px rgba(232, 121, 249, 0.7),
+            0 0 12px 4px rgba(217, 70, 239, 0.4);
+          transform: scale(1.05);
         }
       }
     `,
@@ -429,6 +499,9 @@ export class PostDialog extends LitElement {
 
     // Check if proofreader is available
     this.proofreaderAvailable = await isProofreaderAvailable();
+
+    // Check if speech-to-text is available
+    this.speechToTextAvailable = isAudioTranscriptionAvailable();
   }
 
   public async openNewDialog() {
@@ -450,12 +523,9 @@ export class PostDialog extends LitElement {
     const result = [];
 
     for (const request of await cache.keys()) {
-      // If the request URL matches, add the response to the result
-      if (
-        (request.url.endsWith('.png') && request.url.includes(name)) ||
-        (request.url.endsWith('.jpg') && request.url.includes(name))
-      ) {
-        result.push(await cache.match(name));
+      // If the request URL contains the name, add the response to the result
+      if (request.url.includes(name)) {
+        result.push(await cache.match(request));
       }
     }
 
@@ -523,11 +593,11 @@ export class PostDialog extends LitElement {
       this.attachments = this.attachments.map((a) =>
         a.id === tempId
           ? {
-            ...a,
-            id: data.id,
-            preview_url: data.preview_url, // Use remote URL
-            pending: false,
-          }
+              ...a,
+              id: data.id,
+              preview_url: data.preview_url, // Use remote URL
+              pending: false,
+            }
           : a
       );
 
@@ -597,53 +667,62 @@ export class PostDialog extends LitElement {
         const html = e.data;
         console.log(html);
 
-        if (this.attachments.length > 0) {
-          if (this.sensitive === true) {
-            spoilerText = this.sensitiveInput?.value ?? '';
+        const isOffline = !navigator.onLine;
+
+        try {
+          if (this.attachments.length > 0) {
+            if (this.sensitive === true) {
+              spoilerText = this.sensitiveInput?.value ?? '';
+            }
+
+            await publishPost(
+              status,
+              this.attachments.map((att) => att.id),
+              this.sensitive,
+              spoilerText,
+              this.visibility
+            );
+          } else {
+            if (this.sensitive === true) {
+              spoilerText = this.sensitiveInput?.value ?? '';
+            }
+
+            await publishPost(
+              status,
+              undefined,
+              this.sensitive,
+              spoilerText,
+              this.visibility
+            );
+          }
+        } catch (error) {
+          console.log('[PostDialog] Publish error:', error);
+
+          // If we're offline, the service worker will queue the request
+          // Show a friendly message and close the dialog
+          if (isOffline) {
+            showInfoToast(
+              "Your post will be published when you're back online"
+            );
+            this.resetDialogState();
+            this.notifyDialog?.hide();
+            worker.terminate();
+            return;
           }
 
-          await publishPost(
-            status,
-            this.attachments.map((att) => att.id),
-            this.sensitive,
-            spoilerText,
-            this.visibility
-          );
-
-          this.attachments = [];
-          this.generatedImage = undefined;
-          this.aiBlob = undefined;
-
-          if (this.postTextArea) {
-            this.postTextArea.value = '';
-          }
-        } else {
-          if (this.sensitive === true) {
-            spoilerText = this.sensitiveInput?.value ?? '';
-          }
-
-          await publishPost(
-            status,
-            undefined,
-            this.sensitive,
-            spoilerText,
-            this.visibility
-          );
-
-          this.attachments = [];
-          this.generatedImage = undefined;
-          this.aiBlob = undefined;
-
-          if (this.postTextArea) {
-            this.postTextArea.value = '';
-          }
+          // If we're online but still got an error, it's a real failure
+          // Don't close the dialog so user can retry
+          worker.terminate();
+          return;
         }
 
+        // Success - reset and close
+        this.resetDialogState();
         this.notifyDialog?.hide();
 
         worker.terminate();
 
-        // fire custom eventt
+        // fire custom event
         this.dispatchEvent(
           new CustomEvent('published', {
             bubbles: true,
@@ -656,6 +735,32 @@ export class PostDialog extends LitElement {
       };
 
       worker.postMessage(status);
+    }
+  }
+
+  /**
+   * Reset the dialog state after publishing or closing
+   */
+  private resetDialogState() {
+    this.attachments = [];
+    this.generatedImage = undefined;
+    this.aiBlob = undefined;
+    this.charCount = 0;
+    this.hasStatus = false;
+    this.sensitive = false;
+    this.proofreadResult = null;
+    this.isRecording = false;
+    this.isTranscribing = false;
+
+    // Stop any active recording
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+    this.mediaRecorder = null;
+    this.audioChunks = [];
+
+    if (this.postTextArea) {
+      this.postTextArea.value = '';
     }
   }
 
@@ -750,6 +855,111 @@ export class PostDialog extends LitElement {
     this.proofreadResult = null;
   }
 
+  // Speech-to-text methods
+  async toggleRecording() {
+    if (this.isRecording) {
+      await this.stopRecording();
+    } else {
+      await this.startRecording();
+    }
+  }
+
+  async startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+        },
+      });
+
+      this.audioChunks = [];
+
+      // Try to find a supported MIME type
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+      ];
+
+      let selectedMimeType = '';
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+
+      const options: MediaRecorderOptions = selectedMimeType
+        ? { mimeType: selectedMimeType }
+        : {};
+
+      this.mediaRecorder = new MediaRecorder(stream, options);
+      console.log('MediaRecorder using mimeType:', this.mediaRecorder.mimeType);
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorder.onstop = async () => {
+        // Stop all tracks to release the microphone
+        stream.getTracks().forEach((track) => track.stop());
+
+        const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+        const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+        console.log(
+          'Audio blob created:',
+          audioBlob.size,
+          'bytes, type:',
+          audioBlob.type
+        );
+        await this.handleTranscription(audioBlob);
+      };
+
+      // Request data every 250ms for more reliable capture
+      this.mediaRecorder.start(250);
+      this.isRecording = true;
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+    }
+  }
+
+  async stopRecording() {
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+      this.isRecording = false;
+    }
+  }
+
+  async handleTranscription(audioBlob: Blob) {
+    this.isTranscribing = true;
+
+    try {
+      const transcribedText = await transcribeAudio(audioBlob);
+
+      if (transcribedText && this.postTextArea) {
+        const currentText = this.postTextArea.value;
+        // Append to existing text with a space separator
+        if (currentText.trim().length > 0) {
+          this.postTextArea.value = currentText + ' ' + transcribedText;
+        } else {
+          this.postTextArea.value = transcribedText;
+        }
+
+        // Update character count and status
+        this.charCount = this.postTextArea.value.length;
+        this.hasStatus = this.postTextArea.value.length > 0;
+      }
+    } catch (error) {
+      console.error('Transcription failed:', error);
+    } finally {
+      this.isTranscribing = false;
+    }
+  }
+
   async markAsSensitive() {
     this.sensitive = !this.sensitive;
   }
@@ -793,121 +1003,139 @@ export class PostDialog extends LitElement {
         ?fullscreen=${this.isMobile}
         ?no-backdrop-close=${this.isMobile}
       >
-        <md-text-area
-          @change="${(e: Event) => this.handleStatus(e)}"
-          @input="${(e: Event) => this.handleStatus(e)}"
-          autofocus
-          placeholder="What's on your mind?"
-          rows="6"
-          maxlength="${this.maxChars}"
-        ></md-text-area>
+        <div class="textarea-wrapper">
+          <md-text-area
+            @change="${(e: Event) => this.handleStatus(e)}"
+            @input="${(e: Event) => this.handleStatus(e)}"
+            autofocus
+            placeholder="What's on your mind?"
+            rows="6"
+            maxlength="${this.maxChars}"
+          ></md-text-area>
 
-        ${this.proofreaderAvailable
-        ? html`
-              <div id="proofread-action">
-                ${this.proofreadResult
-            ? this.proofreadResult.corrections.length === 0
+          <div class="textarea-inner-buttons">
+            ${this.proofreaderAvailable
               ? html`
-                        <span class="proofread-result no-issues"
-                          >✓ Looks good!</span
-                        >
-                        <md-button
-                          size="small"
-                          variant="text"
-                          @click="${() => this.dismissProofread()}"
-                          >Dismiss</md-button
-                        >
-                      `
-              : html`
-                        <md-button
-                          size="small"
-                          variant="text"
-                          ?disabled=${!this.hasStatus || this.proofreading}
-                          @click="${() => this.doProofread()}"
-                        >
-                          <md-icon src="/assets/sparkles-outline.svg"></md-icon>
-                          Re-check
-                        </md-button>
-                      `
-            : html`
-                      <md-button
-                        size="small"
-                        variant="text"
-                        ?disabled=${!this.hasStatus || this.proofreading}
-                        @click="${() => this.doProofread()}"
-                      >
-                        <md-icon src="/assets/sparkles-outline.svg"></md-icon>
-                        ${this.proofreading
-                ? 'Checking...'
-                : 'Proofread with AI'}
-                      </md-button>
-                    `}
-                ${this.proofreadResult &&
-            this.proofreadResult.corrections.length > 0
-            ? html`
-                      <div class="proofread-dropdown">
-                        <div class="proofread-dropdown-header">
-                          <span class="proofread-dropdown-label">
-                            Suggested revision
-                            (${this.proofreadResult.corrections.length}
-                            change${this.proofreadResult.corrections.length > 1
-                ? 's'
-                : ''})
-                          </span>
-                          <div class="proofread-dropdown-actions">
-                            <md-button
-                              size="small"
-                              variant="filled"
-                              pill
-                              @click="${() => this.applyCorrections()}"
-                              >Apply</md-button
-                            >
-                            <md-button
-                              size="small"
-                              variant="text"
+                  <div class="proofread-container">
+                    ${this.proofreadResult &&
+                    this.proofreadResult.corrections.length === 0
+                      ? html`
+                          <span class="proofread-success">
+                            ✓ Looks good!
+                            <md-icon-button
+                              class="proofread-button"
+                              label="Dismiss"
+                              src="/assets/close-outline.svg"
                               @click="${() => this.dismissProofread()}"
-                              >Dismiss</md-button
-                            >
+                            ></md-icon-button>
+                          </span>
+                        `
+                      : html`
+                          <md-icon-button
+                            class="proofread-button ${this.proofreading
+                              ? 'proofreading'
+                              : ''}"
+                            label="${this.proofreading
+                              ? 'Checking...'
+                              : 'Proofread'}"
+                            src="/assets/sparkles-outline.svg"
+                            ?disabled=${!this.hasStatus || this.proofreading}
+                            @click="${() => this.doProofread()}"
+                            title="${this.proofreading ? '' : 'On-device AI'}"
+                          ></md-icon-button>
+                        `}
+                    ${this.proofreadResult &&
+                    this.proofreadResult.corrections.length > 0
+                      ? html`
+                          <div class="proofread-dropdown">
+                            <div class="proofread-dropdown-header">
+                              <span class="proofread-dropdown-label">
+                                Suggested revision
+                                (${this.proofreadResult.corrections.length}
+                                change${this.proofreadResult.corrections
+                                  .length > 1
+                                  ? 's'
+                                  : ''})
+                              </span>
+                              <div class="proofread-dropdown-actions">
+                                <md-button
+                                  size="small"
+                                  variant="filled"
+                                  pill
+                                  @click="${() => this.applyCorrections()}"
+                                  >Apply</md-button
+                                >
+                                <md-button
+                                  size="small"
+                                  variant="text"
+                                  @click="${() => this.dismissProofread()}"
+                                  >Dismiss</md-button
+                                >
+                              </div>
+                            </div>
+                            <div class="proofread-dropdown-content">
+                              <p>${this.proofreadResult.correctedInput}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div class="proofread-dropdown-content">
-                          <p>${this.proofreadResult.correctedInput}</p>
-                        </div>
-                      </div>
-                    `
-            : null}
-              </div>
-            `
-        : null}
+                        `
+                      : null}
+                  </div>
+                `
+              : null}
+            ${this.speechToTextAvailable
+              ? html`
+                  <md-icon-button
+                    class="mic-button ${this.isRecording
+                      ? 'recording'
+                      : ''} ${this.isTranscribing ? 'transcribing' : ''}"
+                    label="${this.isRecording
+                      ? 'Stop recording'
+                      : this.isTranscribing
+                        ? 'Transcribing...'
+                        : 'Voice input'}"
+                    src="${this.isRecording
+                      ? '/assets/stop-circle-outline.svg'
+                      : '/assets/mic-outline.svg'}"
+                    ?disabled=${this.isTranscribing}
+                    @click="${() => this.toggleRecording()}"
+                    title="${this.isRecording || this.isTranscribing
+                      ? ''
+                      : 'On-device AI'}"
+                  ></md-icon-button>
+                `
+              : null}
+          </div>
+        </div>
         ${this.sensitive
-        ? html`<div id="sensitive-warning">
+          ? html`<div id="sensitive-warning">
               <md-text-field
                 id="sensitive-input"
                 placeholder="Write your warning here"
               ></md-text-field>
             </div>`
-        : null}
+          : null}
 
         <div slot="footer" class="dialog-footer-actions">
           ${this.showPrompt
-        ? html`<div id="ai-image">
+            ? html`<div id="ai-image">
                 ${this.showPrompt && this.generatedImage
-            ? html` <img src="${this.generatedImage}" /> `
-            : this.showPrompt && this.generatingImage === false
-              ? html`<div id="ai-preview-block">
+                  ? html` <img src="${this.generatedImage}" /> `
+                  : this.showPrompt && this.generatingImage === false
+                    ? html`<div id="ai-preview-block">
                         <p>Enter a prompt to generate an image with AI!</p>
                       </div>`
-              : html`<div id="ai-preview-block">
+                    : html`<div id="ai-preview-block">
                         <md-skeleton></md-skeleton>
                       </div>`}
               </div>`
-        : null}
+            : null}
 
           <div>
             <!-- Desktop buttons with text -->
             <md-select
               .value=${this.visibility}
-              @change=${(e: CustomEvent<{ value: string }>) => (this.visibility = e.detail.value)}
+              @change=${(e: CustomEvent<{ value: string }>) =>
+                (this.visibility = e.detail.value)}
               style="width: 140px; min-width: 140px;"
               pill
             >
@@ -963,10 +1191,10 @@ export class PostDialog extends LitElement {
         </div>
 
         ${this.attaching === false
-        ? html`
+          ? html`
               <ul>
                 ${this.attachments.map((attachment) => {
-          return html`
+                  return html`
                     <div class="img-preview">
                       <div class="preview-actions">
                         <md-icon-button
@@ -988,10 +1216,10 @@ export class PostDialog extends LitElement {
                       />
                     </div>
                   `;
-        })}
+                })}
               </ul>
             `
-        : html`<div id="attachment-loading">
+          : html`<div id="attachment-loading">
               <md-skeleton></md-skeleton>
             </div>`}
       </md-dialog>
@@ -1002,9 +1230,9 @@ export class PostDialog extends LitElement {
         .description="${this.activeAttachment?.description || ''}"
         .mediaId="${this.activeAttachment?.id || ''}"
         @close="${() => {
-        this.editDialogOpen = false;
-        this.activeAttachment = null;
-      }}"
+          this.editDialogOpen = false;
+          this.activeAttachment = null;
+        }}"
         @save="${this.handleMediaSave}"
       ></media-edit-dialog>
     `;

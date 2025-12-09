@@ -39,7 +39,7 @@ export declare class MdIcon extends LitElement {
     private svgContent;
     private loadError;
     static styles: import("lit").CSSResult;
-    updated(changedProperties: Map<string, any>): Promise<void>;
+    updated(changedProperties: Map<string, unknown>): Promise<void>;
     connectedCallback(): Promise<void>;
     /**
      * Load icon from built-in library (instant, no network)

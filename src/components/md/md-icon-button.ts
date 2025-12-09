@@ -7,7 +7,13 @@ import './md-icon';
  * Material Design 3 Icon Button Component
  *
  * An icon button is a clickable icon that triggers an action.
- * Supports standard, filled, and outlined variants.
+ * Supports standard, filled, filled-tonal, and outlined variants.
+ *
+ * Variants:
+ * - `standard` - Transparent background (default)
+ * - `filled` - Bold primary color background
+ * - `filled-tonal` - Subtle secondary container background
+ * - `outlined` - Transparent with border
  *
  * @slot - Default slot for custom icon content
  *
@@ -28,15 +34,22 @@ export class MdIconButton extends LitElement {
   @property({ type: String }) label?: string;
 
   /** Button variant */
-  @property({ type: String }) variant: 'standard' | 'filled' | 'outlined' =
-    'standard';
+  @property({ type: String }) variant:
+    | 'standard'
+    | 'filled'
+    | 'filled-tonal'
+    | 'outlined' = 'standard';
 
   /** Whether the button is disabled */
   @property({ type: Boolean }) disabled = false;
 
+  /** Tooltip text shown on hover */
+  @property({ type: String, reflect: true }) override title: string = '';
+
   static styles = css`
     :host {
       display: inline-flex;
+      position: relative;
     }
 
     .icon-button {
@@ -67,6 +80,19 @@ export class MdIconButton extends LitElement {
       color: var(--md-sys-color-on-primary, white);
     }
 
+    .icon-button--filled-tonal {
+      background: var(
+        --md-sys-color-secondary-container,
+        rgba(255, 255, 255, 0.12)
+      );
+      color: var(
+        --md-sys-color-on-secondary-container,
+        rgba(255, 255, 255, 0.9)
+      );
+      backdrop-filter: blur(46px);
+      -webkit-backdrop-filter: blur(46px);
+    }
+
     .icon-button--outlined {
       border: 1px solid var(--md-sys-color-outline, rgba(255, 255, 255, 0.12));
     }
@@ -89,6 +115,17 @@ export class MdIconButton extends LitElement {
       box-shadow:
         0px 1px 2px rgba(0, 0, 0, 0.3),
         0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+    }
+
+    .icon-button--filled-tonal:not(:disabled):hover {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12)) 92%,
+        var(--md-sys-color-on-secondary-container, white) 8%
+      );
+      box-shadow:
+        0px 1px 2px rgba(0, 0, 0, 0.2),
+        0px 1px 3px 1px rgba(0, 0, 0, 0.1);
     }
 
     .icon-button--outlined:not(:disabled):hover {
@@ -114,6 +151,14 @@ export class MdIconButton extends LitElement {
         in srgb,
         var(--md-sys-color-primary, var(--sl-color-primary-600)) 88%,
         var(--md-sys-color-on-primary, white) 12%
+      );
+    }
+
+    .icon-button--filled-tonal:not(:disabled):active {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12)) 88%,
+        var(--md-sys-color-on-secondary-container, white) 12%
       );
     }
 
@@ -145,6 +190,14 @@ export class MdIconButton extends LitElement {
         );
       }
 
+      .icon-button--filled-tonal {
+        background: var(
+          --md-sys-color-secondary-container,
+          rgba(0, 0, 0, 0.08)
+        );
+        color: var(--md-sys-color-on-secondary-container, rgba(0, 0, 0, 0.8));
+      }
+
       .icon-button--outlined {
         border-color: var(--md-sys-color-outline, rgba(0, 0, 0, 0.12));
       }
@@ -174,6 +227,43 @@ export class MdIconButton extends LitElement {
       align-items: center;
       justify-content: center;
     }
+
+    /* Custom tooltip styles */
+    :host([title]:hover)::after {
+      content: attr(title);
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 6px;
+      padding: 4px 8px;
+      background: var(--md-sys-color-inverse-surface, #313033);
+      color: var(--md-sys-color-inverse-on-surface, #f4eff4);
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      border-radius: 4px;
+      z-index: 10000;
+      pointer-events: none;
+      opacity: 1;
+      animation: tooltipFadeIn 0.15s ease-out;
+    }
+
+    :host([title=''])::after,
+    :host(:not([title]))::after {
+      display: none;
+    }
+
+    @keyframes tooltipFadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
   `;
 
   private handleClick(e: MouseEvent) {
@@ -198,6 +288,7 @@ export class MdIconButton extends LitElement {
       'icon-button': true,
       'icon-button--standard': this.variant === 'standard',
       'icon-button--filled': this.variant === 'filled',
+      'icon-button--filled-tonal': this.variant === 'filled-tonal',
       'icon-button--outlined': this.variant === 'outlined',
     };
 
@@ -212,6 +303,7 @@ export class MdIconButton extends LitElement {
         @click=${this.handleClick}
         @keydown=${this.handleKeyDown}
         aria-label="${this.label || 'icon button'}"
+        title=${ifDefined(this.title || undefined)}
       >
         <div part="icon" class="icon">
           ${this.name

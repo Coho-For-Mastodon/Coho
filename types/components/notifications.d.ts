@@ -1,4 +1,4 @@
-import { LitElement } from 'lit';
+import { LitElement, nothing } from 'lit';
 import './user-profile';
 import './timeline-item';
 import './md/md-dialog';
@@ -7,14 +7,27 @@ import './md/md-button';
 import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
 import { Notification } from '../interfaces/Notification';
+import type { Account } from '../mastodon/types';
 export declare class Notifications extends LitElement {
     notifications: Notification[];
     subbed: boolean;
     activeSegment: string;
+    followingMap: Map<string, boolean>;
+    loadingFollowMap: Map<string, boolean>;
     static styles: import("lit").CSSResult[];
     firstUpdated(): Promise<void>;
+    checkFollowStatuses(): Promise<void>;
     clear(): Promise<void>;
     sub(flag: boolean): Promise<void>;
     openPost(tweet: Post | undefined): Promise<void>;
+    openProfile(account: Account): Promise<void>;
+    followBack(accountId: string, e: Event): Promise<void>;
+    formatTimeAgo(dateString: string): string;
+    getNotificationIcon(type: string): import("lit-html").TemplateResult<1>;
+    getNotificationActionText(type: string): string;
+    renderPostPreview(status: Post | undefined): import("lit-html").TemplateResult<1> | typeof nothing;
+    renderFollowNotification(notification: Notification): import("lit-html").TemplateResult<1>;
+    renderStatusNotification(notification: Notification): import("lit-html").TemplateResult<1>;
+    renderNotification(notification: Notification): import("lit-html").TemplateResult<1>;
     render(): import("lit-html").TemplateResult<1>;
 }

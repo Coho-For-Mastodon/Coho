@@ -4,6 +4,7 @@ import './md/md-dialog.js';
 import './md/md-button.js';
 import './md/md-text-area.js';
 import './md/md-skeleton.js';
+import { isPromptAPIAvailable, generateAltText } from '../services/ai';
 
 @customElement('media-edit-dialog')
 export class MediaEditDialog extends LitElement {
@@ -13,6 +14,13 @@ export class MediaEditDialog extends LitElement {
   @property({ type: String }) mediaId = '';
 
   @state() imageLoaded = false;
+  @state() generating = false;
+  @state() promptAPIAvailable = false;
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.promptAPIAvailable = isPromptAPIAvailable();
+  }
 
   static styles = css`
     .preview-container {
@@ -40,12 +48,22 @@ export class MediaEditDialog extends LitElement {
     }
 
     md-text-area {
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
       display: block;
+    }
+
+    .generate-alt-container {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .generate-alt-container md-button {
+      font-size: var(--md-sys-typescale-label-small-font-size, 12px);
     }
   `;
 
-  willUpdate(changedProperties: Map<string, any>) {
+  willUpdate(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('imageSrc')) {
       this.imageLoaded = false;
     }
@@ -81,6 +99,17 @@ export class MediaEditDialog extends LitElement {
     e.stopPropagation();
   }
 
+  private async handleGenerateAlt() {
+    if (!this.imageSrc || this.generating) return;
+
+    this.generating = true;
+    const result = await generateAltText(this.imageSrc);
+    if (result) {
+      this.description = result;
+    }
+    this.generating = false;
+  }
+
   render() {
     return html`
       <md-dialog
@@ -91,16 +120,16 @@ export class MediaEditDialog extends LitElement {
       >
         <div class="preview-container">
           ${!this.imageLoaded
-        ? html`<md-skeleton width="100%" height="300px"></md-skeleton>`
-        : ''}
+            ? html`<md-skeleton width="100%" height="300px"></md-skeleton>`
+            : ''}
           ${this.imageSrc
-        ? html` <img
+            ? html` <img
                 src="${this.imageSrc}"
                 alt="Preview"
                 @load="${this.handleImageLoad}"
                 style="${this.imageLoaded ? '' : 'display: none;'}"
               />`
-        : ''}
+            : ''}
         </div>
 
         <md-text-area
@@ -108,8 +137,25 @@ export class MediaEditDialog extends LitElement {
           placeholder="Describe this image for people with visual impairments"
           rows="4"
           .value="${this.description}"
-          @input="${(e: Event) => (this.description = (e.target as HTMLTextAreaElement).value)}"
+          @input="${(e: Event) =>
+            (this.description = (e.target as HTMLTextAreaElement).value)}"
         ></md-text-area>
+
+        ${this.promptAPIAvailable
+          ? html`
+              <div class="generate-alt-container">
+                <md-button
+                  variant="text"
+                  size="small"
+                  ?disabled="${this.generating}"
+                  @click="${this.handleGenerateAlt}"
+                  title="On-device AI"
+                >
+                  ${this.generating ? 'Generating...' : 'Generate Alt Text'}
+                </md-button>
+              </div>
+            `
+          : ''}
 
         <div slot="footer" class="actions">
           <md-button variant="text" @click="${this.close}">Cancel</md-button>

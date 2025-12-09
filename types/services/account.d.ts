@@ -1,10 +1,12 @@
+import { Account } from '../types/interfaces/Account';
 export declare const editAccount: (display_name: string, note: string, locked: string, bot: string, avatar: File | string, header: File | string) => Promise<any>;
 export declare const getPeers: () => Promise<any>;
 export declare const checkFollowing: (id: string) => Promise<any>;
-export declare const getCurrentUser: () => Promise<any>;
+export declare const getCurrentUser: () => Promise<Account | undefined>;
 export declare const unfollowUser: (id: string) => Promise<any>;
-export declare const getAccount: (id: string) => Promise<any>;
-export declare const getUsersPosts: (id: string) => Promise<any>;
+export declare const getAccount: (id: string) => Promise<Account | undefined>;
+export type ProfilePostsFilter = 'posts' | 'posts_replies' | 'media';
+export declare const getUsersPosts: (id: string, filter?: ProfilePostsFilter) => Promise<any>;
 export declare const getUsersFollowers: (id: string) => Promise<any>;
 export declare const getFollowing: (id: string) => Promise<any>;
 export declare const followUser: (id: string) => Promise<any>;

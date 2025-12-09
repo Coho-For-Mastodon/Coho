@@ -3,14 +3,14 @@
 import { NetworkOnly, CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import {
-  precacheAndRoute,
-  cleanupOutdatedCaches,
-  createHandlerBoundToURL,
-} from 'workbox-precaching';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { get, set } from 'idb-keyval';
 import { RouteHandlerCallback } from 'workbox-core';
+
+declare const __APP_VERSION__: string;
+
+// Log build version for debugging
+console.log('[SW] Build version:', __APP_VERSION__);
 
 // Type augmentation for Badging API (not yet in all TypeScript libs)
 interface NavigatorBadge {
@@ -20,7 +20,6 @@ interface NavigatorBadge {
 
 // Type augmentation for Service Worker
 declare const self: ServiceWorkerGlobalScope & {
-  __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
   idbKeyval: {
     get: typeof get;
     set: typeof set;
@@ -44,43 +43,43 @@ const IS_DEV =
   location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
 // ============================================================================
-// PRECACHING & APP SHELL
+// NAVIGATION - RUNTIME CACHING (No Precaching)
 // ============================================================================
+// Use NetworkFirst for navigation requests - fetches from network when available,
+// falls back to cache for offline support. The HTML/JS/CSS gets cached at runtime
+// on first visit, enabling offline access without precaching.
 if (!IS_DEV) {
-  // 1. Clean up outdated caches
-  // This runs during the 'activate' phase, after the new SW takes control.
-  // This is safe because we force a reload immediately upon activation.
-  cleanupOutdatedCaches();
-
-  // 2. Precache all assets (including index.html)
-  // This downloads the new index.html + new JS/CSS in the background.
-  const manifest = self.__WB_MANIFEST;
-  if (manifest) {
-    precacheAndRoute(manifest);
-  }
-
-  // 3. Navigation Route - The "Cache First" App Shell
-  // This tells the SW: "For any navigation request, serve the index.html
-  // that was precached in step 1."
-  // This guarantees atomic updates: the index.html served matches the JS/CSS in the cache.
-  try {
-    const handler = createHandlerBoundToURL('/index.html');
-    const navigationRoute = new NavigationRoute(handler, {
+  const navigationRoute = new NavigationRoute(
+    new NetworkFirst({
+      cacheName: 'navigation-cache',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 10,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    }),
+    {
       denylist: [
         // Exclude specific paths if needed (e.g. backend API routes)
         /^\/api\//,
       ],
-    });
-    registerRoute(navigationRoute);
-  } catch (error) {
-    console.error('[SW] Failed to create App Shell handler:', error);
-  }
+    }
+  );
+  registerRoute(navigationRoute);
 } else {
-  console.log('[SW] Development mode: precaching and app shell disabled');
+  console.log('[SW] Development mode: caching disabled');
   // In dev, just pass through to the network
   const navigationRoute = new NavigationRoute(new NetworkOnly());
   registerRoute(navigationRoute);
 }
+
+// ============================================================================
+// SERVICE WORKER LIFECYCLE
+// ============================================================================
+// We do NOT auto-skipWaiting here because old clients don't have coordinated
+// reload logic. Instead, we wait for the client to send SKIP_WAITING message
+// (handled in the message listener below).
 
 interface WidgetDefinition {
   msAcTemplate: string;
@@ -98,14 +97,14 @@ interface WidgetInstallEvent extends ExtendableEvent {
 
 interface NotificationData {
   type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   account: {
     id: string;
     display_name: string;
@@ -122,14 +121,14 @@ interface MastodonPushPayload {
   preferred_locale: string;
   notification_id: string;
   notification_type:
-  | 'mention'
-  | 'reblog'
-  | 'favourite'
-  | 'follow'
-  | 'poll'
-  | 'follow_request'
-  | 'status'
-  | 'update';
+    | 'mention'
+    | 'reblog'
+    | 'favourite'
+    | 'follow'
+    | 'poll'
+    | 'follow_request'
+    | 'status'
+    | 'update';
   icon: string;
   title: string;
   body: string;
@@ -150,7 +149,6 @@ interface PeriodicSyncEvent extends ExtendableEvent {
 // the App Shell strategy consolidated.
 // The following block is removed to avoid duplication.
 
-
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -163,28 +161,37 @@ self.addEventListener('message', (event) => {
 });
 
 // Clean up old caches when a new service worker activates
-// This prevents version mismatches between cached HTML/JS/CSS
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      // Delete ALL runtime caches to prevent stale content issues
-      // This is aggressive but ensures version consistency
+      // IMPORTANT: Claim clients FIRST before any cleanup
+      // This ensures the new SW controls all tabs as quickly as possible
+      // to prevent stale content from being served during cache cleanup
+      await self.clients.claim();
+      console.log('[SW] Claimed all clients');
+
+      // Clean up any old workbox precache entries from previous versions
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames.map((cacheName) => {
-          // Keep workbox precache (it's already versioned) but clear runtime caches
-          if (!cacheName.includes('workbox-precache')) {
-            console.log('[SW] Deleting old cache:', cacheName);
+          // Delete old workbox-precache caches (no longer used)
+          if (cacheName.includes('workbox-precache')) {
+            console.log('[SW] Deleting old precache:', cacheName);
             return caches.delete(cacheName);
           }
           return Promise.resolve();
         })
       );
 
-      // Claim all clients immediately so the new SW controls all tabs
-      await self.clients.claim();
+      console.log('[SW] Activated');
 
-      console.log('[SW] Activated and cleaned up caches');
+      // Notify all clients that the update is ready
+      // This allows clients to do a coordinated reload AFTER the SW is fully ready
+      const clients = await self.clients.matchAll({ type: 'window' });
+      for (const client of clients) {
+        client.postMessage({ type: 'SW_ACTIVATED' });
+      }
+      console.log('[SW] Notified clients of activation');
     })()
   );
 });
@@ -212,8 +219,7 @@ const renderWidget = async (widget: Widget): Promise<void> => {
   }
 };
 
-// This is your Service Worker, you can put any of your custom Service Worker
-// code in this file, above the `precacheAndRoute` line.
+// Background sync for offline actions
 const bgSyncPlugin = new BackgroundSyncPlugin('retryqueue', {
   maxRetentionTime: 48 * 60,
 });
@@ -308,7 +314,7 @@ const getNotifications = async (): Promise<void> => {
     // show notification
     await self.registration.showNotification(title, {
       body: message,
-      icon: '/assets/icons/new-icons/icon-256x256.webp',
+      icon: '/assets/icons/new-icons/icon-256x256.png',
       tag: 'coho',
       renotify: false,
       actions: actions,
@@ -429,9 +435,9 @@ self.addEventListener('push', async (event: PushEvent) => {
   event.waitUntil(
     self.registration.showNotification(payload.title || 'Coho', {
       body: payload.body || 'You have a new notification',
-      icon: payload.icon || '/assets/icons/new-icons/icon-256x256.webp',
+      icon: payload.icon || '/assets/icons/new-icons/icon-256x256.png',
       tag: payload.notification_id || 'coho',
-      badge: '/assets/icons/new-icons/icon-256x256.webp',
+      badge: '/assets/icons/new-icons/icon-256x256.png',
       renotify: true,
       actions: actions,
       data: {
@@ -586,7 +592,6 @@ async function shareTargetHandler({
   return Response.redirect(`/home?name=${mediaFiles[0].name}`, 303);
 }
 
-
 const shareRouteHandler: RouteHandlerCallback = async ({ event }) => {
   return shareTargetHandler({ event: event as FetchEvent });
 };
@@ -595,7 +600,12 @@ registerRoute('/share', shareRouteHandler, 'POST');
 
 // Only register caching routes in production
 if (!IS_DEV) {
-  // background sync
+  // ============================================================================
+  // BACKGROUND SYNC FOR OFFLINE ACTIONS
+  // ============================================================================
+  // These routes queue failed requests and replay them when back online
+
+  // Firebase function routes (boost/favorite, reblog, bookmark)
   registerRoute(
     ({ request }) => request.url.includes('/boost?id'),
     new NetworkOnly({
@@ -620,12 +630,217 @@ if (!IS_DEV) {
     'POST'
   );
 
+  // Firebase function for posting statuses
   registerRoute(
-    ({ request }) => request.url.includes('/status?status'),
+    ({ request }) => request.url.includes('/postStatus'),
     new NetworkOnly({
       plugins: [bgSyncPlugin],
     }),
     'POST'
+  );
+
+  // Firebase function for following users
+  registerRoute(
+    ({ request }) => request.url.includes('/follow?id'),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API routes - for creating new posts and replies
+  // Matches: https://{server}/api/v1/statuses (POST for new status/reply)
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' && url.pathname === '/api/v1/statuses',
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - favorite/unfavorite a post
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/favou?rite$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/unfavou?rite$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - reblog/unreblog a post
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/reblog$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/unreblog$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - bookmark/unbookmark a post
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/bookmark$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/statuses\/\d+\/unbookmark$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - follow/unfollow a user
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/follow$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/unfollow$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - mute/unmute a user
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/mute$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/unmute$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - block/unblock a user
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/block$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' &&
+      /\/api\/v1\/accounts\/\d+\/unblock$/.test(url.pathname),
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Direct Mastodon API - report a user
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'POST' && url.pathname === '/api/v1/reports',
+    new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+    'POST'
+  );
+
+  // Runtime caching for JavaScript files - CacheFirst since they're hashed/versioned
+  registerRoute(
+    ({ request, url }) =>
+      request.destination === 'script' && url.origin === self.location.origin,
+    new CacheFirst({
+      cacheName: 'js-cache',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+        }),
+      ],
+    })
+  );
+
+  // Runtime caching for CSS files - CacheFirst since they're hashed/versioned
+  registerRoute(
+    ({ request, url }) =>
+      request.destination === 'style' && url.origin === self.location.origin,
+    new CacheFirst({
+      cacheName: 'css-cache',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+        }),
+      ],
+    })
+  );
+
+  // User profile credentials - NetworkFirst to work offline while keeping data fresh
+  // This caches /api/v1/accounts/verify_credentials so the app can load user info offline
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'GET' &&
+      url.pathname === '/api/v1/accounts/verify_credentials',
+    new NetworkFirst({
+      cacheName: 'user-credentials',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 5, // One per logged-in account
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    }),
+    'GET'
   );
 
   // avatar photos - explicitly exclude documents to prevent HTML caching
@@ -644,10 +859,61 @@ if (!IS_DEV) {
     })
   );
 
+  // header/banner photos for profiles
   registerRoute(
     ({ request }) =>
       request.destination !== 'document' &&
-      request.url.includes('/user?code'),
+      request.url.includes('/accounts/headers'),
+    new CacheFirst({
+      cacheName: 'header-images',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    })
+  );
+
+  // Cache profile images from Mastodon CDNs (files.*, media.*, cdn.*)
+  // These URLs may not follow the /accounts/avatars pattern on all instances
+  registerRoute(
+    ({ request, url }) =>
+      request.destination === 'image' &&
+      (url.hostname.startsWith('files.') ||
+        url.hostname.startsWith('media.') ||
+        url.hostname.startsWith('cdn.')),
+    new CacheFirst({
+      cacheName: 'mastodon-media',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 200,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+        }),
+      ],
+    })
+  );
+
+  // Cache post media attachments from /media_attachments/ path
+  // This allows viewing previously loaded posts with images while offline
+  registerRoute(
+    ({ request }) =>
+      request.destination === 'image' &&
+      request.url.includes('/media_attachments/'),
+    new CacheFirst({
+      cacheName: 'post-media',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24 * 3, // 3 days (media can be large)
+        }),
+      ],
+    })
+  );
+
+  registerRoute(
+    ({ request }) =>
+      request.destination !== 'document' && request.url.includes('/user?code'),
     new CacheFirst({
       cacheName: 'user',
       plugins: [
@@ -669,6 +935,23 @@ if (!IS_DEV) {
           maxEntries: 50,
           // max age is 5 minutes
           maxAgeSeconds: 60 * 5,
+        }),
+      ],
+    }),
+    'GET'
+  );
+
+  // Network first for hashtag timelines - enables offline viewing of previously visited hashtags
+  registerRoute(
+    ({ request, url }) =>
+      request.method === 'GET' &&
+      /\/api\/v1\/timelines\/tag\//.test(url.pathname),
+    new NetworkFirst({
+      cacheName: 'hashtag-timelines',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 20, // Cache up to 20 different hashtag feeds
+          maxAgeSeconds: 60 * 60 * 24, // 24 hours - hashtags change less frequently
         }),
       ],
     }),

@@ -4,6 +4,7 @@ import { Post } from '../interfaces/Post';
 
 import './timeline-item';
 import './md/md-skeleton-card';
+import './md/md-divider';
 
 @customElement('app-bookmarks')
 export class Bookmarks extends LitElement {
@@ -25,6 +26,8 @@ export class Bookmarks extends LitElement {
         margin: 0;
         padding: 0;
         list-style: none;
+
+        gap: 16px;
 
         height: 90vh;
         overflow-y: scroll;

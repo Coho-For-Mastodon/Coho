@@ -35,7 +35,12 @@ export declare class PostDialog extends LitElement {
     proofreading: boolean;
     proofreadResult: ProofreadResult | null;
     proofreaderAvailable: boolean;
+    isRecording: boolean;
+    isTranscribing: boolean;
+    speechToTextAvailable: boolean;
     aiBlob: Blob | undefined;
+    private mediaRecorder;
+    private audioChunks;
     private notifyDialog;
     private postTextArea;
     private promptTextField;
@@ -49,6 +54,10 @@ export declare class PostDialog extends LitElement {
     addAIImageToPost(): Promise<void>;
     removeImage(id: string): void;
     publish(): Promise<void>;
+    /**
+     * Reset the dialog state after publishing or closing
+     */
+    private resetDialogState;
     doAIImage(prompt: string): Promise<void>;
     openAIPrompt(): Promise<void>;
     generateStatus(): Promise<void>;
@@ -56,6 +65,10 @@ export declare class PostDialog extends LitElement {
     doProofread(): Promise<void>;
     applyCorrections(): void;
     dismissProofread(): void;
+    toggleRecording(): Promise<void>;
+    startRecording(): Promise<void>;
+    stopRecording(): Promise<void>;
+    handleTranscription(audioBlob: Blob): Promise<void>;
     markAsSensitive(): Promise<void>;
     openEditDialog(attachment: LocalAttachment): void;
     handleMediaSave(e: CustomEvent): Promise<void>;

@@ -112,7 +112,7 @@ export class CreateAccount extends LitElement {
   ];
 
   protected async firstUpdated(
-    _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
+    _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
   ) {
     const servers = await getServers();
     console.log('servers', servers);
@@ -124,7 +124,7 @@ export class CreateAccount extends LitElement {
     this.chosenServer = serverInfo.name;
     this.fullDesc = serverInfo.info.full_description;
     const dialog = this.shadowRoot?.querySelector('#create-dialog');
-    // @ts-expect-error fix
+    // @ts-expect-error - Fluent UI dialog show() method not in base Element types
     dialog?.show();
   }
 
@@ -132,7 +132,7 @@ export class CreateAccount extends LitElement {
     this.registered = true;
 
     const createDialog = this.shadowRoot?.querySelector('#create-dialog');
-    // @ts-expect-error fix
+    // @ts-expect-error - Fluent UI dialog hide() method not in base Element types
     await createDialog?.hide();
 
     console.log('this.chosenServer', this.chosenServer);
@@ -194,7 +194,7 @@ export class CreateAccount extends LitElement {
 
         <ul>
           ${this.servers.map((server) => {
-      return html`
+            return html`
               <li>
                 <img src="${server.thumbnail}" alt="${server.name} thumbnail" />
                 <div class="info">
@@ -213,7 +213,7 @@ export class CreateAccount extends LitElement {
                 >
               </li>
             `;
-    })}
+          })}
         </ul>
       </main>
     `;

@@ -1,4 +1,4 @@
-import { set } from 'idb-keyval';
+import { set, get } from 'idb-keyval';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 import { Account } from '../types/interfaces/Account';
 
@@ -18,6 +18,9 @@ export const editAccount = async (
   header: File | string
 ) => {
   const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    throw new Error('Not authenticated');
+  }
 
   const accessToken = getAccessToken();
   const server = getServer();
@@ -27,8 +30,8 @@ export const editAccount = async (
   formData.append('note', note || currentUser.note);
   formData.append('avatar', avatar || currentUser.avatar);
   formData.append('header', header || currentUser.header);
-  formData.append('locked', locked.toString() || currentUser.locked);
-  formData.append('bot', bot.toString() || currentUser.bot);
+  formData.append('locked', String(locked || currentUser.locked));
+  formData.append('bot', String(bot || currentUser.bot));
 
   const response = await fetch(
     `https://${server}/api/v1/accounts/update_credentials`,
@@ -64,7 +67,7 @@ export const checkFollowing = async (id: string) => {
     const data = await response.json();
 
     return data;
-  } catch (err) {
+  } catch {
     const server = getServer();
     if (server) {
       await initAuth(server);
@@ -74,14 +77,16 @@ export const checkFollowing = async (id: string) => {
 
 let currentUser: Account | null = null;
 
-export const getCurrentUser = async () => {
-  try {
-    if (currentUser) {
-      return currentUser;
-    }
+export const getCurrentUser = async (): Promise<Account | undefined> => {
+  // Return in-memory cached user if available
+  if (currentUser) {
+    return currentUser;
+  }
 
-    const accessToken = getAccessToken();
-    const server = getServer();
+  const accessToken = getAccessToken();
+  const server = getServer();
+
+  try {
     const response = await fetch(
       'https://' + server + '/api/v1/accounts/verify_credentials',
       {
@@ -93,18 +98,35 @@ export const getCurrentUser = async () => {
       }
     );
 
-    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
+    const data = await response.json();
     currentUser = data as Account;
 
+    // Persist to localStorage and IndexedDB for offline access
     localStorage.setItem('currentUserID', currentUser.id);
-    return data;
+    await set('currentUser', currentUser);
+
+    return currentUser;
   } catch (err) {
-    console.log(err);
-    const server = getServer();
-    if (server) {
-      // await initAuth(server);
+    console.log('[getCurrentUser] Network error, trying cache:', err);
+
+    // Try to get cached user from IndexedDB when offline
+    try {
+      const cachedUser = (await get('currentUser')) as Account | undefined;
+      if (cachedUser) {
+        console.log('[getCurrentUser] Using cached user data');
+        currentUser = cachedUser;
+        return cachedUser;
+      }
+    } catch (cacheErr) {
+      console.log('[getCurrentUser] Cache retrieval failed:', cacheErr);
     }
+
+    // No cached data available
+    return undefined;
   }
 };
 
@@ -126,26 +148,109 @@ export const unfollowUser = async (id: string) => {
   return data;
 };
 
-export const getAccount = async (id: string) => {
+// Cache key prefix for profile data
+const PROFILE_CACHE_PREFIX = 'profile_';
+
+export const getAccount = async (id: string): Promise<Account | undefined> => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getAccount?id=${id}&code=${accessToken}&server=${server}`
-  );
-  const data = await response.json();
 
-  console.log('account data', data);
-  return data;
+  try {
+    const response = await fetch(
+      `${FIREBASE_FUNCTIONS_BASE_URL}/getAccount?id=${id}&code=${accessToken}&server=${server}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('account data', data);
+
+    // Cache the profile to IndexedDB for offline access
+    if (data && data.id) {
+      await set(`${PROFILE_CACHE_PREFIX}${id}`, data);
+      console.log('[getAccount] Profile cached for offline access');
+    }
+
+    return data as Account;
+  } catch (err) {
+    console.log('[getAccount] Network error, trying cache:', err);
+
+    // Try to get cached profile from IndexedDB when offline
+    try {
+      const cachedProfile = (await get(`${PROFILE_CACHE_PREFIX}${id}`)) as
+        | Account
+        | undefined;
+      if (cachedProfile) {
+        console.log('[getAccount] Using cached profile data');
+        return cachedProfile;
+      }
+    } catch (cacheErr) {
+      console.log('[getAccount] Cache retrieval failed:', cacheErr);
+    }
+
+    // No cached data available
+    return undefined;
+  }
 };
 
-export const getUsersPosts = async (id: string) => {
+export type ProfilePostsFilter = 'posts' | 'posts_replies' | 'media';
+
+// Cache key prefix for user posts
+const USER_POSTS_CACHE_PREFIX = 'user_posts_';
+
+export const getUsersPosts = async (
+  id: string,
+  filter: ProfilePostsFilter = 'posts'
+) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getUserPosts?id=${id}&code=${accessToken}&server=${server}`
-  );
-  const data = await response.json();
-  return data;
+  const cacheKey = `${USER_POSTS_CACHE_PREFIX}${id}_${filter}`;
+
+  let url = `${FIREBASE_FUNCTIONS_BASE_URL}/getUserPosts?id=${id}&code=${accessToken}&server=${server}`;
+
+  // Apply filter parameters based on selected view
+  if (filter === 'posts') {
+    url += '&exclude_replies=true';
+  } else if (filter === 'media') {
+    url += '&only_media=true';
+  }
+  // 'posts_replies' doesn't need any extra params - returns all statuses
+
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Cache posts to IndexedDB for offline access
+    if (Array.isArray(data)) {
+      await set(cacheKey, data);
+      console.log('[getUsersPosts] Posts cached for offline access');
+    }
+
+    return data;
+  } catch (err) {
+    console.log('[getUsersPosts] Network error, trying cache:', err);
+
+    // Try to get cached posts from IndexedDB when offline
+    try {
+      const cachedPosts = await get(cacheKey);
+      if (cachedPosts) {
+        console.log('[getUsersPosts] Using cached posts data');
+        return cachedPosts;
+      }
+    } catch (cacheErr) {
+      console.log('[getUsersPosts] Cache retrieval failed:', cacheErr);
+    }
+
+    // Return empty array if no cached data
+    return [];
+  }
 };
 
 export const getUsersFollowers = async (id: string) => {

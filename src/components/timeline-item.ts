@@ -17,6 +17,7 @@ import {
 } from './timeline-renderers';
 import './report-dialog';
 import type { ReportSubmitDetail } from './report-dialog';
+import { isOnDeviceTranslationAvailable } from '../services/ai';
 
 @customElement('timeline-item')
 export class TimelineItem extends LitElement {
@@ -39,6 +40,7 @@ export class TimelineItem extends LitElement {
   @state() reportAccountId: string = '';
   @state() reportAccountAcct: string = '';
   @state() reportStatusId: string | undefined;
+  @state() isOnDeviceTranslateAvailable: boolean = false;
 
   device: 'mobile' | 'desktop' = 'mobile';
 
@@ -64,6 +66,11 @@ export class TimelineItem extends LitElement {
 
         border-radius: 12px;
         overflow: hidden;
+
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        padding: 10px;
+        width: auto;
+        padding-top: 0;
       }
 
       image-carousel {
@@ -239,12 +246,6 @@ export class TimelineItem extends LitElement {
         margin: 0;
       }
 
-      md-card {
-        width: 100%;
-        overflow-x: hidden;
-        content-visibility: auto;
-      }
-
       md-card a {
         color: var(--sl-color-secondary-700);
       }
@@ -309,6 +310,7 @@ export class TimelineItem extends LitElement {
         align-items: center;
         color: var(--primary-color);
         margin-top: 0px;
+        margin-bottom: 0px;
 
         font-size: var(--md-sys-typescale-body-medium-font-size);
         gap: 8px;
@@ -392,6 +394,7 @@ export class TimelineItem extends LitElement {
 
   async firstUpdated() {
     this.settings = await getSettings();
+    this.isOnDeviceTranslateAvailable = isOnDeviceTranslationAvailable();
   }
 
   async favorite(id: string) {
@@ -916,6 +919,7 @@ export class TimelineItem extends LitElement {
       loadingThread: this.loadingThread,
       threadExpanded: this.threadExpanded,
       threadPosts: this.threadPosts,
+      isOnDeviceTranslateAvailable: this.isOnDeviceTranslateAvailable,
     };
   }
 

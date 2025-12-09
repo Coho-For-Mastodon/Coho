@@ -1,6 +1,5 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
-import { styleMap } from 'lit/directives/style-map.js';
 import {
   checkFollowing,
   followUser,
@@ -13,6 +12,7 @@ import {
   blockUser,
   unblockUser,
   reportUser,
+  type ProfilePostsFilter,
 } from '../services/account';
 
 import '../components/timeline-item';
@@ -30,6 +30,8 @@ import type { MdTextArea } from '../components/md/md-text-area';
 import type { Account } from '../mastodon/types';
 
 import '../components/md/md-skeleton';
+import '../components/md/md-segmented-button';
+import '../components/md/md-divider';
 
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
@@ -43,10 +45,13 @@ export class AppProfile extends LitElement {
   @state() following: boolean = false;
   @state() muted: boolean = false;
   @state() blocked: boolean = false;
-  @state() showMiniProfile: boolean = false;
   @state() selectedPost: Post | undefined = undefined;
   @state() isOwnProfile: boolean = false;
   @state() showReportDialog: boolean = false;
+  @state() activeSegment: ProfilePostsFilter = 'posts';
+  @state() loadingPosts: boolean = false;
+  @state() loadingProfile: boolean = true;
+  @state() profileLoadFailed: boolean = false;
 
   @query('#preview-content') private previewContent!: HTMLElement;
   @query('#edit') private editDialog!: MdDialog;
@@ -56,18 +61,17 @@ export class AppProfile extends LitElement {
     css`
       :host {
         display: block;
-
-        overflow-y: scroll;
+        overflow-y: auto;
         height: 100vh;
+        scroll-timeline: --page-scroll block;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       md-dialog::part(base) {
         z-index: 99999;
-      }
-
-      #profile {
-        view-transition-name: profile-image;
-        contain: paint;
       }
 
       #edit-input-block {
@@ -81,334 +85,525 @@ export class AppProfile extends LitElement {
         text-decoration: none;
       }
 
+      a:hover {
+        text-decoration: underline;
+      }
+
       #edit-input-block md-text-area::part(textarea) {
         height: 200px;
       }
 
-      h3 md-skeleton {
-        width: 186px;
-        height: 22px;
-      }
-
-      #user-url md-skeleton {
-        width: 300px;
-      }
-
-      #bio-placeholder {
-        display: flex;
-        width: 60%;
-        flex-direction: column;
-        gap: 8px;
-        height: 100px;
-      }
-
-      #bio-placeholder md-skeleton {
-        height: 12px;
+      /* Banner section with scroll-driven parallax */
+      #banner {
         width: 100%;
+        height: 200px;
+        background: linear-gradient(
+          135deg,
+          var(--md-sys-color-surface-container-low) 0%,
+          var(--md-sys-color-surface-container) 50%,
+          var(--md-sys-color-surface-container-high) 100%
+        );
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        margin-top: 40px;
+        overflow: hidden;
+        view-timeline-name: --banner-timeline;
+        view-timeline-axis: block;
       }
 
-      #avatar-block md-skeleton {
-        height: -webkit-fill-available;
-        width: -webkit-fill-available;
+      #banner-img {
+        width: 100%;
+        height: 120%;
+        object-fit: cover;
+        object-position: center;
+        animation: banner-parallax linear both;
+        animation-timeline: --page-scroll;
+        animation-range: 0px 300px;
+        transform-origin: center top;
       }
 
-      sl-badge {
-        cursor: pointer;
+      @keyframes banner-parallax {
+        from {
+          transform: translateY(0) scale(1);
+          filter: brightness(1);
+        }
+        to {
+          transform: translateY(-15%) scale(1.05);
+          filter: brightness(0.85);
+        }
       }
 
-      #avatarSkel {
-        width: 80px;
-        height: 80px;
+      #banner-skeleton {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Profile header section */
+      #profile-header {
+        position: relative;
+        padding: 0 16px;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      #avatar-container {
+        position: absolute;
+        top: -64px;
+        left: 16px;
+        z-index: 10;
+      }
+
+      #avatar {
+        width: 128px;
+        height: 128px;
         border-radius: 50%;
+        border: 4px solid
+          var(--md-sys-color-surface, var(--md-sys-color-background));
+        object-fit: cover;
+        background: var(--md-sys-color-surface, var(--md-sys-color-background));
+        animation: avatar-scale linear both;
+        animation-timeline: --page-scroll;
+        animation-range: 0px 250px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        transition: box-shadow 0.3s ease;
       }
 
-      #follower-info {
-        display: flex;
-        gap: 4px;
+      #avatar:hover {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
       }
 
-      #fields {
-        display: flex;
-        overflow-x: auto;
-        margin-top: 12px;
-
-        flex-direction: row;
-        flex-wrap: wrap;
-        margin-top: 1em;
-        gap: 12px;
+      @keyframes avatar-scale {
+        0% {
+          transform: scale(1) translateY(0);
+        }
+        100% {
+          transform: scale(0.85) translateY(-8px);
+        }
       }
 
-      #mutuals {
-        color: white;
-        background: var(--sl-color-primary-600);
-        border-radius: 3px;
-        padding: 6px;
-        font-size: var(--md-sys-typescale-body-medium-font-size);
-      }
-
-      #mini-profile {
-        position: fixed;
-        top: 44px;
-        background: rgb(98 99 105 / 19%);
-        left: 15vw;
-        right: 15vw;
-        border-radius: 6px;
-        backdrop-filter: blur(40px);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px;
-
-        z-index: 100;
-
-        animation-name: slidedown;
-        animation-duration: 0.3s;
-      }
-
-      #mini-profile p {
-        padding: 8px;
-        margin: 0;
-        font-weight: bold;
-      }
-
-      #avatar-mini {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-      }
-
-      #avatar-mini img {
-        height: 40px;
+      #avatar-skeleton {
+        width: 128px;
+        height: 128px;
         border-radius: 50%;
-        border: solid 2px var(--sl-color-primary-600);
+        border: 4px solid
+          var(--md-sys-color-surface, var(--md-sys-color-background));
       }
 
-      .field-name {
-        font-weight: bold;
-        margin-right: 4px;
-        border-right: solid white 2px;
-        padding-right: 6px;
-      }
-
-      .field-value a {
-        max-width: 12em;
-        overflow-x: hidden;
-        display: block;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-
-      main {
-        padding-top: 60px;
-        display: grid;
-        gap: 14px;
-        grid-template-columns: auto;
-        padding-left: 22vw;
-        padding-right: 22vw;
-      }
-
-      #profile-card-actions {
-        margin-top: 2em;
-        gap: 4px;
-
+      /* Actions row (follow button, etc.) */
+      #actions-row {
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        flex-direction: row;
+        padding: 12px 0;
+        gap: 8px;
+        min-height: 68px;
       }
 
-      #unfollow::part(control) {
-        background: indianred;
+      #actions-row md-button {
+        font-weight: 700;
+        min-width: 100px;
       }
 
-      #profile-card-actions sl-button::part(base) {
-        width: 110px;
+      /* Profile info */
+      #profile-info {
+        padding: 0 0 16px 0;
+      }
+
+      #display-name {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0;
+        color: var(--md-sys-color-on-surface);
+        line-height: 1.2;
+      }
+
+      #display-name-skeleton {
+        height: 24px;
+        width: 180px;
+        margin-bottom: 4px;
+      }
+
+      #handle {
+        font-size: 15px;
+        color: var(--md-sys-color-on-surface-variant);
+        margin: 2px 0 12px 0;
+      }
+
+      #handle-skeleton {
+        height: 18px;
+        width: 140px;
+      }
+
+      #bio {
+        font-size: 15px;
+        line-height: 1.4;
+        color: var(--md-sys-color-on-surface);
+        margin: 12px 0;
+        word-wrap: break-word;
+      }
+
+      #bio a {
+        color: var(--md-sys-color-primary);
+      }
+
+      #bio-skeleton {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 12px 0;
+      }
+
+      #bio-skeleton md-skeleton {
+        height: 16px;
+      }
+
+      #bio-skeleton md-skeleton:first-child {
+        width: 100%;
+      }
+
+      #bio-skeleton md-skeleton:nth-child(2) {
+        width: 90%;
+      }
+
+      #bio-skeleton md-skeleton:last-child {
+        width: 60%;
+      }
+
+      /* Stats row */
+      #stats-row {
+        display: flex;
+        gap: 20px;
+        margin: 12px 0;
+      }
+
+      .stat {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+      }
+
+      .stat:hover {
+        opacity: 0.8;
+      }
+
+      .stat-count {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: var(--md-sys-color-on-surface-variant);
+      }
+
+      /* Mutuals badge */
+      #mutuals-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      /* Fields section */
+      #fields {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--md-sys-color-outline-variant);
+      }
+
+      .field-row {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .field-name {
+        font-size: 13px;
+        color: var(--md-sys-color-on-surface-variant);
+        font-weight: 500;
+      }
+
+      .field-value {
+        font-size: 15px;
+        color: var(--md-sys-color-on-surface);
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .field-value a {
+        color: var(--md-sys-color-primary);
+        text-decoration: none;
+      }
+
+      .field-value a:hover {
+        text-decoration: underline;
+      }
+
+      #fields img {
+        height: 18px;
+        vertical-align: middle;
+      }
+
+      /* Tabs section */
+      #tabs-container {
+        border-top: 1px solid var(--md-sys-color-outline-variant);
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 0 16px;
+        padding-top: 16px !important;
+
+        margin-top: 1em;
+        margin-bottom: 2em;
+      }
+
+      md-segmented-button {
+        width: 100%;
+        margin: 0;
+      }
+
+      /* Posts list */
+      #posts-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 0 16px;
       }
 
       ul {
         display: flex;
         flex-direction: column;
-        margin: 0px;
-        padding: 0px;
+        margin: 0;
+        padding: 0;
         list-style: none;
-        overflow: hidden scroll;
-
-        border-radius: 6px;
       }
 
-      #profile {
-        padding-top: 0;
-        border-radius: 6px;
+      ul li {
+        border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      }
 
+      .posts-loading {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      /* Responsive */
+      @media (min-width: 640px) {
+        #banner {
+          height: 420px;
+        }
+
+        #banner-img {
+          animation-range: 0px 450px;
+        }
+
+        #avatar {
+          width: 134px;
+          height: 134px;
+          animation-range: 0px 400px;
+        }
+
+        #avatar-skeleton {
+          width: 134px;
+          height: 134px;
+        }
+
+        #avatar-container {
+          top: -67px;
+        }
+
+        #display-name {
+          font-size: 22px;
+        }
+
+        #tabs-container {
+          animation-range: 350px 550px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        #profile-header {
+          padding: 0 12px;
+        }
+
+        #avatar-container {
+          left: 12px;
+          top: -50px;
+        }
+
+        #avatar {
+          width: 100px;
+          height: 100px;
+        }
+
+        #avatar-skeleton {
+          width: 100px;
+          height: 100px;
+        }
+
+        #actions-row {
+          min-height: 54px;
+        }
+
+        #tabs-container,
+        #posts-container {
+          padding: 0 12px;
+        }
+
+        #display-name {
+          font-size: 18px;
+        }
+
+        #handle,
+        #bio {
+          font-size: 14px;
+        }
+      }
+
+      /* Scroll-driven animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      #profile-info {
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      /* Stats row scroll animation */
+      #stats-row {
+        animation: stats-reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 100%;
+      }
+
+      @keyframes stats-reveal {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* Posts list staggered reveal */
+      ul li {
+        animation: post-reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 40%;
+      }
+
+      @keyframes post-reveal {
+        from {
+          opacity: 0;
+          transform: translateY(30px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      /* Tabs container scroll effect */
+      #tabs-container {
+        animation: tabs-sticky linear both;
+        animation-timeline: --page-scroll;
+        animation-range: 200px 400px;
+      }
+
+      @keyframes tabs-sticky {
+        from {
+          background: transparent;
+        }
+        to {
+          background: color-mix(
+            in srgb,
+            var(--md-sys-color-surface) 90%,
+            transparent
+          );
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+      }
+
+      /* Fallback for browsers without scroll-driven animation support */
+      @supports not (animation-timeline: scroll()) {
+        #banner-img {
+          animation: none;
+          height: 100%;
+          transform: none;
+        }
+
+        #avatar {
+          animation: none;
+          transform: none;
+        }
+
+        #stats-row {
+          animation: none;
+          opacity: 1;
+          transform: none;
+        }
+
+        ul li {
+          animation: none;
+          opacity: 1;
+          transform: none;
+        }
+
+        #tabs-container {
+          animation: none;
+        }
+      }
+
+      /* Offline fallback */
+      #offline-message {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-
-        // animation-name: slideup;
-        // animation-duration: 0.3s;
-      }
-
-      #fake-profile {
-        padding: 12px;
-        padding-top: 0;
-        border-radius: 6px;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        height: 400px;
-      }
-
-      #fake-profile md-skeleton {
-        display: block;
-        height: 400px;
-      }
-
-      #username-block {
-        display: flex;
         align-items: center;
-        gap: 14px;
-        margin-top: 8px;
+        justify-content: center;
+        padding: 48px 24px;
+        text-align: center;
+        gap: 16px;
+        margin-top: 60px;
       }
 
-      #profile #avatar-block img {
-        height: 5em;
-        border: solid var(--sl-color-primary-600) 4px;
-        position: relative;
-        top: 6px;
-        right: 2px;
-        width: 5em;
-        border-radius: 4px;
-        object-fit: cover;
+      #offline-message md-icon {
+        font-size: 48px;
+        color: var(--md-sys-color-on-surface-variant);
       }
 
-      #fields sl-badge span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 400px;
+      #offline-message h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface);
       }
 
-      #fields img {
-        height: 22px;
-      }
-
-      #profile-top {
-        padding: 0px;
-        padding-left: 8px;
-        padding-right: 8px;
-        padding-bottom: 8px;
-        padding-top: 8px;
-        border-radius: 4px;
-
-        background: rgb(32 32 35);
-
-        overflow-x: hidden;
-        text-overflow: ellipsis;
-
-        min-height: 587px;
-      }
-
-      #avatar-block {
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: cover;
-        padding: 6px;
-        border-radius: 4px;
-        height: 280px;
-
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: flex-end;
-        padding-bottom: 10px;
-      }
-
-      #profile-top h3 {
-        margin-bottom: 0;
-        margin-top: 0;
-      }
-
-      #profile-top p {
-        color: white;
-        font-size: var(--md-sys-typescale-body-large-font-size);
-      }
-
-      #user-url {
-        margin-top: 4px;
-        font-size: var(--md-sys-typescale-body-small-font-size);
-      }
-
-      @media (min-width: 1250px) {
-        main {
-          padding-left: 26vw;
-          padding-right: 26vw;
-        }
-
-        #mini-profile {
-          left: 26vw;
-          right: 26vw;
-        }
-      }
-
-      @media (max-width: 820px) {
-        main {
-          display: flex;
-          flex-direction: column;
-
-          padding-left: 10px;
-          padding-right: 10px;
-          padding-top: 60px;
-        }
-
-        ul {
-          height: initial;
-        }
-
-        #mini-profile {
-          right: 14px;
-          left: 14px;
-          bottom: 10px;
-          top: initial;
-
-          animation-name: slideup;
-          animation-duration: 0.3s;
-        }
-      }
-
-      @media (prefers-color-scheme: light) {
-        #profile-top {
-          background: white;
-          color: black;
-        }
-
-        #profile-top p {
-          color: black;
-        }
-      }
-
-      @keyframes slideup {
-        from {
-          transform: translateY(30%);
-          opacity: 0;
-        }
-
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      @keyframes slidedown {
-        from {
-          transform: translateY(-100%);
-          opacity: 0;
-        }
-
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
+      #offline-message p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--md-sys-color-on-surface-variant);
+        max-width: 300px;
       }
     `,
   ];
@@ -423,57 +618,48 @@ export class AppProfile extends LitElement {
       const currentUserID = localStorage.getItem('currentUserID');
       this.isOwnProfile = currentUserID === id;
 
+      this.loadingProfile = true;
+      this.profileLoadFailed = false;
+
       const accountData = await getAccount(id);
       console.log(accountData);
-      this.user = accountData;
+
+      if (accountData) {
+        this.user = accountData;
+      } else {
+        // Profile couldn't be loaded (offline with no cache)
+        this.profileLoadFailed = true;
+        this.loadingProfile = false;
+        return;
+      }
 
       const postsData = await getUsersPosts(id);
       console.log(postsData);
 
-      this.posts = postsData;
+      this.posts = Array.isArray(postsData) ? postsData : [];
+      this.loadingProfile = false;
 
       // Only check follow status if not viewing own profile
       if (!this.isOwnProfile) {
-        const followCheck = await checkFollowing(id);
-        console.log('followCheck', followCheck);
-        this.followed = followCheck[0].following;
+        try {
+          const followCheck = await checkFollowing(id);
+          console.log('followCheck', followCheck);
+          if (Array.isArray(followCheck) && followCheck[0]) {
+            this.followed = followCheck[0].following;
+          }
 
-        const followedCheck = await isFollowingMe(id);
-        console.log('followedCheck', followedCheck);
-        this.following = followedCheck[0].followed_by;
-        this.muted = followedCheck[0].muting;
-        this.blocked = followedCheck[0].blocking;
+          const followedCheck = await isFollowingMe(id);
+          console.log('followedCheck', followedCheck);
+          if (Array.isArray(followedCheck) && followCheck[0]) {
+            this.following = followedCheck[0].followed_by;
+            this.muted = followedCheck[0].muting;
+            this.blocked = followedCheck[0].blocking;
+          }
+        } catch (error) {
+          console.log('Error checking follow status:', error);
+        }
       }
     }
-
-    window.requestIdleCallback(() => {
-      // set up intersection observer
-      const options = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.8,
-      };
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          console.log('entry', entry);
-          if (entry.isIntersecting) {
-            console.log('intersecting', entry);
-
-            window.requestIdleCallback(async () => {
-              this.showMiniProfile = false;
-            });
-          } else {
-            this.showMiniProfile = true;
-          }
-        });
-      }, options);
-
-      // get second child element of postsList
-      const profileDiv = this.shadowRoot?.getElementById('profile');
-
-      observer.observe(profileDiv!);
-    });
   }
 
   async follow() {
@@ -483,10 +669,21 @@ export class AppProfile extends LitElement {
   }
 
   async reloadPosts() {
-    const postsData = await getUsersPosts(this.id);
+    if (!this.user) return;
+    this.loadingPosts = true;
+    const postsData = await getUsersPosts(this.user.id, this.activeSegment);
     console.log(postsData);
 
     this.posts = postsData;
+    this.loadingPosts = false;
+  }
+
+  async handleSegmentChange(e: CustomEvent<{ value: string }>) {
+    const newSegment = e.detail.value as ProfilePostsFilter;
+    if (newSegment === this.activeSegment) return;
+
+    this.activeSegment = newSegment;
+    await this.reloadPosts();
   }
 
   async unfollow() {
@@ -565,7 +762,37 @@ export class AppProfile extends LitElement {
     this.editDialog?.hide();
   }
 
+  private goToFollowers() {
+    if (this.user) {
+      window.location.href = `/followers?id=${this.user.id}`;
+    }
+  }
+
+  private goToFollowing() {
+    if (this.user) {
+      window.location.href = `/following?id=${this.user.id}`;
+    }
+  }
+
   render() {
+    // Show offline fallback if profile couldn't be loaded
+    if (this.profileLoadFailed) {
+      return html`
+        <app-header ?enableBack="${true}"></app-header>
+        <div id="offline-message">
+          <md-icon name="cloud-offline"></md-icon>
+          <h2>Profile unavailable</h2>
+          <p>
+            This profile hasn't been viewed before and can't be loaded while
+            offline.
+          </p>
+          <md-button variant="filled" @click="${() => window.location.reload()}"
+            >Try again</md-button
+          >
+        </div>
+      `;
+    }
+
     return html`
       <app-header ?enableBack="${true}"></app-header>
 
@@ -579,189 +806,186 @@ export class AppProfile extends LitElement {
         </div>
       </md-dialog>
 
-      <main>
-        <div id="profile">
-          <div id="profile-top">
-            ${this.user
-        ? html`
-                  <div
-                    id="avatar-block"
-                    style=${styleMap({
-          backgroundImage: `url(${this.user.header})`,
-        })}
-                  >
-                    <img src="${this.user.avatar}" />
-                  </div>
-                `
-        : html`<div id="avatar-block"><md-skeleton></md-skeleton></div>`}
-            <div id="username-block">
-              <h3>
-                ${this.user
-        ? this.user.display_name
-        : html`<md-skeleton></md-skeleton>`}
-              </h3>
-            </div>
+      <!-- Banner -->
+      <div id="banner">
+        ${this.user?.header
+          ? html`<img
+              id="banner-img"
+              src="${this.user.header}"
+              alt="Profile banner"
+            />`
+          : html`<md-skeleton id="banner-skeleton"></md-skeleton>`}
+      </div>
 
-            <p id="user-url">
-              ${this.user ? this.user.url : html`<md-skeleton></md-skeleton>`}
-            </p>
-
-            ${this.user && this.user.note
-        ? html`
-                  <div .innerHTML=${this.user ? this.user.note : ''}></div>
-                `
-        : html`
-                  <div id="bio-placeholder">
-                    <md-skeleton></md-skeleton>
-                    <md-skeleton></md-skeleton>
-                    <md-skeleton></md-skeleton>
-                  </div>
-                `}
-
-            <div id="follower-info">
-              <md-badge variant="filled"
-                >${this.user ? this.user.followers_count : 0}
-                followers</md-badge
-              >
-              <md-badge variant="filled"
-                >${this.user ? this.user.following_count : 0}
-                following</md-badge
-              >
-            </div>
-
-            <div id="fields">
-              ${this.user
-        ? this.user.fields.map(
-          (field) => html`
-                      <div>
-                        <md-badge variant="outlined">
-                          <span
-                            class="field-name"
-                            .innerHTML="${field.name}"
-                          ></span>
-                          <span
-                            class="field-value"
-                            .innerHTML="${field.value}"
-                          ></span>
-                        </md-badge>
-                      </div>
-                    `
-        )
-        : null}
-            </div>
-
-            <div id="profile-card-actions">
-              ${!this.isOwnProfile
-        ? html`
-                    ${this.followed && this.following
-            ? html`<md-button
-                          variant="filled"
-                          id="unfollow"
-                          @click="${() => this.unfollow()}"
-                          >Mutuals</md-button
-                        >`
-            : this.followed
-              ? html`<md-button
-                            id="unfollow"
-                            @click="${() => this.unfollow()}"
-                            variant="filled"
-                            pill
-                            >Unfollow</md-button
-                          >`
-              : html`<md-button
-                            pill
-                            variant="filled"
-                            @click="${() => this.follow()}"
-                            >Follow</md-button
-                          >`}
-                    <md-dropdown placement="bottom-end">
-                      <md-icon-button
-                        slot="trigger"
-                        name="ellipsis-vertical"
-                        label="More options"
-                      ></md-icon-button>
-                      <md-menu>
-                        ${this.muted
-            ? html`<md-menu-item @click="${() => this.unmute()}">
-                              <md-icon
-                                slot="prefix"
-                                name="volume-mute"
-                              ></md-icon>
-                              Unmute @${this.user?.acct}
-                            </md-menu-item>`
-            : html`<md-menu-item @click="${() => this.mute()}">
-                              <md-icon
-                                slot="prefix"
-                                name="volume-mute"
-                              ></md-icon>
-                              Mute @${this.user?.acct}
-                            </md-menu-item>`}
-                        ${this.blocked
-            ? html`<md-menu-item @click="${() => this.unblock()}">
-                              <md-icon slot="prefix" name="ban"></md-icon>
-                              Unblock @${this.user?.acct}
-                            </md-menu-item>`
-            : html`<md-menu-item @click="${() => this.block()}">
-                              <md-icon slot="prefix" name="ban"></md-icon>
-                              Block @${this.user?.acct}
-                            </md-menu-item>`}
-                        <md-menu-item @click="${() => this.openReportDialog()}">
-                          <md-icon slot="prefix" name="flag"></md-icon>
-                          Report @${this.user?.acct}
-                        </md-menu-item>
-                      </md-menu>
-                    </md-dropdown>
-                  `
-        : null}
-            </div>
-          </div>
+      <!-- Profile Header -->
+      <div id="profile-header">
+        <!-- Avatar (overlapping banner) -->
+        <div id="avatar-container">
+          ${this.user?.avatar
+            ? html`<img
+                id="avatar"
+                src="${this.user.avatar}"
+                alt="${this.user.display_name}'s avatar"
+              />`
+            : html`<md-skeleton id="avatar-skeleton"></md-skeleton>`}
         </div>
 
-        ${this.showMiniProfile && this.user
-        ? html`
-              <div id="mini-profile">
-                <div id="avatar-mini">
-                  <img src="${this.user.avatar}" />
+        <!-- Actions row (follow, menu) -->
+        <div id="actions-row">
+          ${!this.isOwnProfile && this.user
+            ? html`
+                ${this.followed
+                  ? html`<md-button
+                      variant="outlined"
+                      @click="${() => this.unfollow()}"
+                      >Following</md-button
+                    >`
+                  : html`<md-button
+                      variant="filled"
+                      @click="${() => this.follow()}"
+                      >Follow</md-button
+                    >`}
+                <md-dropdown placement="bottom-end">
+                  <md-icon-button
+                    slot="trigger"
+                    name="ellipsis-vertical"
+                    label="More options"
+                  ></md-icon-button>
+                  <md-menu>
+                    ${this.muted
+                      ? html`<md-menu-item @click="${() => this.unmute()}">
+                          <md-icon slot="prefix" name="volume-mute"></md-icon>
+                          Unmute @${this.user?.acct}
+                        </md-menu-item>`
+                      : html`<md-menu-item @click="${() => this.mute()}">
+                          <md-icon slot="prefix" name="volume-mute"></md-icon>
+                          Mute @${this.user?.acct}
+                        </md-menu-item>`}
+                    ${this.blocked
+                      ? html`<md-menu-item @click="${() => this.unblock()}">
+                          <md-icon slot="prefix" name="ban"></md-icon>
+                          Unblock @${this.user?.acct}
+                        </md-menu-item>`
+                      : html`<md-menu-item @click="${() => this.block()}">
+                          <md-icon slot="prefix" name="ban"></md-icon>
+                          Block @${this.user?.acct}
+                        </md-menu-item>`}
+                    <md-menu-item @click="${() => this.openReportDialog()}">
+                      <md-icon slot="prefix" name="flag"></md-icon>
+                      Report @${this.user?.acct}
+                    </md-menu-item>
+                  </md-menu>
+                </md-dropdown>
+              `
+            : null}
+        </div>
 
-                  <p>${this.user.display_name}</p>
+        <!-- Profile Info -->
+        <div id="profile-info">
+          ${this.user
+            ? html`
+                <h1 id="display-name">${this.user.display_name}</h1>
+                <p id="handle">@${this.user.acct}</p>
+
+                ${this.followed && this.following
+                  ? html`<span id="mutuals-badge">
+                      <md-icon name="people" style="font-size: 14px;"></md-icon>
+                      Mutuals
+                    </span>`
+                  : null}
+                ${this.user.note
+                  ? html`<div id="bio" .innerHTML=${this.user.note}></div>`
+                  : null}
+
+                <div id="stats-row">
+                  <span class="stat" @click="${() => this.goToFollowing()}">
+                    <span class="stat-count"
+                      >${(
+                        this.user.following_count ?? 0
+                      ).toLocaleString()}</span
+                    >
+                    <span class="stat-label">Following</span>
+                  </span>
+                  <span class="stat" @click="${() => this.goToFollowers()}">
+                    <span class="stat-count"
+                      >${(
+                        this.user.followers_count ?? 0
+                      ).toLocaleString()}</span
+                    >
+                    <span class="stat-label">Followers</span>
+                  </span>
                 </div>
 
-                ${!this.isOwnProfile
-            ? this.followed
-              ? html`<md-button pill disabled>Following</md-button>`
-              : html`<md-button
-                        pill
-                        variant="filled"
-                        @click="${() => this.follow()}"
-                        >Follow</md-button
-                      >`
-            : null}
-              </div>
-            `
-        : null}
+                ${this.user.fields && this.user.fields.length > 0
+                  ? html`
+                      <div id="fields">
+                        ${this.user.fields.map(
+                          (field) => html`
+                            <div class="field-row">
+                              <span
+                                class="field-name"
+                                .innerHTML="${field.name}"
+                              ></span>
+                              <span
+                                class="field-value"
+                                .innerHTML="${field.value}"
+                              ></span>
+                            </div>
+                          `
+                        )}
+                      </div>
+                    `
+                  : null}
+              `
+            : html`
+                <md-skeleton id="display-name-skeleton"></md-skeleton>
+                <md-skeleton id="handle-skeleton"></md-skeleton>
+                <div id="bio-skeleton">
+                  <md-skeleton></md-skeleton>
+                  <md-skeleton></md-skeleton>
+                  <md-skeleton></md-skeleton>
+                </div>
+              `}
+        </div>
+      </div>
 
-        <ul class="scrollbar-hidden">
+      <!-- Tabs -->
+      <div id="tabs-container">
+        <md-segmented-button
+          .value="${this.activeSegment}"
+          @segment-change="${(e: CustomEvent) => this.handleSegmentChange(e)}"
+        >
+          <md-segment value="posts">Posts</md-segment>
+          <md-segment value="posts_replies">Replies</md-segment>
+          <md-segment value="media">Media</md-segment>
+        </md-segmented-button>
+      </div>
+
+      <!-- Posts -->
+      <div id="posts-container">
+        <ul class="${this.loadingPosts ? 'posts-loading' : ''}">
           ${this.posts.map(
-          (post) => html`
+            (post) => html`
               <li>
                 <timeline-item
-                  @edit="${(e: CustomEvent<{ tweet: Post }>) => this.editPost(e.detail.tweet)}"
+                  @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                    this.editPost(e.detail.tweet)}"
                   @delete="${() => this.reloadPosts()}"
                   .tweet=${post}
                 ></timeline-item>
               </li>
             `
-        )}
+          )}
         </ul>
+      </div>
 
-        <report-dialog
-          .open=${this.showReportDialog}
-          .accountId=${this.user?.id || ''}
-          .accountAcct=${this.user?.acct || ''}
-          @report-submit=${this.handleReportSubmit}
-          @report-cancel=${this.handleReportCancel}
-        ></report-dialog>
-      </main>
+      <report-dialog
+        .open=${this.showReportDialog}
+        .accountId=${this.user?.id || ''}
+        .accountAcct=${this.user?.acct || ''}
+        @report-submit=${this.handleReportSubmit}
+        @report-cancel=${this.handleReportCancel}
+      ></report-dialog>
     `;
   }
 }

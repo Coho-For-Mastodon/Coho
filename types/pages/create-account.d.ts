@@ -24,7 +24,7 @@ export declare class CreateAccount extends LitElement {
     registered: boolean;
     filledValues: string[];
     static styles: import("lit").CSSResult[];
-    protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): Promise<void>;
+    protected firstUpdated(_changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>): Promise<void>;
     startRegister(serverInfo: ServerInfo): void;
     doRegister(): Promise<void>;
     registerInputChange(id: string): void;
