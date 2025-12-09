@@ -11,6 +11,7 @@ import './md/md-select.js';
 import './md/md-option.js';
 import './media-edit-dialog.js';
 import './md/md-skeleton.js';
+import './handwriting-dialog.js';
 
 import type { MdDialog } from './md/md-dialog.js';
 import type { MdTextArea } from './md/md-text-area.js';
@@ -31,6 +32,7 @@ import {
   isProofreaderAvailable,
   isAudioTranscriptionAvailable,
   transcribeAudio,
+  isHandwritingRecognitionAvailable,
 } from '../services/ai';
 import { showInfoToast } from '../utils/optimistic-updates';
 
@@ -78,6 +80,10 @@ export class PostDialog extends LitElement {
   @state() isRecording: boolean = false;
   @state() isTranscribing: boolean = false;
   @state() speechToTextAvailable: boolean = false;
+
+  // Handwriting recognition state
+  @state() handwritingAvailable: boolean = false;
+  @state() handwritingDialogOpen: boolean = false;
 
   aiBlob: Blob | undefined;
 
@@ -455,6 +461,16 @@ export class PostDialog extends LitElement {
         border-radius: 50%;
       }
 
+      .pen-button {
+        --md-icon-button-icon-size: 18px;
+        opacity: 0.6;
+        transition: opacity 0.2s ease;
+      }
+
+      .pen-button:hover {
+        opacity: 1;
+      }
+
       @keyframes recording-pulse {
         0%,
         100% {
@@ -502,9 +518,18 @@ export class PostDialog extends LitElement {
 
     // Check if speech-to-text is available
     this.speechToTextAvailable = isAudioTranscriptionAvailable();
+
+    // Check if handwriting recognition is available
+    this.handwritingAvailable = await isHandwritingRecognitionAvailable();
   }
 
   public async openNewDialog() {
+    // Ensure the component's shadow DOM is ready
+    await this.updateComplete;
+
+    // Wait for the dialog custom element to be defined
+    await customElements.whenDefined('md-dialog');
+
     this.notifyDialog?.show();
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -964,6 +989,34 @@ export class PostDialog extends LitElement {
     this.sensitive = !this.sensitive;
   }
 
+  openHandwritingDialog() {
+    this.handwritingDialogOpen = true;
+  }
+
+  handleHandwritingComplete(e: CustomEvent<{ text: string }>) {
+    const recognizedText = e.detail.text;
+
+    if (recognizedText && this.postTextArea) {
+      const currentText = this.postTextArea.value;
+      // Append to existing text with a space separator
+      if (currentText.trim().length > 0) {
+        this.postTextArea.value = currentText + ' ' + recognizedText;
+      } else {
+        this.postTextArea.value = recognizedText;
+      }
+
+      // Update character count and status
+      this.charCount = this.postTextArea.value.length;
+      this.hasStatus = this.postTextArea.value.length > 0;
+    }
+
+    this.handwritingDialogOpen = false;
+  }
+
+  handleHandwritingClose() {
+    this.handwritingDialogOpen = false;
+  }
+
   openEditDialog(attachment: LocalAttachment) {
     this.activeAttachment = attachment;
     this.editDialogOpen = true;
@@ -1104,6 +1157,17 @@ export class PostDialog extends LitElement {
                   ></md-icon-button>
                 `
               : null}
+            ${this.handwritingAvailable
+              ? html`
+                  <md-icon-button
+                    class="pen-button"
+                    label="Handwriting input"
+                    src="/assets/brush-outline.svg"
+                    @click="${() => this.openHandwritingDialog()}"
+                    title="On-device AI"
+                  ></md-icon-button>
+                `
+              : null}
           </div>
         </div>
         ${this.sensitive
@@ -1235,6 +1299,12 @@ export class PostDialog extends LitElement {
         }}"
         @save="${this.handleMediaSave}"
       ></media-edit-dialog>
+
+      <handwriting-dialog
+        .open="${this.handwritingDialogOpen}"
+        @handwriting-complete="${this.handleHandwritingComplete}"
+        @close="${() => this.handleHandwritingClose()}"
+      ></handwriting-dialog>
     `;
   }
 }

@@ -81,6 +81,7 @@ export class AppHome extends LitElement {
   @state() favoritesLoaded: boolean = false;
   @state() notificationsLoaded: boolean = false;
   @state() searchLoaded: boolean = false;
+  @state() messagesLoaded: boolean = false;
 
   // Lazy loading states for drawer components
   @state() appThemeLoaded: boolean = false;
@@ -858,22 +859,25 @@ export class AppHome extends LitElement {
       // Preload the component for the requested tab
       switch (tabData) {
         case 'bookmarks':
-          this.loadBookmarks();
+          await this.loadBookmarks();
           break;
         case 'faves':
-          this.loadFavorites();
+          await this.loadFavorites();
           break;
         case 'notifications':
-          this.loadNotifications();
+          await this.loadNotifications();
           break;
         case 'search':
-          this.loadSearch();
+          await this.loadSearch();
+          break;
+        case 'messages':
+          await this.loadMessages();
           break;
       }
 
-      setTimeout(() => {
-        this.openATab(tabData);
-      }, 1000);
+      // Wait for the component to be ready before switching tabs
+      await this.updateComplete;
+      this.openATab(tabData);
     }
 
     window.requestIdleCallback(async () => {
@@ -964,9 +968,18 @@ export class AppHome extends LitElement {
     // if on desktop, open the dialog
     // if (window.innerWidth > 600) {
     await import('../components/post-dialog');
-    // const dialog = this.shadowRoot?.getElementById('notify-dialog') as any;
-    // dialog.show();
-    this.postDialog?.openNewDialog();
+
+    // Wait for the custom element to be defined and upgraded
+    await customElements.whenDefined('post-dialog');
+
+    // Wait for Lit to update the DOM with the upgraded element
+    await this.updateComplete;
+
+    // Wait for the post-dialog's own shadow DOM to render
+    if (this.postDialog) {
+      await this.postDialog.updateComplete;
+      this.postDialog.openNewDialog();
+    }
     // }
     // else {
     //   const drawer = this.shadowRoot?.getElementById('reply-drawer') as any;
@@ -1213,6 +1226,13 @@ export class AppHome extends LitElement {
     }
   }
 
+  async loadMessages() {
+    if (!this.messagesLoaded) {
+      await import('./app-messages');
+      this.messagesLoaded = true;
+    }
+  }
+
   // Lazy loading methods for drawer components
   async loadAppTheme() {
     if (!this.appThemeLoaded) {
@@ -1257,6 +1277,9 @@ export class AppHome extends LitElement {
         break;
       case 'search':
         await this.loadSearch();
+        break;
+      case 'messages':
+        await this.loadMessages();
         break;
     }
   }
@@ -1576,7 +1599,9 @@ export class AppHome extends LitElement {
             <app-timeline timelineType="media"></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="messages">
-            <app-messages></app-messages>
+            ${this.messagesLoaded
+              ? html`<app-messages></app-messages>`
+              : nothing}
           </md-tab-panel>
           <md-tab-panel name="custom">
             <app-timeline timelineType="public"></app-timeline>

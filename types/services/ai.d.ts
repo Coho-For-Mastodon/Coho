@@ -1,9 +1,15 @@
-export declare const requestMammothBot: (prompt: string, previousMessages: {
+export declare const requestMammothBot: (
+  prompt: string,
+  previousMessages: {
     role: string;
     content: string;
-}[]) => Promise<any>;
+  }[]
+) => Promise<any>;
 export declare const summarize: (prompt: string) => Promise<any>;
-export declare const translate: (prompt: string, language?: string) => Promise<any>;
+export declare const translate: (
+  prompt: string,
+  language?: string
+) => Promise<any>;
 export declare const createAPost: (prompt: string) => Promise<any>;
 export declare const createImage: (prompt: string) => Promise<any>;
 /**
@@ -14,7 +20,9 @@ export declare const isProofreaderAvailable: () => Promise<boolean>;
  * Proofread text using Chrome's on-device AI Proofreader API
  * Returns corrections for grammar, spelling, and punctuation errors
  */
-export declare const proofread: (text: string) => Promise<ProofreadResult | null>;
+export declare const proofread: (
+  text: string
+) => Promise<ProofreadResult | null>;
 /**
  * Check if Chrome's Prompt API (LanguageModel) is available
  */
@@ -24,11 +32,40 @@ export declare const isPromptAPIAvailable: () => boolean;
  * @param imageSource - URL string or Blob of the image
  * @returns Generated alt text or null if generation fails
  */
-export declare const generateAltText: (imageSource: string | Blob) => Promise<string | null>;
+export declare const generateAltText: (
+  imageSource: string | Blob
+) => Promise<string | null>;
 /**
- * Check if audio transcription via LanguageModel is available
+ * Check if audio transcription is available
+ * Returns true if either Prompt API or transformers.js fallback is available
  */
 export declare const isAudioTranscriptionAvailable: () => boolean;
+/**
+ * Get the audio transcription method available
+ * Returns 'prompt-api' | 'transformers'
+ */
+export declare const getAudioTranscriptionMethod: () =>
+  | 'prompt-api'
+  | 'transformers';
+/**
+ * Check if handwriting recognition is available (via Prompt API or Tesseract fallback)
+ * Returns 'prompt-api' | 'tesseract' | false
+ */
+export declare const getHandwritingRecognitionMethod: () => Promise<
+  'prompt-api' | 'tesseract' | false
+>;
+/**
+ * Check if handwriting recognition is available (any method)
+ */
+export declare const isHandwritingRecognitionAvailable: () => Promise<boolean>;
+/**
+ * Recognize handwritten text from a canvas using Chrome's on-device Prompt API
+ * @param canvas - HTMLCanvasElement containing the handwritten content
+ * @returns Recognized text or null if recognition fails
+ */
+export declare const recognizeHandwriting: (
+  canvas: HTMLCanvasElement
+) => Promise<string | null>;
 /**
  * Check if on-device translation is available via Chrome's Translator API
  */
@@ -38,8 +75,10 @@ export declare const isOnDeviceTranslationAvailable: () => boolean;
  */
 export declare const isOnDeviceSummarizationAvailable: () => boolean;
 /**
- * Transcribe audio using Chrome's on-device Prompt API (LanguageModel)
+ * Transcribe audio using Chrome's on-device Prompt API with transformers.js fallback
  * @param audioBlob - Blob containing audio data
  * @returns Transcribed text or null if transcription fails
  */
-export declare const transcribeAudio: (audioBlob: Blob) => Promise<string | null>;
+export declare const transcribeAudio: (
+  audioBlob: Blob
+) => Promise<string | null>;

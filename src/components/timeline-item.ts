@@ -50,9 +50,16 @@ export class TimelineItem extends LitElement {
         display: block;
 
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
 
         margin-bottom: 0;
         -webkit-tap-highlight-color: transparent;
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       md-card {
@@ -71,6 +78,8 @@ export class TimelineItem extends LitElement {
         padding: 10px;
         width: auto;
         padding-top: 0;
+
+        overflow-x: hidden;
       }
 
       image-carousel {
@@ -300,7 +309,9 @@ export class TimelineItem extends LitElement {
 
       .replyCard {
         margin-left: 15px;
-        width: 96%;
+        width: calc(100% - 15px);
+        max-width: calc(100% - 15px);
+        min-width: 0;
       }
 
       #reply-to {
@@ -321,10 +332,25 @@ export class TimelineItem extends LitElement {
         padding-left: 20px;
         border-left: 3px solid var(--sl-color-primary-600);
         margin-top: 8px;
+        min-width: 0;
       }
 
       .thread-continuation md-card {
         margin-bottom: 8px;
+        min-width: 0;
+      }
+
+      /* Ensure content in cards doesn't overflow */
+      md-card {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      md-card div {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        min-width: 0;
       }
 
       .thread-line {

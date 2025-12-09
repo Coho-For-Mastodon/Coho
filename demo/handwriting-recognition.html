@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Handwriting Recognition Demo - Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg-primary: #0a0a0f;
+        --bg-secondary: #12121a;
+        --bg-tertiary: #1a1a24;
+        --accent: #6366f1;
+        --accent-glow: rgba(99, 102, 241, 0.3);
+        --accent-orange: #f97316;
+        --accent-orange-glow: rgba(249, 115, 22, 0.3);
+        --text-primary: #f4f4f5;
+        --text-secondary: #a1a1aa;
+        --border: #27272a;
+        --success: #22c55e;
+        --error: #ef4444;
+      }
+
+      body {
+        font-family: 'Instrument Sans', sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem;
+        background-image:
+          radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent),
+          radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1), transparent 40%);
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+      }
+
+      .subtitle {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+      }
+
+      .status-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .status-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .status-banner.checking {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+      }
+
+      .status-banner.available {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: var(--success);
+      }
+
+      .status-banner.unavailable {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: var(--error);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .main-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        max-width: 1400px;
+        width: 100%;
+      }
+
+      @media (max-width: 1100px) {
+        .main-container {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .panel.full-width {
+        grid-column: 1 / -1;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .panel-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .panel-title svg {
+        width: 20px;
+        height: 20px;
+        color: var(--accent);
+      }
+
+      .panel-title.tesseract svg {
+        color: var(--accent-orange);
+      }
+
+      .panel-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+      }
+
+      .badge-gemini {
+        background: rgba(99, 102, 241, 0.2);
+        color: var(--accent);
+      }
+
+      .badge-tesseract {
+        background: rgba(249, 115, 22, 0.2);
+        color: var(--accent-orange);
+      }
+
+      .canvas-container {
+        position: relative;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background: #fff;
+        aspect-ratio: 16/9;
+      }
+
+      #canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: crosshair;
+        touch-action: none;
+      }
+
+      .canvas-hint {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ccc;
+        font-size: 1.25rem;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+
+      .canvas-hint.hidden {
+        opacity: 0;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+
+      button {
+        font-family: inherit;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+      }
+
+      button svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: #5558e3;
+        box-shadow: 0 0 20px var(--accent-glow);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-orange {
+        background: var(--accent-orange);
+        color: white;
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .btn-orange:hover:not(:disabled) {
+        background: #ea580c;
+        box-shadow: 0 0 20px var(--accent-orange-glow);
+      }
+
+      .btn-orange:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+      }
+
+      .btn-secondary:hover {
+        background: var(--border);
+        color: var(--text-primary);
+      }
+
+      .btn-both {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-orange) 100%);
+        color: white;
+        flex: 2;
+        min-width: 200px;
+      }
+
+      .btn-both:hover:not(:disabled) {
+        box-shadow:
+          0 0 20px var(--accent-glow),
+          0 0 20px var(--accent-orange-glow);
+      }
+
+      .btn-both:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .results-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+
+      @media (max-width: 700px) {
+        .results-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .result-panel {
+        background: var(--bg-tertiary);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .result-title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .result-meta {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .output-area {
+        flex: 1;
+        min-height: 120px;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .output-area.has-content {
+        color: var(--text-primary);
+      }
+
+      .output-area .error {
+        color: var(--error);
+      }
+
+      .output-area .success {
+        color: var(--success);
+      }
+
+      .settings-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        flex-wrap: wrap;
+      }
+
+      .settings-row label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+      }
+
+      .brush-sizes {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .brush-size {
+        width: 32px;
+        height: 32px;
+        border-radius: 0.375rem;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+
+      .brush-size:hover {
+        border-color: var(--accent);
+      }
+
+      .brush-size.active {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .brush-size span {
+        width: var(--size);
+        height: var(--size);
+        background: currentColor;
+        border-radius: 50%;
+      }
+
+      .color-picker {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        background: transparent;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .instructions {
+        margin-top: 2rem;
+        max-width: 700px;
+        text-align: center;
+      }
+
+      .instructions h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .instructions ol {
+        list-style-position: inside;
+        color: var(--text-secondary);
+        font-size: 0.9375rem;
+        line-height: 1.8;
+      }
+
+      .instructions code {
+        background: var(--bg-tertiary);
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+      }
+
+      .comparison-note {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: var(--bg-tertiary);
+        border-radius: 0.5rem;
+        border-left: 3px solid var(--accent);
+      }
+
+      .comparison-note h4 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--accent);
+      }
+
+      .comparison-note p {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      .progress-bar {
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--accent-orange);
+        transition: width 0.3s;
+        width: 0%;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Handwriting Recognition</h1>
+      <p class="subtitle">Comparing Chrome Prompt API vs Tesseract.js OCR</p>
+    </header>
+
+    <div class="status-container">
+      <div id="status-banner-prompt" class="status-banner checking">
+        <span class="status-dot"></span>
+        <span id="status-text-prompt">Checking Prompt API...</span>
+      </div>
+      <div id="status-banner-tesseract" class="status-banner available">
+        <span class="status-dot"></span>
+        <span id="status-text-tesseract">Tesseract.js Ready</span>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <div class="panel full-width">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
+              />
+            </svg>
+            Writing Canvas
+          </h2>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="canvas"></canvas>
+          <span id="canvas-hint" class="canvas-hint">Write something here...</span>
+        </div>
+
+        <div class="button-group">
+          <button id="clear-btn" class="btn-secondary">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+              />
+            </svg>
+            Clear
+          </button>
+          <button id="recognize-both-btn" class="btn-both">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
+              />
+            </svg>
+            Recognize with Both
+          </button>
+          <button id="recognize-prompt-btn" class="btn-primary" disabled>Gemini Nano</button>
+          <button id="recognize-tesseract-btn" class="btn-orange">Tesseract.js</button>
+        </div>
+
+        <div class="settings-row">
+          <label>Brush Size:</label>
+          <div class="brush-sizes">
+            <button class="brush-size" data-size="2" style="--size: 4px"><span></span></button>
+            <button class="brush-size active" data-size="4" style="--size: 8px"><span></span></button>
+            <button class="brush-size" data-size="8" style="--size: 12px"><span></span></button>
+          </div>
+          <label style="margin-left: auto">Color:</label>
+          <input type="color" id="color-picker" class="color-picker" value="#1a1a24" />
+        </div>
+      </div>
+
+      <div class="panel full-width">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
+              />
+            </svg>
+            Recognition Results
+          </h2>
+        </div>
+
+        <div class="results-grid">
+          <div class="result-panel">
+            <div class="result-header">
+              <span class="result-title">
+                <span class="panel-badge badge-gemini">Gemini Nano</span>
+                Chrome Prompt API
+              </span>
+              <span id="prompt-time" class="result-meta"></span>
+            </div>
+            <div id="output-prompt" class="output-area">Waiting for input...</div>
+          </div>
+
+          <div class="result-panel">
+            <div class="result-header">
+              <span class="result-title">
+                <span class="panel-badge badge-tesseract">OCR</span>
+                Tesseract.js
+              </span>
+              <span id="tesseract-time" class="result-meta"></span>
+            </div>
+            <div id="output-tesseract" class="output-area">Waiting for input...</div>
+            <div id="tesseract-progress" class="progress-bar" style="display: none">
+              <div id="tesseract-progress-fill" class="progress-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-note">
+          <h4>What to expect:</h4>
+          <p>
+            <strong>Gemini Nano</strong> uses an LLM to understand context and can handle messy handwriting, cursive,
+            and even interpret unclear words from context. <strong>Tesseract.js</strong> is a traditional OCR engine
+            optimized for printed text - it works best with clear, separated block letters.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <h3>How to Enable Chrome's Prompt API</h3>
+      <ol>
+        <li>Open <code>chrome://flags</code> in Chrome Canary or Dev</li>
+        <li>Search for <code>Prompt API for Gemini Nano</code></li>
+        <li>Enable the flag and restart Chrome</li>
+        <li>The model may need to download (~1.7GB)</li>
+      </ol>
+    </div>
+
+    <script>
+      // DOM Elements
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const canvasHint = document.getElementById('canvas-hint');
+      const recognizeBothBtn = document.getElementById('recognize-both-btn');
+      const recognizePromptBtn = document.getElementById('recognize-prompt-btn');
+      const recognizeTesseractBtn = document.getElementById('recognize-tesseract-btn');
+      const clearBtn = document.getElementById('clear-btn');
+      const outputPrompt = document.getElementById('output-prompt');
+      const outputTesseract = document.getElementById('output-tesseract');
+      const statusBannerPrompt = document.getElementById('status-banner-prompt');
+      const statusTextPrompt = document.getElementById('status-text-prompt');
+      const colorPicker = document.getElementById('color-picker');
+      const brushSizes = document.querySelectorAll('.brush-size');
+      const promptTime = document.getElementById('prompt-time');
+      const tesseractTime = document.getElementById('tesseract-time');
+      const tesseractProgress = document.getElementById('tesseract-progress');
+      const tesseractProgressFill = document.getElementById('tesseract-progress-fill');
+
+      // State
+      let isPainting = false;
+      let hasContent = false;
+      let currentColor = '#1a1a24';
+      let currentBrushSize = 4;
+      let promptAPIAvailable = false;
+      let tesseractWorker = null;
+
+      // Initialize canvas
+      function initCanvas() {
+        const container = canvas.parentElement;
+        const rect = container.getBoundingClientRect();
+
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+
+        ctx.scale(dpr, dpr);
+
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.lineWidth = currentBrushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = currentColor;
+      }
+
+      function getPosition(e) {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches) {
+          return {
+            x: e.touches[0].clientX - rect.left,
+            y: e.touches[0].clientY - rect.top,
+          };
+        }
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        };
+      }
+
+      function startPaint(e) {
+        isPainting = true;
+        const pos = getPosition(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+
+        if (!hasContent) {
+          hasContent = true;
+          canvasHint.classList.add('hidden');
+        }
+      }
+
+      function paint(e) {
+        if (!isPainting) return;
+        e.preventDefault();
+
+        const pos = getPosition(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      }
+
+      function stopPaint() {
+        if (isPainting) {
+          isPainting = false;
+          ctx.beginPath();
+        }
+      }
+
+      function clearCanvas() {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        hasContent = false;
+        canvasHint.classList.remove('hidden');
+        outputPrompt.textContent = 'Waiting for input...';
+        outputTesseract.textContent = 'Waiting for input...';
+        outputPrompt.classList.remove('has-content');
+        outputTesseract.classList.remove('has-content');
+        promptTime.textContent = '';
+        tesseractTime.textContent = '';
+      }
+
+      // Check Prompt API availability
+      async function checkPromptAPIAvailability() {
+        try {
+          if (typeof LanguageModel === 'undefined') {
+            throw new Error('LanguageModel API not available');
+          }
+
+          const availability = await LanguageModel.availability();
+          console.log('LanguageModel availability:', availability);
+
+          if (availability === 'available' || availability === 'downloadable' || availability === 'downloading') {
+            statusBannerPrompt.className = 'status-banner available';
+            statusTextPrompt.textContent = `Prompt API ${availability}`;
+            recognizePromptBtn.disabled = false;
+            promptAPIAvailable = true;
+            return true;
+          } else {
+            throw new Error(`API status: ${availability}`);
+          }
+        } catch (error) {
+          console.error('Prompt API check error:', error);
+          statusBannerPrompt.className = 'status-banner unavailable';
+          statusTextPrompt.textContent = 'Prompt API unavailable';
+          recognizePromptBtn.disabled = true;
+          promptAPIAvailable = false;
+          return false;
+        }
+      }
+
+      // Initialize Tesseract worker
+      async function initTesseract() {
+        try {
+          tesseractWorker = await Tesseract.createWorker('eng', 1, {
+            logger: (m) => {
+              if (m.status === 'recognizing text') {
+                tesseractProgress.style.display = 'block';
+                tesseractProgressFill.style.width = `${Math.round(m.progress * 100)}%`;
+              }
+            },
+          });
+          console.log('Tesseract worker initialized');
+        } catch (error) {
+          console.error('Tesseract init error:', error);
+        }
+      }
+
+      // Recognize with Prompt API
+      async function recognizeWithPromptAPI() {
+        if (!hasContent) {
+          outputPrompt.innerHTML = '<span class="error">Please write something first!</span>';
+          return;
+        }
+
+        if (!promptAPIAvailable) {
+          outputPrompt.innerHTML = '<span class="error">Prompt API not available</span>';
+          return;
+        }
+
+        recognizePromptBtn.disabled = true;
+        recognizePromptBtn.innerHTML = '<span class="loading-spinner"></span>';
+        outputPrompt.textContent = 'Recognizing...';
+        outputPrompt.classList.add('has-content');
+        promptTime.textContent = '';
+
+        const startTime = performance.now();
+
+        try {
+          const session = await LanguageModel.create({
+            expectedInputs: [{ type: 'image' }],
+          });
+
+          const prompt = `You are a handwriting recognition system. Look at this image of handwritten text and transcribe exactly what is written.
+
+Rules:
+- Only output the transcribed text, nothing else
+- If you can't read something, use [?] to indicate unclear parts
+- Preserve line breaks if there are multiple lines
+- Do not add any explanations or commentary
+
+What text is written in this image?`;
+
+          const stream = session.promptStreaming([
+            {
+              role: 'user',
+              content: [
+                { type: 'text', value: prompt },
+                { type: 'image', value: canvas },
+              ],
+            },
+          ]);
+
+          let fullResponse = '';
+          for await (const chunk of stream) {
+            fullResponse = fullResponse + chunk;
+            outputPrompt.textContent = fullResponse;
+          }
+
+          const endTime = performance.now();
+          promptTime.textContent = `${((endTime - startTime) / 1000).toFixed(2)}s`;
+
+          if (!fullResponse.trim()) {
+            outputPrompt.innerHTML = '<span class="error">Could not recognize any text.</span>';
+          }
+
+          session.destroy();
+        } catch (error) {
+          console.error('Prompt API error:', error);
+          outputPrompt.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+        } finally {
+          recognizePromptBtn.disabled = false;
+          recognizePromptBtn.textContent = 'Gemini Nano';
+        }
+      }
+
+      // Recognize with Tesseract
+      async function recognizeWithTesseract() {
+        if (!hasContent) {
+          outputTesseract.innerHTML = '<span class="error">Please write something first!</span>';
+          return;
+        }
+
+        recognizeTesseractBtn.disabled = true;
+        recognizeTesseractBtn.innerHTML = '<span class="loading-spinner"></span>';
+        outputTesseract.textContent = 'Recognizing...';
+        outputTesseract.classList.add('has-content');
+        tesseractTime.textContent = '';
+        tesseractProgress.style.display = 'block';
+        tesseractProgressFill.style.width = '0%';
+
+        const startTime = performance.now();
+
+        try {
+          // Initialize worker if not already done
+          if (!tesseractWorker) {
+            await initTesseract();
+          }
+
+          // Get canvas as blob for Tesseract
+          const dataUrl = canvas.toDataURL('image/png');
+
+          const result = await tesseractWorker.recognize(dataUrl);
+
+          const endTime = performance.now();
+          tesseractTime.textContent = `${((endTime - startTime) / 1000).toFixed(2)}s`;
+
+          const text = result.data.text.trim();
+
+          if (text) {
+            outputTesseract.textContent = text;
+            // Show confidence
+            const confidence = Math.round(result.data.confidence);
+            tesseractTime.textContent += ` (${confidence}% conf)`;
+          } else {
+            outputTesseract.innerHTML =
+              '<span class="error">Could not recognize any text. Try writing larger, clearer letters.</span>';
+          }
+        } catch (error) {
+          console.error('Tesseract error:', error);
+          outputTesseract.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+        } finally {
+          recognizeTesseractBtn.disabled = false;
+          recognizeTesseractBtn.textContent = 'Tesseract.js';
+          tesseractProgress.style.display = 'none';
+        }
+      }
+
+      // Recognize with both
+      async function recognizeWithBoth() {
+        if (!hasContent) {
+          outputPrompt.innerHTML = '<span class="error">Please write something first!</span>';
+          outputTesseract.innerHTML = '<span class="error">Please write something first!</span>';
+          return;
+        }
+
+        recognizeBothBtn.disabled = true;
+        recognizeBothBtn.innerHTML = '<span class="loading-spinner"></span> Running both...';
+
+        // Run both in parallel
+        await Promise.all([recognizeWithPromptAPI(), recognizeWithTesseract()]);
+
+        recognizeBothBtn.disabled = false;
+        recognizeBothBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+        </svg>
+        Recognize with Both
+      `;
+      }
+
+      // Event listeners
+      canvas.addEventListener('mousedown', startPaint);
+      canvas.addEventListener('mousemove', paint);
+      canvas.addEventListener('mouseup', stopPaint);
+      canvas.addEventListener('mouseleave', stopPaint);
+
+      canvas.addEventListener('touchstart', startPaint, { passive: false });
+      canvas.addEventListener('touchmove', paint, { passive: false });
+      canvas.addEventListener('touchend', stopPaint);
+      canvas.addEventListener('touchcancel', stopPaint);
+
+      clearBtn.addEventListener('click', clearCanvas);
+      recognizeBothBtn.addEventListener('click', recognizeWithBoth);
+      recognizePromptBtn.addEventListener('click', recognizeWithPromptAPI);
+      recognizeTesseractBtn.addEventListener('click', recognizeWithTesseract);
+
+      brushSizes.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          brushSizes.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentBrushSize = parseInt(btn.dataset.size);
+          ctx.lineWidth = currentBrushSize;
+        });
+      });
+
+      colorPicker.addEventListener('input', (e) => {
+        currentColor = e.target.value;
+        ctx.strokeStyle = currentColor;
+      });
+
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          const imageData = canvas.toDataURL();
+
+          initCanvas();
+
+          if (hasContent) {
+            const img = new Image();
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = imageData;
+          }
+        }, 250);
+      });
+
+      // Initialize
+      initCanvas();
+      checkPromptAPIAvailability();
+      initTesseract(); // Pre-initialize Tesseract for faster first recognition
+    </script>
+  </body>
+</html>

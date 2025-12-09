@@ -303,10 +303,109 @@ export const generateAltText = async (
 };
 
 /**
- * Check if audio transcription via LanguageModel is available
+ * Check if audio transcription is available
+ * Returns true if either Prompt API or transformers.js fallback is available
  */
 export const isAudioTranscriptionAvailable = (): boolean => {
-  return 'LanguageModel' in window;
+  // Always return true since we have transformers.js as fallback
+  return true;
+};
+
+/**
+ * Get the audio transcription method available
+ * Returns 'prompt-api' | 'transformers'
+ */
+export const getAudioTranscriptionMethod = ():
+  | 'prompt-api'
+  | 'transformers' => {
+  if ('LanguageModel' in window) {
+    return 'prompt-api';
+  }
+  return 'transformers';
+};
+
+/**
+ * Check if handwriting recognition is available (via Prompt API or Tesseract fallback)
+ * Returns 'prompt-api' | 'tesseract' | false
+ */
+export const getHandwritingRecognitionMethod = async (): Promise<
+  'prompt-api' | 'tesseract' | false
+> => {
+  try {
+    // First check if Prompt API is available (preferred)
+    if (isPromptAPIAvailable()) {
+      const availability = await LanguageModel.availability();
+      if (availability === 'available' || availability === 'downloadable') {
+        return 'prompt-api';
+      }
+    }
+    // Tesseract.js is always available as fallback (it's a JS library)
+    return 'tesseract';
+  } catch (error) {
+    console.error('Handwriting recognition availability check failed:', error);
+    // Even if Prompt API check fails, Tesseract is still available
+    return 'tesseract';
+  }
+};
+
+/**
+ * Check if handwriting recognition is available (any method)
+ */
+export const isHandwritingRecognitionAvailable = async (): Promise<boolean> => {
+  const method = await getHandwritingRecognitionMethod();
+  return method !== false;
+};
+
+/**
+ * Recognize handwritten text from a canvas using Chrome's on-device Prompt API
+ * @param canvas - HTMLCanvasElement containing the handwritten content
+ * @returns Recognized text or null if recognition fails
+ */
+export const recognizeHandwriting = async (
+  canvas: HTMLCanvasElement
+): Promise<string | null> => {
+  try {
+    if (!isPromptAPIAvailable()) {
+      throw new Error('Prompt API (LanguageModel) not available');
+    }
+
+    const session = await LanguageModel.create({
+      expectedInputs: [{ type: 'image' }],
+    });
+
+    const prompt = `You are a handwriting recognition system. Look at this image of handwritten text and transcribe exactly what is written.
+
+Rules:
+- Only output the transcribed text, nothing else
+- If you can't read something, use [?] to indicate unclear parts
+- Preserve line breaks if there are multiple lines
+- Do not add any explanations or commentary
+
+What text is written in this image?`;
+
+    let result = '';
+    const stream = session.promptStreaming([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', value: prompt },
+          { type: 'image', value: canvas },
+        ],
+      },
+    ]);
+
+    for await (const chunk of stream) {
+      result += chunk;
+    }
+
+    // Clean up
+    session.destroy();
+
+    return result.trim() || null;
+  } catch (error) {
+    console.error('Handwriting recognition error:', error);
+    return null;
+  }
 };
 
 /**
@@ -323,8 +422,201 @@ export const isOnDeviceSummarizationAvailable = (): boolean => {
   return 'summarizer' in window;
 };
 
+// Lazy-loaded Whisper worker for transformers.js
+let whisperWorker: Worker | null = null;
+let whisperWorkerReady = false;
+let messageId = 0;
+const pendingRequests = new Map<
+  number,
+  { resolve: (text: string | null) => void; reject: (error: Error) => void }
+>();
+
+/**
+ * Convert audio blob to the format Whisper expects (Float32Array at 16kHz)
+ * This runs on the main thread since AudioContext isn't available in workers
+ */
+const convertAudioForWhisper = async (
+  audioBlob: Blob
+): Promise<Float32Array> => {
+  const audioContext = new AudioContext({ sampleRate: 16000 });
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+  // Get mono audio data (use first channel or mix if stereo)
+  let audioData: Float32Array;
+  if (audioBuffer.numberOfChannels === 1) {
+    audioData = audioBuffer.getChannelData(0);
+  } else {
+    // Mix stereo to mono
+    const left = audioBuffer.getChannelData(0);
+    const right = audioBuffer.getChannelData(1);
+    audioData = new Float32Array(left.length);
+    for (let i = 0; i < left.length; i++) {
+      audioData[i] = (left[i] + right[i]) / 2;
+    }
+  }
+
+  // Resample if needed
+  if (audioBuffer.sampleRate !== 16000) {
+    const offlineContext = new OfflineAudioContext(
+      1,
+      audioBuffer.duration * 16000,
+      16000
+    );
+    const source = offlineContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(offlineContext.destination);
+    source.start();
+    const resampledBuffer = await offlineContext.startRendering();
+    audioData = resampledBuffer.getChannelData(0);
+  }
+
+  await audioContext.close();
+  return audioData;
+};
+
+/**
+ * Get or create the Whisper worker
+ */
+const getWhisperWorker = (): Promise<Worker> => {
+  return new Promise((resolve, reject) => {
+    if (whisperWorker && whisperWorkerReady) {
+      resolve(whisperWorker);
+      return;
+    }
+
+    if (whisperWorker) {
+      // Worker exists but not ready yet, wait for it
+      const checkReady = setInterval(() => {
+        if (whisperWorkerReady) {
+          clearInterval(checkReady);
+          resolve(whisperWorker!);
+        }
+      }, 50);
+      return;
+    }
+
+    // Create new worker
+    console.log('Creating Whisper worker...');
+    whisperWorker = new Worker(
+      new URL('./whisper-worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+
+    whisperWorker.onmessage = (event: MessageEvent) => {
+      const { type, id, text, error } = event.data;
+
+      if (type === 'ready') {
+        console.log('Whisper worker ready');
+        whisperWorkerReady = true;
+        resolve(whisperWorker!);
+        return;
+      }
+
+      if (type === 'result' || type === 'error') {
+        const pending = pendingRequests.get(id);
+        if (pending) {
+          pendingRequests.delete(id);
+          if (type === 'error') {
+            pending.reject(new Error(error));
+          } else {
+            pending.resolve(text);
+          }
+        }
+      }
+    };
+
+    whisperWorker.onerror = (error) => {
+      console.error('Whisper worker error:', error);
+      reject(error);
+    };
+  });
+};
+
+/**
+ * Transcribe audio using transformers.js Whisper model in a Web Worker (fallback)
+ */
+const transcribeWithTransformers = async (
+  audioBlob: Blob
+): Promise<string | null> => {
+  console.log('Transcribing with transformers.js (worker)...');
+
+  // Convert audio on main thread (AudioContext not available in workers)
+  console.log('Converting audio for Whisper...');
+  const audioData = await convertAudioForWhisper(audioBlob);
+
+  const worker = await getWhisperWorker();
+  const id = ++messageId;
+
+  return new Promise((resolve, reject) => {
+    pendingRequests.set(id, { resolve, reject });
+
+    worker.postMessage(
+      {
+        type: 'transcribe',
+        id,
+        audioData,
+      },
+      [audioData.buffer] // Transfer the buffer for better performance
+    );
+  });
+};
+
 /**
  * Transcribe audio using Chrome's on-device Prompt API (LanguageModel)
+ */
+const transcribeWithPromptAPI = async (
+  audioBlob: Blob
+): Promise<string | null> => {
+  console.log(
+    'Transcribing audio blob:',
+    audioBlob.size,
+    'bytes, type:',
+    audioBlob.type
+  );
+
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  console.log('ArrayBuffer size:', arrayBuffer.byteLength);
+
+  const params = await LanguageModel.params();
+  console.log('LanguageModel params:', params);
+
+  const session = await LanguageModel.create({
+    expectedInputs: [{ type: 'audio' }],
+    temperature: 0.1,
+    topK: params.defaultTopK,
+  });
+
+  let result = '';
+  const stream = session.promptStreaming([
+    {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          value:
+            'Please transcribe the following audio recording word for word. Return only the spoken words, nothing else.',
+        },
+        { type: 'audio', value: arrayBuffer },
+      ],
+    },
+  ]);
+
+  for await (const chunk of stream) {
+    console.log('Transcription chunk:', chunk);
+    // Chunks are individual tokens, concatenate them
+    result += chunk;
+  }
+
+  // Clean up
+  session.destroy();
+
+  console.log('Final transcription result:', result);
+  return result.trim();
+};
+
+/**
+ * Transcribe audio using Chrome's on-device Prompt API with transformers.js fallback
  * @param audioBlob - Blob containing audio data
  * @returns Transcribed text or null if transcription fails
  */
@@ -332,55 +624,20 @@ export const transcribeAudio = async (
   audioBlob: Blob
 ): Promise<string | null> => {
   try {
-    if (!isPromptAPIAvailable()) {
-      throw new Error('Prompt API (LanguageModel) not available');
+    // Try Prompt API first if available
+    if (isPromptAPIAvailable()) {
+      try {
+        return await transcribeWithPromptAPI(audioBlob);
+      } catch (promptError) {
+        console.warn(
+          'Prompt API transcription failed, falling back to transformers.js:',
+          promptError
+        );
+      }
     }
 
-    console.log(
-      'Transcribing audio blob:',
-      audioBlob.size,
-      'bytes, type:',
-      audioBlob.type
-    );
-
-    const arrayBuffer = await audioBlob.arrayBuffer();
-    console.log('ArrayBuffer size:', arrayBuffer.byteLength);
-
-    const params = await LanguageModel.params();
-    console.log('LanguageModel params:', params);
-
-    const session = await LanguageModel.create({
-      expectedInputs: [{ type: 'audio' }],
-      temperature: 0.1,
-      topK: params.defaultTopK,
-    });
-
-    let result = '';
-    const stream = session.promptStreaming([
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            value:
-              'Please transcribe the following audio recording word for word. Return only the spoken words, nothing else.',
-          },
-          { type: 'audio', value: arrayBuffer },
-        ],
-      },
-    ]);
-
-    for await (const chunk of stream) {
-      console.log('Transcription chunk:', chunk);
-      // Chunks are individual tokens, concatenate them
-      result += chunk;
-    }
-
-    // Clean up
-    session.destroy();
-
-    console.log('Final transcription result:', result);
-    return result.trim();
+    // Fallback to transformers.js (Whisper)
+    return await transcribeWithTransformers(audioBlob);
   } catch (error) {
     console.error('Audio transcription error:', error);
     return null;

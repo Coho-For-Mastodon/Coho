@@ -35,6 +35,9 @@ export class MdCard extends LitElement {
     :host {
       display: block;
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -50,6 +53,8 @@ export class MdCard extends LitElement {
       transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
       position: relative;
       color: var(--md-sys-color-on-surface, white);
+      min-width: 0;
+      max-width: 100%;
     }
 
     /* Respect reduced motion preference */
@@ -141,6 +146,9 @@ export class MdCard extends LitElement {
     .card__body {
       padding: 16px;
       flex: 1;
+      min-width: 0;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .card__footer {

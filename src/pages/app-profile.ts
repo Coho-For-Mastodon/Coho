@@ -387,10 +387,7 @@ export class AppProfile extends LitElement {
         margin: 0;
         padding: 0;
         list-style: none;
-      }
-
-      ul li {
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        gap: 16px;
       }
 
       .posts-loading {
@@ -525,7 +522,6 @@ export class AppProfile extends LitElement {
 
       /* Tabs container scroll effect */
       #tabs-container {
-        animation: tabs-sticky linear both;
         animation-timeline: --page-scroll;
         animation-range: 200px 400px;
       }

@@ -48,6 +48,7 @@ export declare class AppHome extends LitElement {
   favoritesLoaded: boolean;
   notificationsLoaded: boolean;
   searchLoaded: boolean;
+  messagesLoaded: boolean;
   appThemeLoaded: boolean;
   userTermsLoaded: boolean;
   rightClickLoaded: boolean;
@@ -108,6 +109,7 @@ export declare class AppHome extends LitElement {
   loadFavorites(): Promise<void>;
   loadNotifications(): Promise<void>;
   loadSearch(): Promise<void>;
+  loadMessages(): Promise<void>;
   loadAppTheme(): Promise<void>;
   loadUserTerms(): Promise<void>;
   loadRightClick(): Promise<void>;
