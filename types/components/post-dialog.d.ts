@@ -70,6 +70,7 @@ export declare class PostDialog extends LitElement {
   dismissProofread(): void;
   toggleRecording(): Promise<void>;
   startRecording(): Promise<void>;
+  private _startRecordingInternal;
   stopRecording(): Promise<void>;
   handleTranscription(audioBlob: Blob): Promise<void>;
   markAsSensitive(): Promise<void>;

@@ -891,6 +891,14 @@ export class PostDialog extends LitElement {
 
   async startRecording() {
     try {
+      await this._startRecordingInternal();
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+    }
+  }
+
+  private async _startRecordingInternal() {
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
