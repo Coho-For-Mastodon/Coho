@@ -15,6 +15,7 @@ interface LocalAttachment {
   preview_url: string;
   description: string | null;
   pending?: boolean;
+  file?: File;
 }
 export declare class PostDialog extends LitElement {
   attachmentPreview: string | undefined;
@@ -48,6 +49,7 @@ export declare class PostDialog extends LitElement {
   private postTextArea;
   private promptTextField;
   private sensitiveInput;
+  private mediaEditDialog;
   static styles: import('lit').CSSResult[];
   protected firstUpdated(): Promise<void>;
   openNewDialog(): Promise<void>;

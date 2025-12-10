@@ -38,7 +38,7 @@ export class MediaEditDialog extends LitElement {
       display: flex;
       justify-content: center;
       margin-bottom: 1rem;
-      background: var(--md-sys-color-surface-container, #f0f0f0);
+      background: transparent;
       border-radius: 8px;
       padding: 1rem;
       min-height: 200px;

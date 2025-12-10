@@ -390,6 +390,23 @@ export class Timeline extends LitElement {
       md-menu {
         min-width: 200px;
       }
+
+      #load-more-indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 24px 16px;
+        gap: 8px;
+        color: var(--md-sys-color-on-surface-variant, #666);
+        font-size: 14px;
+      }
+
+      #load-more-indicator md-icon {
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        color: var(--md-sys-color-primary);
+      }
     `,
   ];
 
@@ -665,9 +682,14 @@ export class Timeline extends LitElement {
       !this.loadingData &&
       this.timeline.length > 0
     ) {
+      // Set flag immediately to prevent concurrent loads
       this.loadingData = true;
-      await this.loadMore();
-      this.loadingData = false;
+
+      try {
+        await this.loadMore();
+      } finally {
+        this.loadingData = false;
+      }
     }
   }
 
@@ -850,14 +872,24 @@ export class Timeline extends LitElement {
   }
 
   async loadMore() {
+    // Get the last post ID to use for pagination
+    const lastPostId =
+      this.timeline.length > 0
+        ? this.timeline[this.timeline.length - 1].id
+        : undefined;
+
     const timelineData: Post[] = await getPaginatedHomeTimeline(
-      this.timelineType ? this.timelineType : 'home'
+      this.timelineType ? this.timelineType : 'home',
+      lastPostId
     );
-    console.log(timelineData);
 
     // Deduplicate posts by ID to prevent showing duplicates
     const existingIds = new Set(this.timeline.map((post) => post.id));
     const newPosts = timelineData.filter((post) => !existingIds.has(post.id));
+
+    if (newPosts.length === 0) {
+      return;
+    }
 
     // Enrich new posts with reply context
     const enrichedNewPosts = await enrichPostsWithReplyContext(newPosts);
@@ -1057,32 +1089,66 @@ export class Timeline extends LitElement {
               class="scrollbar-hidden"
               scroller
               .items=${this.timeline}
-              .renderItem=${((tweet: Post) =>
-                html`<div class="timeline-list-item">
-                  <timeline-item
-                    @open="${($event: CustomEvent) =>
-                      this.handleOpen($event.detail.tweet)}"
-                    @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
-                      this.handleSummary($event)}"
-                    @translating="${(
-                      $event: CustomEvent<HandleTranslatingDetail>
-                    ) => this.handleTranslating($event)}"
-                    tweetID="${tweet.id}"
-                    @delete="${() => this.refreshTimeline()}"
-                    @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                      this.showAnalyze(
-                        $event.detail.data as AnalyzeData,
-                        $event.detail.imageData as ImageAnalyzeData | null,
-                        $event.detail.tweet
-                      )}"
-                    @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                      this.showImage($event.detail.imageURL)}"
-                    ?show="${true}"
-                    @replies="${($event: CustomEvent<RepliesDetail>) =>
-                      this.handleReplies($event.detail.data)}"
-                    .tweet="${tweet}"
-                  ></timeline-item>
-                </div>`) as unknown}
+              .renderItem=${((tweet: Post, index: number) =>
+                index === this.timeline.length - 1
+                  ? html`<div class="timeline-list-item">
+                      <timeline-item
+                        @open="${($event: CustomEvent) =>
+                          this.handleOpen($event.detail.tweet)}"
+                        @summarize="${(
+                          $event: CustomEvent<HandleSummaryDetail>
+                        ) => this.handleSummary($event)}"
+                        @translating="${(
+                          $event: CustomEvent<HandleTranslatingDetail>
+                        ) => this.handleTranslating($event)}"
+                        tweetID="${tweet.id}"
+                        @delete="${() => this.refreshTimeline()}"
+                        @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
+                          this.showAnalyze(
+                            $event.detail.data as AnalyzeData,
+                            $event.detail.imageData as ImageAnalyzeData | null,
+                            $event.detail.tweet
+                          )}"
+                        @openimage="${($event: CustomEvent<OpenImageDetail>) =>
+                          this.showImage($event.detail.imageURL)}"
+                        ?show="${true}"
+                        @replies="${($event: CustomEvent<RepliesDetail>) =>
+                          this.handleReplies($event.detail.data)}"
+                        .tweet="${tweet}"
+                      ></timeline-item>
+                      <div id="load-more-indicator">
+                        <md-icon
+                          src="/assets/refresh-circle-outline.svg"
+                        ></md-icon>
+                        <span>Loading more...</span>
+                      </div>
+                    </div>`
+                  : html`<div class="timeline-list-item">
+                      <timeline-item
+                        @open="${($event: CustomEvent) =>
+                          this.handleOpen($event.detail.tweet)}"
+                        @summarize="${(
+                          $event: CustomEvent<HandleSummaryDetail>
+                        ) => this.handleSummary($event)}"
+                        @translating="${(
+                          $event: CustomEvent<HandleTranslatingDetail>
+                        ) => this.handleTranslating($event)}"
+                        tweetID="${tweet.id}"
+                        @delete="${() => this.refreshTimeline()}"
+                        @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
+                          this.showAnalyze(
+                            $event.detail.data as AnalyzeData,
+                            $event.detail.imageData as ImageAnalyzeData | null,
+                            $event.detail.tweet
+                          )}"
+                        @openimage="${($event: CustomEvent<OpenImageDetail>) =>
+                          this.showImage($event.detail.imageURL)}"
+                        ?show="${true}"
+                        @replies="${($event: CustomEvent<RepliesDetail>) =>
+                          this.handleReplies($event.detail.data)}"
+                        .tweet="${tweet}"
+                      ></timeline-item>
+                    </div>`) as unknown}
               @visibilityChanged=${this._handleVisibilityChanged}
             >
             </lit-virtualizer>

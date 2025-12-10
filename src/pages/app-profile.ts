@@ -45,6 +45,7 @@ export class AppProfile extends LitElement {
   @state() following: boolean = false;
   @state() muted: boolean = false;
   @state() blocked: boolean = false;
+  @state() followStatusLoaded: boolean = false;
   @state() selectedPost: Post | undefined = undefined;
   @state() isOwnProfile: boolean = false;
   @state() showReportDialog: boolean = false;
@@ -203,6 +204,16 @@ export class AppProfile extends LitElement {
       #actions-row md-button {
         font-weight: 700;
         min-width: 100px;
+        animation: fadeIn 0.2s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       /* Profile info */
@@ -651,8 +662,10 @@ export class AppProfile extends LitElement {
             this.muted = followedCheck[0].muting;
             this.blocked = followedCheck[0].blocking;
           }
+          this.followStatusLoaded = true;
         } catch (error) {
           console.log('Error checking follow status:', error);
+          this.followStatusLoaded = true;
         }
       }
     }
@@ -830,17 +843,19 @@ export class AppProfile extends LitElement {
         <div id="actions-row">
           ${!this.isOwnProfile && this.user
             ? html`
-                ${this.followed
-                  ? html`<md-button
-                      variant="outlined"
-                      @click="${() => this.unfollow()}"
-                      >Following</md-button
-                    >`
-                  : html`<md-button
-                      variant="filled"
-                      @click="${() => this.follow()}"
-                      >Follow</md-button
-                    >`}
+                ${this.followStatusLoaded
+                  ? this.followed
+                    ? html`<md-button
+                        variant="outlined"
+                        @click="${() => this.unfollow()}"
+                        >Following</md-button
+                      >`
+                    : html`<md-button
+                        variant="filled"
+                        @click="${() => this.follow()}"
+                        >Follow</md-button
+                      >`
+                  : null}
                 <md-dropdown placement="bottom-end">
                   <md-icon-button
                     slot="trigger"

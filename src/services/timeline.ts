@@ -184,10 +184,9 @@ export const getLastPlaceTimeline = async (): Promise<Post[] | undefined> => {
 };
 
 export const getPaginatedHomeTimeline = async (
-  type = 'home'
+  type = 'home',
+  maxId?: string
 ): Promise<Post[]> => {
-  console.log('getPaginatedHomeTimeline', type);
-
   try {
     handlePeriodic();
   } catch (err) {
@@ -205,9 +204,11 @@ export const getPaginatedHomeTimeline = async (
     type = 'home';
   }
 
+  // Use provided maxId, fall back to lastPageID, or fetch from beginning
+  const effectiveMaxId = maxId || lastPageID;
   const fetchUrl =
-    lastPageID && lastPageID.length > 0
-      ? `https://${server}/api/v1/timelines/${type}?limit=10&max_id=${lastPageID}`
+    effectiveMaxId && effectiveMaxId.length > 0
+      ? `https://${server}/api/v1/timelines/${type}?limit=10&max_id=${effectiveMaxId}`
       : `https://${server}/api/v1/timelines/${type}?limit=10`;
 
   const response = await fetch(fetchUrl, {
