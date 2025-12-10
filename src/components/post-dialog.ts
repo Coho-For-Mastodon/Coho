@@ -43,6 +43,7 @@ interface LocalAttachment {
   preview_url: string;
   description: string | null;
   pending?: boolean;
+  file?: File; // Store file for deferred upload
 }
 
 @customElement('post-dialog')
@@ -96,6 +97,8 @@ export class PostDialog extends LitElement {
   @query('md-text-area') private postTextArea!: MdTextArea;
   @query('md-text-field') private promptTextField!: MdTextField;
   @query('#sensitive-input') private sensitiveInput!: MdTextField;
+  @query('media-edit-dialog')
+  private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
 
   static styles = [
     css`
@@ -592,6 +595,7 @@ export class PostDialog extends LitElement {
         preview_url: previewUrl,
         description: null,
         pending: true,
+        file, // Store file for upload when user saves
       };
 
       this.attachments = [...this.attachments, newAttachment];
@@ -601,8 +605,7 @@ export class PostDialog extends LitElement {
         this.openEditDialog(newAttachment);
       }
 
-      // Start upload in background
-      this.uploadFile(file, tempId);
+      // Don't upload yet - wait for user to save in edit dialog
     }
   }
 
@@ -1031,29 +1034,84 @@ export class PostDialog extends LitElement {
   }
 
   async handleMediaSave(e: CustomEvent) {
-    const { id, description } = e.detail;
+    const { id, description, editedBlob } = e.detail;
 
-    // Optimistic update
+    // Find the attachment being saved
+    const attachment = this.attachments.find((a) => a.id === id);
+    if (!attachment) {
+      this.mediaEditDialog?.completeUpload(false);
+      return;
+    }
+
+    // Determine what to upload: editedBlob (filter applied), stored file (new attachment), or nothing (already uploaded)
+    const blobToUpload =
+      editedBlob || (attachment.file ? attachment.file : null);
+
+    if (blobToUpload) {
+      // Need to upload the image
+      try {
+        const result = await uploadImageFromBlob(blobToUpload);
+
+        // Update with description after upload
+        if (description) {
+          await updateMedia(result.id, description);
+        }
+
+        // Clean up the old preview URL if it was a blob URL
+        if (attachment.preview_url.startsWith('blob:')) {
+          URL.revokeObjectURL(attachment.preview_url);
+        }
+
+        // Replace attachment with uploaded one
+        this.attachments = this.attachments.map((a) =>
+          a.id === id
+            ? {
+                id: result.id,
+                preview_url: result.preview_url,
+                description,
+                pending: false,
+                // Don't keep the file reference after upload
+              }
+            : a
+        );
+
+        // Update active attachment if it's the same one
+        if (this.activeAttachment?.id === id) {
+          this.activeAttachment = null;
+        }
+
+        // Signal upload complete
+        this.mediaEditDialog?.completeUpload(true);
+      } catch (err) {
+        console.error('Failed to upload media', err);
+        // Signal upload failed
+        this.mediaEditDialog?.completeUpload(false);
+      }
+      return;
+    }
+
+    // No upload needed - just update description
     this.attachments = this.attachments.map((a) =>
       a.id === id ? { ...a, description } : a
     );
 
-    // If active attachment is the one being saved, update it too
+    // If active attachment is the one being saved, clear it
     if (this.activeAttachment?.id === id) {
-      this.activeAttachment = {
-        ...this.activeAttachment,
-        description,
-      } as LocalAttachment;
+      this.activeAttachment = null;
     }
 
-    // Only send update if not pending (uploading)
-    const attachment = this.attachments.find((a) => a.id === id);
-    if (attachment && !attachment.pending) {
+    // Update description on server if already uploaded
+    if (!attachment.pending) {
       try {
         await updateMedia(id, description);
+        this.mediaEditDialog?.completeUpload(true);
       } catch (err) {
         console.error('Failed to update media description', err);
+        this.mediaEditDialog?.completeUpload(false);
       }
+    } else {
+      // Was pending but no file to upload (shouldn't happen, but handle gracefully)
+      this.mediaEditDialog?.completeUpload(true);
     }
   }
   render() {

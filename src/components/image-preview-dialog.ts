@@ -207,6 +207,13 @@ export class ImagePreviewDialog extends LitElement {
     }
   }
 
+  private handleImageLoad = () => {
+    // Only update if not already loaded to prevent re-renders
+    if (!this.loaded) {
+      this.loaded = true;
+    }
+  };
+
   private close() {
     this.open = false;
     // Delay clearing src to avoid flicker during close animation
@@ -406,11 +413,11 @@ export class ImagePreviewDialog extends LitElement {
             ></md-skeleton>
             <img
               class="${this.loaded ? 'loaded' : ''}"
-              src="${this.src}"
-              alt="${this.alt}"
+              .src="${this.src}"
+              .alt="${this.alt}"
               width="${ifDefined(this.width || undefined)}"
               @click="${(e: Event) => e.stopPropagation()}"
-              @load="${() => (this.loaded = true)}"
+              @load="${this.handleImageLoad}"
             />
           </div>
           ${this.alt
