@@ -14,7 +14,6 @@ const PipelineFactory = {
   ) {
     if (this.instance === null) {
       this.instance = pipeline('automatic-speech-recognition', this.model, {
-        device: 'webgpu',
         progress_callback,
       });
     }
