@@ -194,6 +194,13 @@ export class OtterDrawer extends LitElement {
       }
     }
 
+    /* when in window controls overlay */
+    @media (display-mode: window-controls-overlay) {
+      .header {
+        padding: 1.62rem;
+      }
+    }
+
     /* Animations for smooth interactions */
     @media (prefers-reduced-motion: reduce) {
       .overlay,
