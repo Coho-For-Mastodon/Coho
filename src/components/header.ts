@@ -215,26 +215,28 @@ export class AppHeader extends LitElement {
             : nothing}
         </div>
 
-        <div id="actions">
-          <md-icon-button
-            title="Open Theme Settings"
-            id="open-button"
-            @click="${() => this.handleTheming()}"
-          >
-            <md-icon
-              src="/assets/color-palette-outline.svg"
-              alt="Theme"
-            ></md-icon>
-          </md-icon-button>
+        ${!this.enableBack
+          ? html`<div id="actions">
+              <md-icon-button
+                title="Open Theme Settings"
+                id="open-button"
+                @click="${() => this.handleTheming()}"
+              >
+                <md-icon
+                  src="/assets/color-palette-outline.svg"
+                  alt="Theme"
+                ></md-icon>
+              </md-icon-button>
 
-          <md-icon-button
-            id="settings-button"
-            title="Open Settings"
-            @click="${() => this.openSettings()}"
-          >
-            <md-icon src="/assets/settings-outline.svg"></md-icon>
-          </md-icon-button>
-        </div>
+              <md-icon-button
+                id="settings-button"
+                title="Open Settings"
+                @click="${() => this.openSettings()}"
+              >
+                <md-icon src="/assets/settings-outline.svg"></md-icon>
+              </md-icon-button>
+            </div>`
+          : nothing}
       </header>
     `;
   }
