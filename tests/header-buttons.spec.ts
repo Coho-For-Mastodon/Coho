@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { bootstrapApp, navigateTo } from './test-utils';
+import type { Page } from '@playwright/test';
+
+// Helper function to get header button locators
+function getHeaderButtons(page: Page) {
+  return {
+    settings: page.locator('app-header').locator('#settings-button'),
+    theme: page.locator('app-header').locator('#open-button'),
+  };
+}
 
 test.describe('Header Buttons Visibility', () => {
   test.beforeEach(async ({ isMobile }) => {
@@ -17,13 +26,10 @@ test.describe('Header Buttons Visibility', () => {
     await expect(page.locator('app-home')).toBeVisible();
 
     // Settings and theme buttons should be visible on home
-    const settingsButton = page
-      .locator('app-header')
-      .locator('#settings-button');
-    const themeButton = page.locator('app-header').locator('#open-button');
+    const { settings, theme } = getHeaderButtons(page);
 
-    await expect(settingsButton).toBeVisible();
-    await expect(themeButton).toBeVisible();
+    await expect(settings).toBeVisible();
+    await expect(theme).toBeVisible();
   });
 
   test('settings and theme buttons are hidden on profile page', async ({
@@ -36,13 +42,10 @@ test.describe('Header Buttons Visibility', () => {
     await expect(page.locator('app-profile')).toBeVisible();
 
     // Settings and theme buttons should NOT be visible
-    const settingsButton = page
-      .locator('app-header')
-      .locator('#settings-button');
-    const themeButton = page.locator('app-header').locator('#open-button');
+    const { settings, theme } = getHeaderButtons(page);
 
-    await expect(settingsButton).not.toBeVisible();
-    await expect(themeButton).not.toBeVisible();
+    await expect(settings).not.toBeVisible();
+    await expect(theme).not.toBeVisible();
   });
 
   test('settings and theme buttons are hidden on search page', async ({
@@ -55,13 +58,10 @@ test.describe('Header Buttons Visibility', () => {
     await expect(page.locator('search-page')).toBeVisible();
 
     // Settings and theme buttons should NOT be visible
-    const settingsButton = page
-      .locator('app-header')
-      .locator('#settings-button');
-    const themeButton = page.locator('app-header').locator('#open-button');
+    const { settings, theme } = getHeaderButtons(page);
 
-    await expect(settingsButton).not.toBeVisible();
-    await expect(themeButton).not.toBeVisible();
+    await expect(settings).not.toBeVisible();
+    await expect(theme).not.toBeVisible();
   });
 
   test('settings and theme buttons are hidden on about page', async ({
@@ -74,13 +74,10 @@ test.describe('Header Buttons Visibility', () => {
     await expect(page.locator('app-about')).toBeVisible();
 
     // Settings and theme buttons should NOT be visible
-    const settingsButton = page
-      .locator('app-header')
-      .locator('#settings-button');
-    const themeButton = page.locator('app-header').locator('#open-button');
+    const { settings, theme } = getHeaderButtons(page);
 
-    await expect(settingsButton).not.toBeVisible();
-    await expect(themeButton).not.toBeVisible();
+    await expect(settings).not.toBeVisible();
+    await expect(theme).not.toBeVisible();
   });
 
   test('settings and theme buttons are hidden on followers page', async ({
@@ -93,12 +90,9 @@ test.describe('Header Buttons Visibility', () => {
     await expect(page.locator('app-followers')).toBeVisible();
 
     // Settings and theme buttons should NOT be visible
-    const settingsButton = page
-      .locator('app-header')
-      .locator('#settings-button');
-    const themeButton = page.locator('app-header').locator('#open-button');
+    const { settings, theme } = getHeaderButtons(page);
 
-    await expect(settingsButton).not.toBeVisible();
-    await expect(themeButton).not.toBeVisible();
+    await expect(settings).not.toBeVisible();
+    await expect(theme).not.toBeVisible();
   });
 });
