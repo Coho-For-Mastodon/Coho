@@ -19,7 +19,7 @@ export class AppFollowers extends LitElement {
       }
 
       main {
-        padding-top: 60px;
+        padding-top: 50px;
       }
 
       ul {
@@ -41,6 +41,7 @@ export class AppFollowers extends LitElement {
       h2 {
         padding-left: 4em;
         animation: slideInFromLeft 0.3s ease-in-out;
+        margin-bottom: 0;
       }
 
       ul li {
@@ -54,6 +55,16 @@ export class AppFollowers extends LitElement {
       li a {
         text-decoration: none;
         color: white;
+      }
+
+      @media (max-width: 820px) {
+        ul {
+          padding: 12px;
+        }
+
+        h2 {
+          padding: 12px;
+        }
       }
 
       @keyframes slideUp {
