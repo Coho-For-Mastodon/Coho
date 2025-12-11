@@ -31,10 +31,11 @@ export class MdTextArea extends LitElement {
 
     textarea {
       width: 100%;
-      min-height: 80px;
-      padding: 12px 16px;
+      min-height: var(--md-text-area-min-height, 80px);
+      padding: var(--md-text-area-padding, 12px 16px);
       border: none;
-      border-radius: 4px 4px 0 0;
+      border-radius: var(--md-text-area-radius, 4px)
+        var(--md-text-area-radius, 4px) 0 0;
       background-color: var(--md-sys-color-surface-container-highest, #e6e0e9);
       font-family:
         'Roboto',
@@ -51,7 +52,7 @@ export class MdTextArea extends LitElement {
         background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
         border-bottom-color 0.2s cubic-bezier(0.2, 0, 0, 1),
         border-bottom-width 0.2s cubic-bezier(0.2, 0, 0, 1);
-      resize: vertical;
+      resize: var(--md-text-area-resize, vertical);
       box-sizing: border-box;
     }
 
@@ -90,7 +91,7 @@ export class MdTextArea extends LitElement {
     textarea.outlined {
       background-color: transparent;
       border: 1px solid var(--md-sys-color-outline, #79747e);
-      border-radius: 4px;
+      border-radius: var(--md-text-area-radius, 4px);
     }
 
     textarea.outlined:hover:not(:disabled) {
@@ -102,7 +103,6 @@ export class MdTextArea extends LitElement {
       border-color: var(--md-sys-color-primary, #6750a4);
       border-width: 2px;
       background-color: transparent;
-      padding: 11px 15px; /* Adjust for border width change */
     }
 
     /* Dark mode support */
@@ -214,8 +214,9 @@ export class MdTextArea extends LitElement {
 
   render() {
     return html`
-      <div class="text-area-container">
+      <div class="text-area-container" part="container">
         <textarea
+          part="textarea"
           .value="${this.value}"
           placeholder="${this.placeholder}"
           ?disabled="${this.disabled}"

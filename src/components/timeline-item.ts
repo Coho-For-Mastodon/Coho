@@ -4,7 +4,6 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { getSettings, Settings } from '../services/settings';
 import { withOptimisticUpdate } from '../utils/optimistic-updates';
 
-import { router } from '../utils/router';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types';
 import {
@@ -630,89 +629,32 @@ export class TimelineItem extends LitElement {
   }
 
   async openPost() {
-    if (this.device === 'mobile') {
-      if ('startViewTransition' in document) {
-        this.style.viewTransitionName = 'card';
+    if (!this.tweet) return;
 
-        // document.startViewTransition(async () => {
-        //     if (this.tweet) {
-        //         const serialized = new URLSearchParams(JSON.stringify(this.tweet)).toString();
-
-        //         await router.navigate(`/home/post?${serialized}`);
-
-        //         setTimeout(() => {
-        //             // @ts-expect-error fix
-        //             this.style.viewTransitionName = '';
-        //         }, 800)
-        //     }
-        // });
-        await document.startViewTransition();
-
-        if (this.tweet) {
-          const serialized = new URLSearchParams(
-            JSON.stringify(this.tweet)
-          ).toString();
-
-          await router.navigate(`/home/post?${serialized}`);
-
-          setTimeout(() => {
-            this.style.viewTransitionName = '';
-          }, 800);
-        }
-      } else {
-        const serialized = new URLSearchParams(
-          JSON.stringify(this.tweet)
-        ).toString();
-
-        await router.navigate(`/home/post?${serialized}`);
-      }
-    } else {
-      // emit custom event with post
-      this.dispatchEvent(
-        new CustomEvent('open', {
-          detail: {
-            tweet: this.tweet,
-          },
-        })
-      );
-    }
+    // Always emit an open event so the parent context can decide:
+    // - app-home on mobile: open bottom-sheet
+    // - desktop: navigate to the full page route
+    this.dispatchEvent(
+      new CustomEvent('open', {
+        detail: {
+          tweet: this.tweet,
+        },
+      })
+    );
   }
 
   async openParentPost() {
     const parentPost = this.tweet?.reply_to;
     if (!parentPost) return;
 
-    if (this.device === 'mobile') {
-      if ('startViewTransition' in document) {
-        this.style.viewTransitionName = 'card';
-        await document.startViewTransition();
-
-        const serialized = new URLSearchParams(
-          JSON.stringify(parentPost)
-        ).toString();
-
-        await router.navigate(`/home/post?${serialized}`);
-
-        setTimeout(() => {
-          this.style.viewTransitionName = '';
-        }, 800);
-      } else {
-        const serialized = new URLSearchParams(
-          JSON.stringify(parentPost)
-        ).toString();
-
-        await router.navigate(`/home/post?${serialized}`);
-      }
-    } else {
-      // emit custom event with parent post
-      this.dispatchEvent(
-        new CustomEvent('open', {
-          detail: {
-            tweet: parentPost,
-          },
-        })
-      );
-    }
+    // Emit custom event with parent post; parent decides navigation/presentation.
+    this.dispatchEvent(
+      new CustomEvent('open', {
+        detail: {
+          tweet: parentPost,
+        },
+      })
+    );
   }
 
   async deleteStatus() {

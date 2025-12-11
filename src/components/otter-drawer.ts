@@ -15,6 +15,13 @@ export class OtterDrawer extends LitElement {
   @property() placement: 'start' | 'end' | 'top' | 'bottom' = 'end';
   @state() private open: boolean = false;
 
+  // Drag-to-dismiss (bottom placement only)
+  @state() private dragging: boolean = false;
+  private dragStartY: number = 0;
+  private dragCurrentY: number = 0;
+  private dragStartTime: number = 0;
+  private dragPointerId: number | null = null;
+
   static styles = css`
     :host {
       --drawer-width: 400px;
@@ -25,6 +32,13 @@ export class OtterDrawer extends LitElement {
       --header-height: 60px;
       --footer-height: auto;
       --transition-speed: 0.3s;
+      --drawer-radius: 18px;
+      --drawer-body-padding: 1.5rem;
+      --drawer-header-padding: 1rem 1.5rem;
+      --drawer-footer-padding: 1rem 1.5rem;
+      --drawer-handle-width: 44px;
+      --drawer-handle-height: 4px;
+      --drawer-handle-bg: rgba(120, 120, 120, 0.35);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -72,6 +86,10 @@ export class OtterDrawer extends LitElement {
         visibility 0s;
     }
 
+    .drawer.dragging {
+      transition: none !important;
+    }
+
     /* Placement: end (right) */
     .drawer.end {
       top: 0;
@@ -105,6 +123,8 @@ export class OtterDrawer extends LitElement {
       bottom: 0;
       height: var(--drawer-height);
       transform: translateY(100%);
+      border-top-left-radius: var(--drawer-radius);
+      border-top-right-radius: var(--drawer-radius);
     }
 
     .drawer.bottom.open {
@@ -118,20 +138,42 @@ export class OtterDrawer extends LitElement {
       top: 0;
       height: var(--drawer-height);
       transform: translateY(-100%);
+      border-bottom-left-radius: var(--drawer-radius);
+      border-bottom-right-radius: var(--drawer-radius);
     }
 
     .drawer.top.open {
       transform: translateY(0);
     }
 
+    /* Android-like grab handle for bottom sheets */
+    .handle {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 10px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid transparent;
+      touch-action: none;
+    }
+
+    .handle-bar {
+      width: var(--drawer-handle-width);
+      height: var(--drawer-handle-height);
+      border-radius: 999px;
+      background: var(--drawer-handle-bg);
+    }
+
     .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1rem 1.5rem;
+      padding: var(--drawer-header-padding);
       border-bottom: 1px solid var(--drawer-border);
       min-height: var(--header-height);
       flex-shrink: 0;
+      touch-action: none;
     }
 
     .header h2 {
@@ -168,12 +210,12 @@ export class OtterDrawer extends LitElement {
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 1.5rem;
+      padding: var(--drawer-body-padding);
     }
 
     .footer {
       border-top: 1px solid var(--drawer-border);
-      padding: 1rem 1.5rem;
+      padding: var(--drawer-footer-padding);
       flex-shrink: 0;
     }
 
@@ -219,10 +261,27 @@ export class OtterDrawer extends LitElement {
       ></div>
 
       <div
-        class="drawer ${this.placement} ${this.open ? 'open' : ''}"
+        class="drawer ${this.placement} ${this.open ? 'open' : ''} ${this
+          .dragging
+          ? 'dragging'
+          : ''}"
         part="base"
       >
-        <div class="header" part="header">
+        ${this.placement === 'bottom'
+          ? html`<div
+              class="handle"
+              part="handle"
+              @pointerdown=${this.onDragStart}
+            >
+              <div class="handle-bar"></div>
+            </div>`
+          : null}
+
+        <div
+          class="header"
+          part="header"
+          @pointerdown=${this.placement === 'bottom' ? this.onDragStart : null}
+        >
           <h2>${this.label}</h2>
           <button
             class="close-button"
@@ -261,6 +320,7 @@ export class OtterDrawer extends LitElement {
    * Show the drawer with optional animation
    */
   async show() {
+    this.resetDragState();
     this.open = true;
 
     // Emit event for potential listeners
@@ -281,6 +341,7 @@ export class OtterDrawer extends LitElement {
    * Hide the drawer
    */
   async hide() {
+    this.resetDragState();
     this.open = false;
 
     // Emit event for potential listeners
@@ -318,6 +379,92 @@ export class OtterDrawer extends LitElement {
       this.hide();
     }
   }
+
+  private get drawerEl(): HTMLElement | null {
+    return this.shadowRoot?.querySelector('.drawer') as HTMLElement | null;
+  }
+
+  private resetDragState() {
+    this.dragging = false;
+    this.dragPointerId = null;
+    this.dragStartY = 0;
+    this.dragCurrentY = 0;
+    this.dragStartTime = 0;
+    this.drawerEl?.style.removeProperty('transform');
+  }
+
+  private onDragStart = (event: PointerEvent) => {
+    if (this.placement !== 'bottom' || !this.open) return;
+    // Only left-button / primary touch
+    if (event.button !== 0 && event.pointerType !== 'touch') return;
+
+    this.dragging = true;
+    this.dragPointerId = event.pointerId;
+    this.dragStartY = event.clientY;
+    this.dragCurrentY = event.clientY;
+    this.dragStartTime = performance.now();
+
+    // Capture pointer so we keep getting moves outside header/handle.
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+
+    window.addEventListener('pointermove', this.onDragMove, { passive: false });
+    window.addEventListener('pointerup', this.onDragEnd, { passive: false });
+    window.addEventListener('pointercancel', this.onDragEnd, {
+      passive: false,
+    });
+  };
+
+  private onDragMove = (event: PointerEvent) => {
+    if (!this.dragging || this.dragPointerId !== event.pointerId) return;
+
+    // Prevent scroll while dragging the sheet
+    event.preventDefault();
+
+    this.dragCurrentY = event.clientY;
+    const dy = Math.max(0, this.dragCurrentY - this.dragStartY);
+
+    const el = this.drawerEl;
+    if (!el) return;
+
+    el.style.transform = `translateY(${dy}px)`;
+  };
+
+  private onDragEnd = async (event: PointerEvent) => {
+    if (!this.dragging || this.dragPointerId !== event.pointerId) return;
+
+    window.removeEventListener('pointermove', this.onDragMove);
+    window.removeEventListener('pointerup', this.onDragEnd);
+    window.removeEventListener('pointercancel', this.onDragEnd);
+
+    const el = this.drawerEl;
+    const elapsed = Math.max(1, performance.now() - this.dragStartTime);
+    const dy = Math.max(0, this.dragCurrentY - this.dragStartY);
+    const velocity = dy / elapsed; // px/ms
+
+    // Threshold: either distance or velocity
+    const height = el?.getBoundingClientRect().height ?? 0;
+    const shouldClose = dy > height * 0.25 || velocity > 0.9;
+
+    this.dragging = false;
+
+    if (shouldClose) {
+      // Clear inline transform so close animation can run
+      el?.style.removeProperty('transform');
+      await this.hide();
+      return;
+    }
+
+    // Snap back
+    if (el) {
+      el.style.transform = 'translateY(0px)';
+      window.setTimeout(() => {
+        // Let CSS own the final transform state again
+        el.style.removeProperty('transform');
+      }, 180);
+    }
+
+    this.dragPointerId = null;
+  };
 }
 
 declare global {
