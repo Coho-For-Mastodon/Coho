@@ -200,19 +200,19 @@ export class ImagePreviewDialog extends LitElement {
     }
   };
 
-  private async handleGenerateAlt() {
-    const result = await generateAltText(this.src);
-    if (result) {
-      this.alt = result;
-    }
-  }
-
   private handleImageLoad = () => {
     // Only update if not already loaded to prevent re-renders
     if (!this.loaded) {
       this.loaded = true;
     }
   };
+
+  private async handleGenerateAlt() {
+    const result = await generateAltText(this.src);
+    if (result) {
+      this.alt = result;
+    }
+  }
 
   private close() {
     this.open = false;
