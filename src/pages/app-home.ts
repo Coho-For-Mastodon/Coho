@@ -970,20 +970,26 @@ export class AppHome extends LitElement {
   }
 
   async shareTarget(name: string) {
+    // Decode the URL-encoded filename from the query param
+    const decodedName = decodeURIComponent(name);
     const cache = await caches.open('shareTarget');
-    const result = [];
 
-    for (const request of await cache.keys()) {
-      // If the request URL contains the name, add the response to the result
-      if (request.url.includes(name)) {
-        result.push(await cache.match(request));
-      }
-    }
+    // Build the expected cache key (must match SW's format)
+    const expectedKey = `/_share/${encodeURIComponent(decodedName)}`;
 
-    console.log('share target result', result);
+    console.log('[Share Target] Looking for cache key:', expectedKey);
+    console.log(
+      '[Share Target] Available cache keys:',
+      (await cache.keys()).map((r) => r.url)
+    );
 
-    if (result.length > 0) {
+    const response = await cache.match(expectedKey);
+
+    if (response) {
+      console.log('[Share Target] Found cached file, opening dialog');
       await this.openNewDialog();
+    } else {
+      console.log('[Share Target] No cached file found');
     }
   }
 

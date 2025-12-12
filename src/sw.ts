@@ -488,11 +488,14 @@ async function shareTargetHandler({
   const mediaFiles = formData.getAll('image') as File[];
   const cache = await caches.open('shareTarget');
 
+  console.log('[SW] Share target received', mediaFiles.length, 'files');
+
   for (const mediaFile of mediaFiles) {
+    // Use a proper URL path as the cache key for reliable matching
+    const cacheKey = `/_share/${encodeURIComponent(mediaFile.name)}`;
+    console.log('[SW] Caching file with key:', cacheKey);
     await cache.put(
-      // TODO: Handle scenarios in which mediaFile.name isn't set,
-      // or doesn't include a proper extension.
-      mediaFile.name,
+      cacheKey,
       new Response(mediaFile, {
         headers: {
           'content-length': mediaFile.size.toString(),
@@ -502,7 +505,9 @@ async function shareTargetHandler({
     );
   }
 
-  return Response.redirect(`/home?name=${mediaFiles[0].name}`, 303);
+  const redirectUrl = `/home?name=${encodeURIComponent(mediaFiles[0].name)}`;
+  console.log('[SW] Redirecting to:', redirectUrl);
+  return Response.redirect(redirectUrl, 303);
 }
 
 const shareRouteHandler: RouteHandlerCallback = async ({ event }) => {

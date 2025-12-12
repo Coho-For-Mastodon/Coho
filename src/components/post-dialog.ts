@@ -639,22 +639,24 @@ export class PostDialog extends LitElement {
   }
 
   async shareTarget(name: string) {
+    // Decode the URL-encoded filename from the query param
+    const decodedName = decodeURIComponent(name);
     const cache = await caches.open('shareTarget');
-    const result = [];
 
-    for (const request of await cache.keys()) {
-      // If the request URL contains the name, add the response to the result
-      if (request.url.includes(name)) {
-        result.push(await cache.match(request));
-      }
-    }
+    // Build the expected cache key (must match SW's format)
+    const expectedKey = `/_share/${encodeURIComponent(decodedName)}`;
 
-    console.log('share target result', result);
+    console.log('[Share Target Dialog] Looking for cache key:', expectedKey);
+    console.log(
+      '[Share Target Dialog] Available cache keys:',
+      (await cache.keys()).map((r) => r.url)
+    );
 
-    if (result.length > 0) {
-      const blob = await result[0]!.blob();
+    const response = await cache.match(expectedKey);
 
-      // await this.openNewDialog();
+    if (response) {
+      console.log('[Share Target Dialog] Found cached file, uploading...');
+      const blob = await response.blob();
 
       this.attaching = true;
 
@@ -670,7 +672,14 @@ export class PostDialog extends LitElement {
       };
 
       this.attachments = [...this.attachments, newAttachment];
+
+      // Clean up the cache after successful upload
+      await cache.delete(expectedKey);
+      console.log('[Share Target Dialog] Cached file cleaned up');
+
       this.openEditDialog(newAttachment);
+    } else {
+      console.log('[Share Target Dialog] No cached file found');
     }
   }
 
