@@ -148,13 +148,21 @@ export const subToPush = async () => {
   const res = await response.json();
   console.log('subToPush', res);
 
-  // ask for permission to show notifications
-  const permission = await Notification.requestPermission();
+  const doWeHavePermission = Notification.permission === 'granted';
+  let permission: NotificationPermission | undefined;
+
+  if (!doWeHavePermission) {
+    console.log('Requesting notification permission from user...');
+    permission = await Notification.requestPermission();
+  } else {
+    permission = 'granted';
+  }
+
   if (permission === 'granted') {
     // show notification
     registration?.showNotification('Coho', {
       body: 'You have successfully subscribed to push notifications!',
-      icon: '/assets/icons/128-icon.png',
+      icon: '/assets/icons/new-icons/icon-128x128.png',
       tag: 'coho-subscribe',
     });
   }

@@ -322,6 +322,9 @@ const getNotifications = async (): Promise<void> => {
         break;
     }
 
+    // remove any HTML tags from message
+    message = message.replace(/<\/?[^>]+(>|$)/g, '');
+
     // show notification
     await self.registration.showNotification(title, {
       body: message,
@@ -441,6 +444,9 @@ self.addEventListener('push', async (event: PushEvent) => {
       },
     ];
   }
+
+  // remove any HTML tags from message
+  payload.body = payload.body?.replace(/<\/?[^>]+(>|$)/g, '');
 
   // show notification using the data Mastodon provides
   event.waitUntil(

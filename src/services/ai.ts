@@ -1,11 +1,5 @@
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 
-// const endpoint = "https://mammoth-ai.cognitiveservices.azure.com/";
-// const key = "a38533c238474e93999c8898e8d7419b";
-
-// const visionEndpoint = "https://mammoth-vision.cognitiveservices.azure.com/";
-// const visionKey = "8362308c1d174ffca10ca1eb77b1314f";
-
 export const requestMammothBot = async (
   prompt: string,
   previousMessages: { role: string; content: string }[]
