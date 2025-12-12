@@ -1091,11 +1091,11 @@ export class Timeline extends LitElement {
         label="Image Preview"
       >
         ${this.imgPreview
-        ? html`<img
+          ? html`<img
               src="${this.imgPreview}"
               style="width:100%;border-radius:6px;"
             />`
-        : null}
+          : null}
       </md-dialog>
 
       ${this.header
@@ -1123,7 +1123,7 @@ export class Timeline extends LitElement {
                 </md-menu-item>
                 <md-menu-item
                   @click="${() =>
-            this.changeTimelineType('home and some trending')}"
+                    this.changeTimelineType('home and some trending')}"
                 >
                   Home & Trending
                 </md-menu-item>
@@ -1140,9 +1140,9 @@ export class Timeline extends LitElement {
               id="refresh-manual-button"
               circle
               @click="${() => {
-            clearTimelineCache(this.timelineType);
-            this.refreshTimeline(true);
-          }}"
+                clearTimelineCache(this.timelineType);
+                this.refreshTimeline(true);
+              }}"
             >
               <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
             </md-icon-button>
@@ -1163,30 +1163,30 @@ export class Timeline extends LitElement {
               scroller
               .items=${this.timeline}
               .renderItem=${((tweet: Post, index: number) =>
-            index === this.timeline.length - 1
-              ? html`<div class="timeline-list-item">
+                index === this.timeline.length - 1
+                  ? html`<div class="timeline-list-item">
                       <timeline-item
                         @open="${($event: CustomEvent) =>
-                  this.handleOpen($event.detail.tweet)}"
+                          this.handleOpen($event.detail.tweet)}"
                         @summarize="${(
-                    $event: CustomEvent<HandleSummaryDetail>
-                  ) => this.handleSummary($event)}"
+                          $event: CustomEvent<HandleSummaryDetail>
+                        ) => this.handleSummary($event)}"
                         @translating="${(
-                    $event: CustomEvent<HandleTranslatingDetail>
-                  ) => this.handleTranslating($event)}"
+                          $event: CustomEvent<HandleTranslatingDetail>
+                        ) => this.handleTranslating($event)}"
                         tweetID="${tweet.id}"
                         @delete="${() => this.refreshTimeline()}"
                         @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                  this.showAnalyze(
-                    $event.detail.data as AnalyzeData,
-                    $event.detail.imageData as ImageAnalyzeData | null,
-                    $event.detail.tweet
-                  )}"
+                          this.showAnalyze(
+                            $event.detail.data as AnalyzeData,
+                            $event.detail.imageData as ImageAnalyzeData | null,
+                            $event.detail.tweet
+                          )}"
                         @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                  this.showImage($event.detail.imageURL)}"
+                          this.showImage($event.detail.imageURL)}"
                         ?show="${true}"
                         @replies="${($event: CustomEvent<RepliesDetail>) =>
-                  this.handleReplies($event.detail.data)}"
+                          this.handleReplies($event.detail.data)}"
                         .tweet="${tweet}"
                       ></timeline-item>
                       <div id="load-more-indicator">
@@ -1196,29 +1196,29 @@ export class Timeline extends LitElement {
                         <span>Loading more...</span>
                       </div>
                     </div>`
-              : html`<div class="timeline-list-item">
+                  : html`<div class="timeline-list-item">
                       <timeline-item
                         @open="${($event: CustomEvent) =>
-                  this.handleOpen($event.detail.tweet)}"
+                          this.handleOpen($event.detail.tweet)}"
                         @summarize="${(
-                    $event: CustomEvent<HandleSummaryDetail>
-                  ) => this.handleSummary($event)}"
+                          $event: CustomEvent<HandleSummaryDetail>
+                        ) => this.handleSummary($event)}"
                         @translating="${(
-                    $event: CustomEvent<HandleTranslatingDetail>
-                  ) => this.handleTranslating($event)}"
+                          $event: CustomEvent<HandleTranslatingDetail>
+                        ) => this.handleTranslating($event)}"
                         tweetID="${tweet.id}"
                         @delete="${() => this.refreshTimeline()}"
                         @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                  this.showAnalyze(
-                    $event.detail.data as AnalyzeData,
-                    $event.detail.imageData as ImageAnalyzeData | null,
-                    $event.detail.tweet
-                  )}"
+                          this.showAnalyze(
+                            $event.detail.data as AnalyzeData,
+                            $event.detail.imageData as ImageAnalyzeData | null,
+                            $event.detail.tweet
+                          )}"
                         @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                  this.showImage($event.detail.imageURL)}"
+                          this.showImage($event.detail.imageURL)}"
                         ?show="${true}"
                         @replies="${($event: CustomEvent<RepliesDetail>) =>
-                  this.handleReplies($event.detail.data)}"
+                          this.handleReplies($event.detail.data)}"
                         .tweet="${tweet}"
                       ></timeline-item>
                     </div>`) as unknown}
