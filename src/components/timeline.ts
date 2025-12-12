@@ -86,6 +86,12 @@ export class Timeline extends LitElement {
   private _hapticTriggered: boolean = false;
   private _prefetchedIds = new Set<string>();
 
+  // Cached element references for pull-to-refresh performance
+  private _refreshIndicator: HTMLElement | null = null;
+  private _refreshIcon: HTMLElement | null = null;
+  private _scrollContainer: HTMLElement | null = null;
+  private _rafId: number | null = null;
+
   @property({ type: String }) timelineType:
     | 'home'
     | 'public'
@@ -307,19 +313,22 @@ export class Timeline extends LitElement {
         justify-content: center;
         align-items: center;
         width: 100%;
-        transition: height 0.2s ease;
+        transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         flex-shrink: 0;
         z-index: 100;
         position: relative;
       }
 
       #refresh-indicator md-icon {
-        transform: rotate(0deg);
-        transition: transform 0.2s ease;
+        transform: rotate(0deg) scale(0.5);
+        transition:
+          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.3s ease;
         width: 32px;
         height: 32px;
         font-size: 32px;
         color: var(--md-sys-color-primary);
+        opacity: 0;
       }
 
       #refresh-indicator.refreshing {
@@ -328,6 +337,8 @@ export class Timeline extends LitElement {
 
       #refresh-indicator.refreshing md-icon {
         animation: spin 1s linear infinite;
+        transform: scale(1);
+        opacity: 1;
       }
 
       @keyframes spin {
@@ -447,7 +458,30 @@ export class Timeline extends LitElement {
   }
 
   private _getScrollContainer(): HTMLElement | null {
-    return this.shadowRoot?.querySelector('lit-virtualizer') as HTMLElement;
+    if (!this._scrollContainer) {
+      this._scrollContainer = this.shadowRoot?.querySelector(
+        'lit-virtualizer'
+      ) as HTMLElement;
+    }
+    return this._scrollContainer;
+  }
+
+  private _getRefreshIndicator(): HTMLElement | null {
+    if (!this._refreshIndicator) {
+      this._refreshIndicator = this.shadowRoot?.querySelector(
+        '#refresh-indicator'
+      ) as HTMLElement;
+    }
+    return this._refreshIndicator;
+  }
+
+  private _getRefreshIcon(): HTMLElement | null {
+    if (!this._refreshIcon) {
+      this._refreshIcon = this._getRefreshIndicator()?.querySelector(
+        'md-icon'
+      ) as HTMLElement;
+    }
+    return this._refreshIcon;
   }
 
   _handleTouchStart(e: TouchEvent) {
@@ -499,23 +533,37 @@ export class Timeline extends LitElement {
 
       this._pullDistance = deltaY * 0.5;
 
-      const indicator = this.shadowRoot?.querySelector(
-        '#refresh-indicator'
-      ) as HTMLElement;
-      const icon = indicator?.querySelector('md-icon') as HTMLElement;
-
-      if (indicator) {
-        indicator.style.height = `${Math.min(this._pullDistance, 150)}px`;
-        indicator.style.transition = 'none';
+      // Use requestAnimationFrame for smooth, batched DOM updates
+      if (this._rafId) {
+        cancelAnimationFrame(this._rafId);
       }
 
-      if (icon) {
-        const rotation = Math.min(
-          (this._pullDistance / this._threshold) * 360,
-          360
-        );
-        icon.style.transform = `rotate(${rotation}deg)`;
-      }
+      this._rafId = requestAnimationFrame(() => {
+        const indicator = this._getRefreshIndicator();
+        const icon = this._getRefreshIcon();
+
+        if (indicator) {
+          indicator.style.height = `${Math.min(this._pullDistance, 150)}px`;
+          indicator.style.transition = 'none';
+        }
+
+        if (icon) {
+          // Calculate progress (0 to 1)
+          const progress = Math.min(this._pullDistance / this._threshold, 1);
+          // MD3-style: rotate multiple times as you pull (up to 540 degrees)
+          const rotation = progress * 540;
+          // Scale from 0.5 to 1 as you pull
+          const scale = 0.5 + progress * 0.5;
+          // Opacity from 0 to 1
+          const opacity = progress;
+
+          icon.style.transition = 'none';
+          icon.style.transform = `rotate(${rotation}deg) scale(${scale})`;
+          icon.style.opacity = `${opacity}`;
+        }
+
+        this._rafId = null;
+      });
 
       if (this._pullDistance >= this._threshold && !this._hapticTriggered) {
         if (navigator.vibrate) navigator.vibrate(10);
@@ -528,9 +576,7 @@ export class Timeline extends LitElement {
       // and let normal scrolling happen
       this._isPulling = false;
       this._pullDistance = 0;
-      const indicator = this.shadowRoot?.querySelector(
-        '#refresh-indicator'
-      ) as HTMLElement;
+      const indicator = this._getRefreshIndicator();
       if (indicator) {
         indicator.style.height = '0px';
       }
@@ -542,11 +588,22 @@ export class Timeline extends LitElement {
     this._isPulling = false;
     this._hapticTriggered = false;
 
-    const indicator = this.shadowRoot?.querySelector(
-      '#refresh-indicator'
-    ) as HTMLElement;
+    // Cancel any pending animation frame
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
+
+    const indicator = this._getRefreshIndicator();
+    const icon = this._getRefreshIcon();
+
+    // Re-enable transitions for smooth animation
     if (indicator) {
-      indicator.style.transition = 'height 0.2s ease'; // Re-enable transition
+      indicator.style.transition = 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    }
+    if (icon) {
+      icon.style.transition =
+        'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease';
     }
 
     if (this._pullDistance >= this._threshold) {
@@ -555,6 +612,10 @@ export class Timeline extends LitElement {
 
       // Reset height to fixed loading height
       if (indicator) indicator.style.height = '60px';
+      if (icon) {
+        icon.style.transform = 'rotate(0deg) scale(1)';
+        icon.style.opacity = '1';
+      }
 
       await this.refreshTimeline(true);
 
@@ -563,8 +624,17 @@ export class Timeline extends LitElement {
         indicator.classList.remove('refreshing');
         indicator.style.height = '0px';
       }
+      if (icon) {
+        icon.style.transform = 'rotate(0deg) scale(0.5)';
+        icon.style.opacity = '0';
+      }
     } else {
+      // Snap back animation - animate back to initial state
       if (indicator) indicator.style.height = '0px';
+      if (icon) {
+        icon.style.transform = 'rotate(0deg) scale(0.5)';
+        icon.style.opacity = '0';
+      }
     }
 
     this._pullDistance = 0;
@@ -1021,11 +1091,11 @@ export class Timeline extends LitElement {
         label="Image Preview"
       >
         ${this.imgPreview
-          ? html`<img
+        ? html`<img
               src="${this.imgPreview}"
               style="width:100%;border-radius:6px;"
             />`
-          : null}
+        : null}
       </md-dialog>
 
       ${this.header
@@ -1053,7 +1123,7 @@ export class Timeline extends LitElement {
                 </md-menu-item>
                 <md-menu-item
                   @click="${() =>
-                    this.changeTimelineType('home and some trending')}"
+            this.changeTimelineType('home and some trending')}"
                 >
                   Home & Trending
                 </md-menu-item>
@@ -1070,9 +1140,9 @@ export class Timeline extends LitElement {
               id="refresh-manual-button"
               circle
               @click="${() => {
-                clearTimelineCache(this.timelineType);
-                this.refreshTimeline(true);
-              }}"
+            clearTimelineCache(this.timelineType);
+            this.refreshTimeline(true);
+          }}"
             >
               <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
             </md-icon-button>
@@ -1093,30 +1163,30 @@ export class Timeline extends LitElement {
               scroller
               .items=${this.timeline}
               .renderItem=${((tweet: Post, index: number) =>
-                index === this.timeline.length - 1
-                  ? html`<div class="timeline-list-item">
+            index === this.timeline.length - 1
+              ? html`<div class="timeline-list-item">
                       <timeline-item
                         @open="${($event: CustomEvent) =>
-                          this.handleOpen($event.detail.tweet)}"
+                  this.handleOpen($event.detail.tweet)}"
                         @summarize="${(
-                          $event: CustomEvent<HandleSummaryDetail>
-                        ) => this.handleSummary($event)}"
+                    $event: CustomEvent<HandleSummaryDetail>
+                  ) => this.handleSummary($event)}"
                         @translating="${(
-                          $event: CustomEvent<HandleTranslatingDetail>
-                        ) => this.handleTranslating($event)}"
+                    $event: CustomEvent<HandleTranslatingDetail>
+                  ) => this.handleTranslating($event)}"
                         tweetID="${tweet.id}"
                         @delete="${() => this.refreshTimeline()}"
                         @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                          this.showAnalyze(
-                            $event.detail.data as AnalyzeData,
-                            $event.detail.imageData as ImageAnalyzeData | null,
-                            $event.detail.tweet
-                          )}"
+                  this.showAnalyze(
+                    $event.detail.data as AnalyzeData,
+                    $event.detail.imageData as ImageAnalyzeData | null,
+                    $event.detail.tweet
+                  )}"
                         @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                          this.showImage($event.detail.imageURL)}"
+                  this.showImage($event.detail.imageURL)}"
                         ?show="${true}"
                         @replies="${($event: CustomEvent<RepliesDetail>) =>
-                          this.handleReplies($event.detail.data)}"
+                  this.handleReplies($event.detail.data)}"
                         .tweet="${tweet}"
                       ></timeline-item>
                       <div id="load-more-indicator">
@@ -1126,29 +1196,29 @@ export class Timeline extends LitElement {
                         <span>Loading more...</span>
                       </div>
                     </div>`
-                  : html`<div class="timeline-list-item">
+              : html`<div class="timeline-list-item">
                       <timeline-item
                         @open="${($event: CustomEvent) =>
-                          this.handleOpen($event.detail.tweet)}"
+                  this.handleOpen($event.detail.tweet)}"
                         @summarize="${(
-                          $event: CustomEvent<HandleSummaryDetail>
-                        ) => this.handleSummary($event)}"
+                    $event: CustomEvent<HandleSummaryDetail>
+                  ) => this.handleSummary($event)}"
                         @translating="${(
-                          $event: CustomEvent<HandleTranslatingDetail>
-                        ) => this.handleTranslating($event)}"
+                    $event: CustomEvent<HandleTranslatingDetail>
+                  ) => this.handleTranslating($event)}"
                         tweetID="${tweet.id}"
                         @delete="${() => this.refreshTimeline()}"
                         @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                          this.showAnalyze(
-                            $event.detail.data as AnalyzeData,
-                            $event.detail.imageData as ImageAnalyzeData | null,
-                            $event.detail.tweet
-                          )}"
+                  this.showAnalyze(
+                    $event.detail.data as AnalyzeData,
+                    $event.detail.imageData as ImageAnalyzeData | null,
+                    $event.detail.tweet
+                  )}"
                         @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                          this.showImage($event.detail.imageURL)}"
+                  this.showImage($event.detail.imageURL)}"
                         ?show="${true}"
                         @replies="${($event: CustomEvent<RepliesDetail>) =>
-                          this.handleReplies($event.detail.data)}"
+                  this.handleReplies($event.detail.data)}"
                         .tweet="${tweet}"
                       ></timeline-item>
                     </div>`) as unknown}
