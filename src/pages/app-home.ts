@@ -887,9 +887,19 @@ export class AppHome extends LitElement {
     const tabData = effectiveParams.get('tab');
     console.log('tabData', tabData);
 
-    if (tabData) {
+    // Restore tab from sessionStorage if no URL param override
+    let tabToOpen = tabData;
+    if (!tabToOpen) {
+      try {
+        tabToOpen = sessionStorage.getItem('coho:activeTab');
+      } catch {
+        // sessionStorage may be unavailable in some privacy contexts; ignore.
+      }
+    }
+
+    if (tabToOpen) {
       // Preload the component for the requested tab
-      switch (tabData) {
+      switch (tabToOpen) {
         case 'bookmarks':
           await this.loadBookmarks();
           break;
@@ -909,7 +919,7 @@ export class AppHome extends LitElement {
 
       // Wait for the component to be ready before switching tabs
       await this.updateComplete;
-      this.openATab(tabData);
+      this.openATab(tabToOpen);
     }
 
     window.requestIdleCallback(async () => {
@@ -1137,6 +1147,13 @@ export class AppHome extends LitElement {
   openATab(name: string) {
     console.log('tab name', name);
     this.activeTab = name;
+
+    // Persist active tab to sessionStorage for navigation restoration
+    try {
+      sessionStorage.setItem('coho:activeTab', name);
+    } catch {
+      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
   }
 
   async shareMyProfile() {
@@ -1305,6 +1322,13 @@ export class AppHome extends LitElement {
   async handleTabChange(event: TabChangeEvent) {
     const panel = event.detail.panel;
     this.activeTab = panel;
+
+    // Persist active tab to sessionStorage for navigation restoration
+    try {
+      sessionStorage.setItem('coho:activeTab', panel);
+    } catch {
+      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
 
     // Lazy load components based on which tab is shown
     switch (panel) {
