@@ -6,15 +6,15 @@ export declare class AppIndex extends LitElement {
   static get styles(): import('lit').CSSResult;
   connectedCallback(): Promise<void>;
   /**
+   * Initialize idle-time preloading
+   * Lazy imports the preload service to avoid bundle bloat
+   */
+  private initIdlePreload;
+  /**
    * Sync credentials from localStorage to IndexedDB
    * This ensures the service worker has access to the latest tokens
    */
   private syncCredentialsToIndexedDB;
-  /**
-   * Warm the service worker cache for notifications, bookmarks, and favorites
-   * Only if user has good network and data saver is off
-   */
-  private warmCacheIfAppropriate;
   /**
    * Apply theme color to both Shoelace and MD3 design tokens
    */

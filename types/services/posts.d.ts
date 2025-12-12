@@ -17,6 +17,10 @@ export declare function publishPost(
     multiple: boolean;
   }
 ): Promise<Post>;
+/**
+ * Convenience helper for publishing a poll post.
+ * Keeps callsites clean and avoids accidental media_ids usage.
+ */
 export declare function publishPollPost(
   post: string,
   poll: {

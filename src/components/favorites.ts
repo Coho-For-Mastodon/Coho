@@ -47,13 +47,23 @@ export class Favorites extends LitElement {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
           this.isLoading = true;
-          const { getFavorites } = await import('../services/favorites');
-          const favoritesData = await getFavorites();
-          console.log(favoritesData);
 
-          this.favorites = favoritesData;
+          // First, check for preloaded data for instant display
+          const { getPreloadedFavorites } = await import('../services/preload');
+          const preloaded = getPreloadedFavorites();
+
+          if (preloaded && preloaded.length > 0) {
+            console.log('[Favorites] Using preloaded data');
+            this.favorites = preloaded;
+          } else {
+            // Fallback to fetching if no preloaded data
+            const { getFavorites } = await import('../services/favorites');
+            const favoritesData = await getFavorites();
+            console.log(favoritesData);
+            this.favorites = favoritesData;
+          }
+
           this.isLoading = false;
-
           observer.disconnect();
         }
       });

@@ -153,11 +153,6 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-
-  if (event.data && event.data.type === 'WARM_CACHE') {
-    // Warm cache on app boot if network conditions are good
-    event.waitUntil(warmCache());
-  }
 });
 
 // Clean up old caches when a new service worker activates
@@ -465,104 +460,6 @@ self.addEventListener('push', async (event: PushEvent) => {
     })
   );
 });
-
-// Cache warming functions for better UX
-const warmNotificationsCache = async (): Promise<void> => {
-  try {
-    const accessToken = (await get('accessToken')) as string;
-    const server = (await get('server')) as string;
-
-    if (!accessToken || !server) {
-      console.log('[SW] Cache warming skipped: No auth credentials');
-      return;
-    }
-
-    const url = `https://${server}/api/v1/notifications`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    });
-
-    if (response.ok) {
-      const cache = await caches.open('notifications');
-      await cache.put(url, response.clone());
-      console.log('[SW] Notifications cache warmed');
-    }
-  } catch (error) {
-    console.error('[SW] Failed to warm notifications cache:', error);
-  }
-};
-
-const warmBookmarksCache = async (): Promise<void> => {
-  try {
-    const accessToken = (await get('accessToken')) as string;
-    const server = (await get('server')) as string;
-
-    if (!accessToken || !server) {
-      console.log('[SW] Cache warming skipped: No auth credentials');
-      return;
-    }
-
-    const url = `https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks?code=${accessToken}&server=${server}`;
-    const response = await fetch(url, {
-      method: 'GET',
-    });
-
-    if (response.ok) {
-      const cache = await caches.open('bookmarks');
-      await cache.put(url, response.clone());
-      console.log('[SW] Bookmarks cache warmed');
-    }
-  } catch (error) {
-    console.error('[SW] Failed to warm bookmarks cache:', error);
-  }
-};
-
-const warmFavoritesCache = async (): Promise<void> => {
-  try {
-    const accessToken = (await get('accessToken')) as string;
-    const server = (await get('server')) as string;
-
-    if (!accessToken || !server) {
-      console.log('[SW] Cache warming skipped: No auth credentials');
-      return;
-    }
-
-    const url = `https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites?code=${accessToken}&server=${server}`;
-    const response = await fetch(url, {
-      method: 'GET',
-    });
-
-    if (response.ok) {
-      const cache = await caches.open('favorites');
-      await cache.put(url, response.clone());
-      console.log('[SW] Favorites cache warmed');
-    }
-  } catch (error) {
-    console.error('[SW] Failed to warm favorites cache:', error);
-  }
-};
-
-const warmCache = async (): Promise<void> => {
-  // Skip cache warming in development mode
-  if (IS_DEV) {
-    console.log('[SW] Development mode: cache warming skipped');
-    return;
-  }
-
-  console.log('[SW] Starting cache warming...');
-
-  // Run all cache warming operations in parallel for better performance
-  await Promise.all([
-    warmNotificationsCache(),
-    warmBookmarksCache(),
-    warmFavoritesCache(),
-  ]);
-
-  console.log('[SW] Cache warming completed');
-};
 
 // periodic background sync
 self.addEventListener('periodicsync', async (event: Event) => {

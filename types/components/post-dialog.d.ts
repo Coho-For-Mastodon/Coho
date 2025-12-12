@@ -7,6 +7,7 @@ import './md/md-icon.js';
 import './md/md-icon-button.js';
 import './md/md-select.js';
 import './md/md-option.js';
+import './md/md-checkbox.js';
 import './media-edit-dialog.js';
 import './md/md-skeleton.js';
 import './handwriting-dialog.js';
@@ -59,15 +60,16 @@ export declare class PostDialog extends LitElement {
   protected firstUpdated(): Promise<void>;
   openNewDialog(): Promise<void>;
   shareTarget(name: string): Promise<void>;
+  private _togglePoll;
+  private _setPollOption;
+  private _readInputEventValue;
+  private _addPollOption;
+  private _removePollOption;
+  private _getPollPayload;
   attachFile(): Promise<void>;
   uploadFile(file: File, tempId: string): Promise<void>;
   addAIImageToPost(): Promise<void>;
   removeImage(id: string): void;
-  private _togglePoll;
-  private _setPollOption;
-  private _addPollOption;
-  private _removePollOption;
-  private _getPollPayload;
   publish(): Promise<void>;
   /**
    * Reset the dialog state after publishing or closing

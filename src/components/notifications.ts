@@ -380,12 +380,22 @@ export class Notifications extends LitElement {
     const observer = new IntersectionObserver((entries, observer) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
-          const { getNotifications } =
-            await import('../services/notifications');
-          const notificationsData = await getNotifications();
-          console.log(notificationsData);
+          // First, check for preloaded data for instant display
+          const { getPreloadedNotifications } =
+            await import('../services/preload');
+          const preloaded = getPreloadedNotifications();
 
-          this.notifications = notificationsData;
+          if (preloaded && preloaded.length > 0) {
+            console.log('[Notifications] Using preloaded data');
+            this.notifications = preloaded;
+          } else {
+            // Fallback to fetching if no preloaded data
+            const { getNotifications } =
+              await import('../services/notifications');
+            const notificationsData = await getNotifications();
+            console.log(notificationsData);
+            this.notifications = notificationsData;
+          }
 
           // Check follow status for all follow notifications
           await this.checkFollowStatuses();
