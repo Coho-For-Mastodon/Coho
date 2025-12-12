@@ -40,6 +40,11 @@ export class MdDialog extends LitElement {
         sans-serif;
     }
 
+    dialog[open] {
+      display: flex;
+      flex-direction: column;
+    }
+
     dialog.fullscreen {
       max-width: 100vw;
       max-height: 100vh;
@@ -59,6 +64,7 @@ export class MdDialog extends LitElement {
       justify-content: space-between;
       padding: 24px 24px 16px 24px;
       gap: 16px;
+      flex-shrink: 0;
     }
 
     .dialog-title {
@@ -72,7 +78,8 @@ export class MdDialog extends LitElement {
     .dialog-body {
       padding: 0 24px 24px 24px;
       overflow-y: auto;
-      max-height: calc(100vh - 200px);
+      flex: 1;
+      min-height: 0;
     }
 
     .dialog-footer {
@@ -81,6 +88,7 @@ export class MdDialog extends LitElement {
       justify-content: flex-end;
       gap: 8px;
       padding: 16px 24px 24px 24px;
+      flex-shrink: 0;
     }
 
     ::slotted([slot='header-actions']) {

@@ -6,10 +6,28 @@ import { router } from './utils/router';
 import './pages/app-login';
 import './components/header';
 import './components/image-preview-dialog';
-import { getSettings, Settings } from './services/settings';
+import { getSettings } from './services/settings';
 
 // Log build version for debugging
 console.log('[Coho] Build version:', __APP_VERSION__);
+
+// ============================================================================
+// LAUNCH INTENT CAPTURE (PWA manifest shortcuts / deep links)
+// ============================================================================
+// Some boot-time redirects or navigations can accidentally drop query params
+// from the initial URL (e.g. /home?tab=notifications). Capture the first URL
+// we were launched with so downstream pages can recover intent if needed.
+try {
+  const key = 'coho:launchUrl';
+  if (!sessionStorage.getItem(key)) {
+    sessionStorage.setItem(
+      key,
+      `${window.location.pathname}${window.location.search}${window.location.hash}`
+    );
+  }
+} catch {
+  // sessionStorage may be unavailable in some privacy contexts; ignore.
+}
 
 // ============================================================================
 // STALE ASSET RECOVERY
@@ -137,8 +155,22 @@ export class AppIndex extends LitElement {
       this.applyThemeColor(color);
     }
 
-    // Warm cache on app boot if conditions are good
-    this.warmCacheIfAppropriate(settings);
+    // Preload data during idle time if conditions are good
+    // This is lazy-imported to avoid impacting first load bundle size
+    this.initIdlePreload();
+  }
+
+  /**
+   * Initialize idle-time preloading
+   * Lazy imports the preload service to avoid bundle bloat
+   */
+  private async initIdlePreload() {
+    try {
+      const { initPreload } = await import('./services/preload');
+      await initPreload();
+    } catch (error) {
+      console.warn('[App] Preload initialization failed:', error);
+    }
   }
 
   /**
@@ -154,57 +186,6 @@ export class AppIndex extends LitElement {
       await set('accessToken', accessToken);
       await set('server', server);
       console.log('[App] Synced credentials to IndexedDB');
-    }
-  }
-
-  /**
-   * Warm the service worker cache for notifications, bookmarks, and favorites
-   * Only if user has good network and data saver is off
-   */
-  private async warmCacheIfAppropriate(settings: Settings) {
-    // Skip if data saver mode is enabled
-    if (settings.data_saver) {
-      console.log('[App] Cache warming skipped: Data saver enabled');
-      return;
-    }
-
-    // Check if user is authenticated
-    const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) {
-      console.log('[App] Cache warming skipped: Not authenticated');
-      return;
-    }
-
-    console.log('checking cache warming: accessToken', accessToken);
-
-    // Check network connection quality
-    if ('connection' in navigator) {
-      const conn = (navigator as { connection?: NetworkInformation })
-        .connection;
-
-      // Skip on slow connections (2G, slow-2g) or if saveData is enabled
-      if (
-        conn?.saveData ||
-        conn?.effectiveType === '3g' ||
-        conn?.effectiveType === '2g' ||
-        conn?.effectiveType === 'slow-2g'
-      ) {
-        console.log(
-          '[App] Cache warming skipped: Slow connection or saveData enabled'
-        );
-        return;
-      }
-    }
-
-    console.log(
-      '[App] Conditions met for cache warming.',
-      navigator.serviceWorker.controller
-    );
-
-    // All conditions met - trigger cache warming in service worker
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      console.log('[App] Triggering cache warming...');
-      navigator.serviceWorker.controller.postMessage({ type: 'WARM_CACHE' });
     }
   }
 

@@ -1,4 +1,4 @@
-import { LitElement, html, css, nothing } from 'lit';
+import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
 
 import '../components/header';
@@ -10,8 +10,8 @@ import { Post } from '../interfaces/Post';
 import { getReplies } from '../services/timeline';
 
 import { replyToPost } from '../services/posts';
-import { classMap } from 'lit/directives/class-map.js';
 import type { MdTextArea } from '../components/md/md-text-area';
+import { router } from '../utils/router';
 
 @customElement('post-detail')
 export class PostDetail extends LitElement {
@@ -27,59 +27,98 @@ export class PostDetail extends LitElement {
     css`
       :host {
         display: block;
+        height: 100%;
+        max-height: 100%;
+      }
 
-        overflow-y: scroll;
+      /* Full page default */
+      :host(:not([embedded])) {
+        height: 100vh;
+        max-height: 100vh;
       }
 
       main {
-        padding-top: 60px;
-
+        height: 100%;
+        width: 100%;
         display: flex;
         flex-direction: column;
-        padding-left: 20px;
-        justify-content: space-between;
-        align-items: flex-start;
-        padding-right: 20px;
-        gap: 0px;
-        overflow-y: auto;
-        height: calc(100vh - 60px);
+        box-sizing: border-box;
+        padding-left: 16px;
+        padding-right: 16px;
       }
 
-      #replies ul {
+      /* Account for fixed header on full-page view */
+      :host(:not([embedded])) main {
+        padding-top: 60px;
+      }
+
+      .scroller {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        width: 100%;
+        max-width: var(--post-detail-max-width, 720px);
+        margin: 0 auto;
+        padding-top: 10px;
+        padding-bottom: 12px;
+      }
+
+      .post-section {
+        padding-bottom: 12px;
+      }
+
+      #main {
+        min-height: 230px;
+        view-transition-name: card;
+      }
+
+      .replies-section {
+        margin-top: 10px;
+      }
+
+      .replies-title {
+        margin: 0 0 10px 0;
+        font-size: var(--md-sys-typescale-title-medium-font-size, 16px);
+        color: var(--md-sys-color-on-surface, #fff);
+      }
+
+      .replies-list {
         list-style: none;
         padding: 0;
         margin: 0;
-
         display: flex;
         flex-direction: column;
+        gap: 8px;
       }
 
-      md-button::part(control) {
-        border: none;
-      }
-
-      #main-block {
-        display: flex;
-        flex-direction: column;
-        flex: 1.5;
-        /* position: sticky;
-        top: 60px; */
-
-        /* overflow-x: hidden; */
-
+      .composer {
         width: 100%;
-
-        margin-bottom: 4em;
+        max-width: var(--post-detail-max-width, 720px);
+        margin: 0 auto;
+        padding-top: 10px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.18);
+        border-radius: 12px;
       }
 
-      #post-actions {
+      .composer-shell {
+        background: var(
+          --md-sys-color-surface-container,
+          rgba(255, 255, 255, 0.06)
+        );
+        border: 1px solid
+          var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
+        border-radius: 16px;
+        padding: 10px;
+      }
+
+      .composer-inner {
         display: flex;
-        justify-content: flex-end;
-        gap: 6px;
         flex-direction: column;
+        gap: 8px;
       }
 
-      #replying-to-indicator {
+      .replying-to-indicator {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -88,34 +127,47 @@ export class PostDetail extends LitElement {
         padding: 4px 8px;
         background: var(--md-sys-color-surface-container-high);
         border-radius: 8px;
-        margin-bottom: 8px;
       }
 
-      #replies {
+      md-text-area {
         width: 100%;
       }
 
-      #replies h2 {
-        margin-top: 0;
-        margin-left: 15px;
+      md-text-area.reply-input {
+        --md-text-area-min-height: 56px;
+        --md-text-area-resize: none;
+        --md-text-area-radius: 14px;
+        --md-text-area-padding: 10px 12px;
       }
 
-      #reply-button {
-        place-self: flex-end;
+      .composer-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
       }
 
-      #main {
-        min-height: 230px;
-
-        view-transition-name: card;
+      md-button::part(control) {
+        border: none;
       }
 
-      .standalone {
-        padding: 0;
+      @media (min-width: 820px) {
+        main {
+          padding-left: 24px;
+          padding-right: 24px;
+        }
       }
 
-      .standalone #main-block {
-        top: 0;
+      @media (min-width: 1100px) {
+        :host(:not([embedded])) main {
+          padding-left: 32px;
+          padding-right: 32px;
+        }
+      }
+
+      /* Embedded mode should fully rely on its container */
+      :host([embedded]) main {
+        padding-top: 0;
       }
 
       @media (prefers-color-scheme: dark) {
@@ -136,62 +188,14 @@ export class PostDetail extends LitElement {
           opacity: 1;
         }
       }
-
-      @media (min-width: 1250px) {
-        main {
-          padding-left: 26vw;
-          padding-right: 26vw;
-        }
-      }
-
-      @media (min-width: 820px) {
-        main {
-          padding-left: 22vw;
-          padding-right: 22vw;
-        }
-      }
-
-      @media (max-width: 820px) {
-        main {
-          flex-direction: column;
-          display: flex;
-          height: 79vh;
-          overflow-y: auto;
-        }
-
-        #post-actions {
-          position: fixed;
-          bottom: 10px;
-          left: 10px;
-          right: 10px;
-          background: #f8f8f80f;
-          padding: 8px;
-          border-radius: 6px;
-          z-index: 999;
-          backdrop-filter: blur(42px);
-        }
-
-        #main-block {
-          display: initial;
-          position: initial;
-          width: 100%;
-          overflow-x: initial;
-        }
-
-        #main {
-          position: initial;
-          flex: 1;
-        }
-
-        #replies {
-          width: 100%;
-        }
-      }
     `,
   ];
 
   async connectedCallback() {
     super.connectedCallback();
+
+    // Keep CSS in sync with whether we're embedded (sheet/dialog) vs full page
+    this.toggleAttribute('embedded', this.passed_tweet !== null);
 
     if (this.passed_tweet) {
       this.tweet = this.passed_tweet;
@@ -213,6 +217,19 @@ export class PostDetail extends LitElement {
     decoded.content = decoded.content.replace(/\+/g, ' ').replace(/-/g, '');
 
     this.tweet = decoded;
+  }
+
+  protected updated(changedProperties: PropertyValues) {
+    super.updated(changedProperties);
+
+    if (changedProperties.has('passed_tweet')) {
+      this.toggleAttribute('embedded', this.passed_tweet !== null);
+      if (this.passed_tweet) {
+        this.tweet = this.passed_tweet;
+        // Ensure replies load even if passed_tweet is set after firstUpdated.
+        void this.loadReplies();
+      }
+    }
   }
 
   async firstUpdated() {
@@ -268,59 +285,108 @@ export class PostDetail extends LitElement {
     }
   }
 
+  private async handleOpenPost(e: CustomEvent<{ tweet: Post }>) {
+    const tweet = e.detail.tweet;
+    if (!tweet) return;
+
+    // If we're embedded in a sheet/dialog, keep navigation "in-place"
+    // by swapping the post and reloading replies.
+    if (this.passed_tweet) {
+      this.tweet = tweet;
+      this.replyingTo = null;
+      await this.loadReplies();
+
+      const scroller = this.renderRoot?.querySelector(
+        '.scroller'
+      ) as HTMLElement | null;
+      scroller?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Full-page mode: navigate to the new post route.
+    router.navigate(`/home/post?${encodeURIComponent(JSON.stringify(tweet))}`);
+  }
+
   render() {
+    const embedded = this.passed_tweet !== null;
     return html`
-      ${!this.passed_tweet
+      ${!embedded
         ? html`<app-header ?enableBack="${true}"></app-header>`
         : null}
 
-      <main class=${classMap({ standalone: this.passed_tweet !== null })}>
-        <div id="main-block">
-          <timeline-item id="main" .tweet="${this.tweet!}"></timeline-item>
-          <div id="post-actions">
-            ${this.replyingTo
-              ? html`
-                  <div id="replying-to-indicator">
-                    <span>Replying to @${this.replyingTo.account.acct}</span>
-                    <md-icon-button
-                      name="close"
-                      @click=${() => (this.replyingTo = null)}
-                    ></md-icon-button>
-                  </div>
-                `
+      <main>
+        <div class="scroller">
+          <section class="post-section">
+            <timeline-item
+              id="main"
+              .tweet="${this.tweet!}"
+              @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                this.handleOpenPost(e)}"
+            ></timeline-item>
+          </section>
+
+          <section class="replies-section">
+            ${this.replies.length > 0
+              ? html`<h2 class="replies-title">Replies</h2>`
               : nothing}
-            <md-text-area
-              variant="outlined"
-              placeholder="Reply to this post..."
-            ></md-text-area>
-            <md-button
-              @click="${() => this.handleReply()}"
-              id="reply-button"
-              variant="filled"
-            >
-              Reply
 
-              <md-icon slot="suffix" src="/assets/add-outline.svg"></md-icon>
-            </md-button>
+            <ul class="replies-list">
+              ${this.replies.map(
+                (reply) => html`
+                  <timeline-item
+                    .tweet="${reply}"
+                    ?show="${true}"
+                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                      this.handleOpenPost(e)}"
+                    @reply-clicked="${(e: CustomEvent) =>
+                      this.handleReplyClick(e)}"
+                  ></timeline-item>
+                `
+              )}
+            </ul>
+          </section>
+        </div>
+
+        <footer class="composer">
+          <div class="composer-shell">
+            <div class="composer-inner">
+              ${this.replyingTo
+                ? html`
+                    <div class="replying-to-indicator">
+                      <span>Replying to @${this.replyingTo.account.acct}</span>
+                      <md-icon-button
+                        name="close"
+                        @click=${() => (this.replyingTo = null)}
+                      ></md-icon-button>
+                    </div>
+                  `
+                : nothing}
+
+              <md-text-area
+                class="reply-input"
+                variant="outlined"
+                rows="2"
+                placeholder="Reply to this post..."
+              ></md-text-area>
+
+              <div class="composer-actions">
+                <md-button
+                  @click="${() => this.handleReply()}"
+                  id="reply-button"
+                  variant="filled"
+                  pill
+                  size="small"
+                >
+                  Reply
+                  <md-icon
+                    slot="suffix"
+                    src="/assets/add-outline.svg"
+                  ></md-icon>
+                </md-button>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div id="replies">
-          ${this.replies.length > 0 ? html`<h2>Replies</h2>` : nothing}
-
-          <ul>
-            ${this.replies.map(
-              (reply) => html`
-                <timeline-item
-                  .tweet="${reply}"
-                  ?show="${true}"
-                  @reply-clicked="${(e: CustomEvent) =>
-                    this.handleReplyClick(e)}"
-                ></timeline-item>
-              `
-            )}
-          </ul>
-        </div>
+        </footer>
       </main>
     `;
   }

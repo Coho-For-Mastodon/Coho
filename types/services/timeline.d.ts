@@ -1,17 +1,28 @@
 import { Post } from '../interfaces/Post';
-export declare const enrichPostsWithReplyContext: (posts: Post[]) => Promise<Post[]>;
+export declare const enrichPostsWithReplyContext: (
+  posts: Post[]
+) => Promise<Post[]>;
 export type { Post };
 export declare const savePlace: (id: string) => Promise<void>;
 export declare const getHomeTimeline: () => Promise<Post[]>;
 export declare const mixTimeline: (type?: string) => Promise<Post[]>;
 export declare const addSomeInterestFinds: () => Promise<Post[]>;
 export declare const getPreviewTimeline: () => Promise<Post[]>;
-export declare const getTrendingLinks: () => Promise<import("../mastodon").TrendingLink[]>;
-export declare const getTrendingStatuses: () => Promise<import("../mastodon").Post[]>;
-export declare const getTrendingTags: () => Promise<import("../mastodon").TrendingTag[]>;
+export declare const getTrendingLinks: () => Promise<
+  import('../mastodon').TrendingLink[]
+>;
+export declare const getTrendingStatuses: () => Promise<
+  import('../mastodon').Post[]
+>;
+export declare const getTrendingTags: () => Promise<
+  import('../mastodon').TrendingTag[]
+>;
 export declare const resetLastPageID: () => Promise<void>;
 export declare const getLastPlaceTimeline: () => Promise<Post[] | undefined>;
-export declare const getPaginatedHomeTimeline: (type?: string) => Promise<Post[]>;
+export declare const getPaginatedHomeTimeline: (
+  type?: string,
+  maxId?: string
+) => Promise<Post[]>;
 /**
  * Prefetch the next page of timeline data.
  * This is a fire-and-forget operation - the SW will cache the response.
@@ -22,11 +33,26 @@ export declare const getPublicTimeline: () => Promise<Post[]>;
 export declare const boostPost: (id: string) => Promise<any>;
 export declare const reblogPost: (id: string) => Promise<any>;
 export declare const getReplies: (id: string) => Promise<{
-    ancestors: Post[];
-    descendants: Post[];
+  ancestors: Post[];
+  descendants: Post[];
 }>;
 export declare const reply: (id: string, replyContent: string) => Promise<any>;
-export declare const mediaTimeline: (userId?: string) => Promise<import("../mastodon").Post[]>;
+/**
+ * Vote in a poll.
+ * Mastodon API: POST /api/v1/polls/:id/votes
+ */
+export declare const votePoll: (
+  pollId: string,
+  choices: number[]
+) => Promise<NonNullable<Post['poll']>>;
+export declare const mediaTimeline: (
+  userId?: string
+) => Promise<import('../mastodon').Post[]>;
 export declare const searchTimeline: (query: string) => Promise<any>;
-export declare const getHashtagTimeline: (hashtag: string, maxId?: string) => Promise<import("../mastodon").Post[]>;
-export declare const getAStatus: (id: string) => Promise<import("../mastodon").Post>;
+export declare const getHashtagTimeline: (
+  hashtag: string,
+  maxId?: string
+) => Promise<import('../mastodon').Post[]>;
+export declare const getAStatus: (
+  id: string
+) => Promise<import('../mastodon').Post>;

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-let customPlugins = [];
+const customPlugins = [];
 
 // Build version - shared between main app and service worker
 const BUILD_VERSION = new Date().toISOString();
@@ -121,6 +121,12 @@ customPlugins.push({
 // https://vitejs.dev/config/
 export default defineConfig({
   base: '/',
+  css: {
+    transformer: 'postcss',
+  },
+  worker: {
+    format: 'es',
+  },
   build: {
     sourcemap: false,
     assetsDir: 'code',

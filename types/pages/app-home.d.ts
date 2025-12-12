@@ -48,6 +48,7 @@ export declare class AppHome extends LitElement {
   favoritesLoaded: boolean;
   notificationsLoaded: boolean;
   searchLoaded: boolean;
+  messagesLoaded: boolean;
   appThemeLoaded: boolean;
   userTermsLoaded: boolean;
   rightClickLoaded: boolean;
@@ -61,7 +62,7 @@ export declare class AppHome extends LitElement {
   private translationToast;
   private errorToast;
   private summaryDialog;
-  private openTweetDialog;
+  private openTweetSheet;
   private homeTimeline;
   private postDialog;
   static get styles(): import('lit').CSSResult[];
@@ -102,12 +103,14 @@ export declare class AppHome extends LitElement {
     }
   ): void;
   handleOpenTweet(tweet: Post): Promise<void>;
+  private handleOpenTweetSheetHide;
   disconnectedCallback(): Promise<void>;
   reloadHome(): void;
   loadBookmarks(): Promise<void>;
   loadFavorites(): Promise<void>;
   loadNotifications(): Promise<void>;
   loadSearch(): Promise<void>;
+  loadMessages(): Promise<void>;
   loadAppTheme(): Promise<void>;
   loadUserTerms(): Promise<void>;
   loadRightClick(): Promise<void>;

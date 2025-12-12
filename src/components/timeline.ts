@@ -86,6 +86,12 @@ export class Timeline extends LitElement {
   private _hapticTriggered: boolean = false;
   private _prefetchedIds = new Set<string>();
 
+  // Cached element references for pull-to-refresh performance
+  private _refreshIndicator: HTMLElement | null = null;
+  private _refreshIcon: HTMLElement | null = null;
+  private _scrollContainer: HTMLElement | null = null;
+  private _rafId: number | null = null;
+
   @property({ type: String }) timelineType:
     | 'home'
     | 'public'
@@ -211,6 +217,8 @@ export class Timeline extends LitElement {
       .timeline-list-item {
         margin-bottom: 0px;
         width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
       }
 
       #load-more {
@@ -305,19 +313,22 @@ export class Timeline extends LitElement {
         justify-content: center;
         align-items: center;
         width: 100%;
-        transition: height 0.2s ease;
+        transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         flex-shrink: 0;
         z-index: 100;
         position: relative;
       }
 
       #refresh-indicator md-icon {
-        transform: rotate(0deg);
-        transition: transform 0.2s ease;
+        transform: rotate(0deg) scale(0.5);
+        transition:
+          transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.3s ease;
         width: 32px;
         height: 32px;
         font-size: 32px;
         color: var(--md-sys-color-primary);
+        opacity: 0;
       }
 
       #refresh-indicator.refreshing {
@@ -326,6 +337,8 @@ export class Timeline extends LitElement {
 
       #refresh-indicator.refreshing md-icon {
         animation: spin 1s linear infinite;
+        transform: scale(1);
+        opacity: 1;
       }
 
       @keyframes spin {
@@ -388,6 +401,23 @@ export class Timeline extends LitElement {
       md-menu {
         min-width: 200px;
       }
+
+      #load-more-indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 24px 16px;
+        gap: 8px;
+        color: var(--md-sys-color-on-surface-variant, #666);
+        font-size: 14px;
+      }
+
+      #load-more-indicator md-icon {
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        color: var(--md-sys-color-primary);
+      }
     `,
   ];
 
@@ -428,7 +458,30 @@ export class Timeline extends LitElement {
   }
 
   private _getScrollContainer(): HTMLElement | null {
-    return this.shadowRoot?.querySelector('lit-virtualizer') as HTMLElement;
+    if (!this._scrollContainer) {
+      this._scrollContainer = this.shadowRoot?.querySelector(
+        'lit-virtualizer'
+      ) as HTMLElement;
+    }
+    return this._scrollContainer;
+  }
+
+  private _getRefreshIndicator(): HTMLElement | null {
+    if (!this._refreshIndicator) {
+      this._refreshIndicator = this.shadowRoot?.querySelector(
+        '#refresh-indicator'
+      ) as HTMLElement;
+    }
+    return this._refreshIndicator;
+  }
+
+  private _getRefreshIcon(): HTMLElement | null {
+    if (!this._refreshIcon) {
+      this._refreshIcon = this._getRefreshIndicator()?.querySelector(
+        'md-icon'
+      ) as HTMLElement;
+    }
+    return this._refreshIcon;
   }
 
   _handleTouchStart(e: TouchEvent) {
@@ -480,23 +533,37 @@ export class Timeline extends LitElement {
 
       this._pullDistance = deltaY * 0.5;
 
-      const indicator = this.shadowRoot?.querySelector(
-        '#refresh-indicator'
-      ) as HTMLElement;
-      const icon = indicator?.querySelector('md-icon') as HTMLElement;
-
-      if (indicator) {
-        indicator.style.height = `${Math.min(this._pullDistance, 150)}px`;
-        indicator.style.transition = 'none';
+      // Use requestAnimationFrame for smooth, batched DOM updates
+      if (this._rafId) {
+        cancelAnimationFrame(this._rafId);
       }
 
-      if (icon) {
-        const rotation = Math.min(
-          (this._pullDistance / this._threshold) * 360,
-          360
-        );
-        icon.style.transform = `rotate(${rotation}deg)`;
-      }
+      this._rafId = requestAnimationFrame(() => {
+        const indicator = this._getRefreshIndicator();
+        const icon = this._getRefreshIcon();
+
+        if (indicator) {
+          indicator.style.height = `${Math.min(this._pullDistance, 150)}px`;
+          indicator.style.transition = 'none';
+        }
+
+        if (icon) {
+          // Calculate progress (0 to 1)
+          const progress = Math.min(this._pullDistance / this._threshold, 1);
+          // MD3-style: rotate multiple times as you pull (up to 540 degrees)
+          const rotation = progress * 540;
+          // Scale from 0.5 to 1 as you pull
+          const scale = 0.5 + progress * 0.5;
+          // Opacity from 0 to 1
+          const opacity = progress;
+
+          icon.style.transition = 'none';
+          icon.style.transform = `rotate(${rotation}deg) scale(${scale})`;
+          icon.style.opacity = `${opacity}`;
+        }
+
+        this._rafId = null;
+      });
 
       if (this._pullDistance >= this._threshold && !this._hapticTriggered) {
         if (navigator.vibrate) navigator.vibrate(10);
@@ -509,9 +576,7 @@ export class Timeline extends LitElement {
       // and let normal scrolling happen
       this._isPulling = false;
       this._pullDistance = 0;
-      const indicator = this.shadowRoot?.querySelector(
-        '#refresh-indicator'
-      ) as HTMLElement;
+      const indicator = this._getRefreshIndicator();
       if (indicator) {
         indicator.style.height = '0px';
       }
@@ -523,11 +588,22 @@ export class Timeline extends LitElement {
     this._isPulling = false;
     this._hapticTriggered = false;
 
-    const indicator = this.shadowRoot?.querySelector(
-      '#refresh-indicator'
-    ) as HTMLElement;
+    // Cancel any pending animation frame
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
+
+    const indicator = this._getRefreshIndicator();
+    const icon = this._getRefreshIcon();
+
+    // Re-enable transitions for smooth animation
     if (indicator) {
-      indicator.style.transition = 'height 0.2s ease'; // Re-enable transition
+      indicator.style.transition = 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    }
+    if (icon) {
+      icon.style.transition =
+        'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease';
     }
 
     if (this._pullDistance >= this._threshold) {
@@ -536,6 +612,10 @@ export class Timeline extends LitElement {
 
       // Reset height to fixed loading height
       if (indicator) indicator.style.height = '60px';
+      if (icon) {
+        icon.style.transform = 'rotate(0deg) scale(1)';
+        icon.style.opacity = '1';
+      }
 
       await this.refreshTimeline(true);
 
@@ -544,8 +624,17 @@ export class Timeline extends LitElement {
         indicator.classList.remove('refreshing');
         indicator.style.height = '0px';
       }
+      if (icon) {
+        icon.style.transform = 'rotate(0deg) scale(0.5)';
+        icon.style.opacity = '0';
+      }
     } else {
+      // Snap back animation - animate back to initial state
       if (indicator) indicator.style.height = '0px';
+      if (icon) {
+        icon.style.transform = 'rotate(0deg) scale(0.5)';
+        icon.style.opacity = '0';
+      }
     }
 
     this._pullDistance = 0;
@@ -663,9 +752,14 @@ export class Timeline extends LitElement {
       !this.loadingData &&
       this.timeline.length > 0
     ) {
+      // Set flag immediately to prevent concurrent loads
       this.loadingData = true;
-      await this.loadMore();
-      this.loadingData = false;
+
+      try {
+        await this.loadMore();
+      } finally {
+        this.loadingData = false;
+      }
     }
   }
 
@@ -709,7 +803,7 @@ export class Timeline extends LitElement {
         console.log('timelineData', timelineDataMix);
 
         this.timeline = [];
-        await this.hasUpdated;
+        await this.updateComplete;
 
         // Deduplicate by post ID
         const uniqueMix = Array.from(
@@ -730,7 +824,7 @@ export class Timeline extends LitElement {
         console.log('timelineData', timelineDataMix2);
 
         this.timeline = [];
-        await this.hasUpdated;
+        await this.updateComplete;
 
         // Deduplicate by post ID
         const uniqueMix2 = Array.from(
@@ -754,7 +848,7 @@ export class Timeline extends LitElement {
           const timelineData = await getLastPlaceTimeline();
 
           this.timeline = [];
-          await this.hasUpdated;
+          await this.updateComplete;
 
           if (timelineData) {
             // Deduplicate by post ID
@@ -780,7 +874,7 @@ export class Timeline extends LitElement {
         console.log('timelineData', timelineData);
 
         this.timeline = [];
-        await this.hasUpdated;
+        await this.updateComplete;
 
         // Deduplicate by post ID
         const uniqueHome = Array.from(
@@ -801,7 +895,7 @@ export class Timeline extends LitElement {
         console.log(timelineDataPub);
 
         this.timeline = [];
-        await this.hasUpdated;
+        await this.updateComplete;
 
         // Deduplicate by post ID
         const uniquePub = Array.from(
@@ -848,14 +942,24 @@ export class Timeline extends LitElement {
   }
 
   async loadMore() {
+    // Get the last post ID to use for pagination
+    const lastPostId =
+      this.timeline.length > 0
+        ? this.timeline[this.timeline.length - 1].id
+        : undefined;
+
     const timelineData: Post[] = await getPaginatedHomeTimeline(
-      this.timelineType ? this.timelineType : 'home'
+      this.timelineType ? this.timelineType : 'home',
+      lastPostId
     );
-    console.log(timelineData);
 
     // Deduplicate posts by ID to prevent showing duplicates
     const existingIds = new Set(this.timeline.map((post) => post.id));
     const newPosts = timelineData.filter((post) => !existingIds.has(post.id));
+
+    if (newPosts.length === 0) {
+      return;
+    }
 
     // Enrich new posts with reply context
     const enrichedNewPosts = await enrichPostsWithReplyContext(newPosts);
@@ -891,11 +995,14 @@ export class Timeline extends LitElement {
     // await dialog.show();
 
     if ('startViewTransition' in document) {
-      await document.startViewTransition();
-      router.navigate(`/home/img-preview?src=${imageURL}`);
-    } else {
-      router.navigate(`/home/img-preview?src=${imageURL}`);
+      const transition = document.startViewTransition(() => {
+        router.navigate(`/home/img-preview?src=${imageURL}`);
+      });
+      await transition.finished;
+      return;
     }
+
+    router.navigate(`/home/img-preview?src=${imageURL}`);
   }
 
   async showAnalyze(
@@ -925,7 +1032,7 @@ export class Timeline extends LitElement {
     const dialog = this.shadowRoot?.querySelector('#analyze') as HTMLElement & {
       show(): void;
     };
-    await dialog?.show();
+    dialog?.show();
   }
 
   async changeTimelineType(
@@ -1055,32 +1162,66 @@ export class Timeline extends LitElement {
               class="scrollbar-hidden"
               scroller
               .items=${this.timeline}
-              .renderItem=${((tweet: Post) =>
-                html`<div class="timeline-list-item">
-                  <timeline-item
-                    @open="${($event: CustomEvent) =>
-                      this.handleOpen($event.detail.tweet)}"
-                    @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
-                      this.handleSummary($event)}"
-                    @translating="${(
-                      $event: CustomEvent<HandleTranslatingDetail>
-                    ) => this.handleTranslating($event)}"
-                    tweetID="${tweet.id}"
-                    @delete="${() => this.refreshTimeline()}"
-                    @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                      this.showAnalyze(
-                        $event.detail.data as AnalyzeData,
-                        $event.detail.imageData as ImageAnalyzeData | null,
-                        $event.detail.tweet
-                      )}"
-                    @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                      this.showImage($event.detail.imageURL)}"
-                    ?show="${true}"
-                    @replies="${($event: CustomEvent<RepliesDetail>) =>
-                      this.handleReplies($event.detail.data)}"
-                    .tweet="${tweet}"
-                  ></timeline-item>
-                </div>`) as unknown}
+              .renderItem=${((tweet: Post, index: number) =>
+                index === this.timeline.length - 1
+                  ? html`<div class="timeline-list-item">
+                      <timeline-item
+                        @open="${($event: CustomEvent) =>
+                          this.handleOpen($event.detail.tweet)}"
+                        @summarize="${(
+                          $event: CustomEvent<HandleSummaryDetail>
+                        ) => this.handleSummary($event)}"
+                        @translating="${(
+                          $event: CustomEvent<HandleTranslatingDetail>
+                        ) => this.handleTranslating($event)}"
+                        tweetID="${tweet.id}"
+                        @delete="${() => this.refreshTimeline()}"
+                        @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
+                          this.showAnalyze(
+                            $event.detail.data as AnalyzeData,
+                            $event.detail.imageData as ImageAnalyzeData | null,
+                            $event.detail.tweet
+                          )}"
+                        @openimage="${($event: CustomEvent<OpenImageDetail>) =>
+                          this.showImage($event.detail.imageURL)}"
+                        ?show="${true}"
+                        @replies="${($event: CustomEvent<RepliesDetail>) =>
+                          this.handleReplies($event.detail.data)}"
+                        .tweet="${tweet}"
+                      ></timeline-item>
+                      <div id="load-more-indicator">
+                        <md-icon
+                          src="/assets/refresh-circle-outline.svg"
+                        ></md-icon>
+                        <span>Loading more...</span>
+                      </div>
+                    </div>`
+                  : html`<div class="timeline-list-item">
+                      <timeline-item
+                        @open="${($event: CustomEvent) =>
+                          this.handleOpen($event.detail.tweet)}"
+                        @summarize="${(
+                          $event: CustomEvent<HandleSummaryDetail>
+                        ) => this.handleSummary($event)}"
+                        @translating="${(
+                          $event: CustomEvent<HandleTranslatingDetail>
+                        ) => this.handleTranslating($event)}"
+                        tweetID="${tweet.id}"
+                        @delete="${() => this.refreshTimeline()}"
+                        @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
+                          this.showAnalyze(
+                            $event.detail.data as AnalyzeData,
+                            $event.detail.imageData as ImageAnalyzeData | null,
+                            $event.detail.tweet
+                          )}"
+                        @openimage="${($event: CustomEvent<OpenImageDetail>) =>
+                          this.showImage($event.detail.imageURL)}"
+                        ?show="${true}"
+                        @replies="${($event: CustomEvent<RepliesDetail>) =>
+                          this.handleReplies($event.detail.data)}"
+                        .tweet="${tweet}"
+                      ></timeline-item>
+                    </div>`) as unknown}
               @visibilityChanged=${this._handleVisibilityChanged}
             >
             </lit-virtualizer>

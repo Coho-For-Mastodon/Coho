@@ -247,16 +247,50 @@ export class AppLogin extends LitElement {
 
     const server = localStorage.getItem('server');
 
+    const getPostAuthTarget = (): string => {
+      // If the current URL already carries an intent (rare, but possible),
+      // preserve it when we redirect to /home.
+      const currentParams = new URLSearchParams(window.location.search);
+      if (
+        currentParams.has('tab') ||
+        currentParams.has('newPost') ||
+        currentParams.has('name')
+      ) {
+        return `/home${window.location.search}${window.location.hash}`;
+      }
+
+      // Otherwise, prefer the initial launch URL (manifest shortcut / deep link)
+      // if it points at /home with intent params.
+      try {
+        const launchUrl = sessionStorage.getItem('coho:launchUrl') || '';
+        if (launchUrl) {
+          const launch = new URL(launchUrl, window.location.origin);
+          const hasIntent =
+            launch.searchParams.has('tab') ||
+            launch.searchParams.has('newPost') ||
+            launch.searchParams.has('name');
+
+          if (launch.pathname === '/home' && hasIntent) {
+            return `${launch.pathname}${launch.search}${launch.hash}`;
+          }
+        }
+      } catch {
+        // sessionStorage may be unavailable in some privacy contexts; ignore.
+      }
+
+      return '/home';
+    };
+
     if (code && state) {
       const { authToClient } = await import('../services/account');
 
       await authToClient(code, state);
 
       const router = await getRouter();
-      await router.navigate('/home');
+      await router.navigate(getPostAuthTarget());
     } else if (accessToken && server) {
       const router = await getRouter();
-      await router.navigate('/home');
+      await router.navigate(getPostAuthTarget());
     }
 
     window.requestIdleCallback(async () => {

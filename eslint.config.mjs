@@ -12,22 +12,60 @@ const compat = new FlatCompat({
     baseDirectory: __dirname
 });
 
-export default [
+export default tseslint.config(
   {
     ignores: ["dist/", "node_modules/", "public/", "functions/lib/"]
   },
-  {files: ["**/*.{js,mjs,cjs,ts}"]},
-  {languageOptions: { globals: globals.browser }},
   pluginJs.configs.recommended,
   ...tseslint.configs.strict,
-  ...compat.extends("plugin:lit/recommended"),
-  ...compat.extends("plugin:wc/recommended"),
+  ...compat
+    .extends("plugin:lit/recommended")
+    .map((config) => ({ ...config, files: ["src/**/*.ts"] })),
+  ...compat
+    .extends("plugin:wc/recommended")
+    .map((config) => ({ ...config, files: ["src/**/*.ts"] })),
   {
-      rules: {
-        "@typescript-eslint/explicit-module-boundary-types": "off",
-        "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/no-non-null-assertion": "off",
-        "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
+    files: ["src/**/*.{js,mjs,cjs,ts}"],
+    languageOptions: { globals: globals.browser }
+  },
+  {
+    files: ["functions/src/**/*.{js,mjs,cjs,ts}"],
+    languageOptions: { globals: globals.node }
+  },
+  // Type-aware linting (high-signal correctness rules)
+  {
+    files: ["src/**/*.ts"],
+    languageOptions: {
+      parserOptions: {
+        project: ["./tsconfig.json"],
+        tsconfigRootDir: __dirname
       }
+    },
+    rules: {
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/switch-exhaustiveness-check": "error"
+    }
+  },
+  {
+    files: ["functions/src/**/*.ts"],
+    languageOptions: {
+      parserOptions: {
+        project: ["./functions/tsconfig.json"],
+        tsconfigRootDir: __dirname
+      }
+    },
+    rules: {
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/switch-exhaustiveness-check": "error"
+    }
+  },
+  {
+    rules: {
+      // Keep these a bit lighter for now (we can tighten later)
+      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }]
+    }
   }
-];
+);

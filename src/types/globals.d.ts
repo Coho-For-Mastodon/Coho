@@ -98,6 +98,7 @@ declare global {
 
   // Chrome LanguageModel API (Prompt API)
   interface LanguageModel {
+    availability(): Promise<string>;
     params(): Promise<LanguageModelParams>;
     create(options?: LanguageModelCreateOptions): Promise<LanguageModelSession>;
   }
@@ -128,7 +129,7 @@ declare global {
 
   type LanguageModelContent =
     | { type: 'text'; value: string }
-    | { type: 'image'; value: Blob | ArrayBuffer }
+    | { type: 'image'; value: Blob | ArrayBuffer | HTMLCanvasElement }
     | { type: 'audio'; value: ArrayBuffer };
 
   const LanguageModel: LanguageModel;

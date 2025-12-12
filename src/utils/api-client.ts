@@ -133,9 +133,18 @@ function fetchWithTimeout(
       reject(new NetworkError(`Request timed out after ${timeout}ms`));
     }, timeout);
 
+    // set up retries https://github.com/explainers-by-googlers/fetch-retry/tree/main
     fetch(url, {
       ...options,
       signal: controller.signal,
+      // @ts-expect-error - fetch-retry is not typed yet
+      retryOptions: {
+        maxAttempts: 3, // Max 3 retries (4 total attempts)
+        initialDelay: 500, // Start with 500ms delay
+        maxAge: 120000, // Give up after 2 minutes total retry time
+        retryAfterUnload: false, // Allow retries to continue even if page closes
+        retryNonIdempotent: true,
+      },
     })
       .then((response) => {
         clearTimeout(timeoutId);

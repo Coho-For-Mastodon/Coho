@@ -9,8 +9,10 @@ import './md/md-icon.js';
 import './md/md-icon-button.js';
 import './md/md-select.js';
 import './md/md-option.js';
+import './md/md-checkbox.js';
 import './media-edit-dialog.js';
 import './md/md-skeleton.js';
+import './handwriting-dialog.js';
 
 import type { MdDialog } from './md/md-dialog.js';
 import type { MdTextArea } from './md/md-text-area.js';
@@ -18,6 +20,7 @@ import type { MdTextField } from './md/md-text-field.js';
 
 import {
   publishPost,
+  publishPollPost,
   uploadImageFromBlob,
   updateMedia,
   pickMedia,
@@ -31,6 +34,7 @@ import {
   isProofreaderAvailable,
   isAudioTranscriptionAvailable,
   transcribeAudio,
+  isHandwritingRecognitionAvailable,
 } from '../services/ai';
 import { showInfoToast } from '../utils/optimistic-updates';
 
@@ -41,6 +45,7 @@ interface LocalAttachment {
   preview_url: string;
   description: string | null;
   pending?: boolean;
+  file?: File; // Store file for deferred upload
 }
 
 @customElement('post-dialog')
@@ -70,6 +75,13 @@ export class PostDialog extends LitElement {
   @state() maxChars: number = 500;
   @state() charCount: number = 0;
 
+  // Poll composer state (basic)
+  @state() pollEnabled: boolean = false;
+  @state() pollOptions: string[] = ['', ''];
+  @state() pollDurationSeconds: number = 60 * 60; // 1h default
+  @state() pollMultiple: boolean = false;
+  @state() pollError: string | null = null;
+
   @state() proofreading: boolean = false;
   @state() proofreadResult: ProofreadResult | null = null;
   @state() proofreaderAvailable: boolean = false;
@@ -78,6 +90,10 @@ export class PostDialog extends LitElement {
   @state() isRecording: boolean = false;
   @state() isTranscribing: boolean = false;
   @state() speechToTextAvailable: boolean = false;
+
+  // Handwriting recognition state
+  @state() handwritingAvailable: boolean = false;
+  @state() handwritingDialogOpen: boolean = false;
 
   aiBlob: Blob | undefined;
 
@@ -90,11 +106,96 @@ export class PostDialog extends LitElement {
   @query('md-text-area') private postTextArea!: MdTextArea;
   @query('md-text-field') private promptTextField!: MdTextField;
   @query('#sensitive-input') private sensitiveInput!: MdTextField;
+  @query('media-edit-dialog')
+  private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
 
   static styles = [
     css`
       :host {
         display: block;
+      }
+
+      /* Poll height animation using interpolate-size (native auto height animation) */
+      .poll-wrapper {
+        interpolate-size: allow-keywords;
+        height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition:
+          height 0.3s cubic-bezier(0.2, 0, 0, 1),
+          opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+      }
+
+      .poll-wrapper.open {
+        height: auto;
+        opacity: 1;
+      }
+
+      .poll-composer {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, #ffffff) 6%,
+          transparent
+        );
+        border: 1px solid
+          var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
+      }
+
+      .poll-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .poll-title {
+        font-weight: 700;
+        font-size: var(--md-sys-typescale-title-small-font-size, 14px);
+      }
+
+      .poll-subtitle {
+        color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
+        font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+      }
+
+      .poll-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .poll-option-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .poll-option-input {
+        flex: 1;
+      }
+
+      .poll-actions-row {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .poll-settings {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .poll-error {
+        margin-top: 10px;
+        color: var(--md-sys-color-error, #ffb4ab);
+        font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
       }
 
       #ai-preview-block {
@@ -455,6 +556,16 @@ export class PostDialog extends LitElement {
         border-radius: 50%;
       }
 
+      .pen-button {
+        --md-icon-button-icon-size: 18px;
+        opacity: 0.6;
+        transition: opacity 0.2s ease;
+      }
+
+      .pen-button:hover {
+        opacity: 1;
+      }
+
       @keyframes recording-pulse {
         0%,
         100% {
@@ -502,9 +613,18 @@ export class PostDialog extends LitElement {
 
     // Check if speech-to-text is available
     this.speechToTextAvailable = isAudioTranscriptionAvailable();
+
+    // Check if handwriting recognition is available
+    this.handwritingAvailable = await isHandwritingRecognitionAvailable();
   }
 
   public async openNewDialog() {
+    // Ensure the component's shadow DOM is ready
+    await this.updateComplete;
+
+    // Wait for the dialog custom element to be defined
+    await customElements.whenDefined('md-dialog');
+
     this.notifyDialog?.show();
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -519,22 +639,24 @@ export class PostDialog extends LitElement {
   }
 
   async shareTarget(name: string) {
+    // Decode the URL-encoded filename from the query param
+    const decodedName = decodeURIComponent(name);
     const cache = await caches.open('shareTarget');
-    const result = [];
 
-    for (const request of await cache.keys()) {
-      // If the request URL contains the name, add the response to the result
-      if (request.url.includes(name)) {
-        result.push(await cache.match(request));
-      }
-    }
+    // Build the expected cache key (must match SW's format)
+    const expectedKey = `/_share/${encodeURIComponent(decodedName)}`;
 
-    console.log('share target result', result);
+    console.log('[Share Target Dialog] Looking for cache key:', expectedKey);
+    console.log(
+      '[Share Target Dialog] Available cache keys:',
+      (await cache.keys()).map((r) => r.url)
+    );
 
-    if (result.length > 0) {
-      const blob = await result[0]!.blob();
+    const response = await cache.match(expectedKey);
 
-      // await this.openNewDialog();
+    if (response) {
+      console.log('[Share Target Dialog] Found cached file, uploading...');
+      const blob = await response.blob();
 
       this.attaching = true;
 
@@ -550,11 +672,116 @@ export class PostDialog extends LitElement {
       };
 
       this.attachments = [...this.attachments, newAttachment];
+
+      // Clean up the cache after successful upload
+      await cache.delete(expectedKey);
+      console.log('[Share Target Dialog] Cached file cleaned up');
+
       this.openEditDialog(newAttachment);
+    } else {
+      console.log('[Share Target Dialog] No cached file found');
     }
   }
 
+  private _togglePoll() {
+    // Enforce mutual exclusion: poll OR media
+    if (!this.pollEnabled && this.attachments.length > 0) {
+      showInfoToast('Remove media attachments before adding a poll.');
+      return;
+    }
+
+    const next = !this.pollEnabled;
+    this.pollEnabled = next;
+    this.pollError = null;
+
+    // Reset poll fields when turning off
+    if (!next) {
+      this.pollOptions = ['', ''];
+      this.pollDurationSeconds = 60 * 60;
+      this.pollMultiple = false;
+    }
+  }
+
+  private _setPollOption(index: number, value: string) {
+    const next = [...this.pollOptions];
+    next[index] = String(value ?? '');
+    this.pollOptions = next;
+    this.pollError = null;
+  }
+
+  private _readInputEventValue(e: Event): string {
+    // md-text-field dispatches a CustomEvent('input', { detail: { value } }),
+    // but the native <input> event can also bubble out of its shadow root.
+    // Support both so typing doesn't get overwritten by stale state.
+    const detailValue = (e as CustomEvent<{ value?: string }>).detail?.value;
+    if (typeof detailValue === 'string') return detailValue;
+
+    const target = e.target as HTMLInputElement | null;
+    if (target && typeof (target as any).value === 'string')
+      return (target as any).value;
+
+    const first = e.composedPath?.()[0] as any;
+    if (first && typeof first.value === 'string') return first.value;
+
+    return '';
+  }
+
+  private _addPollOption() {
+    if (this.pollOptions.length >= 4) return;
+    this.pollOptions = [...this.pollOptions, ''];
+    this.pollError = null;
+  }
+
+  private _removePollOption(index: number) {
+    if (this.pollOptions.length <= 2) return;
+    const next = this.pollOptions.filter((_, i) => i !== index);
+    this.pollOptions = next;
+    this.pollError = null;
+  }
+
+  private _getPollPayload(): {
+    options: string[];
+    expiresIn: number;
+    multiple: boolean;
+  } | null {
+    if (!this.pollEnabled) return null;
+
+    const options = this.pollOptions
+      .map((o) => String(o ?? '').trim())
+      .filter(Boolean);
+    if (options.length < 2 || options.length > 4) {
+      this.pollError = 'Add between 2 and 4 options.';
+      return null;
+    }
+
+    const normalized = options.map((o) => o.toLowerCase());
+    const unique = new Set(normalized);
+    if (unique.size !== normalized.length) {
+      this.pollError = 'Poll options must be unique.';
+      return null;
+    }
+
+    if (
+      !Number.isFinite(this.pollDurationSeconds) ||
+      this.pollDurationSeconds <= 0
+    ) {
+      this.pollError = 'Choose a valid poll duration.';
+      return null;
+    }
+
+    return {
+      options,
+      expiresIn: this.pollDurationSeconds,
+      multiple: this.pollMultiple,
+    };
+  }
+
   async attachFile() {
+    if (this.pollEnabled) {
+      showInfoToast('Disable the poll to attach media.');
+      return;
+    }
+
     const files = await pickMedia();
     if (!files || files.length === 0) return;
 
@@ -567,6 +794,7 @@ export class PostDialog extends LitElement {
         preview_url: previewUrl,
         description: null,
         pending: true,
+        file, // Store file for upload when user saves
       };
 
       this.attachments = [...this.attachments, newAttachment];
@@ -576,8 +804,7 @@ export class PostDialog extends LitElement {
         this.openEditDialog(newAttachment);
       }
 
-      // Start upload in background
-      this.uploadFile(file, tempId);
+      // Don't upload yet - wait for user to save in edit dialog
     }
   }
 
@@ -670,6 +897,17 @@ export class PostDialog extends LitElement {
         const isOffline = !navigator.onLine;
 
         try {
+          // Build poll payload (if enabled)
+          const pollPayload = this._getPollPayload();
+
+          // Enforce mutual exclusion at publish-time as well
+          if (pollPayload && this.attachments.length > 0) {
+            this.pollError =
+              'Remove media attachments before publishing a poll.';
+            worker.terminate();
+            return;
+          }
+
           if (this.attachments.length > 0) {
             if (this.sensitive === true) {
               spoilerText = this.sensitiveInput?.value ?? '';
@@ -687,13 +925,23 @@ export class PostDialog extends LitElement {
               spoilerText = this.sensitiveInput?.value ?? '';
             }
 
-            await publishPost(
-              status,
-              undefined,
-              this.sensitive,
-              spoilerText,
-              this.visibility
-            );
+            if (pollPayload) {
+              await publishPollPost(
+                status,
+                pollPayload,
+                this.sensitive,
+                spoilerText,
+                this.visibility
+              );
+            } else {
+              await publishPost(
+                status,
+                undefined,
+                this.sensitive,
+                spoilerText,
+                this.visibility
+              );
+            }
           }
         } catch (error) {
           console.log('[PostDialog] Publish error:', error);
@@ -751,6 +999,13 @@ export class PostDialog extends LitElement {
     this.proofreadResult = null;
     this.isRecording = false;
     this.isTranscribing = false;
+
+    // Reset poll composer state
+    this.pollEnabled = false;
+    this.pollOptions = ['', ''];
+    this.pollDurationSeconds = 60 * 60;
+    this.pollMultiple = false;
+    this.pollError = null;
 
     // Stop any active recording
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
@@ -866,6 +1121,14 @@ export class PostDialog extends LitElement {
 
   async startRecording() {
     try {
+      await this._startRecordingInternal();
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+    }
+  }
+
+  private async _startRecordingInternal() {
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
@@ -964,35 +1227,118 @@ export class PostDialog extends LitElement {
     this.sensitive = !this.sensitive;
   }
 
+  openHandwritingDialog() {
+    this.handwritingDialogOpen = true;
+  }
+
+  handleHandwritingComplete(e: CustomEvent<{ text: string }>) {
+    const recognizedText = e.detail.text;
+
+    if (recognizedText && this.postTextArea) {
+      const currentText = this.postTextArea.value;
+      // Append to existing text with a space separator
+      if (currentText.trim().length > 0) {
+        this.postTextArea.value = currentText + ' ' + recognizedText;
+      } else {
+        this.postTextArea.value = recognizedText;
+      }
+
+      // Update character count and status
+      this.charCount = this.postTextArea.value.length;
+      this.hasStatus = this.postTextArea.value.length > 0;
+    }
+
+    this.handwritingDialogOpen = false;
+  }
+
+  handleHandwritingClose() {
+    this.handwritingDialogOpen = false;
+  }
+
   openEditDialog(attachment: LocalAttachment) {
     this.activeAttachment = attachment;
     this.editDialogOpen = true;
   }
 
   async handleMediaSave(e: CustomEvent) {
-    const { id, description } = e.detail;
+    const { id, description, editedBlob } = e.detail;
 
-    // Optimistic update
+    // Find the attachment being saved
+    const attachment = this.attachments.find((a) => a.id === id);
+    if (!attachment) {
+      this.mediaEditDialog?.completeUpload(false);
+      return;
+    }
+
+    // Determine what to upload: editedBlob (filter applied), stored file (new attachment), or nothing (already uploaded)
+    const blobToUpload =
+      editedBlob || (attachment.file ? attachment.file : null);
+
+    if (blobToUpload) {
+      // Need to upload the image
+      try {
+        const result = await uploadImageFromBlob(blobToUpload);
+
+        // Update with description after upload
+        if (description) {
+          await updateMedia(result.id, description);
+        }
+
+        // Clean up the old preview URL if it was a blob URL
+        if (attachment.preview_url.startsWith('blob:')) {
+          URL.revokeObjectURL(attachment.preview_url);
+        }
+
+        // Replace attachment with uploaded one
+        this.attachments = this.attachments.map((a) =>
+          a.id === id
+            ? {
+                id: result.id,
+                preview_url: result.preview_url,
+                description,
+                pending: false,
+                // Don't keep the file reference after upload
+              }
+            : a
+        );
+
+        // Update active attachment if it's the same one
+        if (this.activeAttachment?.id === id) {
+          this.activeAttachment = null;
+        }
+
+        // Signal upload complete
+        this.mediaEditDialog?.completeUpload(true);
+      } catch (err) {
+        console.error('Failed to upload media', err);
+        // Signal upload failed
+        this.mediaEditDialog?.completeUpload(false);
+      }
+      return;
+    }
+
+    // No upload needed - just update description
     this.attachments = this.attachments.map((a) =>
       a.id === id ? { ...a, description } : a
     );
 
-    // If active attachment is the one being saved, update it too
+    // If active attachment is the one being saved, clear it
     if (this.activeAttachment?.id === id) {
-      this.activeAttachment = {
-        ...this.activeAttachment,
-        description,
-      } as LocalAttachment;
+      this.activeAttachment = null;
     }
 
-    // Only send update if not pending (uploading)
-    const attachment = this.attachments.find((a) => a.id === id);
-    if (attachment && !attachment.pending) {
+    // Update description on server if already uploaded
+    if (!attachment.pending) {
       try {
         await updateMedia(id, description);
+        this.mediaEditDialog?.completeUpload(true);
       } catch (err) {
         console.error('Failed to update media description', err);
+        this.mediaEditDialog?.completeUpload(false);
       }
+    } else {
+      // Was pending but no file to upload (shouldn't happen, but handle gracefully)
+      this.mediaEditDialog?.completeUpload(true);
     }
   }
   render() {
@@ -1104,6 +1450,17 @@ export class PostDialog extends LitElement {
                   ></md-icon-button>
                 `
               : null}
+            ${this.handwritingAvailable
+              ? html`
+                  <md-icon-button
+                    class="pen-button"
+                    label="Handwriting input"
+                    src="/assets/brush-outline.svg"
+                    @click="${() => this.openHandwritingDialog()}"
+                    title="On-device AI"
+                  ></md-icon-button>
+                `
+              : null}
           </div>
         </div>
         ${this.sensitive
@@ -1114,6 +1471,84 @@ export class PostDialog extends LitElement {
               ></md-text-field>
             </div>`
           : null}
+
+        <div class="poll-wrapper ${this.pollEnabled ? 'open' : ''}">
+          <div class="poll-composer">
+            <div class="poll-header">
+              <div class="poll-title">Poll</div>
+              <div class="poll-subtitle">Add 2–4 options</div>
+            </div>
+
+            <div class="poll-options">
+              ${this.pollOptions.map(
+                (opt, idx) => html`
+                  <div class="poll-option-row">
+                    <md-text-field
+                      class="poll-option-input"
+                      placeholder="Option ${idx + 1}"
+                      .value=${String(opt ?? '')}
+                      @input=${(e: Event) =>
+                        this._setPollOption(idx, this._readInputEventValue(e))}
+                    ></md-text-field>
+
+                    <md-icon-button
+                      label="Remove option"
+                      src="/assets/close-outline.svg"
+                      ?disabled=${this.pollOptions.length <= 2}
+                      @click=${() => this._removePollOption(idx)}
+                    ></md-icon-button>
+                  </div>
+                `
+              )}
+
+              <div class="poll-actions-row">
+                <md-button
+                  variant="text"
+                  size="small"
+                  pill
+                  ?disabled=${this.pollOptions.length >= 4}
+                  @click=${() => this._addPollOption()}
+                >
+                  Add option
+                </md-button>
+              </div>
+            </div>
+
+            <div class="poll-settings">
+              <md-select
+                .value=${String(this.pollDurationSeconds)}
+                @change=${(e: CustomEvent<{ value: string }>) =>
+                  (this.pollDurationSeconds = parseInt(e.detail.value, 10))}
+                pill
+                style="width: 180px; min-width: 180px;"
+              >
+                <md-option value="${String(5 * 60)}">5 minutes</md-option>
+                <md-option value="${String(30 * 60)}">30 minutes</md-option>
+                <md-option value="${String(60 * 60)}">1 hour</md-option>
+                <md-option value="${String(6 * 60 * 60)}">6 hours</md-option>
+                <md-option value="${String(24 * 60 * 60)}">1 day</md-option>
+                <md-option value="${String(3 * 24 * 60 * 60)}"
+                  >3 days</md-option
+                >
+                <md-option value="${String(7 * 24 * 60 * 60)}"
+                  >7 days</md-option
+                >
+              </md-select>
+
+              <md-checkbox
+                .checked=${this.pollMultiple}
+                @change=${(e: CustomEvent<{ checked: boolean }>) =>
+                  (this.pollMultiple = e.detail.checked)}
+              >
+                Allow multiple choices
+              </md-checkbox>
+            </div>
+
+            ${this.pollError
+              ? html`<div class="poll-error">${this.pollError}</div>`
+              : null}
+          </div>
+        </div>
 
         <div slot="footer" class="dialog-footer-actions">
           ${this.showPrompt
@@ -1148,6 +1583,15 @@ export class PostDialog extends LitElement {
             <md-button
               class="desktop-button"
               variant="outlined"
+              ?disabled=${this.attachments.length > 0}
+              @click="${() => this._togglePoll()}"
+            >
+              ${this.pollEnabled ? 'Remove Poll' : 'Add Poll'}
+            </md-button>
+
+            <md-button
+              class="desktop-button"
+              variant="outlined"
               @click="${() => this.markAsSensitive()}"
             >
               Content Warning
@@ -1159,12 +1603,21 @@ export class PostDialog extends LitElement {
               pill
               variant="outlined"
               @click="${() => this.attachFile()}"
+              ?disabled=${this.pollEnabled}
             >
               Attach Media
               <md-icon src="/assets/attach-outline.svg"></md-icon>
             </md-button>
 
             <!-- Mobile icon buttons -->
+            <md-icon-button
+              class="mobile-icon-button"
+              label="${this.pollEnabled ? 'Remove Poll' : 'Add Poll'}"
+              src="/assets/chatbox-outline.svg"
+              ?disabled=${this.attachments.length > 0}
+              @click="${() => this._togglePoll()}"
+            ></md-icon-button>
+
             <md-icon-button
               class="mobile-icon-button"
               label="Content Warning"
@@ -1177,6 +1630,7 @@ export class PostDialog extends LitElement {
               label="Attach Media"
               src="/assets/attach-outline.svg"
               @click="${() => this.attachFile()}"
+              ?disabled=${this.pollEnabled}
             ></md-icon-button>
           </div>
 
@@ -1235,6 +1689,12 @@ export class PostDialog extends LitElement {
         }}"
         @save="${this.handleMediaSave}"
       ></media-edit-dialog>
+
+      <handwriting-dialog
+        .open="${this.handwritingDialogOpen}"
+        @handwriting-complete="${this.handleHandwritingComplete}"
+        @close="${() => this.handleHandwritingClose()}"
+      ></handwriting-dialog>
     `;
   }
 }

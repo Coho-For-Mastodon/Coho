@@ -14,6 +14,7 @@ import {
   reportUser,
   type ProfilePostsFilter,
 } from '../services/account';
+import { withOptimisticUpdate } from '../utils/optimistic-updates';
 
 import '../components/timeline-item';
 import '../components/md/md-dialog';
@@ -30,6 +31,7 @@ import type { MdTextArea } from '../components/md/md-text-area';
 import type { Account } from '../mastodon/types';
 
 import '../components/md/md-skeleton';
+import '../components/md/md-skeleton-card';
 import '../components/md/md-segmented-button';
 import '../components/md/md-divider';
 
@@ -45,6 +47,7 @@ export class AppProfile extends LitElement {
   @state() following: boolean = false;
   @state() muted: boolean = false;
   @state() blocked: boolean = false;
+  @state() followStatusLoaded: boolean = false;
   @state() selectedPost: Post | undefined = undefined;
   @state() isOwnProfile: boolean = false;
   @state() showReportDialog: boolean = false;
@@ -52,6 +55,10 @@ export class AppProfile extends LitElement {
   @state() loadingPosts: boolean = false;
   @state() loadingProfile: boolean = true;
   @state() profileLoadFailed: boolean = false;
+  @state() bannerReady: boolean = false;
+  @state() bannerFailed: boolean = false;
+  @state() avatarReady: boolean = false;
+  @state() avatarFailed: boolean = false;
 
   @query('#preview-content') private previewContent!: HTMLElement;
   @query('#edit') private editDialog!: MdDialog;
@@ -112,6 +119,13 @@ export class AppProfile extends LitElement {
         view-timeline-axis: block;
       }
 
+      .skeleton-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: block;
+      }
+
       #banner-img {
         width: 100%;
         height: 120%;
@@ -154,9 +168,15 @@ export class AppProfile extends LitElement {
         z-index: 10;
       }
 
-      #avatar {
+      #avatar-stack {
+        position: relative;
         width: 128px;
         height: 128px;
+      }
+
+      #avatar {
+        width: 100%;
+        height: 100%;
         border-radius: 50%;
         border: 4px solid
           var(--md-sys-color-surface, var(--md-sys-color-background));
@@ -183,8 +203,8 @@ export class AppProfile extends LitElement {
       }
 
       #avatar-skeleton {
-        width: 128px;
-        height: 128px;
+        width: 100%;
+        height: 100%;
         border-radius: 50%;
         border: 4px solid
           var(--md-sys-color-surface, var(--md-sys-color-background));
@@ -200,9 +220,35 @@ export class AppProfile extends LitElement {
         min-height: 68px;
       }
 
+      #actions-skeleton {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      #actions-skeleton md-skeleton.action-button {
+        width: 120px;
+        height: 40px;
+      }
+
+      #actions-skeleton md-skeleton.action-icon {
+        width: 40px;
+        height: 40px;
+      }
+
       #actions-row md-button {
         font-weight: 700;
         min-width: 100px;
+        animation: fadeIn 0.2s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       /* Profile info */
@@ -277,6 +323,17 @@ export class AppProfile extends LitElement {
         margin: 12px 0;
       }
 
+      #stats-skeleton {
+        display: flex;
+        gap: 12px;
+        margin: 12px 0;
+        align-items: center;
+      }
+
+      #stats-skeleton md-skeleton {
+        height: 18px;
+      }
+
       .stat {
         display: flex;
         align-items: center;
@@ -322,6 +379,31 @@ export class AppProfile extends LitElement {
         margin-top: 16px;
         padding-top: 16px;
         border-top: 1px solid var(--md-sys-color-outline-variant);
+      }
+
+      #fields-skeleton {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--md-sys-color-outline-variant);
+      }
+
+      .field-skeleton-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field-skeleton-row md-skeleton.field-name {
+        width: 120px;
+        height: 14px;
+      }
+
+      .field-skeleton-row md-skeleton.field-value {
+        width: 85%;
+        height: 18px;
       }
 
       .field-row {
@@ -374,6 +456,17 @@ export class AppProfile extends LitElement {
         margin: 0;
       }
 
+      #tabs-skeleton {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+      }
+
+      #tabs-skeleton md-skeleton {
+        height: 40px;
+        flex: 1;
+      }
+
       /* Posts list */
       #posts-container {
         max-width: 600px;
@@ -387,10 +480,7 @@ export class AppProfile extends LitElement {
         margin: 0;
         padding: 0;
         list-style: none;
-      }
-
-      ul li {
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        gap: 16px;
       }
 
       .posts-loading {
@@ -409,12 +499,10 @@ export class AppProfile extends LitElement {
         }
 
         #avatar {
-          width: 134px;
-          height: 134px;
           animation-range: 0px 400px;
         }
 
-        #avatar-skeleton {
+        #avatar-stack {
           width: 134px;
           height: 134px;
         }
@@ -442,12 +530,7 @@ export class AppProfile extends LitElement {
           top: -50px;
         }
 
-        #avatar {
-          width: 100px;
-          height: 100px;
-        }
-
-        #avatar-skeleton {
+        #avatar-stack {
           width: 100px;
           height: 100px;
         }
@@ -525,7 +608,6 @@ export class AppProfile extends LitElement {
 
       /* Tabs container scroll effect */
       #tabs-container {
-        animation: tabs-sticky linear both;
         animation-timeline: --page-scroll;
         animation-range: 200px 400px;
       }
@@ -608,6 +690,29 @@ export class AppProfile extends LitElement {
     `,
   ];
 
+  private _resetImageStates() {
+    this.bannerReady = false;
+    this.bannerFailed = false;
+    this.avatarReady = false;
+    this.avatarFailed = false;
+  }
+
+  private _handleBannerLoad() {
+    this.bannerReady = true;
+  }
+
+  private _handleBannerError() {
+    this.bannerFailed = true;
+  }
+
+  private _handleAvatarLoad() {
+    this.avatarReady = true;
+  }
+
+  private _handleAvatarError() {
+    this.avatarFailed = true;
+  }
+
   async firstUpdated() {
     // get id from query string
     const urlParams = new URLSearchParams(window.location.search);
@@ -620,6 +725,8 @@ export class AppProfile extends LitElement {
 
       this.loadingProfile = true;
       this.profileLoadFailed = false;
+      this.loadingPosts = true;
+      this._resetImageStates();
 
       const accountData = await getAccount(id);
       console.log(accountData);
@@ -630,6 +737,7 @@ export class AppProfile extends LitElement {
         // Profile couldn't be loaded (offline with no cache)
         this.profileLoadFailed = true;
         this.loadingProfile = false;
+        this.loadingPosts = false;
         return;
       }
 
@@ -638,6 +746,7 @@ export class AppProfile extends LitElement {
 
       this.posts = Array.isArray(postsData) ? postsData : [];
       this.loadingProfile = false;
+      this.loadingPosts = false;
 
       // Only check follow status if not viewing own profile
       if (!this.isOwnProfile) {
@@ -655,8 +764,10 @@ export class AppProfile extends LitElement {
             this.muted = followedCheck[0].muting;
             this.blocked = followedCheck[0].blocking;
           }
+          this.followStatusLoaded = true;
         } catch (error) {
           console.log('Error checking follow status:', error);
+          this.followStatusLoaded = true;
         }
       }
     }
@@ -664,8 +775,25 @@ export class AppProfile extends LitElement {
 
   async follow() {
     if (!this.user) return;
-    await followUser(this.user.id);
-    this.followed = true;
+
+    // Store original state for rollback
+    const originalFollowed = this.followed;
+
+    await withOptimisticUpdate(
+      // Apply optimistic update
+      () => {
+        this.followed = true;
+        this.requestUpdate();
+      },
+      // Execute actual API call
+      () => followUser(this.user!.id),
+      // Rollback on failure
+      () => {
+        this.followed = originalFollowed;
+        this.requestUpdate();
+      },
+      { errorMessage: 'Failed to follow user.' }
+    );
   }
 
   async reloadPosts() {
@@ -688,8 +816,25 @@ export class AppProfile extends LitElement {
 
   async unfollow() {
     if (!this.user) return;
-    await unfollowUser(this.user.id);
-    this.followed = false;
+
+    // Store original state for rollback
+    const originalFollowed = this.followed;
+
+    await withOptimisticUpdate(
+      // Apply optimistic update
+      () => {
+        this.followed = false;
+        this.requestUpdate();
+      },
+      // Execute actual API call
+      () => unfollowUser(this.user!.id),
+      // Rollback on failure
+      () => {
+        this.followed = originalFollowed;
+        this.requestUpdate();
+      },
+      { errorMessage: 'Failed to unfollow user.' }
+    );
   }
 
   async mute() {
@@ -809,11 +954,24 @@ export class AppProfile extends LitElement {
       <!-- Banner -->
       <div id="banner">
         ${this.user?.header
-          ? html`<img
-              id="banner-img"
-              src="${this.user.header}"
-              alt="Profile banner"
-            />`
+          ? html`
+              ${!this.bannerFailed
+                ? html`<img
+                    id="banner-img"
+                    src="${this.user.header}"
+                    alt="Profile banner"
+                    @load=${() => this._handleBannerLoad()}
+                    @error=${() => this._handleBannerError()}
+                    style="opacity: ${this.bannerReady ? 1 : 0};"
+                  />`
+                : null}
+              ${!this.bannerReady || this.bannerFailed
+                ? html`<md-skeleton
+                    id="banner-skeleton"
+                    class="skeleton-overlay"
+                  ></md-skeleton>`
+                : null}
+            `
           : html`<md-skeleton id="banner-skeleton"></md-skeleton>`}
       </div>
 
@@ -821,61 +979,96 @@ export class AppProfile extends LitElement {
       <div id="profile-header">
         <!-- Avatar (overlapping banner) -->
         <div id="avatar-container">
-          ${this.user?.avatar
-            ? html`<img
-                id="avatar"
-                src="${this.user.avatar}"
-                alt="${this.user.display_name}'s avatar"
-              />`
-            : html`<md-skeleton id="avatar-skeleton"></md-skeleton>`}
+          <div id="avatar-stack">
+            ${this.user?.avatar && !this.avatarFailed
+              ? html`<img
+                  id="avatar"
+                  src="${this.user.avatar}"
+                  alt="${this.user.display_name}'s avatar"
+                  @load=${() => this._handleAvatarLoad()}
+                  @error=${() => this._handleAvatarError()}
+                  style="opacity: ${this.avatarReady ? 1 : 0};"
+                />`
+              : null}
+            ${!this.user?.avatar || !this.avatarReady || this.avatarFailed
+              ? html`<md-skeleton
+                  id="avatar-skeleton"
+                  class="skeleton-overlay"
+                ></md-skeleton>`
+              : null}
+          </div>
         </div>
 
         <!-- Actions row (follow, menu) -->
         <div id="actions-row">
           ${!this.isOwnProfile && this.user
             ? html`
-                ${this.followed
-                  ? html`<md-button
-                      variant="outlined"
-                      @click="${() => this.unfollow()}"
-                      >Following</md-button
-                    >`
-                  : html`<md-button
-                      variant="filled"
-                      @click="${() => this.follow()}"
-                      >Follow</md-button
-                    >`}
-                <md-dropdown placement="bottom-end">
-                  <md-icon-button
-                    slot="trigger"
-                    name="ellipsis-vertical"
-                    label="More options"
-                  ></md-icon-button>
-                  <md-menu>
-                    ${this.muted
-                      ? html`<md-menu-item @click="${() => this.unmute()}">
-                          <md-icon slot="prefix" name="volume-mute"></md-icon>
-                          Unmute @${this.user?.acct}
-                        </md-menu-item>`
-                      : html`<md-menu-item @click="${() => this.mute()}">
-                          <md-icon slot="prefix" name="volume-mute"></md-icon>
-                          Mute @${this.user?.acct}
-                        </md-menu-item>`}
-                    ${this.blocked
-                      ? html`<md-menu-item @click="${() => this.unblock()}">
-                          <md-icon slot="prefix" name="ban"></md-icon>
-                          Unblock @${this.user?.acct}
-                        </md-menu-item>`
-                      : html`<md-menu-item @click="${() => this.block()}">
-                          <md-icon slot="prefix" name="ban"></md-icon>
-                          Block @${this.user?.acct}
-                        </md-menu-item>`}
-                    <md-menu-item @click="${() => this.openReportDialog()}">
-                      <md-icon slot="prefix" name="flag"></md-icon>
-                      Report @${this.user?.acct}
-                    </md-menu-item>
-                  </md-menu>
-                </md-dropdown>
+                ${this.followStatusLoaded
+                  ? html`
+                      ${this.followed
+                        ? html`<md-button
+                            variant="outlined"
+                            @click="${() => this.unfollow()}"
+                            >Following</md-button
+                          >`
+                        : html`<md-button
+                            variant="filled"
+                            @click="${() => this.follow()}"
+                            >Follow</md-button
+                          >`}
+                      <md-dropdown placement="bottom-end">
+                        <md-icon-button
+                          slot="trigger"
+                          name="ellipsis-vertical"
+                          label="More options"
+                        ></md-icon-button>
+                        <md-menu>
+                          ${this.muted
+                            ? html`<md-menu-item
+                                @click="${() => this.unmute()}"
+                              >
+                                <md-icon
+                                  slot="prefix"
+                                  name="volume-mute"
+                                ></md-icon>
+                                Unmute @${this.user?.acct}
+                              </md-menu-item>`
+                            : html`<md-menu-item @click="${() => this.mute()}">
+                                <md-icon
+                                  slot="prefix"
+                                  name="volume-mute"
+                                ></md-icon>
+                                Mute @${this.user?.acct}
+                              </md-menu-item>`}
+                          ${this.blocked
+                            ? html`<md-menu-item
+                                @click="${() => this.unblock()}"
+                              >
+                                <md-icon slot="prefix" name="ban"></md-icon>
+                                Unblock @${this.user?.acct}
+                              </md-menu-item>`
+                            : html`<md-menu-item @click="${() => this.block()}">
+                                <md-icon slot="prefix" name="ban"></md-icon>
+                                Block @${this.user?.acct}
+                              </md-menu-item>`}
+                          <md-menu-item
+                            @click="${() => this.openReportDialog()}"
+                          >
+                            <md-icon slot="prefix" name="flag"></md-icon>
+                            Report @${this.user?.acct}
+                          </md-menu-item>
+                        </md-menu>
+                      </md-dropdown>
+                    `
+                  : html`
+                      <div id="actions-skeleton" aria-hidden="true">
+                        <md-skeleton class="action-button"></md-skeleton>
+                        <md-skeleton
+                          class="action-icon"
+                          shape="circle"
+                        ></md-skeleton>
+                      </div>
+                    `}
               `
             : null}
         </div>
@@ -940,10 +1133,24 @@ export class AppProfile extends LitElement {
             : html`
                 <md-skeleton id="display-name-skeleton"></md-skeleton>
                 <md-skeleton id="handle-skeleton"></md-skeleton>
+                <div id="stats-skeleton" aria-hidden="true">
+                  <md-skeleton width="96px" height="18px"></md-skeleton>
+                  <md-skeleton width="110px" height="18px"></md-skeleton>
+                </div>
                 <div id="bio-skeleton">
                   <md-skeleton></md-skeleton>
                   <md-skeleton></md-skeleton>
                   <md-skeleton></md-skeleton>
+                </div>
+                <div id="fields-skeleton" aria-hidden="true">
+                  <div class="field-skeleton-row">
+                    <md-skeleton class="field-name"></md-skeleton>
+                    <md-skeleton class="field-value"></md-skeleton>
+                  </div>
+                  <div class="field-skeleton-row">
+                    <md-skeleton class="field-name"></md-skeleton>
+                    <md-skeleton class="field-value"></md-skeleton>
+                  </div>
                 </div>
               `}
         </div>
@@ -951,32 +1158,47 @@ export class AppProfile extends LitElement {
 
       <!-- Tabs -->
       <div id="tabs-container">
-        <md-segmented-button
-          .value="${this.activeSegment}"
-          @segment-change="${(e: CustomEvent) => this.handleSegmentChange(e)}"
-        >
-          <md-segment value="posts">Posts</md-segment>
-          <md-segment value="posts_replies">Replies</md-segment>
-          <md-segment value="media">Media</md-segment>
-        </md-segmented-button>
+        ${this.loadingProfile
+          ? html`
+              <div id="tabs-skeleton" aria-hidden="true">
+                <md-skeleton></md-skeleton>
+                <md-skeleton></md-skeleton>
+                <md-skeleton></md-skeleton>
+              </div>
+            `
+          : html`
+              <md-segmented-button
+                .value="${this.activeSegment}"
+                @segment-change="${(e: CustomEvent) =>
+                  this.handleSegmentChange(e)}"
+              >
+                <md-segment value="posts">Posts</md-segment>
+                <md-segment value="posts_replies">Replies</md-segment>
+                <md-segment value="media">Media</md-segment>
+              </md-segmented-button>
+            `}
       </div>
 
       <!-- Posts -->
       <div id="posts-container">
-        <ul class="${this.loadingPosts ? 'posts-loading' : ''}">
-          ${this.posts.map(
-            (post) => html`
-              <li>
-                <timeline-item
-                  @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                    this.editPost(e.detail.tweet)}"
-                  @delete="${() => this.reloadPosts()}"
-                  .tweet=${post}
-                ></timeline-item>
-              </li>
-            `
-          )}
-        </ul>
+        ${this.loadingPosts && this.posts.length === 0
+          ? html`<md-skeleton-card count="5"></md-skeleton-card>`
+          : html`
+              <ul class="${this.loadingPosts ? 'posts-loading' : ''}">
+                ${this.posts.map(
+                  (post) => html`
+                    <li>
+                      <timeline-item
+                        @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.editPost(e.detail.tweet)}"
+                        @delete="${() => this.reloadPosts()}"
+                        .tweet=${post}
+                      ></timeline-item>
+                    </li>
+                  `
+                )}
+              </ul>
+            `}
       </div>
 
       <report-dialog

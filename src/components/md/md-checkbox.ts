@@ -1,4 +1,4 @@
-import { LitElement, css, html } from 'lit';
+import { LitElement, css, html, svg } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 
 /**
@@ -21,97 +21,118 @@ export class MdCheckbox extends LitElement {
       user-select: none;
     }
 
+    .wrapper {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      cursor: inherit;
+      outline: none;
+    }
+
     :host([disabled]) {
       opacity: 0.38;
       cursor: not-allowed;
+    }
+
+    /* State layer container for hover/press effects */
+    .control-wrapper {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin: -11px; /* Pull back so checkbox doesn't take extra space */
+    }
+
+    .state-layer {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: transparent;
+      transition: background 0.15s ease;
     }
 
     .control {
       position: relative;
       width: 18px;
       height: 18px;
-      border: 2px solid var(--md-sys-color-on-surface-variant, #49454f);
-      border-radius: 2px;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      border: 2px solid var(--md-sys-color-on-surface-variant, #938f99);
+      border-radius: 3px;
+      transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
       background-color: transparent;
-      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     :host([checked]) .control {
-      background-color: var(
-        --md-sys-color-primary,
-        var(--sl-color-primary-600, #6750a4)
-      );
-      border-color: var(
-        --md-sys-color-primary,
-        var(--sl-color-primary-600, #6750a4)
-      );
+      background-color: var(--md-sys-color-primary, #6750a4);
+      border-color: var(--md-sys-color-primary, #6750a4);
     }
 
     .checkmark {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       opacity: 0;
-      transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
+      transform: scale(0);
+      transition: all 0.12s cubic-bezier(0.2, 0, 0, 1);
     }
 
     :host([checked]) .checkmark {
-      transform: translate(-50%, -50%) scale(1);
       opacity: 1;
+      transform: scale(1);
     }
 
-    .checkmark::before,
-    .checkmark::after {
-      content: '';
-      position: absolute;
-      background-color: var(--md-sys-color-on-primary, #ffffff);
-      border-radius: 1px;
+    .checkmark path {
+      fill: none;
+      stroke: var(--md-sys-color-on-primary, #fff);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
-    .checkmark::before {
-      width: 2px;
-      height: 6px;
-      bottom: 2px;
-      left: 3px;
-      transform: rotate(-45deg);
+    .wrapper:focus-visible .control-wrapper {
+      outline: 2px solid var(--md-sys-color-primary, #6750a4);
+      outline-offset: 0;
     }
 
-    .checkmark::after {
-      width: 2px;
-      height: 10px;
-      bottom: 0;
-      right: 1px;
-      transform: rotate(45deg);
-    }
-
-    .control:focus-visible {
-      outline: 2px solid
-        var(--md-sys-color-primary, var(--sl-color-primary-600, #6750a4));
-      outline-offset: 2px;
-      border-radius: 2px;
-    }
-
-    /* Hover state */
+    /* Hover state layer */
     @media (hover: hover) {
-      :host(:not([disabled])) .control:hover {
-        background-color: color-mix(
+      :host(:not([disabled])) .wrapper:hover .state-layer {
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, #1d1b20) 8%,
+          transparent
+        );
+      }
+
+      :host([checked]:not([disabled])) .wrapper:hover .state-layer {
+        background: color-mix(
           in srgb,
           var(--md-sys-color-primary, #6750a4) 8%,
           transparent
         );
       }
+    }
 
-      :host([checked]:not([disabled])) .control:hover {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-primary, #6750a4) 92%,
-          black
-        );
-      }
+    /* Active/pressed state */
+    :host(:not([disabled])) .wrapper:active .state-layer {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface, #1d1b20) 12%,
+        transparent
+      );
+    }
+
+    :host([checked]:not([disabled])) .wrapper:active .state-layer {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-primary, #6750a4) 12%,
+        transparent
+      );
     }
 
     .label {
@@ -160,7 +181,7 @@ export class MdCheckbox extends LitElement {
   render() {
     return html`
       <div
-        class="control"
+        class="wrapper"
         role="checkbox"
         aria-checked=${this.checked ? 'true' : 'false'}
         aria-disabled=${this.disabled ? 'true' : 'false'}
@@ -168,9 +189,16 @@ export class MdCheckbox extends LitElement {
         @click=${this._onClick}
         @keydown=${this._onKeyDown}
       >
-        <div class="checkmark"></div>
+        <div class="control-wrapper">
+          <div class="state-layer"></div>
+          <div class="control" aria-hidden="true">
+            <svg class="checkmark" viewBox="0 0 12 12">
+              ${svg`<path d="M2 6 L5 9 L10 3" />`}
+            </svg>
+          </div>
+        </div>
+        <slot class="label"></slot>
       </div>
-      <slot class="label"></slot>
     `;
   }
 }

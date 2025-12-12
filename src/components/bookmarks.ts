@@ -53,13 +53,23 @@ export class Bookmarks extends LitElement {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
           this.isLoading = true;
-          const { getBookmarks } = await import('../services/bookmarks');
-          const bookmarksData = await getBookmarks();
-          console.log(bookmarksData);
 
-          this.bookmarks = bookmarksData;
+          // First, check for preloaded data for instant display
+          const { getPreloadedBookmarks } = await import('../services/preload');
+          const preloaded = getPreloadedBookmarks();
+
+          if (preloaded && preloaded.length > 0) {
+            console.log('[Bookmarks] Using preloaded data');
+            this.bookmarks = preloaded;
+          } else {
+            // Fallback to fetching if no preloaded data
+            const { getBookmarks } = await import('../services/bookmarks');
+            const bookmarksData = await getBookmarks();
+            console.log(bookmarksData);
+            this.bookmarks = bookmarksData;
+          }
+
           this.isLoading = false;
-
           observer.disconnect();
         }
       });

@@ -81,6 +81,7 @@ export class AppHome extends LitElement {
   @state() favoritesLoaded: boolean = false;
   @state() notificationsLoaded: boolean = false;
   @state() searchLoaded: boolean = false;
+  @state() messagesLoaded: boolean = false;
 
   // Lazy loading states for drawer components
   @state() appThemeLoaded: boolean = false;
@@ -100,7 +101,7 @@ export class AppHome extends LitElement {
   @query('#translation-toast') private translationToast!: MdToast;
   @query('#error-toast') private errorToast!: MdToast;
   @query('#summary-dialog') private summaryDialog!: MdDialog;
-  @query('#open-tweet-dialog') private openTweetDialog!: MdDialog;
+  @query('#open-tweet-sheet') private openTweetSheet!: OtterDrawer;
   @query('.homeTimeline') private homeTimeline!: Timeline;
   @query('post-dialog') private postDialog!: PostDialog;
 
@@ -203,14 +204,24 @@ export class AppHome extends LitElement {
           --neutral-fill-stealth-hover: #141314;
         }
 
-        #open-tweet-dialog {
-          --md-dialog-max-width: 60vw;
-          --md-dialog-height: 92vh;
+        #open-tweet-sheet {
+          --drawer-height: 92vh;
+          --drawer-width: 720px;
         }
 
-        #open-tweet-dialog::part(dialog) {
-          width: 55vw;
-          max-width: 55vw;
+        #open-tweet-sheet::part(body) {
+          padding: 0;
+          overflow: hidden;
+        }
+
+        /* Post bottom-sheet should not show a header bar */
+        #open-tweet-sheet::part(header) {
+          display: none;
+        }
+
+        /* Post bottom-sheet doesn't use drawer footer */
+        #open-tweet-sheet::part(footer) {
+          display: none;
         }
 
         mammoth-bot {
@@ -697,11 +708,9 @@ export class AppHome extends LitElement {
             width: 100%;
           }
 
-          #open-tweet-dialog::part(panel) {
-            height: 100vh;
-            max-height: 100vh;
-            max-width: 100vw;
-            width: 100vw;
+          #open-tweet-sheet {
+            --drawer-height: 92vh;
+            --drawer-width: 100vw;
           }
 
           mammoth-bot {
@@ -786,7 +795,31 @@ export class AppHome extends LitElement {
   }
 
   async firstUpdated() {
+    // Use the current URL params, but fall back to the initial launch URL if
+    // something in boot dropped our query string (e.g. PWA manifest shortcut
+    // /home?tab=notifications getting normalized to /home).
     const urlParams = new URLSearchParams(window.location.search);
+    const effectiveParams = new URLSearchParams(urlParams);
+
+    try {
+      const launchUrl = sessionStorage.getItem('coho:launchUrl');
+      if (launchUrl) {
+        const launch = new URL(launchUrl, window.location.origin);
+
+        // Only “fill in” missing intent params from the launch URL.
+        for (const key of ['tab', 'newPost', 'name'] as const) {
+          if (!effectiveParams.has(key) && launch.searchParams.has(key)) {
+            const value = launch.searchParams.get(key);
+            if (value != null) effectiveParams.set(key, value);
+          }
+        }
+
+        // We’re now on /home; don’t let launch intent leak into later navigations.
+        sessionStorage.removeItem('coho:launchUrl');
+      }
+    } catch {
+      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
 
     // Initialize tabs state based on screen size
     if (window.matchMedia('(max-width: 820px)').matches) {
@@ -801,8 +834,8 @@ export class AppHome extends LitElement {
     this.setupGlobalToastListener();
 
     setTimeout(async () => {
-      if (urlParams.has('name')) {
-        const name = urlParams.get('name');
+      if (effectiveParams.has('name')) {
+        const name = effectiveParams.get('name');
 
         if (name) {
           await this.shareTarget(name);
@@ -851,29 +884,42 @@ export class AppHome extends LitElement {
       }
     });
 
-    const tabData = urlParams.get('tab');
+    const tabData = effectiveParams.get('tab');
     console.log('tabData', tabData);
 
-    if (tabData) {
+    // Restore tab from sessionStorage if no URL param override
+    let tabToOpen = tabData;
+    if (!tabToOpen) {
+      try {
+        tabToOpen = sessionStorage.getItem('coho:activeTab');
+      } catch {
+        // sessionStorage may be unavailable in some privacy contexts; ignore.
+      }
+    }
+
+    if (tabToOpen) {
       // Preload the component for the requested tab
-      switch (tabData) {
+      switch (tabToOpen) {
         case 'bookmarks':
-          this.loadBookmarks();
+          await this.loadBookmarks();
           break;
         case 'faves':
-          this.loadFavorites();
+          await this.loadFavorites();
           break;
         case 'notifications':
-          this.loadNotifications();
+          await this.loadNotifications();
           break;
         case 'search':
-          this.loadSearch();
+          await this.loadSearch();
+          break;
+        case 'messages':
+          await this.loadMessages();
           break;
       }
 
-      setTimeout(() => {
-        this.openATab(tabData);
-      }, 1000);
+      // Wait for the component to be ready before switching tabs
+      await this.updateComplete;
+      this.openATab(tabToOpen);
     }
 
     window.requestIdleCallback(async () => {
@@ -888,7 +934,7 @@ export class AppHome extends LitElement {
 
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
-        const newPost = urlParams.get('newPost');
+        const newPost = effectiveParams.get('newPost');
 
         if (newPost) {
           this.openNewDialog();
@@ -924,20 +970,26 @@ export class AppHome extends LitElement {
   }
 
   async shareTarget(name: string) {
+    // Decode the URL-encoded filename from the query param
+    const decodedName = decodeURIComponent(name);
     const cache = await caches.open('shareTarget');
-    const result = [];
 
-    for (const request of await cache.keys()) {
-      // If the request URL contains the name, add the response to the result
-      if (request.url.includes(name)) {
-        result.push(await cache.match(request));
-      }
-    }
+    // Build the expected cache key (must match SW's format)
+    const expectedKey = `/_share/${encodeURIComponent(decodedName)}`;
 
-    console.log('share target result', result);
+    console.log('[Share Target] Looking for cache key:', expectedKey);
+    console.log(
+      '[Share Target] Available cache keys:',
+      (await cache.keys()).map((r) => r.url)
+    );
 
-    if (result.length > 0) {
+    const response = await cache.match(expectedKey);
+
+    if (response) {
+      console.log('[Share Target] Found cached file, opening dialog');
       await this.openNewDialog();
+    } else {
+      console.log('[Share Target] No cached file found');
     }
   }
 
@@ -964,9 +1016,18 @@ export class AppHome extends LitElement {
     // if on desktop, open the dialog
     // if (window.innerWidth > 600) {
     await import('../components/post-dialog');
-    // const dialog = this.shadowRoot?.getElementById('notify-dialog') as any;
-    // dialog.show();
-    this.postDialog?.openNewDialog();
+
+    // Wait for the custom element to be defined and upgraded
+    await customElements.whenDefined('post-dialog');
+
+    // Wait for Lit to update the DOM with the upgraded element
+    await this.updateComplete;
+
+    // Wait for the post-dialog's own shadow DOM to render
+    if (this.postDialog) {
+      await this.postDialog.updateComplete;
+      this.postDialog.openNewDialog();
+    }
     // }
     // else {
     //   const drawer = this.shadowRoot?.getElementById('reply-drawer') as any;
@@ -1092,6 +1153,13 @@ export class AppHome extends LitElement {
   openATab(name: string) {
     console.log('tab name', name);
     this.activeTab = name;
+
+    // Persist active tab to sessionStorage for navigation restoration
+    try {
+      sessionStorage.setItem('coho:activeTab', name);
+    } catch {
+      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
   }
 
   async shareMyProfile() {
@@ -1157,17 +1225,32 @@ export class AppHome extends LitElement {
   }
 
   async handleOpenTweet(tweet: Post) {
+    const isMobile = window.matchMedia('(max-width: 820px)').matches;
+
+    // Desktop: prefer full-page navigation (better UX + supports back/forward/history)
+    if (!isMobile) {
+      router.navigate(
+        `/home/post?${encodeURIComponent(JSON.stringify(tweet))}`
+      );
+      return;
+    }
+
     await import('../pages/post-detail');
 
     this.openTweet = null;
 
     this.requestUpdate();
 
-    await this.updated;
+    await this.updateComplete;
 
     this.openTweet = tweet;
 
-    await this.openTweetDialog?.show();
+    await this.openTweetSheet?.show();
+  }
+
+  private handleOpenTweetSheetHide() {
+    // Unmount post detail when the sheet is dismissed
+    this.openTweet = null;
   }
 
   async disconnectedCallback() {
@@ -1213,6 +1296,13 @@ export class AppHome extends LitElement {
     }
   }
 
+  async loadMessages() {
+    if (!this.messagesLoaded) {
+      await import('./app-messages');
+      this.messagesLoaded = true;
+    }
+  }
+
   // Lazy loading methods for drawer components
   async loadAppTheme() {
     if (!this.appThemeLoaded) {
@@ -1239,6 +1329,13 @@ export class AppHome extends LitElement {
     const panel = event.detail.panel;
     this.activeTab = panel;
 
+    // Persist active tab to sessionStorage for navigation restoration
+    try {
+      sessionStorage.setItem('coho:activeTab', panel);
+    } catch {
+      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
+
     // Lazy load components based on which tab is shown
     switch (panel) {
       case 'bookmarks':
@@ -1257,6 +1354,9 @@ export class AppHome extends LitElement {
         break;
       case 'search':
         await this.loadSearch();
+        break;
+      case 'messages':
+        await this.loadMessages();
         break;
     }
   }
@@ -1339,11 +1439,16 @@ export class AppHome extends LitElement {
 
       <md-dialog id="summary-dialog" label=""> ${this.summary} </md-dialog>
 
-      <md-dialog id="open-tweet-dialog">
+      <otter-drawer
+        id="open-tweet-sheet"
+        placement="bottom"
+        label="Post"
+        @otter-hide="${() => this.handleOpenTweetSheetHide()}"
+      >
         ${this.openTweet
           ? html`<post-detail .passed_tweet="${this.openTweet}"></post-detail>`
           : null}
-      </md-dialog>
+      </otter-drawer>
 
       <post-dialog @published="${() => this.handleReload()}"></post-dialog>
 
@@ -1576,7 +1681,9 @@ export class AppHome extends LitElement {
             <app-timeline timelineType="media"></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="messages">
-            <app-messages></app-messages>
+            ${this.messagesLoaded
+              ? html`<app-messages></app-messages>`
+              : nothing}
           </md-tab-panel>
           <md-tab-panel name="custom">
             <app-timeline timelineType="public"></app-timeline>
