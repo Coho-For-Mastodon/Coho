@@ -18,6 +18,8 @@ export class MdSkeleton extends LitElement {
       display: inline-block;
       position: relative;
       overflow: hidden;
+      width: 100%;
+      height: 1em;
     }
 
     .skeleton {
@@ -79,10 +81,31 @@ export class MdSkeleton extends LitElement {
     }
   `;
 
+  private _applyInlineSize() {
+    // Only apply inline sizing when the author explicitly provided attributes.
+    // Otherwise, allow CSS (e.g. overlays, component-specific rules) to size us.
+    if (this.hasAttribute('width')) {
+      this.style.width = this.width;
+    } else {
+      this.style.removeProperty('width');
+    }
+
+    if (this.hasAttribute('height')) {
+      this.style.height = this.height;
+    } else {
+      this.style.removeProperty('height');
+    }
+  }
+
   connectedCallback() {
     super.connectedCallback();
-    this.style.width = this.width;
-    this.style.height = this.height;
+    this._applyInlineSize();
+  }
+
+  protected updated(changed: Map<string, unknown>) {
+    if (changed.has('width') || changed.has('height')) {
+      this._applyInlineSize();
+    }
   }
 
   render() {

@@ -62,7 +62,7 @@ export declare class AppHome extends LitElement {
   private translationToast;
   private errorToast;
   private summaryDialog;
-  private openTweetDialog;
+  private openTweetSheet;
   private homeTimeline;
   private postDialog;
   static get styles(): import('lit').CSSResult[];
@@ -103,6 +103,7 @@ export declare class AppHome extends LitElement {
     }
   ): void;
   handleOpenTweet(tweet: Post): Promise<void>;
+  private handleOpenTweetSheetHide;
   disconnectedCallback(): Promise<void>;
   reloadHome(): void;
   loadBookmarks(): Promise<void>;

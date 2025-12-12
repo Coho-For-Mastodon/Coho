@@ -22,8 +22,8 @@ export declare class ImagePreviewDialog extends LitElement {
   disconnectedCallback(): void;
   updated(changedProperties: Map<string, unknown>): void;
   private handlePreviewImage;
-  private handleGenerateAlt;
   private handleImageLoad;
+  private handleGenerateAlt;
   private close;
   private handleBackdropClick;
   private handleTouchStart;

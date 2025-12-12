@@ -139,12 +139,25 @@ export class UserProfile extends LitElement {
       'profile-image';
 
     if ('startViewTransition' in document) {
-      await document.startViewTransition();
-      router.navigate(`/account?id=${this.account?.id}`);
-      setTimeout(() => {
-        // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
-        this.shadowRoot!.querySelector('.headerBlock')!.viewTransitionName = '';
-      }, 800);
+      // startViewTransition returns a ViewTransition object (not a Promise)
+      const transition = document.startViewTransition(() => {
+        router.navigate(`/account?id=${this.account?.id}`);
+      });
+
+      try {
+        await transition.finished;
+      } finally {
+        // Best-effort cleanup (component may be disconnected after navigation)
+        try {
+          const headerBlock = this.shadowRoot?.querySelector('.headerBlock');
+          if (headerBlock) {
+            // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
+            headerBlock.viewTransitionName = '';
+          }
+        } catch {
+          // ignore
+        }
+      }
     } else {
       router.navigate(`/account?id=${this.account?.id}`);
     }

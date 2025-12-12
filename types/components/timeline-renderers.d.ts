@@ -10,41 +10,61 @@ import '../components/md/md-button';
 import '../components/md/md-dropdown';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
+import '../components/timeline-poll';
 export interface TimelineItemHandlers {
-    viewSensitive: () => void;
-    viewThreadSensitive: (id: string) => void;
-    viewReplySensitive: () => void;
-    replies: () => void;
-    bookmark: (id: string) => void;
-    favorite: (id: string) => void;
-    reblog: (id: string) => void;
-    translatePost: (content: string | null) => void;
-    shareStatus: (tweet: Post | null) => void;
-    deleteStatus: () => void;
-    initEditStatus: () => void;
-    openPost: () => void;
-    openParentPost: () => void;
-    openLinkCard: (url: string) => void;
-    showThread: () => void;
-    muteUser: (accountId: string) => void;
-    blockUser: (accountId: string) => void;
-    reportUser: (accountId: string, accountAcct: string, statusId?: string) => void;
+  viewSensitive: () => void;
+  viewThreadSensitive: (id: string) => void;
+  viewReplySensitive: () => void;
+  replies: () => void;
+  bookmark: (id: string) => void;
+  favorite: (id: string) => void;
+  reblog: (id: string) => void;
+  translatePost: (content: string | null) => void;
+  shareStatus: (tweet: Post | null) => void;
+  deleteStatus: () => void;
+  initEditStatus: () => void;
+  openPost: () => void;
+  openParentPost: () => void;
+  openLinkCard: (url: string) => void;
+  showThread: () => void;
+  muteUser: (accountId: string) => void;
+  blockUser: (accountId: string) => void;
+  reportUser: (
+    accountId: string,
+    accountAcct: string,
+    statusId?: string
+  ) => void;
 }
 export interface TimelineItemState {
-    tweet: Post | undefined;
-    show: boolean;
-    currentUser: Account | null;
-    settings: Settings | undefined;
-    isBookmarked: boolean;
-    isBoosted: boolean;
-    isReblogged: boolean;
-    loadingThread: boolean;
-    threadExpanded: boolean;
-    threadPosts: Post[];
-    isOnDeviceTranslateAvailable: boolean;
+  tweet: Post | undefined;
+  show: boolean;
+  currentUser: Account | null;
+  settings: Settings | undefined;
+  isBookmarked: boolean;
+  isBoosted: boolean;
+  isReblogged: boolean;
+  loadingThread: boolean;
+  threadExpanded: boolean;
+  threadPosts: Post[];
+  isOnDeviceTranslateAvailable: boolean;
 }
-export declare function renderSensitive(state: TimelineItemState, handlers: TimelineItemHandlers): import("lit-html").TemplateResult<1>;
-export declare function renderReplyContext(state: TimelineItemState, handlers: TimelineItemHandlers): import("lit-html").TemplateResult<1> | null;
-export declare function renderRegularTweet(state: TimelineItemState, handlers: TimelineItemHandlers): import("lit-html").TemplateResult<1>;
-export declare function renderReblog(state: TimelineItemState, handlers: TimelineItemHandlers): import("lit-html").TemplateResult<1> | null;
-export declare function renderThread(state: TimelineItemState, handlers: TimelineItemHandlers): import("lit-html").TemplateResult<1> | null;
+export declare function renderSensitive(
+  state: TimelineItemState,
+  handlers: TimelineItemHandlers
+): import('lit-html').TemplateResult<1>;
+export declare function renderReplyContext(
+  state: TimelineItemState,
+  handlers: TimelineItemHandlers
+): import('lit-html').TemplateResult<1> | null;
+export declare function renderRegularTweet(
+  state: TimelineItemState,
+  handlers: TimelineItemHandlers
+): import('lit-html').TemplateResult<1>;
+export declare function renderReblog(
+  state: TimelineItemState,
+  handlers: TimelineItemHandlers
+): import('lit-html').TemplateResult<1> | null;
+export declare function renderThread(
+  state: TimelineItemState,
+  handlers: TimelineItemHandlers
+): import('lit-html').TemplateResult<1> | null;

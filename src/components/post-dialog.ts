@@ -9,6 +9,7 @@ import './md/md-icon.js';
 import './md/md-icon-button.js';
 import './md/md-select.js';
 import './md/md-option.js';
+import './md/md-checkbox.js';
 import './media-edit-dialog.js';
 import './md/md-skeleton.js';
 import './handwriting-dialog.js';
@@ -19,6 +20,7 @@ import type { MdTextField } from './md/md-text-field.js';
 
 import {
   publishPost,
+  publishPollPost,
   uploadImageFromBlob,
   updateMedia,
   pickMedia,
@@ -73,6 +75,13 @@ export class PostDialog extends LitElement {
   @state() maxChars: number = 500;
   @state() charCount: number = 0;
 
+  // Poll composer state (basic)
+  @state() pollEnabled: boolean = false;
+  @state() pollOptions: string[] = ['', ''];
+  @state() pollDurationSeconds: number = 60 * 60; // 1h default
+  @state() pollMultiple: boolean = false;
+  @state() pollError: string | null = null;
+
   @state() proofreading: boolean = false;
   @state() proofreadResult: ProofreadResult | null = null;
   @state() proofreaderAvailable: boolean = false;
@@ -104,6 +113,89 @@ export class PostDialog extends LitElement {
     css`
       :host {
         display: block;
+      }
+
+      /* Poll height animation using interpolate-size (native auto height animation) */
+      .poll-wrapper {
+        interpolate-size: allow-keywords;
+        height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition:
+          height 0.3s cubic-bezier(0.2, 0, 0, 1),
+          opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+      }
+
+      .poll-wrapper.open {
+        height: auto;
+        opacity: 1;
+      }
+
+      .poll-composer {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, #ffffff) 6%,
+          transparent
+        );
+        border: 1px solid
+          var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
+      }
+
+      .poll-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .poll-title {
+        font-weight: 700;
+        font-size: var(--md-sys-typescale-title-small-font-size, 14px);
+      }
+
+      .poll-subtitle {
+        color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
+        font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+      }
+
+      .poll-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .poll-option-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .poll-option-input {
+        flex: 1;
+      }
+
+      .poll-actions-row {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .poll-settings {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .poll-error {
+        margin-top: 10px;
+        color: var(--md-sys-color-error, #ffb4ab);
+        font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
       }
 
       #ai-preview-block {
@@ -582,7 +674,105 @@ export class PostDialog extends LitElement {
     }
   }
 
+  private _togglePoll() {
+    // Enforce mutual exclusion: poll OR media
+    if (!this.pollEnabled && this.attachments.length > 0) {
+      showInfoToast('Remove media attachments before adding a poll.');
+      return;
+    }
+
+    const next = !this.pollEnabled;
+    this.pollEnabled = next;
+    this.pollError = null;
+
+    // Reset poll fields when turning off
+    if (!next) {
+      this.pollOptions = ['', ''];
+      this.pollDurationSeconds = 60 * 60;
+      this.pollMultiple = false;
+    }
+  }
+
+  private _setPollOption(index: number, value: string) {
+    const next = [...this.pollOptions];
+    next[index] = String(value ?? '');
+    this.pollOptions = next;
+    this.pollError = null;
+  }
+
+  private _readInputEventValue(e: Event): string {
+    // md-text-field dispatches a CustomEvent('input', { detail: { value } }),
+    // but the native <input> event can also bubble out of its shadow root.
+    // Support both so typing doesn't get overwritten by stale state.
+    const detailValue = (e as CustomEvent<{ value?: string }>).detail?.value;
+    if (typeof detailValue === 'string') return detailValue;
+
+    const target = e.target as HTMLInputElement | null;
+    if (target && typeof (target as any).value === 'string')
+      return (target as any).value;
+
+    const first = e.composedPath?.()[0] as any;
+    if (first && typeof first.value === 'string') return first.value;
+
+    return '';
+  }
+
+  private _addPollOption() {
+    if (this.pollOptions.length >= 4) return;
+    this.pollOptions = [...this.pollOptions, ''];
+    this.pollError = null;
+  }
+
+  private _removePollOption(index: number) {
+    if (this.pollOptions.length <= 2) return;
+    const next = this.pollOptions.filter((_, i) => i !== index);
+    this.pollOptions = next;
+    this.pollError = null;
+  }
+
+  private _getPollPayload(): {
+    options: string[];
+    expiresIn: number;
+    multiple: boolean;
+  } | null {
+    if (!this.pollEnabled) return null;
+
+    const options = this.pollOptions
+      .map((o) => String(o ?? '').trim())
+      .filter(Boolean);
+    if (options.length < 2 || options.length > 4) {
+      this.pollError = 'Add between 2 and 4 options.';
+      return null;
+    }
+
+    const normalized = options.map((o) => o.toLowerCase());
+    const unique = new Set(normalized);
+    if (unique.size !== normalized.length) {
+      this.pollError = 'Poll options must be unique.';
+      return null;
+    }
+
+    if (
+      !Number.isFinite(this.pollDurationSeconds) ||
+      this.pollDurationSeconds <= 0
+    ) {
+      this.pollError = 'Choose a valid poll duration.';
+      return null;
+    }
+
+    return {
+      options,
+      expiresIn: this.pollDurationSeconds,
+      multiple: this.pollMultiple,
+    };
+  }
+
   async attachFile() {
+    if (this.pollEnabled) {
+      showInfoToast('Disable the poll to attach media.');
+      return;
+    }
+
     const files = await pickMedia();
     if (!files || files.length === 0) return;
 
@@ -698,6 +888,17 @@ export class PostDialog extends LitElement {
         const isOffline = !navigator.onLine;
 
         try {
+          // Build poll payload (if enabled)
+          const pollPayload = this._getPollPayload();
+
+          // Enforce mutual exclusion at publish-time as well
+          if (pollPayload && this.attachments.length > 0) {
+            this.pollError =
+              'Remove media attachments before publishing a poll.';
+            worker.terminate();
+            return;
+          }
+
           if (this.attachments.length > 0) {
             if (this.sensitive === true) {
               spoilerText = this.sensitiveInput?.value ?? '';
@@ -715,13 +916,23 @@ export class PostDialog extends LitElement {
               spoilerText = this.sensitiveInput?.value ?? '';
             }
 
-            await publishPost(
-              status,
-              undefined,
-              this.sensitive,
-              spoilerText,
-              this.visibility
-            );
+            if (pollPayload) {
+              await publishPollPost(
+                status,
+                pollPayload,
+                this.sensitive,
+                spoilerText,
+                this.visibility
+              );
+            } else {
+              await publishPost(
+                status,
+                undefined,
+                this.sensitive,
+                spoilerText,
+                this.visibility
+              );
+            }
           }
         } catch (error) {
           console.log('[PostDialog] Publish error:', error);
@@ -779,6 +990,13 @@ export class PostDialog extends LitElement {
     this.proofreadResult = null;
     this.isRecording = false;
     this.isTranscribing = false;
+
+    // Reset poll composer state
+    this.pollEnabled = false;
+    this.pollOptions = ['', ''];
+    this.pollDurationSeconds = 60 * 60;
+    this.pollMultiple = false;
+    this.pollError = null;
 
     // Stop any active recording
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
@@ -1245,6 +1463,84 @@ export class PostDialog extends LitElement {
             </div>`
           : null}
 
+        <div class="poll-wrapper ${this.pollEnabled ? 'open' : ''}">
+          <div class="poll-composer">
+            <div class="poll-header">
+              <div class="poll-title">Poll</div>
+              <div class="poll-subtitle">Add 2–4 options</div>
+            </div>
+
+            <div class="poll-options">
+              ${this.pollOptions.map(
+                (opt, idx) => html`
+                  <div class="poll-option-row">
+                    <md-text-field
+                      class="poll-option-input"
+                      placeholder="Option ${idx + 1}"
+                      .value=${String(opt ?? '')}
+                      @input=${(e: Event) =>
+                        this._setPollOption(idx, this._readInputEventValue(e))}
+                    ></md-text-field>
+
+                    <md-icon-button
+                      label="Remove option"
+                      src="/assets/close-outline.svg"
+                      ?disabled=${this.pollOptions.length <= 2}
+                      @click=${() => this._removePollOption(idx)}
+                    ></md-icon-button>
+                  </div>
+                `
+              )}
+
+              <div class="poll-actions-row">
+                <md-button
+                  variant="text"
+                  size="small"
+                  pill
+                  ?disabled=${this.pollOptions.length >= 4}
+                  @click=${() => this._addPollOption()}
+                >
+                  Add option
+                </md-button>
+              </div>
+            </div>
+
+            <div class="poll-settings">
+              <md-select
+                .value=${String(this.pollDurationSeconds)}
+                @change=${(e: CustomEvent<{ value: string }>) =>
+                  (this.pollDurationSeconds = parseInt(e.detail.value, 10))}
+                pill
+                style="width: 180px; min-width: 180px;"
+              >
+                <md-option value="${String(5 * 60)}">5 minutes</md-option>
+                <md-option value="${String(30 * 60)}">30 minutes</md-option>
+                <md-option value="${String(60 * 60)}">1 hour</md-option>
+                <md-option value="${String(6 * 60 * 60)}">6 hours</md-option>
+                <md-option value="${String(24 * 60 * 60)}">1 day</md-option>
+                <md-option value="${String(3 * 24 * 60 * 60)}"
+                  >3 days</md-option
+                >
+                <md-option value="${String(7 * 24 * 60 * 60)}"
+                  >7 days</md-option
+                >
+              </md-select>
+
+              <md-checkbox
+                .checked=${this.pollMultiple}
+                @change=${(e: CustomEvent<{ checked: boolean }>) =>
+                  (this.pollMultiple = e.detail.checked)}
+              >
+                Allow multiple choices
+              </md-checkbox>
+            </div>
+
+            ${this.pollError
+              ? html`<div class="poll-error">${this.pollError}</div>`
+              : null}
+          </div>
+        </div>
+
         <div slot="footer" class="dialog-footer-actions">
           ${this.showPrompt
             ? html`<div id="ai-image">
@@ -1278,6 +1574,15 @@ export class PostDialog extends LitElement {
             <md-button
               class="desktop-button"
               variant="outlined"
+              ?disabled=${this.attachments.length > 0}
+              @click="${() => this._togglePoll()}"
+            >
+              ${this.pollEnabled ? 'Remove Poll' : 'Add Poll'}
+            </md-button>
+
+            <md-button
+              class="desktop-button"
+              variant="outlined"
               @click="${() => this.markAsSensitive()}"
             >
               Content Warning
@@ -1289,12 +1594,21 @@ export class PostDialog extends LitElement {
               pill
               variant="outlined"
               @click="${() => this.attachFile()}"
+              ?disabled=${this.pollEnabled}
             >
               Attach Media
               <md-icon src="/assets/attach-outline.svg"></md-icon>
             </md-button>
 
             <!-- Mobile icon buttons -->
+            <md-icon-button
+              class="mobile-icon-button"
+              label="${this.pollEnabled ? 'Remove Poll' : 'Add Poll'}"
+              src="/assets/chatbox-outline.svg"
+              ?disabled=${this.attachments.length > 0}
+              @click="${() => this._togglePoll()}"
+            ></md-icon-button>
+
             <md-icon-button
               class="mobile-icon-button"
               label="Content Warning"
@@ -1307,6 +1621,7 @@ export class PostDialog extends LitElement {
               label="Attach Media"
               src="/assets/attach-outline.svg"
               @click="${() => this.attachFile()}"
+              ?disabled=${this.pollEnabled}
             ></md-icon-button>
           </div>
 

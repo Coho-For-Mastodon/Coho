@@ -75,7 +75,8 @@ export async function publishPost(
   ids?: Array<string>,
   sensitive: boolean = false,
   spoilerText: string = '',
-  visibility: string = 'public'
+  visibility: string = 'public',
+  poll?: { options: string[]; expiresIn: number; multiple: boolean }
 ): Promise<Post> {
   const server = getServer();
   const accessToken = getAccessToken();
@@ -84,10 +85,23 @@ export async function publishPost(
   formData.append('status', post && post.length > 0 ? post : '');
   formData.append('visibility', visibility);
 
-  if (ids && ids.length > 0) {
+  // Mastodon constraint: media and poll are mutually exclusive.
+  if (poll && ids && ids.length > 0) {
+    throw new Error('Cannot publish a post with both media and a poll.');
+  }
+
+  if (!poll && ids && ids.length > 0) {
     for (const id of ids) {
       formData.append('media_ids[]', id);
     }
+  }
+
+  if (poll) {
+    for (const opt of poll.options) {
+      formData.append('poll[options][]', opt);
+    }
+    formData.append('poll[expires_in]', String(poll.expiresIn));
+    formData.append('poll[multiple]', poll.multiple ? 'true' : 'false');
   }
 
   if (sensitive) {
@@ -109,6 +123,20 @@ export async function publishPost(
 
   const data = await response.json();
   return data;
+}
+
+/**
+ * Convenience helper for publishing a poll post.
+ * Keeps callsites clean and avoids accidental media_ids usage.
+ */
+export async function publishPollPost(
+  post: string,
+  poll: { options: string[]; expiresIn: number; multiple: boolean },
+  sensitive: boolean = false,
+  spoilerText: string = '',
+  visibility: string = 'public'
+): Promise<Post> {
+  return publishPost(post, undefined, sensitive, spoilerText, visibility, poll);
 }
 
 export async function replyToPost(id: string, content: string): Promise<Post> {

@@ -12,6 +12,24 @@ import { getSettings, Settings } from './services/settings';
 console.log('[Coho] Build version:', __APP_VERSION__);
 
 // ============================================================================
+// LAUNCH INTENT CAPTURE (PWA manifest shortcuts / deep links)
+// ============================================================================
+// Some boot-time redirects or navigations can accidentally drop query params
+// from the initial URL (e.g. /home?tab=notifications). Capture the first URL
+// we were launched with so downstream pages can recover intent if needed.
+try {
+  const key = 'coho:launchUrl';
+  if (!sessionStorage.getItem(key)) {
+    sessionStorage.setItem(
+      key,
+      `${window.location.pathname}${window.location.search}${window.location.hash}`
+    );
+  }
+} catch {
+  // sessionStorage may be unavailable in some privacy contexts; ignore.
+}
+
+// ============================================================================
 // STALE ASSET RECOVERY
 // ============================================================================
 // When the app updates but the browser still has old index.html cached,

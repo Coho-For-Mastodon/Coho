@@ -34,6 +34,11 @@ export declare class PostDialog extends LitElement {
   isMobile: boolean;
   maxChars: number;
   charCount: number;
+  pollEnabled: boolean;
+  pollOptions: string[];
+  pollDurationSeconds: number;
+  pollMultiple: boolean;
+  pollError: string | null;
   proofreading: boolean;
   proofreadResult: ProofreadResult | null;
   proofreaderAvailable: boolean;
@@ -58,6 +63,11 @@ export declare class PostDialog extends LitElement {
   uploadFile(file: File, tempId: string): Promise<void>;
   addAIImageToPost(): Promise<void>;
   removeImage(id: string): void;
+  private _togglePoll;
+  private _setPollOption;
+  private _addPollOption;
+  private _removePollOption;
+  private _getPollPayload;
   publish(): Promise<void>;
   /**
    * Reset the dialog state after publishing or closing

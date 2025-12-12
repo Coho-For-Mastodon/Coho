@@ -320,6 +320,51 @@ export const reply = async (id: string, replyContent: string) => {
   return data;
 };
 
+/**
+ * Vote in a poll.
+ * Mastodon API: POST /api/v1/polls/:id/votes
+ */
+export const votePoll = async (
+  pollId: string,
+  choices: number[]
+): Promise<NonNullable<Post['poll']>> => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+  const headers = new Headers({
+    Authorization: `Bearer ${accessToken}`,
+  });
+
+  const formData = new FormData();
+  for (const choice of choices) {
+    formData.append('choices[]', String(choice));
+  }
+
+  const response = await fetch(
+    `https://${server}/api/v1/polls/${pollId}/votes`,
+    {
+      method: 'POST',
+      headers: accessToken.length > 0 ? headers : new Headers({}),
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+
+  // Mastodon returns a JSON error body on non-2xx responses; don't let that
+  // poison UI state by treating it as a Poll object.
+  if (!response.ok) {
+    const message =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (data as any)?.error ||
+      `Failed to vote in poll (HTTP ${response.status})`;
+    const err = new Error(message) as Error & { status?: number };
+    err.status = response.status;
+    throw err;
+  }
+
+  return data;
+};
+
 // Use mastodon library's getMediaTimeline
 export const mediaTimeline = mastodonGetMediaTimeline;
 

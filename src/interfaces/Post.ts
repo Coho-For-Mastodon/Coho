@@ -55,14 +55,18 @@ export interface Post {
   } | null;
   poll: {
     id: string;
-    expires_at: string;
+    expires_at: string | null;
     expired: boolean;
     multiple: boolean;
     votes_count: number;
+    voters_count?: number;
     options: {
       title: string;
       votes_count: number;
     }[];
+    emojis?: Emoji[];
+    voted?: boolean;
+    own_votes?: number[];
   } | null;
   reply_to?: Post;
   ancestors?: Post[];

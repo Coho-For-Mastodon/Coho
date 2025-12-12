@@ -306,6 +306,22 @@ const getNotifications = async (): Promise<void> => {
           },
         ];
         break;
+      case 'follow_request':
+        message = `${data[0].account.display_name} requested to follow you`;
+        title = 'Follow request';
+        break;
+      case 'poll':
+        message = `${data[0].account.display_name} updated a poll`;
+        title = 'Poll update';
+        break;
+      case 'status':
+        message = `${data[0].account.display_name} posted a new status`;
+        title = 'New status';
+        break;
+      case 'update':
+        message = `${data[0].account.display_name} updated a post`;
+        title = 'Post update';
+        break;
       default:
         message = `You have ${data.length} new notifications`;
         break;

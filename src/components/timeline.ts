@@ -733,7 +733,7 @@ export class Timeline extends LitElement {
         console.log('timelineData', timelineDataMix);
 
         this.timeline = [];
-        await this.hasUpdated;
+        await this.updateComplete;
 
         // Deduplicate by post ID
         const uniqueMix = Array.from(
@@ -754,7 +754,7 @@ export class Timeline extends LitElement {
         console.log('timelineData', timelineDataMix2);
 
         this.timeline = [];
-        await this.hasUpdated;
+        await this.updateComplete;
 
         // Deduplicate by post ID
         const uniqueMix2 = Array.from(
@@ -778,7 +778,7 @@ export class Timeline extends LitElement {
           const timelineData = await getLastPlaceTimeline();
 
           this.timeline = [];
-          await this.hasUpdated;
+          await this.updateComplete;
 
           if (timelineData) {
             // Deduplicate by post ID
@@ -804,7 +804,7 @@ export class Timeline extends LitElement {
         console.log('timelineData', timelineData);
 
         this.timeline = [];
-        await this.hasUpdated;
+        await this.updateComplete;
 
         // Deduplicate by post ID
         const uniqueHome = Array.from(
@@ -825,7 +825,7 @@ export class Timeline extends LitElement {
         console.log(timelineDataPub);
 
         this.timeline = [];
-        await this.hasUpdated;
+        await this.updateComplete;
 
         // Deduplicate by post ID
         const uniquePub = Array.from(
@@ -925,11 +925,14 @@ export class Timeline extends LitElement {
     // await dialog.show();
 
     if ('startViewTransition' in document) {
-      await document.startViewTransition();
-      router.navigate(`/home/img-preview?src=${imageURL}`);
-    } else {
-      router.navigate(`/home/img-preview?src=${imageURL}`);
+      const transition = document.startViewTransition(() => {
+        router.navigate(`/home/img-preview?src=${imageURL}`);
+      });
+      await transition.finished;
+      return;
     }
+
+    router.navigate(`/home/img-preview?src=${imageURL}`);
   }
 
   async showAnalyze(
@@ -959,7 +962,7 @@ export class Timeline extends LitElement {
     const dialog = this.shadowRoot?.querySelector('#analyze') as HTMLElement & {
       show(): void;
     };
-    await dialog?.show();
+    dialog?.show();
   }
 
   async changeTimelineType(

@@ -37,6 +37,14 @@ export declare const getReplies: (id: string) => Promise<{
   descendants: Post[];
 }>;
 export declare const reply: (id: string, replyContent: string) => Promise<any>;
+/**
+ * Vote in a poll.
+ * Mastodon API: POST /api/v1/polls/:id/votes
+ */
+export declare const votePoll: (
+  pollId: string,
+  choices: number[]
+) => Promise<NonNullable<Post['poll']>>;
 export declare const mediaTimeline: (
   userId?: string
 ) => Promise<import('../mastodon').Post[]>;

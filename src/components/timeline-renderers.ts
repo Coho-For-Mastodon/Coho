@@ -15,6 +15,7 @@ import '../components/md/md-button';
 import '../components/md/md-dropdown';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
+import '../components/timeline-poll';
 
 export interface TimelineItemHandlers {
   viewSensitive: () => void;
@@ -126,6 +127,9 @@ export function renderReplyContext(
               state.tweet?.reply_to?.emojis || []
             )}"
           ></div>`}
+      ${state.tweet?.reply_to?.poll
+        ? html`<timeline-poll .post=${state.tweet.reply_to}></timeline-poll>`
+        : null}
       ${state.tweet?.reply_to?.media_attachments &&
       state.tweet.reply_to.media_attachments.length > 0
         ? html`
@@ -280,6 +284,12 @@ export function renderRegularTweet(
         @click="${handlers.openPost}"
         .innerHTML="${parseEmojis(state.tweet?.content || '', state.tweet?.emojis || [])}"
       ></div>
+
+      ${
+        state.tweet?.poll
+          ? html`<timeline-poll .post=${state.tweet}></timeline-poll>`
+          : null
+      }
 
       ${
         state.tweet &&
@@ -470,6 +480,9 @@ export function renderReblog(
         )}"
       ></div>
 
+      ${state.tweet.reblog.poll
+        ? html`<timeline-poll .post=${state.tweet.reblog}></timeline-poll>`
+        : null}
       ${state.tweet.reblog.media_attachments &&
       state.tweet.reblog.media_attachments.length > 0
         ? html`
@@ -591,6 +604,9 @@ export function renderThread(
                   </div>
                 `
               : html`<div .innerHTML="${threadPost.content}"></div>`}
+            ${threadPost.poll
+              ? html`<timeline-poll .post=${threadPost}></timeline-poll>`
+              : null}
             ${threadPost.media_attachments &&
             threadPost.media_attachments.length > 0
               ? html`

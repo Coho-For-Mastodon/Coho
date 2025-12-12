@@ -795,7 +795,31 @@ export class AppHome extends LitElement {
   }
 
   async firstUpdated() {
+    // Use the current URL params, but fall back to the initial launch URL if
+    // something in boot dropped our query string (e.g. PWA manifest shortcut
+    // /home?tab=notifications getting normalized to /home).
     const urlParams = new URLSearchParams(window.location.search);
+    const effectiveParams = new URLSearchParams(urlParams);
+
+    try {
+      const launchUrl = sessionStorage.getItem('coho:launchUrl');
+      if (launchUrl) {
+        const launch = new URL(launchUrl, window.location.origin);
+
+        // Only “fill in” missing intent params from the launch URL.
+        for (const key of ['tab', 'newPost', 'name'] as const) {
+          if (!effectiveParams.has(key) && launch.searchParams.has(key)) {
+            const value = launch.searchParams.get(key);
+            if (value != null) effectiveParams.set(key, value);
+          }
+        }
+
+        // We’re now on /home; don’t let launch intent leak into later navigations.
+        sessionStorage.removeItem('coho:launchUrl');
+      }
+    } catch {
+      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
 
     // Initialize tabs state based on screen size
     if (window.matchMedia('(max-width: 820px)').matches) {
@@ -810,8 +834,8 @@ export class AppHome extends LitElement {
     this.setupGlobalToastListener();
 
     setTimeout(async () => {
-      if (urlParams.has('name')) {
-        const name = urlParams.get('name');
+      if (effectiveParams.has('name')) {
+        const name = effectiveParams.get('name');
 
         if (name) {
           await this.shareTarget(name);
@@ -860,7 +884,7 @@ export class AppHome extends LitElement {
       }
     });
 
-    const tabData = urlParams.get('tab');
+    const tabData = effectiveParams.get('tab');
     console.log('tabData', tabData);
 
     if (tabData) {
@@ -900,7 +924,7 @@ export class AppHome extends LitElement {
 
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
-        const newPost = urlParams.get('newPost');
+        const newPost = effectiveParams.get('newPost');
 
         if (newPost) {
           this.openNewDialog();
@@ -1194,7 +1218,7 @@ export class AppHome extends LitElement {
 
     this.requestUpdate();
 
-    await this.updated;
+    await this.updateComplete;
 
     this.openTweet = tweet;
 
