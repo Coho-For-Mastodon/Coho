@@ -76,7 +76,7 @@ export class MdDropdown extends LitElement {
       left: 0;
       right: 0;
       bottom: 0;
-      z-index: 9998;
+      z-index: 99998;
       background: transparent;
     `;
     this._backdrop.addEventListener('click', this._handleBackdropClick);
@@ -86,7 +86,7 @@ export class MdDropdown extends LitElement {
     this._popupContainer = document.createElement('div');
     this._popupContainer.style.cssText = `
       position: fixed;
-      z-index: 9999;
+      z-index: 100000;
       opacity: 0;
       transform: scale(0.95);
       transform-origin: top left;
