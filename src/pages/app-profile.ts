@@ -14,6 +14,7 @@ import {
   reportUser,
   type ProfilePostsFilter,
 } from '../services/account';
+import { withOptimisticUpdate } from '../utils/optimistic-updates';
 
 import '../components/timeline-item';
 import '../components/md/md-dialog';
@@ -774,8 +775,25 @@ export class AppProfile extends LitElement {
 
   async follow() {
     if (!this.user) return;
-    await followUser(this.user.id);
-    this.followed = true;
+
+    // Store original state for rollback
+    const originalFollowed = this.followed;
+
+    await withOptimisticUpdate(
+      // Apply optimistic update
+      () => {
+        this.followed = true;
+        this.requestUpdate();
+      },
+      // Execute actual API call
+      () => followUser(this.user!.id),
+      // Rollback on failure
+      () => {
+        this.followed = originalFollowed;
+        this.requestUpdate();
+      },
+      { errorMessage: 'Failed to follow user.' }
+    );
   }
 
   async reloadPosts() {
@@ -798,8 +816,25 @@ export class AppProfile extends LitElement {
 
   async unfollow() {
     if (!this.user) return;
-    await unfollowUser(this.user.id);
-    this.followed = false;
+
+    // Store original state for rollback
+    const originalFollowed = this.followed;
+
+    await withOptimisticUpdate(
+      // Apply optimistic update
+      () => {
+        this.followed = false;
+        this.requestUpdate();
+      },
+      // Execute actual API call
+      () => unfollowUser(this.user!.id),
+      // Rollback on failure
+      () => {
+        this.followed = originalFollowed;
+        this.requestUpdate();
+      },
+      { errorMessage: 'Failed to unfollow user.' }
+    );
   }
 
   async mute() {
