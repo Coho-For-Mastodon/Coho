@@ -6,18 +6,22 @@ import '../components/timeline-item';
 import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/md/md-text-area';
+import '../components/md/md-skeleton-card';
 import { Post } from '../interfaces/Post';
 import { getReplies } from '../services/timeline';
 
-import { replyToPost } from '../services/posts';
+import { replyToPost, getPostDetail } from '../services/posts';
 import type { MdTextArea } from '../components/md/md-text-area';
 import { router } from '../utils/router';
+import { getNotificationById } from '../mastodon/api/notifications';
 
 @customElement('post-detail')
 export class PostDetail extends LitElement {
   @state() tweet: Post | null = null;
   @state() replies: Post[] = [];
   @state() replyingTo: Post | null = null;
+  @state() loading = false;
+  @state() error: string | null = null;
 
   @property({ type: Object }) passed_tweet: Post | null = null;
 
@@ -65,6 +69,22 @@ export class PostDetail extends LitElement {
 
       .post-section {
         padding-bottom: 12px;
+      }
+
+      .post-section.error-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 16px;
+        color: var(--md-sys-color-on-surface-variant, #999);
+        text-align: center;
+      }
+
+      .post-section.error-state md-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        color: var(--md-sys-color-error, #f44336);
       }
 
       #main {
@@ -202,21 +222,78 @@ export class PostDetail extends LitElement {
       return;
     }
 
-    // remove ? from beginning of window.location.search
-    const query = window.location.search.substring(1);
+    // Check for ID-based route (/post/:id or /post/notification?notification_id=xxx)
+    const pathMatch = window.location.pathname.match(/\/post\/(.+)/);
+    if (pathMatch) {
+      const pathId = pathMatch[1];
+      const urlParams = new URLSearchParams(window.location.search);
+      const notificationId = urlParams.get('notification_id');
 
-    const decoded = JSON.parse(decodeURIComponent(query));
-    console.log('decoded', decoded);
-    // remove + and - from decoded.content
-    if (decoded.reblog) {
-      decoded.reblog.content = decoded.reblog.content
-        .replace(/\+/g, ' ')
-        .replace(/-/g, '');
+      this.loading = true;
+      this.error = null;
+
+      try {
+        // If coming from a push notification, fetch via notification_id
+        if (notificationId || pathId === 'notification') {
+          const nId = notificationId || pathId;
+          if (nId && nId !== 'notification') {
+            const notification = await getNotificationById(nId);
+            if (notification.status) {
+              this.tweet = notification.status;
+            } else {
+              // Notification doesn't have a status (e.g., follow notification)
+              // Redirect to notifications
+              router.navigate('/home?tab=notifications');
+              return;
+            }
+          } else if (notificationId) {
+            // notification_id is in query string
+            const notification = await getNotificationById(notificationId);
+            if (notification.status) {
+              this.tweet = notification.status;
+            } else {
+              router.navigate('/home?tab=notifications');
+              return;
+            }
+          } else {
+            this.error = 'Invalid notification';
+            this.loading = false;
+            return;
+          }
+        } else {
+          // Direct post ID access (/post/:postId)
+          this.tweet = await getPostDetail(pathId);
+        }
+      } catch (err) {
+        console.error('Failed to load post:', err);
+        this.error = 'Failed to load post';
+      } finally {
+        this.loading = false;
+      }
+      return;
     }
 
-    decoded.content = decoded.content.replace(/\+/g, ' ').replace(/-/g, '');
+    // Legacy: full JSON in query string (/home/post?{...})
+    const query = window.location.search.substring(1);
+    if (query) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(query));
+        console.log('decoded', decoded);
+        // remove + and - from decoded.content
+        if (decoded.reblog) {
+          decoded.reblog.content = decoded.reblog.content
+            .replace(/\+/g, ' ')
+            .replace(/-/g, '');
+        }
 
-    this.tweet = decoded;
+        decoded.content = decoded.content.replace(/\+/g, ' ').replace(/-/g, '');
+
+        this.tweet = decoded;
+      } catch (err) {
+        console.error('Failed to parse query string:', err);
+        this.error = 'Failed to load post';
+      }
+    }
   }
 
   protected updated(changedProperties: PropertyValues) {
@@ -309,6 +386,56 @@ export class PostDetail extends LitElement {
 
   render() {
     const embedded = this.passed_tweet !== null;
+
+    // Show skeleton while loading
+    if (this.loading) {
+      return html`
+        ${!embedded
+          ? html`<app-header ?enableBack="${true}"></app-header>`
+          : null}
+        <main>
+          <div class="scroller">
+            <section class="post-section">
+              <md-skeleton-card count="1"></md-skeleton-card>
+            </section>
+          </div>
+        </main>
+      `;
+    }
+
+    // Show error state
+    if (this.error) {
+      return html`
+        ${!embedded
+          ? html`<app-header ?enableBack="${true}"></app-header>`
+          : null}
+        <main>
+          <div class="scroller">
+            <section class="post-section error-state">
+              <md-icon name="error"></md-icon>
+              <p>${this.error}</p>
+            </section>
+          </div>
+        </main>
+      `;
+    }
+
+    // No tweet to display
+    if (!this.tweet) {
+      return html`
+        ${!embedded
+          ? html`<app-header ?enableBack="${true}"></app-header>`
+          : null}
+        <main>
+          <div class="scroller">
+            <section class="post-section">
+              <p>Post not found</p>
+            </section>
+          </div>
+        </main>
+      `;
+    }
+
     return html`
       ${!embedded
         ? html`<app-header ?enableBack="${true}"></app-header>`

@@ -15,7 +15,7 @@ export class UserTerms extends LitElement {
 
       ul {
         list-style: none;
-        padding: 0;
+        padding: 8px;
         margin: 0;
 
         gap: 8px;

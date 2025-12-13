@@ -159,16 +159,16 @@ self.addEventListener('message', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      // IMPORTANT: Claim clients FIRST before any cleanup
-      // This ensures the new SW controls all tabs as quickly as possible
-      // to prevent stale content from being served during cache cleanup
-      await self.clients.claim();
-      console.log('[SW] Claimed all clients');
-
-      // Clean up any old workbox precache entries from previous versions
+      // Clean up caches BEFORE claiming clients
+      // This ensures fresh content is served immediately after takeover
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames.map((cacheName) => {
+          // Delete navigation cache to force fresh index.html
+          if (cacheName === 'navigation-cache') {
+            console.log('[SW] Deleting navigation cache for fresh content');
+            return caches.delete(cacheName);
+          }
           // Delete old workbox-precache caches (no longer used)
           if (cacheName.includes('workbox-precache')) {
             console.log('[SW] Deleting old precache:', cacheName);
@@ -177,6 +177,10 @@ self.addEventListener('activate', (event) => {
           return Promise.resolve();
         })
       );
+
+      // Now claim clients after cache cleanup
+      await self.clients.claim();
+      console.log('[SW] Claimed all clients');
 
       console.log('[SW] Activated');
 
@@ -348,7 +352,48 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
   }
 
   const notificationData = event.notification.data;
-  const targetUrl = '/home?tab=notifications';
+
+  // Determine the target URL based on notification type
+  const getTargetUrl = (): string => {
+    if (
+      !notificationData?.notification_type ||
+      !notificationData?.notification_id
+    ) {
+      return '/home?tab=notifications';
+    }
+
+    const { notification_type, notification_id } = notificationData;
+
+    switch (notification_type) {
+      // Status-related notifications - deep link to the post
+      case 'mention':
+      case 'reblog':
+      case 'favourite':
+      case 'poll':
+      case 'status':
+      case 'update':
+        // Navigate to post detail with notification_id so the page can fetch the full notification
+        // and extract the status from it
+        return `/post/notification?notification_id=${notification_id}`;
+
+      // Follow notifications - go to notifications tab to see who followed
+      case 'follow':
+      case 'follow_request':
+        // Could deep link to profile, but we need account_id which requires fetching
+        // For now, go to notifications where user can see and act on it
+        return '/home?tab=notifications';
+
+      // Admin notifications
+      case 'admin.sign_up':
+      case 'admin.report':
+        return '/home?tab=notifications';
+
+      default:
+        return '/home?tab=notifications';
+    }
+  };
+
+  const targetUrl = getTargetUrl();
 
   // Helper to focus existing window or open new one
   const focusOrOpenWindow = async (url: string) => {

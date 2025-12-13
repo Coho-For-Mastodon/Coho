@@ -75,6 +75,12 @@ export const router = new Router({
       render: () => html`<post-detail></post-detail>`,
     },
     {
+      path: '/post/:id',
+      title: 'post',
+      plugins: [lazy(() => import('../pages/post-detail.js'))],
+      render: () => html`<post-detail></post-detail>`,
+    },
+    {
       path: '/editaccount',
       title: 'edit account',
       plugins: [lazy(() => import('../pages/edit-page.js'))],

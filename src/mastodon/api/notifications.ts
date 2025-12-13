@@ -12,6 +12,18 @@ export const getNotifications = async (): Promise<Notification[]> => {
   return data;
 };
 
+export const getNotificationById = async (
+  id: string
+): Promise<Notification> => {
+  const { url } = getClientConfig();
+  const response = await apiFetch(`https://${url}/api/v1/notifications/${id}`, {
+    method: 'GET',
+  });
+
+  const data = await response.json();
+  return data;
+};
+
 export const clearNotifications = async () => {
   const { url } = getClientConfig();
   const response = await apiFetch(`https://${url}/api/v1/notifications/clear`, {

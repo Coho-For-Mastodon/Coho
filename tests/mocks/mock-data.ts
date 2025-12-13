@@ -1,160 +1,171 @@
 const now = new Date().toISOString();
 
 const mockAccount = {
-    id: 'acct_mock_1',
-    username: 'coho',
-    acct: 'coho@mock.social',
-    display_name: 'Coho Bot',
-    locked: false,
-    bot: false,
-    created_at: now,
-    note: '<p>Resident test account</p>',
-    url: 'https://tech.lgbt/@coho',
-    avatar: '/assets/icons/icon-128.png',
-    avatar_static: '/assets/icons/icon-128.png',
-    header: '/assets/icons/icon-512.png',
-    header_static: '/assets/icons/icon-512.png',
-    followers_count: 420,
-    following_count: 133,
-    statuses_count: 2048,
-    emojis: [],
-    fields: [],
+  id: 'acct_mock_1',
+  username: 'coho',
+  acct: 'coho@mock.social',
+  display_name: 'Coho Bot',
+  locked: false,
+  bot: false,
+  created_at: now,
+  note: '<p>Resident test account</p>',
+  url: 'https://tech.lgbt/@coho',
+  avatar: '/assets/icons/icon-128.png',
+  avatar_static: '/assets/icons/icon-128.png',
+  header: '/assets/icons/icon-512.png',
+  header_static: '/assets/icons/icon-512.png',
+  followers_count: 420,
+  following_count: 133,
+  statuses_count: 2048,
+  emojis: [],
+  fields: [],
 };
 
 const basePost = {
-    id: 'post_mock_1',
-    created_at: now,
-    in_reply_to_id: null,
-    in_reply_to_account_id: null,
-    sensitive: false,
-    spoiler_text: '',
-    visibility: 'public',
-    uri: 'https://tech.lgbt/users/coho/statuses/post_mock_1',
-    url: 'https://tech.lgbt/@coho/post_mock_1',
-    replies_count: 3,
-    reblogs_count: 2,
-    favourites_count: 5,
-    favourited: false,
-    reblogged: false,
-    muted: false,
-    bookmarked: false,
-    pinned: false,
-    content: '<p>Welcome to the mocked timeline!</p>',
-    reblog: null,
-    application: {
-        name: 'Coho Test Harness',
-        website: null,
-    },
-    account: mockAccount,
-    media_attachments: [],
-    mentions: [],
-    tags: [],
-    emojis: [],
-    card: null,
-    poll: null,
-    reply_to: null,
-    ancestors: [],
-    thread_continuation: [],
+  id: 'post_mock_1',
+  created_at: now,
+  in_reply_to_id: null,
+  in_reply_to_account_id: null,
+  sensitive: false,
+  spoiler_text: '',
+  visibility: 'public',
+  uri: 'https://tech.lgbt/users/coho/statuses/post_mock_1',
+  url: 'https://tech.lgbt/@coho/post_mock_1',
+  replies_count: 3,
+  reblogs_count: 2,
+  favourites_count: 5,
+  favourited: false,
+  reblogged: false,
+  muted: false,
+  bookmarked: false,
+  pinned: false,
+  content: '<p>Welcome to the mocked timeline!</p>',
+  reblog: null,
+  application: {
+    name: 'Coho Test Harness',
+    website: null,
+  },
+  account: mockAccount,
+  media_attachments: [],
+  mentions: [],
+  tags: [],
+  emojis: [],
+  card: null,
+  poll: null,
+  reply_to: null,
+  ancestors: [],
+  thread_continuation: [],
 };
 
 const secondaryPost = {
-    ...basePost,
-    id: 'post_mock_2',
-    created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    content: '<p>Timeline post number two.</p>',
-    replies_count: 1,
-    favourites_count: 2,
+  ...basePost,
+  id: 'post_mock_2',
+  created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  content: '<p>Timeline post number two.</p>',
+  replies_count: 1,
+  favourites_count: 2,
 };
 
 export const mockTimelinePosts = [basePost, secondaryPost];
 
 export const mockBookmarks = [
-    {
-        ...basePost,
-        id: 'bookmark_mock_1',
-        content: '<p>Saved post from your bookmarks.</p>',
-        bookmarked: true,
-    },
+  {
+    ...basePost,
+    id: 'bookmark_mock_1',
+    content: '<p>Saved post from your bookmarks.</p>',
+    bookmarked: true,
+  },
 ];
 
 export const mockFavorites = [
-    {
-        ...basePost,
-        id: 'favorite_mock_1',
-        content: '<p>Your favorited post appears here.</p>',
-        favourited: true,
-    },
+  {
+    ...basePost,
+    id: 'favorite_mock_1',
+    content: '<p>Your favorited post appears here.</p>',
+    favourited: true,
+  },
 ];
 
 export const mockNotifications = [
-    {
-        id: 'notify_follow_1',
-        type: 'follow',
-        created_at: now,
-        account: mockAccount,
-        status: basePost,
+  {
+    id: 'notify_follow_1',
+    type: 'follow',
+    created_at: now,
+    account: mockAccount,
+    status: basePost,
+  },
+  {
+    id: 'notify_favourite_1',
+    type: 'favourite',
+    created_at: now,
+    account: mockAccount,
+    status: secondaryPost,
+  },
+  {
+    id: 'notify_mention_1',
+    type: 'mention',
+    created_at: now,
+    account: mockAccount,
+    status: {
+      ...basePost,
+      id: 'post_mention_1',
+      content: '<p>@you This is a mention notification!</p>',
     },
-    {
-        id: 'notify_favourite_1',
-        type: 'favourite',
-        created_at: now,
-        account: mockAccount,
-        status: secondaryPost,
-    },
+  },
 ];
 
 export const mockSearchResult = {
-    query: 'Mastodon',
-    accounts: [
-        {
-            id: 'acct_search_1',
-            username: 'searchbot',
-            acct: 'searchbot@mock.social',
-            display_name: 'Search Bot',
-            note: '<p>I love search results.</p>',
-            url: 'https://tech.lgbt/@searchbot',
-            avatar: '/assets/icons/icon-128.png',
-            avatar_static: '/assets/icons/icon-128.png',
-        },
-    ],
-    statuses: mockTimelinePosts,
-    hashtags: [
-        {
-            name: 'coho',
-            url: 'https://tech.lgbt/tags/coho',
-        },
-    ],
+  query: 'Mastodon',
+  accounts: [
+    {
+      id: 'acct_search_1',
+      username: 'searchbot',
+      acct: 'searchbot@mock.social',
+      display_name: 'Search Bot',
+      note: '<p>I love search results.</p>',
+      url: 'https://tech.lgbt/@searchbot',
+      avatar: '/assets/icons/icon-128.png',
+      avatar_static: '/assets/icons/icon-128.png',
+    },
+  ],
+  statuses: mockTimelinePosts,
+  hashtags: [
+    {
+      name: 'coho',
+      url: 'https://tech.lgbt/tags/coho',
+    },
+  ],
 };
 
 export const mockTrendingStatuses = mockTimelinePosts;
 
 export const mockTrendingLinks = [
-    {
-        url: 'https://coho.app/blog/mock-news',
-        title: 'Coho Mock News',
-        description: 'Daily digest generated by the local mock server.',
-        image: '/assets/screenshots/home.png',
-    },
+  {
+    url: 'https://coho.app/blog/mock-news',
+    title: 'Coho Mock News',
+    description: 'Daily digest generated by the local mock server.',
+    image: '/assets/screenshots/home.png',
+  },
 ];
 
 export const mockAccountProfile = mockAccount;
 
 export const mockInstanceInfo = {
-    title: 'Tech.LGBT Mock Instance',
-    thumbnail: '/assets/icons/icon-192-maskable.png',
-    description: '<p>Mock description for the local test instance.</p>',
+  title: 'Tech.LGBT Mock Instance',
+  thumbnail: '/assets/icons/icon-192-maskable.png',
+  description: '<p>Mock description for the local test instance.</p>',
 };
 
 export const mockTrendingTags = [
-    {
-        name: 'coho',
-        url: 'https://tech.lgbt/tags/coho',
-        history: [
-            {
-                day: '1668297600',
-                uses: '100',
-                accounts: '50',
-            },
-        ],
-    },
+  {
+    name: 'coho',
+    url: 'https://tech.lgbt/tags/coho',
+    history: [
+      {
+        day: '1668297600',
+        uses: '100',
+        accounts: '50',
+      },
+    ],
+  },
 ];
