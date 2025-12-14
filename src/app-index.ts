@@ -71,6 +71,9 @@ export class AppIndex extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
 
+    // Initialize router (loads initial route's lazy imports)
+    await router.init();
+
     // Sync localStorage credentials to IndexedDB for service worker access
     await this.syncCredentialsToIndexedDB();
 
@@ -257,17 +260,7 @@ export class AppIndex extends LitElement {
 
   firstUpdated() {
     router.addEventListener('route-changed', () => {
-      if ('startViewTransition' in document) {
-        (
-          document as Document & {
-            startViewTransition: (callback: () => void) => void;
-          }
-        ).startViewTransition(() => {
-          this.requestUpdate();
-        });
-      } else {
-        this.requestUpdate();
-      }
+      this.requestUpdate();
     });
   }
 

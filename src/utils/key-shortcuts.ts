@@ -29,17 +29,17 @@ export function init() {
 }
 
 async function handleGoToHome() {
-  await router.navigate(['/home']);
+  await router.navigate('/home');
 }
 
 async function handleGoToBookmarks() {
-  await router.navigate(['/home?tab=bookmarks']);
+  await router.navigate('/home?tab=bookmarks');
 
   window.location.reload();
 }
 
 async function handleGoToFavorites() {
-  await router.navigate(['/home?tab=favorites']);
+  await router.navigate('/home?tab=favorites');
 
   window.location.reload();
 }

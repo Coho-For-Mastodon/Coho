@@ -174,12 +174,9 @@ export class AppHeader extends LitElement {
   }
 
   async goBack() {
-    if ('navigation' in window) {
-      // @ts-expect-error - Navigation API not yet in TypeScript lib types
-      if (window.navigation.canGoBack) {
-        // @ts-expect-error - Navigation API not yet in TypeScript lib types
-        await window.navigation.back();
-      }
+    if ('navigation' in window && window.navigation.canGoBack) {
+      const result = window.navigation.back();
+      await result.finished;
     } else {
       window.history.back();
     }

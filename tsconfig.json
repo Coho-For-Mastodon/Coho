@@ -3,6 +3,7 @@
     "module": "esnext",
     "target": "esnext",
     "lib": ["es2024", "esnext", "dom", "dom.iterable"],
+    "types": ["dom-navigation"],
     "skipLibCheck": true,
     "declaration": true,
     "emitDeclarationOnly": true,
