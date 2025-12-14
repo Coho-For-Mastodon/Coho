@@ -21,12 +21,14 @@ import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/md/md-toast';
 import '../components/offline-notify';
+import '../components/pwa-install';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
 import type { MdToast } from '../components/md/md-toast';
 import type { Timeline } from '../components/timeline';
 import type { PostDialog } from '../components/post-dialog';
+import type { PwaInstall } from '../components/pwa-install';
 
 import { styles } from '../styles/shared-styles';
 import { router } from '../utils/router';
@@ -88,6 +90,10 @@ export class AppHome extends LitElement {
   @state() userTermsLoaded: boolean = false;
   @state() rightClickLoaded: boolean = false;
 
+  // PWA Install states
+  @state() showInstallPrompt: boolean = false;
+  @state() pwaInstallLoaded: boolean = false;
+
   @state() activeTab: string = 'general';
 
   @state() tabsOrientation: 'horizontal' | 'vertical' = 'vertical';
@@ -104,6 +110,8 @@ export class AppHome extends LitElement {
   @query('#open-tweet-sheet') private openTweetSheet!: OtterDrawer;
   @query('.homeTimeline') private homeTimeline!: Timeline;
   @query('post-dialog') private postDialog!: PostDialog;
+  @query('#install-dialog') private installDialog!: MdDialog;
+  @query('pwa-install') private pwaInstall!: PwaInstall;
 
   static get styles() {
     return [
@@ -222,6 +230,10 @@ export class AppHome extends LitElement {
         /* Post bottom-sheet doesn't use drawer footer */
         #open-tweet-sheet::part(footer) {
           display: none;
+        }
+
+        #install-dialog::part(body) {
+          padding: 0;
         }
 
         mammoth-bot {
@@ -932,6 +944,9 @@ export class AppHome extends LitElement {
     // Load right-click component immediately
     this.loadRightClick();
 
+    // Check if we should show the install prompt
+    this.checkInstallPrompt();
+
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
         const newPost = effectiveParams.get('newPost');
@@ -1325,6 +1340,50 @@ export class AppHome extends LitElement {
     }
   }
 
+  // PWA Install methods
+  async checkInstallPrompt() {
+    // Wait a moment for the pwa-install component to initialize
+    await this.updateComplete;
+
+    // Don't show if already installed
+    if (
+      this.pwaInstall &&
+      (window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: window-controls-overlay)').matches)
+    ) {
+      return;
+    }
+
+    const isMobile = window.matchMedia('(max-width: 820px)').matches;
+
+    // On desktop with Web Install API, always show (ignore dismissal)
+    if (!isMobile && this.pwaInstall?.hasWebInstallAPI) {
+      this.showInstallPrompt = true;
+      this.pwaInstallLoaded = true;
+      return;
+    }
+
+    // Otherwise, check if install can be shown (respects dismissal)
+    if (this.pwaInstall?.canShow || this.pwaInstall?.hasInstallMethod) {
+      this.showInstallPrompt = true;
+      this.pwaInstallLoaded = true;
+    }
+  }
+
+  openInstallDialog() {
+    this.installDialog?.show();
+  }
+
+  handleInstallDismiss() {
+    this.showInstallPrompt = false;
+    this.installDialog?.hide();
+  }
+
+  handleInstallSuccess() {
+    this.showInstallPrompt = false;
+    this.installDialog?.hide();
+  }
+
   async handleTabChange(event: TabChangeEvent) {
     const panel = event.detail.panel;
     this.activeTab = panel;
@@ -1420,11 +1479,22 @@ export class AppHome extends LitElement {
         @open-bot-drawer="${() => this.openBotDrawer()}"
         @open-settings="${() => this.openSettingsDrawer()}"
         @open-theming="${() => this.openThemingDrawer()}"
+        @open-install="${() => this.openInstallDialog()}"
+        .showInstall="${this.showInstallPrompt}"
       >
       </app-header>
 
       <!-- Offline status notifications -->
       <offline-notify></offline-notify>
+
+      <!-- PWA Install Dialog -->
+      <md-dialog id="install-dialog" label="Install Coho">
+        <pwa-install
+          @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
+          @pwa-install-success="${() => this.handleInstallSuccess()}"
+          @pwa-installed="${() => this.handleInstallSuccess()}"
+        ></pwa-install>
+      </md-dialog>
 
       <otter-drawer label="Theming" id="theming-drawer">
         ${this.appThemeLoaded

@@ -10,6 +10,7 @@ import type {
   OpenSettingsEvent,
   OpenThemingEvent,
   OpenBotDrawerEvent,
+  OpenInstallEvent,
 } from '../types/events';
 
 @customElement('app-header')
@@ -17,6 +18,8 @@ export class AppHeader extends LitElement {
   @property({ type: String }) title = 'Otter';
 
   @property({ type: Boolean }) enableBack: boolean = false;
+
+  @property({ type: Boolean }) showInstall: boolean = false;
 
   static get styles() {
     return css`
@@ -165,6 +168,11 @@ export class AppHeader extends LitElement {
     );
   }
 
+  openInstall() {
+    // fire custom event
+    this.dispatchEvent(new CustomEvent('open-install') as OpenInstallEvent);
+  }
+
   async goBack() {
     if ('navigation' in window) {
       // @ts-expect-error - Navigation API not yet in TypeScript lib types
@@ -216,6 +224,16 @@ export class AppHeader extends LitElement {
         </div>
 
         <div id="actions">
+          ${this.showInstall
+            ? html`<md-icon-button
+                title="Install App"
+                id="install-button"
+                @click="${() => this.openInstall()}"
+              >
+                <md-icon src="/assets/download-outline.svg"></md-icon>
+              </md-icon-button>`
+            : nothing}
+
           <md-icon-button
             title="Open Theme Settings"
             id="open-button"

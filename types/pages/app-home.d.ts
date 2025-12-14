@@ -18,6 +18,7 @@ import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/md/md-toast';
 import '../components/offline-notify';
+import '../components/pwa-install';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
@@ -52,6 +53,8 @@ export declare class AppHome extends LitElement {
   appThemeLoaded: boolean;
   userTermsLoaded: boolean;
   rightClickLoaded: boolean;
+  showInstallPrompt: boolean;
+  pwaInstallLoaded: boolean;
   activeTab: string;
   tabsOrientation: 'horizontal' | 'vertical';
   tabsPlacement: 'top' | 'bottom' | 'start' | 'end';
@@ -65,6 +68,8 @@ export declare class AppHome extends LitElement {
   private openTweetSheet;
   private homeTimeline;
   private postDialog;
+  private installDialog;
+  private pwaInstall;
   static get styles(): import('lit').CSSResult[];
   firstUpdated(): Promise<void>;
   /**
@@ -114,6 +119,10 @@ export declare class AppHome extends LitElement {
   loadAppTheme(): Promise<void>;
   loadUserTerms(): Promise<void>;
   loadRightClick(): Promise<void>;
+  checkInstallPrompt(): Promise<void>;
+  openInstallDialog(): Promise<void>;
+  handleInstallDismiss(): void;
+  handleInstallSuccess(): void;
   handleTabChange(event: TabChangeEvent): Promise<void>;
   handleTranslating(_event: HandleTranslatingEvent): Promise<void>;
   render(): import('lit-html').TemplateResult<1>;

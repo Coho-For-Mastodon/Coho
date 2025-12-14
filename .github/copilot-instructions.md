@@ -1,39 +1,53 @@
 # Coho - Mastodon PWA Development Guide
 
-## Overview
-
-Coho is a Progressive Web App Mastodon client built with **Lit 3.x web components**, **Vite**, and **Firebase Functions**. It emphasizes offline-first architecture, Material Design 3 components, and cross-platform PWA features.
-
 ## Quick Start
 
 ```bash
 npm install && npm run dev    # Dev server on localhost:3000
-npm run build                 # Production build with SSR skeleton generation
-npm test                      # Playwright tests (requires build first)
-firebase deploy --only hosting   # Deploy frontend
+npm run build                 # Production build with SSR skeleton
+npm run start-for-tests && npm test  # Playwright tests
 ```
 
-## Architecture Overview
+## Architecture
 
-### Directory Structure
+**Stack**: Lit 3.x web components, Vite, Firebase Functions, Workbox service worker
 
-- `src/pages/` - Route-level page components (lazy-loaded)
-- `src/components/` - Reusable components; `md/` subdirectory contains MD3 components
-- `src/services/` - Stateless API/data modules (no global state library)
-- `src/utils/` - Router config, workers, helpers
-- `functions/` - Firebase Functions (AI features, Mastodon proxies)
+```
+src/
+├── pages/           # Route-level components (lazy-loaded via router)
+├── components/      # Reusable components
+│   └── md/          # Custom MD3 components (25+ components)
+├── services/        # Stateless API modules (no global state)
+├── mastodon/        # Mastodon API client (types, api/, config/)
+├── sw.ts            # Service worker (built separately by Vite)
+└── utils/router.ts  # @thepassle/app-tools router config
+functions/src/       # Firebase Functions (AI features via OpenAI)
+```
 
-### Key Patterns
+## Critical Pattern: Dual Token Storage
 
-#### Component Structure
+Auth tokens **must** exist in both localStorage (frontend) AND IndexedDB (service worker):
 
-All components use Lit decorators. Use `@state()` for private reactive state, `@property()` for public props:
+```typescript
+// Frontend reads from localStorage
+const token = localStorage.getItem('accessToken');
+
+// Service worker reads from IndexedDB (idb-keyval)
+const token = await get('accessToken');
+
+// Sync happens in app-index.ts:syncCredentialsToIndexedDB()
+```
+
+## Component Patterns
+
+Use Lit decorators. `@state()` for private reactive state, `@property()` for public props:
 
 ```typescript
 @customElement('my-component')
 export class MyComponent extends LitElement {
   @state() private loading = false;
-  @property({ type: String }) userId = '';
+  @property({ type: Object }) tweet: Post | undefined;
+
   static styles = css`
     /* scoped styles */
   `;
@@ -43,32 +57,11 @@ export class MyComponent extends LitElement {
 }
 ```
 
-#### Routing
+**Reactivity gotcha**: Array mutations don't trigger updates. Reassign: `this.items = [...this.items, newItem]`
 
-Routes defined in `src/utils/router.ts` using `@thepassle/app-tools/router` with lazy loading:
+## Services (src/services/)
 
-```typescript
-{ path: '/home', plugins: [lazy(() => import('../pages/app-home.js'))], render: () => html`<app-home></app-home>` }
-```
-
-Navigate with `router.navigate('/path')` or `<a href="/path">`.
-
-#### Dual Token Storage (Critical)
-
-Auth tokens **must** be stored in both localStorage AND IndexedDB for service worker access:
-
-```typescript
-// Frontend uses localStorage
-const token = localStorage.getItem('accessToken');
-// Service worker uses IndexedDB via idb-keyval
-const token = await get('accessToken');
-```
-
-See `syncCredentialsToIndexedDB()` in `app-index.ts` for the sync pattern.
-
-#### Service Layer Pattern
-
-Services in `src/services/` are stateless. Always get fresh tokens:
+Stateless modules that fetch fresh auth on each call:
 
 ```typescript
 const getServer = () => localStorage.getItem('server') || '';
@@ -82,68 +75,55 @@ export async function getPostDetail(id: string): Promise<Post> {
 }
 ```
 
-## Material Design 3 Components
+**Settings**: Use IndexedDB via `src/services/settings.ts`, NOT localStorage.
 
-**ALWAYS prefer MD3 components** (`src/components/md/`) over Shoelace or Fluent UI:
+## MD3 Components (`src/components/md/`)
 
-| Component | Tag         | Key Props                                        |
-| --------- | ----------- | ------------------------------------------------ |
-| Button    | `md-button` | `variant` (filled/outlined/text), `pill`, `size` |
-| Dialog    | `md-dialog` | `label`, `open`, `fullscreen`                    |
-| Tabs      | `md-tabs`   | `orientation`, `placement`, `active`             |
-| Select    | `md-select` | `value`, `placeholder`, `variant`                |
+**Always prefer custom MD3 components** over Shoelace/Fluent UI:
 
-### MD3 Styling Rules
+- `md-button` - variants: filled/outlined/text/elevated/tonal/fab
+- `md-dialog`, `md-tabs`, `md-select`, `md-text-field`, `md-card`
+- `md-skeleton`, `md-toast`, `md-menu`, `md-dropdown`
 
-1. **Use semantic tokens**: `--md-sys-color-primary`, `--md-sys-color-surface-container`
-2. **Fallback to Shoelace**: `var(--md-sys-color-primary, var(--sl-color-primary-600))`
-3. **Dark mode via media query**: `@media (prefers-color-scheme: dark)`
-4. **Mobile breakpoint**: `@media(max-width: 820px)`
-5. **No custom scrollbar styles** - use centralized styles in `md-tokens.css`
+**Styling tokens**:
 
-### Creating New MD3 Components
+```css
+background: var(--md-sys-color-surface-container, #1e1e24);
+color: var(
+  --md-sys-color-primary,
+  var(--sl-color-primary-600)
+); /* Shoelace fallback */
+@media (max-width: 820px) {
+  /* mobile breakpoint */
+}
+```
 
-1. Create in `src/components/md/` following existing patterns
-2. Support dark mode via media queries
-3. Use slots for extensibility (`prefix`, `suffix`, `footer`)
-4. Emit custom events for interactions
-5. Add keyboard support (Enter/Space for buttons)
+## Routing
 
-## Offline & PWA
-
-### Service Worker (`src/sw.ts`)
-
-- Workbox-based with `injectManifest` strategy
-- NetworkFirst for navigation, CacheFirst for assets
-- Background sync for failed requests via `BackgroundSyncPlugin`
-- Push notifications with Mastodon-specific payload handling
-
-### Settings
-
-Stored in IndexedDB via `idb-keyval`, not localStorage:
+Routes in `src/utils/router.ts` use lazy loading:
 
 ```typescript
-import { getSettings, setSettings } from './services/settings';
-const settings = await getSettings();
-await setSettings({ data_saver: true });
+{ path: '/home', plugins: [lazy(() => import('../pages/app-home.js'))], render: () => html`<app-home></app-home>` }
 ```
+
+Navigate: `router.navigate('/path')` or use `<a href="/path">`
 
 ## Testing
 
-```bash
-npm run start-for-tests   # Build + serve on port 3000
-npm test                  # Run Playwright tests
-```
-
-Tests use mock APIs registered in `tests/mocks/`. Auth seeding:
+Tests use Playwright with mock API routes:
 
 ```typescript
-await seedAuth(page); // Sets localStorage tokens and navigates to /home
+// tests/test-utils.ts
+await bootstrapApp(page); // Registers mocks, loads app
+await seedAuth(page); // Sets auth in localStorage, navigates to /home
+
+// Mocks defined in tests/mocks/register-api.ts
+// Mock data in tests/mocks/mock-data.ts
 ```
 
 ## Firebase Functions
 
-Located in `functions/src/index.ts`. Pattern:
+Pattern in `functions/src/index.ts`:
 
 ```typescript
 export const myFunction = onRequest(
@@ -156,16 +136,12 @@ export const myFunction = onRequest(
     }
     applyCors(req, res);
     // ... logic
-    res.json(data);
   }
 );
 ```
 
-Requires `OPENAI_API_KEY` secret for AI features.
-
 ## Common Pitfalls
 
-- **Array mutations don't trigger updates** - reassign: `this.items = [...this.items, newItem]`
-- **Import components before use** - Lit components must be imported to be registered
-- **Web Workers use top-level await** - modern browsers only
-- **Service worker can't access localStorage** - use IndexedDB pattern above
+- **Import components before use** - Lit registers on import
+- **Service worker built separately** - see `vite.config.ts` build-sw plugin
+- **Launch URL capture** - `sessionStorage.getItem('coho:launchUrl')` preserves deep link intent

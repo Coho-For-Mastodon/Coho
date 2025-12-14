@@ -109,6 +109,9 @@ export type OpenThemingEvent = CustomEvent<void>;
 /** Typed CustomEvent for open-bot-drawer (no detail) */
 export type OpenBotDrawerEvent = CustomEvent<void>;
 
+/** Typed CustomEvent for open-install (no detail) */
+export type OpenInstallEvent = CustomEvent<void>;
+
 // ============================================================================
 // Menu Events
 // ============================================================================

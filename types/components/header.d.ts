@@ -4,6 +4,7 @@ import './md/md-icon-button.js';
 export declare class AppHeader extends LitElement {
   title: string;
   enableBack: boolean;
+  showInstall: boolean;
   static get styles(): import('lit').CSSResult;
   protected firstUpdated(
     _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
@@ -11,6 +12,7 @@ export declare class AppHeader extends LitElement {
   openSettings(): void;
   handleTheming(): void;
   openBotDrawer(): void;
+  openInstall(): void;
   goBack(): Promise<void>;
   render(): import('lit-html').TemplateResult<1>;
 }

@@ -21,52 +21,52 @@
 import type { Post } from '../interfaces/Post';
 /** Detail for tab-change events emitted by md-tabs */
 export interface TabChangeDetail {
-    panel: string;
+  panel: string;
 }
 /** Typed CustomEvent for tab-change */
 export type TabChangeEvent = CustomEvent<TabChangeDetail>;
 /** Detail for replies events emitted when viewing post replies */
 export interface RepliesDetail {
-    data: Post[];
-    id?: string;
+  data: Post[];
+  id?: string;
 }
 /** Typed CustomEvent for replies */
 export type RepliesEvent = CustomEvent<RepliesDetail>;
 /** Detail for open events when opening a post in detail view */
 export interface OpenPostDetail {
-    tweet: Post;
+  tweet: Post;
 }
 /** Typed CustomEvent for open post */
 export type OpenPostEvent = CustomEvent<OpenPostDetail>;
 /** Detail for handle-summary events */
 export interface HandleSummaryDetail {
-    data: string;
+  data: string;
 }
 /** Typed CustomEvent for handle-summary */
 export type HandleSummaryEvent = CustomEvent<HandleSummaryDetail>;
 /** Detail for handle-translating events */
 export interface HandleTranslatingDetail {
-    tweet: Post;
+  tweet: Post;
 }
 /** Typed CustomEvent for handle-translating */
 export type HandleTranslatingEvent = CustomEvent<HandleTranslatingDetail>;
 /** Detail for reply-clicked events */
 export interface ReplyClickedDetail {
-    post: Post;
+  post: Post;
 }
 /** Typed CustomEvent for reply-clicked */
 export type ReplyClickedEvent = CustomEvent<ReplyClickedDetail>;
 /** Detail for analyze events */
 export interface AnalyzeEventDetail {
-    data: unknown;
-    imageData: unknown;
-    tweet: Post;
+  data: unknown;
+  imageData: unknown;
+  tweet: Post;
 }
 /** Typed CustomEvent for analyze */
 export type AnalyzeEvent = CustomEvent<AnalyzeEventDetail>;
 /** Detail for openimage events */
 export interface OpenImageDetail {
-    imageURL: string;
+  imageURL: string;
 }
 /** Typed CustomEvent for openimage */
 export type OpenImageEvent = CustomEvent<OpenImageDetail>;
@@ -76,64 +76,66 @@ export type OpenSettingsEvent = CustomEvent<void>;
 export type OpenThemingEvent = CustomEvent<void>;
 /** Typed CustomEvent for open-bot-drawer (no detail) */
 export type OpenBotDrawerEvent = CustomEvent<void>;
+/** Typed CustomEvent for open-install (no detail) */
+export type OpenInstallEvent = CustomEvent<void>;
 /** Detail for menu-item-click events */
 export interface MenuItemClickDetail {
-    value?: string;
+  value?: string;
 }
 /** Typed CustomEvent for menu-item-click */
 export type MenuItemClickEvent = CustomEvent<MenuItemClickDetail>;
 /** Detail for segment-change events */
 export interface SegmentChangeDetail {
-    value: string;
+  value: string;
 }
 /** Typed CustomEvent for segment-change */
 export type SegmentChangeEvent = CustomEvent<SegmentChangeDetail>;
 /** Detail for select change events */
 export interface SelectChangeDetail {
-    value: string;
+  value: string;
 }
 /** Typed CustomEvent for select change */
 export type SelectChangeEvent = CustomEvent<SelectChangeDetail>;
 /** Detail for preview-image events from image-carousel */
 export interface PreviewImageDetail {
-    src: string;
-    alt?: string;
+  src: string;
+  alt?: string;
 }
 /** Typed CustomEvent for preview-image */
 export type PreviewImageEvent = CustomEvent<PreviewImageDetail>;
 /** Detail for media-edit save events */
 export interface MediaEditSaveDetail {
-    description: string;
+  description: string;
 }
 /** Typed CustomEvent for media-edit save */
 export type MediaEditSaveEvent = CustomEvent<MediaEditSaveDetail>;
 /** Detail for color-chosen events from theme picker */
 export interface ColorChosenDetail {
-    color: string;
+  color: string;
 }
 /** Typed CustomEvent for color-chosen */
 export type ColorChosenEvent = CustomEvent<ColorChosenDetail>;
 /** Detail for switch toggle events */
 export interface SwitchChangeDetail {
-    checked: boolean;
+  checked: boolean;
 }
 /** Typed CustomEvent for switch changes */
 export type SwitchChangeEvent = CustomEvent<SwitchChangeDetail>;
 /** Detail for checkbox toggle events */
 export interface CheckboxChangeDetail {
-    checked: boolean;
+  checked: boolean;
 }
 /** Typed CustomEvent for checkbox changes */
 export type CheckboxChangeEvent = CustomEvent<CheckboxChangeDetail>;
 /** Detail for server-select events */
 export interface ServerSelectDetail {
-    server: string;
+  server: string;
 }
 /** Typed CustomEvent for server-select */
 export type ServerSelectEvent = CustomEvent<ServerSelectDetail>;
 /** Detail for toast action-click events */
 export interface ToastActionClickDetail {
-    action: string;
+  action: string;
 }
 /** Typed CustomEvent for toast action-click */
 export type ToastActionClickEvent = CustomEvent<ToastActionClickDetail>;
@@ -148,4 +150,6 @@ export type TypedEventHandler<T> = (event: CustomEvent<T>) => void;
  * @example
  * handleTabChange: AsyncTypedEventHandler<TabChangeDetail> = async (e) => { ... }
  */
-export type AsyncTypedEventHandler<T> = (event: CustomEvent<T>) => Promise<void>;
+export type AsyncTypedEventHandler<T> = (
+  event: CustomEvent<T>
+) => Promise<void>;
