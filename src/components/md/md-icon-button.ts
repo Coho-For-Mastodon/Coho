@@ -53,6 +53,7 @@ export class MdIconButton extends LitElement {
     }
 
     .icon-button {
+      -webkit-tap-highlight-color: transparent;
       position: relative;
       display: inline-flex;
       align-items: center;
