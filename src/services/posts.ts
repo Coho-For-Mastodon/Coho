@@ -66,6 +66,10 @@ export async function getPostDetail(id: string): Promise<Post> {
     }),
   });
 
+  if (!response.ok) {
+    throw new Error(`Failed to load post: ${response.status}`);
+  }
+
   const data = await response.json();
   return data;
 }
