@@ -1,34 +1,4 @@
 import type { TemplateResult } from 'lit';
-declare global {
-  interface NavigateEvent extends Event {
-    destination: {
-      url: string;
-    };
-    downloadRequest: string | null;
-    formData: FormData | null;
-    intercept(options?: {
-      focusReset?: 'after-transition' | 'manual';
-      scroll?: 'after-transition' | 'manual';
-      handler?: () => Promise<void>;
-    }): void;
-  }
-  interface Navigation {
-    addEventListener(
-      type: 'navigate',
-      listener: (event: NavigateEvent) => void
-    ): void;
-    navigate(
-      url: string,
-      options?: {
-        history?: 'push' | 'replace' | 'auto';
-        info?: unknown;
-      }
-    ): {
-      finished: Promise<void>;
-    };
-  }
-  const navigation: Navigation;
-}
 /**
  * Route plugin interface - called during navigation lifecycle
  */
