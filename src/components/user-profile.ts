@@ -95,20 +95,19 @@ export class UserProfile extends LitElement {
   ];
 
   async firstUpdated() {
-    // set up intersection observer
     const options = {
       root: null,
-      rootMargin: '200px',
+      rootMargin: '100px',
       threshold: 0,
     };
 
     const observer = new IntersectionObserver((entries, observer) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          this.loadImage();
+        console.log('Observing user profile image intersection');
+        this.loadImage();
+        observer.unobserve(entry.target);
 
-          observer.unobserve(entry.target);
-        }
+        observer.disconnect();
       });
     }, options);
 
