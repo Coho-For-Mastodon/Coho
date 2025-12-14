@@ -5,6 +5,7 @@ import { Post } from '../interfaces/Post';
 import { parseEmojis } from '../utils/emoji-parser';
 import type { Settings } from '../services/settings';
 import type { Account } from '../mastodon/types';
+import { router } from '../utils/router';
 
 import '../components/user-profile';
 import '../components/md/md-card';
@@ -396,23 +397,39 @@ export function renderReblog(
 ) {
   if (!state.tweet?.reblog) return null;
 
+  const boosterName =
+    state.tweet.account.display_name || state.tweet.account.acct;
+
   return html`
     <md-card slot="card">
-      <div class="header-block reblog-header" slot="header">
+      <div
+        class="boost-indicator"
+        @click="${(e: Event) => {
+          e.stopPropagation();
+          router.navigate(`/account?id=${state.tweet?.account.id}`);
+        }}"
+      >
+        <md-icon name="repeat"></md-icon>
+        <img
+          src="${state.tweet.account.avatar_static ||
+          '/assets/icons/new-icons/icon-72x72.png'}"
+          alt="${boosterName}"
+        />
+        <span
+          class="booster-name"
+          .innerHTML="${parseEmojis(
+            boosterName,
+            state.tweet.account.emojis || [],
+            true
+          )}"
+        ></span>
+        <span>boosted</span>
+      </div>
+      <div class="header-block" slot="header">
         <user-profile
           ?small="${true}"
           .account="${state.tweet.reblog.account}"
         ></user-profile>
-
-        <div class="boosted-by">
-          <span>Boosted by</span>
-          <user-profile
-            boosted
-            class="smaller-profile"
-            ?small="${true}"
-            .account="${state.tweet.account}"
-          ></user-profile>
-        </div>
         <md-dropdown placement="bottom-end">
           <md-icon-button
             slot="trigger"

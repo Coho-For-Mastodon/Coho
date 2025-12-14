@@ -104,6 +104,44 @@ export class TimelineItem extends LitElement {
         padding: 8px 12px;
       }
 
+      .boost-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        margin: -10px -10px 10px -10px;
+        background: var(--md-sys-color-surface-container-high, #2a2a30);
+        border-radius: 12px 12px 0 0;
+        font-size: var(--md-sys-typescale-body-small-font-size);
+        color: var(--md-sys-color-on-surface-variant, #c4c4c4);
+        cursor: pointer;
+      }
+
+      .boost-indicator:hover {
+        background: var(--md-sys-color-surface-container-highest, #353539);
+      }
+
+      .boost-indicator md-icon {
+        color: var(--md-sys-color-primary, var(--sl-color-primary-600));
+        font-size: 16px;
+      }
+
+      .boost-indicator img {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 1px solid var(--md-sys-color-outline-variant, #444);
+      }
+
+      .boost-indicator .booster-name {
+        font-weight: 500;
+        color: var(--md-sys-color-on-surface, #fff);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+      }
+
       .boosted-by {
         flex: 2;
       }
@@ -267,6 +305,7 @@ export class TimelineItem extends LitElement {
         display: flex;
         align-items: center;
         gap: 14px;
+        justify-content: space-between;
       }
 
       .header-block img {
@@ -368,11 +407,28 @@ export class TimelineItem extends LitElement {
           width: 100%;
           justify-content: space-between;
         }
+
+        .boost-indicator .booster-name {
+          max-width: 100px;
+        }
       }
 
       @media (prefers-color-scheme: light) {
         #reply-to {
           color: black;
+        }
+
+        .boost-indicator {
+          background: var(--md-sys-color-surface-container-high, #e8e8ec);
+          color: var(--md-sys-color-on-surface-variant, #5a5a5a);
+        }
+
+        .boost-indicator:hover {
+          background: var(--md-sys-color-surface-container-highest, #dcdce0);
+        }
+
+        .boost-indicator .booster-name {
+          color: var(--md-sys-color-on-surface, #1c1c1c);
         }
       }
 
