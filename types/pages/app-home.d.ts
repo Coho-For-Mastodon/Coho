@@ -120,7 +120,7 @@ export declare class AppHome extends LitElement {
   loadUserTerms(): Promise<void>;
   loadRightClick(): Promise<void>;
   checkInstallPrompt(): Promise<void>;
-  openInstallDialog(): Promise<void>;
+  openInstallDialog(): void;
   handleInstallDismiss(): void;
   handleInstallSuccess(): void;
   handleTabChange(event: TabChangeEvent): Promise<void>;
