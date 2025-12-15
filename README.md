@@ -1,16 +1,12 @@
-# Coho
+<div align="center">
+  <img src="/public/assets/icons/256-icon.png" alt="Coho" width="128" height="128" />
 
-**A fast, offline-first Mastodon client that works anywhere.**
+  # Coho <sup>alpha</sup>
 
-[![Status](https://img.shields.io/badge/Status-Public%20Alpha-orange)]()
+  A fast, offline-first Mastodon client.
 
-Coho is a Progressive Web App (PWA) client for Mastodon built around three core principles: **performance**, **simplicity**, and **offline capability**. Install it on any device or operating system and enjoy a blazing fast, reliable Mastodon experience—even without an internet connection.
+  [**Try the App**](https://coho.place)
 
-> **Public Alpha**: Coho is under active development. Expect bugs and missing features as we work toward a stable release.
-
-[**Try the App →**](https://coho.place)
-
-<div>
   <img src="/public/assets/new-header-graphic.png" alt="Coho For Mastodon" />
 </div>
 
