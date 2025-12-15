@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="/public/assets/icons/256-icon.png" alt="Coho" width="128" height="128" />
+  <img src="/public/assets/icons/new-icons/icon-256x256.png" alt="Coho" width="128" height="128" />
 
-  # Coho <sup>alpha</sup>
+# Coho <sup>alpha</sup>
 
-  A fast, offline-first Mastodon client.
+A fast, offline-first Mastodon client.
 
-  [**Try the App**](https://coho.place)
+[**Try the App**](https://coho.place)
 
   <img src="/public/assets/new-header-graphic.png" alt="Coho For Mastodon" />
 </div>
