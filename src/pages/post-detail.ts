@@ -22,6 +22,7 @@ export class PostDetail extends LitElement {
   @state() replyingTo: Post | null = null;
   @state() loading = false;
   @state() error: string | null = null;
+  @state() isGuestMode = false;
 
   @property({ type: Object }) passed_tweet: Post | null = null;
 
@@ -310,6 +311,10 @@ export class PostDetail extends LitElement {
   }
 
   async firstUpdated() {
+    // Check guest mode
+    const { isGuestMode } = await import('../services/auth-state');
+    this.isGuestMode = isGuestMode();
+
     // get id from query string
     await this.loadReplies();
   }
@@ -447,6 +452,7 @@ export class PostDetail extends LitElement {
             <timeline-item
               id="main"
               .tweet="${this.tweet!}"
+              ?guestMode="${this.isGuestMode}"
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"
             ></timeline-item>
@@ -463,6 +469,7 @@ export class PostDetail extends LitElement {
                   <timeline-item
                     .tweet="${reply}"
                     ?show="${true}"
+                    ?guestMode="${this.isGuestMode}"
                     @open="${(e: CustomEvent<{ tweet: Post }>) =>
                       this.handleOpenPost(e)}"
                     @reply-clicked="${(e: CustomEvent) =>
@@ -474,46 +481,53 @@ export class PostDetail extends LitElement {
           </section>
         </div>
 
-        <footer class="composer">
-          <div class="composer-shell">
-            <div class="composer-inner">
-              ${this.replyingTo
-                ? html`
-                    <div class="replying-to-indicator">
-                      <span>Replying to @${this.replyingTo.account.acct}</span>
-                      <md-icon-button
-                        name="close"
-                        @click=${() => (this.replyingTo = null)}
-                      ></md-icon-button>
+        ${this.isGuestMode
+          ? nothing
+          : html`
+              <footer class="composer">
+                <div class="composer-shell">
+                  <div class="composer-inner">
+                    ${this.replyingTo
+                      ? html`
+                          <div class="replying-to-indicator">
+                            <span
+                              >Replying to
+                              @${this.replyingTo.account.acct}</span
+                            >
+                            <md-icon-button
+                              name="close"
+                              @click=${() => (this.replyingTo = null)}
+                            ></md-icon-button>
+                          </div>
+                        `
+                      : nothing}
+
+                    <md-text-area
+                      class="reply-input"
+                      variant="outlined"
+                      rows="2"
+                      placeholder="Reply to this post..."
+                    ></md-text-area>
+
+                    <div class="composer-actions">
+                      <md-button
+                        @click="${() => this.handleReply()}"
+                        id="reply-button"
+                        variant="filled"
+                        pill
+                        size="small"
+                      >
+                        Reply
+                        <md-icon
+                          slot="suffix"
+                          src="/assets/add-outline.svg"
+                        ></md-icon>
+                      </md-button>
                     </div>
-                  `
-                : nothing}
-
-              <md-text-area
-                class="reply-input"
-                variant="outlined"
-                rows="2"
-                placeholder="Reply to this post..."
-              ></md-text-area>
-
-              <div class="composer-actions">
-                <md-button
-                  @click="${() => this.handleReply()}"
-                  id="reply-button"
-                  variant="filled"
-                  pill
-                  size="small"
-                >
-                  Reply
-                  <md-icon
-                    slot="suffix"
-                    src="/assets/add-outline.svg"
-                  ></md-icon>
-                </md-button>
-              </div>
-            </div>
-          </div>
-        </footer>
+                  </div>
+                </div>
+              </footer>
+            `}
       </main>
     `;
   }

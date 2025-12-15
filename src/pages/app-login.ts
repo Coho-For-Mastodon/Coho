@@ -476,8 +476,11 @@ export class AppLogin extends LitElement {
   }
 
   async explore() {
+    const { enterGuestMode } = await import('../services/auth-state');
+    enterGuestMode();
+
     const router = await getRouter();
-    router.navigate('/explore');
+    router.navigate('/home');
   }
 
   render() {
@@ -626,7 +629,7 @@ export class AppLogin extends LitElement {
               Intro To Mastodon
             </md-button>
             <md-button @click="${() => this.explore()}" variant="text">
-              Explore without an account
+              Try Coho without an account
             </md-button>
           </div>
         </md-card>

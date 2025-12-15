@@ -58,6 +58,7 @@ export class AppProfile extends LitElement {
   @state() bannerReady: boolean = false;
   @state() bannerFailed: boolean = false;
   @state() avatarReady: boolean = false;
+  @state() isGuestMode: boolean = false;
   @state() avatarFailed: boolean = false;
 
   @query('#preview-content') private previewContent!: HTMLElement;
@@ -714,14 +715,18 @@ export class AppProfile extends LitElement {
   }
 
   async firstUpdated() {
+    // Check guest mode
+    const { isGuestMode } = await import('../services/auth-state');
+    this.isGuestMode = isGuestMode();
+
     // get id from query string
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
 
     if (id) {
-      // Check if viewing own profile
+      // Check if viewing own profile (only matters for authenticated users)
       const currentUserID = localStorage.getItem('currentUserID');
-      this.isOwnProfile = currentUserID === id;
+      this.isOwnProfile = !this.isGuestMode && currentUserID === id;
 
       this.loadingProfile = true;
       this.profileLoadFailed = false;
@@ -748,8 +753,8 @@ export class AppProfile extends LitElement {
       this.loadingProfile = false;
       this.loadingPosts = false;
 
-      // Only check follow status if not viewing own profile
-      if (!this.isOwnProfile) {
+      // Only check follow status if not viewing own profile and not a guest
+      if (!this.isOwnProfile && !this.isGuestMode) {
         try {
           const followCheck = await checkFollowing(id);
           console.log('followCheck', followCheck);
@@ -775,6 +780,18 @@ export class AppProfile extends LitElement {
 
   async follow() {
     if (!this.user) return;
+
+    if (this.isGuestMode) {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: 'Sign in to follow users',
+            variant: 'info',
+          },
+        })
+      );
+      return;
+    }
 
     // Store original state for rollback
     const originalFollowed = this.followed;
@@ -817,6 +834,18 @@ export class AppProfile extends LitElement {
   async unfollow() {
     if (!this.user) return;
 
+    if (this.isGuestMode) {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: 'Sign in to unfollow users',
+            variant: 'info',
+          },
+        })
+      );
+      return;
+    }
+
     // Store original state for rollback
     const originalFollowed = this.followed;
 
@@ -839,6 +868,19 @@ export class AppProfile extends LitElement {
 
   async mute() {
     if (!this.user) return;
+
+    if (this.isGuestMode) {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: 'Sign in to mute users',
+            variant: 'info',
+          },
+        })
+      );
+      return;
+    }
+
     await muteUser(this.user.id);
     this.muted = true;
   }
@@ -851,6 +893,18 @@ export class AppProfile extends LitElement {
 
   async block() {
     if (!this.user) return;
+
+    if (this.isGuestMode) {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: 'Sign in to block users',
+            variant: 'info',
+          },
+        })
+      );
+      return;
+    }
     await blockUser(this.user.id);
     this.blocked = true;
   }
@@ -1193,6 +1247,7 @@ export class AppProfile extends LitElement {
                           this.editPost(e.detail.tweet)}"
                         @delete="${() => this.reloadPosts()}"
                         .tweet=${post}
+                        ?guestMode="${this.isGuestMode}"
                       ></timeline-item>
                     </li>
                   `

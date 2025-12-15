@@ -356,6 +356,10 @@ export const authToClient = async (code: string, state: string) => {
     await set('accessToken', tokenData);
     await set('server', getServer());
 
+    // Exit guest mode since user is now logged in
+    const { exitGuestMode } = await import('./auth-state');
+    exitGuestMode();
+
     // Clear cached currentUser to force re-fetch with new token
     currentUser = null;
 

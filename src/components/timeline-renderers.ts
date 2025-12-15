@@ -55,6 +55,7 @@ export interface TimelineItemState {
   threadExpanded: boolean;
   threadPosts: Post[];
   isOnDeviceTranslateAvailable: boolean;
+  guestMode?: boolean;
 }
 
 export function renderSensitive(

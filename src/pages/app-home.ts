@@ -22,6 +22,7 @@ import '../components/md/md-icon-button';
 import '../components/md/md-toast';
 import '../components/offline-notify';
 import '../components/pwa-install';
+import '../components/guest-login-banner';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -91,6 +92,9 @@ export class AppHome extends LitElement {
   // PWA Install states
   @state() showInstallPrompt: boolean = false;
   @state() pwaInstallLoaded: boolean = false;
+
+  // Guest mode state
+  @state() isGuestMode: boolean = false;
 
   @state() activeTab: string = 'general';
 
@@ -779,6 +783,11 @@ export class AppHome extends LitElement {
   }
 
   async firstUpdated() {
+    // Check if in guest mode
+    const { isGuestMode: checkGuestMode } =
+      await import('../services/auth-state');
+    this.isGuestMode = checkGuestMode();
+
     // Use the current URL params, but fall back to the initial launch URL if
     // something in boot dropped our query string (e.g. PWA manifest shortcut
     // /home?tab=notifications getting normalized to /home).
@@ -853,7 +862,10 @@ export class AppHome extends LitElement {
           this.handleDataSaverMode(settings.data_saver || false);
         }
 
-        this.hasNewNotifications = await checkNewNotifications();
+        // Only check notifications for authenticated users
+        if (!this.isGuestMode) {
+          this.hasNewNotifications = await checkNewNotifications();
+        }
       },
       { timeout: 3000 }
     );
@@ -882,6 +894,17 @@ export class AppHome extends LitElement {
     }
 
     if (tabToOpen) {
+      // Skip auth-required tabs for guests
+      const authRequiredTabs = [
+        'bookmarks',
+        'faves',
+        'notifications',
+        'messages',
+      ];
+      if (this.isGuestMode && authRequiredTabs.includes(tabToOpen)) {
+        tabToOpen = 'general';
+      }
+
       // Preload the component for the requested tab
       switch (tabToOpen) {
         case 'bookmarks':
@@ -929,11 +952,13 @@ export class AppHome extends LitElement {
       }
     });
 
-    // setTimeout(async () => {
-    const { getCurrentUser } = await import('../services/account');
-    getCurrentUser().then((user) => {
-      this.user = user ?? null;
-    });
+    // Only load user for authenticated users
+    if (!this.isGuestMode) {
+      const { getCurrentUser } = await import('../services/account');
+      getCurrentUser().then((user) => {
+        this.user = user ?? null;
+      });
+    }
     // }, 1200);
   }
 
@@ -1429,6 +1454,7 @@ export class AppHome extends LitElement {
         @open-theming="${() => this.openThemingDrawer()}"
         @open-install="${() => this.openInstallDialog()}"
         .showInstall="${this.showInstallPrompt}"
+        .guestMode="${this.isGuestMode}"
       >
       </app-header>
 
@@ -1636,7 +1662,11 @@ export class AppHome extends LitElement {
             <md-icon slot="icon" src="/assets/search-outline.svg"></md-icon>
             <span class="tab-label">Explore</span>
           </md-tab>
-          <md-tab slot="nav" panel="notifications">
+          <md-tab
+            slot="nav"
+            panel="notifications"
+            ?disabled="${this.isGuestMode}"
+          >
             <md-icon
               slot="icon"
               src="/assets/notifications-outline.svg"
@@ -1645,26 +1675,51 @@ export class AppHome extends LitElement {
             ${this.hasNewNotifications
               ? html`<span class="notification-dot"></span>`
               : nothing}
+            ${this.isGuestMode
+              ? html`<md-icon
+                  slot="suffix"
+                  name="lock-closed"
+                  style="font-size: 12px; opacity: 0.5;"
+                ></md-icon>`
+              : nothing}
           </md-tab>
-          <md-tab slot="nav" panel="bookmarks">
+          <md-tab slot="nav" panel="bookmarks" ?disabled="${this.isGuestMode}">
             <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
             <span class="tab-label">Saved</span>
+            ${this.isGuestMode
+              ? html`<md-icon
+                  slot="suffix"
+                  name="lock-closed"
+                  style="font-size: 12px; opacity: 0.5;"
+                ></md-icon>`
+              : nothing}
           </md-tab>
-          <md-tab slot="nav" panel="faves">
+          <md-tab slot="nav" panel="faves" ?disabled="${this.isGuestMode}">
             <md-icon slot="icon" src="/assets/heart-outline.svg"></md-icon>
             <span class="tab-label">Favorites</span>
+            ${this.isGuestMode
+              ? html`<md-icon
+                  slot="suffix"
+                  name="lock-closed"
+                  style="font-size: 12px; opacity: 0.5;"
+                ></md-icon>`
+              : nothing}
           </md-tab>
 
-          <div slot="nav" class="new-post-container">
-            <md-button
-              variant="fab"
-              class="new-post-btn"
-              @click="${() => this.openNewDialog()}"
-              title="New Post"
-            >
-              <md-icon src="/assets/add-outline.svg"></md-icon>
-            </md-button>
-          </div>
+          ${this.isGuestMode
+            ? nothing
+            : html`
+                <div slot="nav" class="new-post-container">
+                  <md-button
+                    variant="fab"
+                    class="new-post-btn"
+                    @click="${() => this.openNewDialog()}"
+                    title="New Post"
+                  >
+                    <md-icon src="/assets/add-outline.svg"></md-icon>
+                  </md-button>
+                </div>
+              `}
 
           <md-tab slot="nav" panel="media" style="display: none;"></md-tab>
           <md-tab slot="nav" panel="messages" style="display: none;"></md-tab>
@@ -1679,7 +1734,8 @@ export class AppHome extends LitElement {
               @handle-translating="${($event: HandleTranslatingEvent) =>
                 this.handleTranslating($event)}"
               class="homeTimeline"
-              timelineType="home"
+              timelineType="${this.isGuestMode ? 'public' : 'home'}"
+              ?guestMode="${this.isGuestMode}"
               @replies="${($event: RepliesEvent) =>
                 this.handleReplies($event.detail.data, $event.detail.id ?? '')}"
             ></app-timeline>
@@ -1719,82 +1775,112 @@ export class AppHome extends LitElement {
         </md-tabs>
 
         <div id="right-sidebar">
-          <div class="sidebar-card">
-            <div id="profile-card-content">
-              ${this.user && this.user.avatar
-                ? html`<img src="${this.user.avatar}" />`
-                : html`<md-skeleton
-                    id="profile-avatar"
-                    shape="circle"
-                    width="80px"
-                    height="80px"
-                  ></md-skeleton>`}
-
-              <div id="username-block">
-                <h3>
-                  ${this.user
-                    ? this.user.display_name
-                    : html`<md-skeleton
-                        width="100px"
-                        height="25px"
-                      ></md-skeleton>`}
-                </h3>
-
-                <div id="user-actions">
-                  <md-dropdown>
-                    <md-icon-button
-                      slot="trigger"
-                      src="/assets/settings-outline.svg"
-                    ></md-icon-button>
-                    <md-menu>
-                      <md-menu-item @click="${() => this.viewMyProfile()}">
-                        <md-icon
-                          slot="prefix"
-                          src="/assets/eye-outline.svg"
-                        ></md-icon>
-                        View My Profile
-                      </md-menu-item>
-                      <md-menu-item @click="${() => this.shareMyProfile()}">
-                        <md-icon
-                          slot="prefix"
-                          src="/assets/share-social-outline.svg"
-                        ></md-icon>
-                        Share My Profile
-                      </md-menu-item>
-                      <md-menu-item @click="${() => this.editMyProfile()}">
-                        Edit My Profile
-                      </md-menu-item>
-                    </md-menu>
-                  </md-dropdown>
+          ${this.isGuestMode
+            ? html`
+                <div class="sidebar-card">
+                  <div id="profile-card-content">
+                    <md-icon
+                      name="person-circle"
+                      style="font-size: 64px; color: var(--md-sys-color-on-surface-variant);"
+                    ></md-icon>
+                    <h3>Welcome to Coho</h3>
+                    <p style="margin-bottom: 16px;">
+                      You're browsing as a guest. Sign in to interact with posts
+                      and access all features.
+                    </p>
+                    <md-button
+                      variant="filled"
+                      @click="${() => router.navigate('/')}"
+                      >Sign In</md-button
+                    >
+                  </div>
                 </div>
-              </div>
+              `
+            : html`
+                <div class="sidebar-card">
+                  <div id="profile-card-content">
+                    ${this.user && this.user.avatar
+                      ? html`<img src="${this.user.avatar}" />`
+                      : html`<md-skeleton
+                          id="profile-avatar"
+                          shape="circle"
+                          width="80px"
+                          height="80px"
+                        ></md-skeleton>`}
 
-              <p id="user-url">
-                ${this.user
-                  ? this.user.url
-                  : html`<md-skeleton
-                      width="100px"
-                      height="19px"
-                    ></md-skeleton>`}
-              </p>
+                    <div id="username-block">
+                      <h3>
+                        ${this.user
+                          ? this.user.display_name
+                          : html`<md-skeleton
+                              width="100px"
+                              height="25px"
+                            ></md-skeleton>`}
+                      </h3>
 
-              <div class="profile-stats">
-                <md-badge
-                  variant="outlined"
-                  clickable
-                  @click="${() => this.goToFollowers()}"
-                  >${this.user ? this.user.followers_count : '0'} followers
-                </md-badge>
-                <md-badge
-                  variant="outlined"
-                  clickable
-                  @click="${() => this.goToFollowing()}"
-                  >${this.user ? this.user.following_count : '0'} following
-                </md-badge>
-              </div>
-            </div>
-          </div>
+                      <div id="user-actions">
+                        <md-dropdown>
+                          <md-icon-button
+                            slot="trigger"
+                            src="/assets/settings-outline.svg"
+                          ></md-icon-button>
+                          <md-menu>
+                            <md-menu-item
+                              @click="${() => this.viewMyProfile()}"
+                            >
+                              <md-icon
+                                slot="prefix"
+                                src="/assets/eye-outline.svg"
+                              ></md-icon>
+                              View My Profile
+                            </md-menu-item>
+                            <md-menu-item
+                              @click="${() => this.shareMyProfile()}"
+                            >
+                              <md-icon
+                                slot="prefix"
+                                src="/assets/share-social-outline.svg"
+                              ></md-icon>
+                              Share My Profile
+                            </md-menu-item>
+                            <md-menu-item
+                              @click="${() => this.editMyProfile()}"
+                            >
+                              Edit My Profile
+                            </md-menu-item>
+                          </md-menu>
+                        </md-dropdown>
+                      </div>
+                    </div>
 
+                    <p id="user-url">
+                      ${this.user
+                        ? this.user.url
+                        : html`<md-skeleton
+                            width="100px"
+                            height="19px"
+                          ></md-skeleton>`}
+                    </p>
+
+                    <div class="profile-stats">
+                      <md-badge
+                        variant="outlined"
+                        clickable
+                        @click="${() => this.goToFollowers()}"
+                        >${this.user ? this.user.followers_count : '0'}
+                        followers
+                      </md-badge>
+                      <md-badge
+                        variant="outlined"
+                        clickable
+                        @click="${() => this.goToFollowing()}"
+                        >${this.user ? this.user.following_count : '0'}
+                        following
+                      </md-badge>
+                    </div>
+                  </div>
+                </div>
+              `}
           ${this.trendingTags && this.trendingTags.length > 0
             ? html`
                 <div class="sidebar-card">
@@ -1818,12 +1904,20 @@ export class AppHome extends LitElement {
             : nothing}
         </div>
 
-        <div id="mobile-actions">
-          <md-button variant="fab" @click="${() => this.openNewDialog()}">
-            <md-icon src="/assets/add-outline.svg"></md-icon>
-          </md-button>
-        </div>
+        ${this.isGuestMode
+          ? nothing
+          : html`
+              <div id="mobile-actions">
+                <md-button variant="fab" @click="${() => this.openNewDialog()}">
+                  <md-icon src="/assets/add-outline.svg"></md-icon>
+                </md-button>
+              </div>
+            `}
       </main>
+
+      ${this.isGuestMode
+        ? html`<guest-login-banner></guest-login-banner>`
+        : nothing}
 
       <md-toast
         id="translation-toast"

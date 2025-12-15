@@ -21,6 +21,8 @@ export class AppHeader extends LitElement {
 
   @property({ type: Boolean }) showInstall: boolean = false;
 
+  @property({ type: Boolean }) guestMode: boolean = false;
+
   static get styles() {
     return css`
       header {
@@ -242,13 +244,23 @@ export class AppHeader extends LitElement {
             ></md-icon>
           </md-icon-button>
 
-          <md-icon-button
-            id="settings-button"
-            title="Open Settings"
-            @click="${() => this.openSettings()}"
-          >
-            <md-icon src="/assets/settings-outline.svg"></md-icon>
-          </md-icon-button>
+          ${this.guestMode
+            ? html`<md-icon-button
+                id="login-button"
+                title="Sign In"
+                @click="${() => {
+                  import('../utils/router').then((m) => m.router.navigate('/'));
+                }}"
+              >
+                <md-icon name="log-in"></md-icon>
+              </md-icon-button>`
+            : html`<md-icon-button
+                id="settings-button"
+                title="Open Settings"
+                @click="${() => this.openSettings()}"
+              >
+                <md-icon src="/assets/settings-outline.svg"></md-icon>
+              </md-icon-button>`}
         </div>
       </header>
     `;

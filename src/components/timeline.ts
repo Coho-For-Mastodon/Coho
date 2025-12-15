@@ -99,6 +99,8 @@ export class Timeline extends LitElement {
     | 'for you'
     | 'home and some trending' = 'home';
 
+  @property({ type: Boolean }) guestMode: boolean = false;
+
   @property({ type: Array }) data: Post[] | undefined;
   @property({ type: Boolean }) header: boolean = true;
   @property({ type: Boolean }) autoLoad: boolean = true;
@@ -1185,6 +1187,7 @@ export class Timeline extends LitElement {
                         @openimage="${($event: CustomEvent<OpenImageDetail>) =>
                           this.showImage($event.detail.imageURL)}"
                         ?show="${true}"
+                        ?guestMode="${this.guestMode}"
                         @replies="${($event: CustomEvent<RepliesDetail>) =>
                           this.handleReplies($event.detail.data)}"
                         .tweet="${tweet}"
@@ -1217,6 +1220,7 @@ export class Timeline extends LitElement {
                         @openimage="${($event: CustomEvent<OpenImageDetail>) =>
                           this.showImage($event.detail.imageURL)}"
                         ?show="${true}"
+                        ?guestMode="${this.guestMode}"
                         @replies="${($event: CustomEvent<RepliesDetail>) =>
                           this.handleReplies($event.detail.data)}"
                         .tweet="${tweet}"

@@ -22,6 +22,7 @@ export class TimelineItem extends LitElement {
   @property({ type: Object }) tweet: Post | undefined;
   @property({ type: Boolean }) show: boolean = false;
   @property({ type: Boolean }) showreply: boolean = false;
+  @property({ type: Boolean }) guestMode: boolean = false;
 
   @state() isBoosted: boolean = false;
   @state() isReblogged: boolean = false;
@@ -109,7 +110,7 @@ export class TimelineItem extends LitElement {
         gap: 8px;
         padding: 8px 12px;
         margin: -10px -10px 10px -10px;
-        background: var(--md-sys-color-surface-container-high, #2a2a30);
+        background: transparent;
         border-radius: 12px 12px 0 0;
         font-size: var(--md-sys-typescale-body-small-font-size);
         color: var(--md-sys-color-on-surface-variant, #c4c4c4);
@@ -478,8 +479,28 @@ export class TimelineItem extends LitElement {
     this.isOnDeviceTranslateAvailable = isOnDeviceTranslationAvailable();
   }
 
+  /**
+   * Show login prompt for guests trying to use auth-required features
+   */
+  private showLoginPrompt(action: string) {
+    // Dispatch a toast event to show the message
+    window.dispatchEvent(
+      new CustomEvent('app-toast', {
+        detail: {
+          message: `Sign in to ${action}`,
+          variant: 'info',
+        },
+      })
+    );
+  }
+
   async favorite(id: string) {
     console.log('favorite', id);
+
+    if (this.guestMode) {
+      this.showLoginPrompt('like posts');
+      return;
+    }
 
     if (!this.tweet) return;
 
@@ -537,6 +558,11 @@ export class TimelineItem extends LitElement {
   async reblog(id: string) {
     console.log('reblog', id);
 
+    if (this.guestMode) {
+      this.showLoginPrompt('boost posts');
+      return;
+    }
+
     if (!this.tweet) return;
 
     // Store original state for rollback
@@ -593,6 +619,11 @@ export class TimelineItem extends LitElement {
   async bookmark(id: string) {
     console.log('bookmark', id);
 
+    if (this.guestMode) {
+      this.showLoginPrompt('bookmark posts');
+      return;
+    }
+
     if (!this.tweet) return;
 
     // Store original state for rollback
@@ -625,6 +656,11 @@ export class TimelineItem extends LitElement {
   }
 
   async replies() {
+    if (this.guestMode) {
+      this.showLoginPrompt('reply to posts');
+      return;
+    }
+
     const event = new CustomEvent('reply-clicked', {
       detail: {
         tweet: this.tweet,
@@ -942,6 +978,7 @@ export class TimelineItem extends LitElement {
       threadExpanded: this.threadExpanded,
       threadPosts: this.threadPosts,
       isOnDeviceTranslateAvailable: this.isOnDeviceTranslateAvailable,
+      guestMode: this.guestMode,
     };
   }
 
