@@ -96,7 +96,7 @@ customPlugins.push({
     // Minify CSS inside <style> tags
     html = html.replace(
       /<style>([\s\S]*?)<\/style>/g,
-      (match: any, css: any) => {
+      (match: string, css: string) => {
         const minifiedCss = css
           .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
           .replace(/\n\s*/g, '') // Remove newlines and leading whitespace
@@ -174,6 +174,10 @@ export default defineConfig({
         entryFileNames: 'code/[name].js',
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // Exclude lit-virtualizer from vendor-lit - let it bundle naturally with components
+            if (id.includes('/node_modules/@lit-labs/virtualizer')) {
+              return undefined;
+            }
             if (
               id.includes('/node_modules/lit') ||
               id.includes('/node_modules/@lit')

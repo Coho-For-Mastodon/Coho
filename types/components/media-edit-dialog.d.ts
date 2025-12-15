@@ -17,7 +17,7 @@ export declare class MediaEditDialog extends LitElement {
   editedBlob: Blob | null;
   isProcessing: boolean;
   isUploading: boolean;
-  connectedCallback(): void;
+  connectedCallback(): Promise<void>;
   static styles: import('lit').CSSResult;
   willUpdate(changedProperties: Map<string, unknown>): void;
   private generateThumbnails;

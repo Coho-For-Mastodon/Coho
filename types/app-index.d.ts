@@ -1,10 +1,15 @@
 import { LitElement } from 'lit';
 import './pages/app-login';
 import './components/header';
-import './components/image-preview-dialog';
 export declare class AppIndex extends LitElement {
   static get styles(): import('lit').CSSResult;
   connectedCallback(): Promise<void>;
+  /**
+   * Lazy-load and initialize the image preview dialog
+   * Only loads when user first clicks an image
+   */
+  private imagePreviewInitialized;
+  private initLazyImagePreview;
   /**
    * Initialize idle-time preloading
    * Lazy imports the preload service to avoid bundle bloat

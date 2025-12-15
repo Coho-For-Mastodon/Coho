@@ -41,7 +41,6 @@ export declare class AppHome extends LitElement {
   sensitiveMode: boolean;
   attaching: boolean;
   summary: string;
-  openTweet: Post | null;
   homeLoad: boolean;
   hasNewNotifications: boolean;
   trendingTags: TrendingTag[];
@@ -65,7 +64,6 @@ export declare class AppHome extends LitElement {
   private translationToast;
   private errorToast;
   private summaryDialog;
-  private openTweetSheet;
   private homeTimeline;
   private postDialog;
   private installDialog;
@@ -108,7 +106,6 @@ export declare class AppHome extends LitElement {
     }
   ): void;
   handleOpenTweet(tweet: Post): Promise<void>;
-  private handleOpenTweetSheetHide;
   disconnectedCallback(): Promise<void>;
   reloadHome(): void;
   loadBookmarks(): Promise<void>;

@@ -28,31 +28,31 @@ import { LitElement } from 'lit';
  * ```
  */
 export declare class MdIcon extends LitElement {
-    /** The name of a built-in icon from the icon library */
-    name?: string;
-    /** The path/URL to the SVG icon file (used if name is not provided) */
-    src?: string;
-    /** The label for accessibility */
-    label?: string;
-    /** Size of the icon (CSS length value) */
-    size: string;
-    private svgContent;
-    private loadError;
-    static styles: import("lit").CSSResult;
-    updated(changedProperties: Map<string, unknown>): Promise<void>;
-    connectedCallback(): Promise<void>;
-    /**
-     * Load icon from built-in library (instant, no network)
-     */
-    private loadNamedIcon;
-    /**
-     * Load icon from external source with in-memory caching
-     */
-    private loadExternalIcon;
-    render(): import("lit-html").TemplateResult<1>;
+  /** The name of a built-in icon from the icon library */
+  name?: string;
+  /** The path/URL to the SVG icon file (used if name is not provided) */
+  src?: string;
+  /** The label for accessibility */
+  label?: string;
+  /** Size of the icon (CSS length value) */
+  size: string;
+  private svgContent;
+  private loadError;
+  static styles: import('lit').CSSResult;
+  updated(changedProperties: Map<string, unknown>): Promise<void>;
+  connectedCallback(): Promise<void>;
+  /**
+   * Load icon from built-in library (lazy-loaded)
+   */
+  private loadNamedIcon;
+  /**
+   * Load icon from external source with in-memory caching
+   */
+  private loadExternalIcon;
+  render(): import('lit-html').TemplateResult<1>;
 }
 declare global {
-    interface HTMLElementTagNameMap {
-        'md-icon': MdIcon;
-    }
+  interface HTMLElementTagNameMap {
+    'md-icon': MdIcon;
+  }
 }

@@ -4,7 +4,6 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import './md/md-icon-button';
 import './md/md-icon';
 import './md/md-skeleton';
-import { isPromptAPIAvailable, generateAltText } from '../services/ai';
 
 @customElement('image-preview-dialog')
 export class ImagePreviewDialog extends LitElement {
@@ -164,7 +163,7 @@ export class ImagePreviewDialog extends LitElement {
     super.connectedCallback();
     window.addEventListener(
       'preview-image',
-      this.handlePreviewImage as EventListener
+      this.handlePreviewImage as unknown as EventListener
     );
   }
 
@@ -172,7 +171,7 @@ export class ImagePreviewDialog extends LitElement {
     super.disconnectedCallback();
     window.removeEventListener(
       'preview-image',
-      this.handlePreviewImage as EventListener
+      this.handlePreviewImage as unknown as EventListener
     );
   }
 
@@ -186,7 +185,7 @@ export class ImagePreviewDialog extends LitElement {
     }
   }
 
-  private handlePreviewImage = (e: CustomEvent) => {
+  private handlePreviewImage = async (e: CustomEvent) => {
     this.src = e.detail.src;
     this.alt = e.detail.alt;
     this.width = e.detail.width;
@@ -194,6 +193,8 @@ export class ImagePreviewDialog extends LitElement {
     this.loaded = false;
     this.open = true;
 
+    // Lazy load AI service to keep it out of main bundle
+    const { isPromptAPIAvailable } = await import('../services/ai');
     if (isPromptAPIAvailable() && (!this.alt || this.alt.trim() === '')) {
       this.alt = 'Loading alt text...';
       this.handleGenerateAlt();
@@ -208,6 +209,7 @@ export class ImagePreviewDialog extends LitElement {
   };
 
   private async handleGenerateAlt() {
+    const { generateAltText } = await import('../services/ai');
     const result = await generateAltText(this.src);
     if (result) {
       this.alt = result;

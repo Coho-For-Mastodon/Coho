@@ -5,7 +5,6 @@ import { router } from './utils/router';
 
 import './pages/app-login';
 import './components/header';
-import './components/image-preview-dialog';
 import { getSettings } from './services/settings';
 
 // Log build version for debugging
@@ -95,6 +94,30 @@ export class AppIndex extends LitElement {
     // Preload data during idle time if conditions are good
     // This is lazy-imported to avoid impacting first load bundle size
     this.initIdlePreload();
+
+    // Lazy-load image preview dialog on first preview-image event
+    this.initLazyImagePreview();
+  }
+
+  /**
+   * Lazy-load and initialize the image preview dialog
+   * Only loads when user first clicks an image
+   */
+  private imagePreviewInitialized = false;
+  private initLazyImagePreview() {
+    const handler = async () => {
+      if (this.imagePreviewInitialized) return;
+      this.imagePreviewInitialized = true;
+
+      // Import the component (registers the custom element)
+      await import('./components/image-preview-dialog');
+
+      // Create and append the dialog to the shadow root
+      const dialog = document.createElement('image-preview-dialog');
+      this.shadowRoot?.appendChild(dialog);
+    };
+
+    window.addEventListener('preview-image', handler, { once: true });
   }
 
   /**
@@ -265,9 +288,6 @@ export class AppIndex extends LitElement {
   }
 
   render() {
-    return html`
-      ${router.render()}
-      <image-preview-dialog></image-preview-dialog>
-    `;
+    return html` ${router.render()} `;
   }
 }

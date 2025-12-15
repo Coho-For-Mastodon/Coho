@@ -70,8 +70,6 @@ export class AppHome extends LitElement {
 
   @state() summary: string = '';
 
-  @state() openTweet: Post | null = null;
-
   @state() homeLoad: boolean = false;
 
   @state() hasNewNotifications: boolean = false;
@@ -107,7 +105,6 @@ export class AppHome extends LitElement {
   @query('#translation-toast') private translationToast!: MdToast;
   @query('#error-toast') private errorToast!: MdToast;
   @query('#summary-dialog') private summaryDialog!: MdDialog;
-  @query('#open-tweet-sheet') private openTweetSheet!: OtterDrawer;
   @query('.homeTimeline') private homeTimeline!: Timeline;
   @query('post-dialog') private postDialog!: PostDialog;
   @query('#install-dialog') private installDialog!: MdDialog;
@@ -210,26 +207,6 @@ export class AppHome extends LitElement {
 
         md-menu-item {
           --neutral-fill-stealth-hover: #141314;
-        }
-
-        #open-tweet-sheet {
-          --drawer-height: 92vh;
-          --drawer-width: 720px;
-        }
-
-        #open-tweet-sheet::part(body) {
-          padding: 0;
-          overflow: hidden;
-        }
-
-        /* Post bottom-sheet should not show a header bar */
-        #open-tweet-sheet::part(header) {
-          display: none;
-        }
-
-        /* Post bottom-sheet doesn't use drawer footer */
-        #open-tweet-sheet::part(footer) {
-          display: none;
         }
 
         #install-dialog::part(body) {
@@ -718,11 +695,6 @@ export class AppHome extends LitElement {
             margin-left: initial;
             margin-right: initial;
             width: 100%;
-          }
-
-          #open-tweet-sheet {
-            --drawer-height: 92vh;
-            --drawer-width: 100vw;
           }
 
           mammoth-bot {
@@ -1240,32 +1212,8 @@ export class AppHome extends LitElement {
   }
 
   async handleOpenTweet(tweet: Post) {
-    const isMobile = window.matchMedia('(max-width: 820px)').matches;
-
-    // Desktop: prefer full-page navigation (better UX + supports back/forward/history)
-    if (!isMobile) {
-      router.navigate(
-        `/home/post?${encodeURIComponent(JSON.stringify(tweet))}`
-      );
-      return;
-    }
-
-    await import('../pages/post-detail');
-
-    this.openTweet = null;
-
-    this.requestUpdate();
-
-    await this.updateComplete;
-
-    this.openTweet = tweet;
-
-    await this.openTweetSheet?.show();
-  }
-
-  private handleOpenTweetSheetHide() {
-    // Unmount post detail when the sheet is dismissed
-    this.openTweet = null;
+    // Always use full-page navigation for better UX + supports back/forward/history
+    router.navigate(`/home/post?${encodeURIComponent(JSON.stringify(tweet))}`);
   }
 
   async disconnectedCallback() {
@@ -1508,17 +1456,6 @@ export class AppHome extends LitElement {
       </otter-drawer>
 
       <md-dialog id="summary-dialog" label=""> ${this.summary} </md-dialog>
-
-      <otter-drawer
-        id="open-tweet-sheet"
-        placement="bottom"
-        label="Post"
-        @otter-hide="${() => this.handleOpenTweetSheetHide()}"
-      >
-        ${this.openTweet
-          ? html`<post-detail .passed_tweet="${this.openTweet}"></post-detail>`
-          : null}
-      </otter-drawer>
 
       <post-dialog @published="${() => this.handleReload()}"></post-dialog>
 

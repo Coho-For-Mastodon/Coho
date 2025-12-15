@@ -4,7 +4,6 @@ import './md/md-dialog.js';
 import './md/md-button.js';
 import './md/md-text-area.js';
 import './md/md-skeleton.js';
-import { isPromptAPIAvailable, generateAltText } from '../services/ai';
 import {
   FILTER_PRESETS,
   applyFilter,
@@ -28,8 +27,9 @@ export class MediaEditDialog extends LitElement {
   @state() isProcessing = false;
   @state() isUploading = false;
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
+    const { isPromptAPIAvailable } = await import('../services/ai');
     this.promptAPIAvailable = isPromptAPIAvailable();
   }
 
@@ -266,6 +266,7 @@ export class MediaEditDialog extends LitElement {
     if (!this.imageSrc || this.generating) return;
 
     this.generating = true;
+    const { generateAltText } = await import('../services/ai');
     const result = await generateAltText(this.imageSrc);
     if (result) {
       this.description = result;

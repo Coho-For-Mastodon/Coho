@@ -16,7 +16,6 @@ import {
 } from './timeline-renderers';
 import './report-dialog';
 import type { ReportSubmitDetail } from './report-dialog';
-import { isOnDeviceTranslationAvailable } from '../services/ai';
 
 @customElement('timeline-item')
 export class TimelineItem extends LitElement {
@@ -475,6 +474,7 @@ export class TimelineItem extends LitElement {
 
   async firstUpdated() {
     this.settings = await getSettings();
+    const { isOnDeviceTranslationAvailable } = await import('../services/ai');
     this.isOnDeviceTranslateAvailable = isOnDeviceTranslationAvailable();
   }
 
@@ -687,9 +687,7 @@ export class TimelineItem extends LitElement {
   async openPost() {
     if (!this.tweet) return;
 
-    // Always emit an open event so the parent context can decide:
-    // - app-home on mobile: open bottom-sheet
-    // - desktop: navigate to the full page route
+    // Emit an open event so the parent context can handle navigation
     this.dispatchEvent(
       new CustomEvent('open', {
         detail: {
