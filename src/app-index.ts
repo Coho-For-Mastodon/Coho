@@ -5,6 +5,7 @@ import { router } from './utils/router';
 
 import './pages/app-login';
 import './components/header';
+import './components/pwa-update';
 import { getSettings } from './services/settings';
 
 // Log build version for debugging
@@ -288,6 +289,9 @@ export class AppIndex extends LitElement {
   }
 
   render() {
-    return html` ${router.render()} `;
+    return html`
+      ${router.render()}
+      <pwa-update></pwa-update>
+    `;
   }
 }

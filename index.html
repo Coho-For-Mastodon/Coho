@@ -192,42 +192,6 @@
           color: var(--md-sys-color-on-background);
         }
       }
-
-      #updateToast {
-        position: fixed;
-        z-index: 99999;
-        right: 16px;
-        bottom: 16px;
-        background: var(--sl-color-primary-600, #5c86ff);
-        color: white;
-        padding: 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        display: none;
-        flex-direction: column;
-        gap: 12px;
-        max-width: 300px;
-      }
-
-      #updateToast p {
-        margin: 0;
-        font-size: 14px;
-      }
-
-      #updateButton {
-        align-self: flex-end;
-        background: white;
-        color: var(--sl-color-primary-600, #5c86ff);
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-      }
-
-      #updateButton:hover {
-        opacity: 0.9;
-      }
     </style>
 
     <script type="module" src="/src/app-index.ts"></script>
@@ -236,12 +200,6 @@
   <body>
     <!-- Our app-index web component. This component is defined in src/pages/app-index.ts-->
     <app-index></app-index>
-
-    <div id="updateToast">
-      <strong>Update Available</strong>
-      <p>A new version is ready. Click to update now.</p>
-      <button id="updateButton">Update</button>
-    </div>
 
     <script>
       const themeSetting = window.matchMedia('(prefers-color-scheme: dark)');
@@ -280,106 +238,57 @@
     <!-- register service worker -->
     <script>
       if ('serviceWorker' in navigator) {
-        const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-        const swUrl = isDev ? '/dev-sw.js?dev-sw' : '/sw.js';
-        const swOptions = { type: 'module' };
+        const swUrl = '/sw.js';
+        const swOptions = { scope: '/', type: 'module' };
 
         let refreshing = false;
-        let waitingWorker = null;
 
-        // Show update toast
-        const showUpdateToast = () => {
-          const toast = document.getElementById('updateToast');
-          if (toast) toast.style.display = 'flex';
-        };
-
-        // Hide update toast
-        const hideUpdateToast = () => {
-          const toast = document.getElementById('updateToast');
-          if (toast) toast.style.display = 'none';
-        };
-
-        // Coordinated reload - clears caches first to ensure fresh content
-        const performCoordinatedReload = async () => {
+        // Listen for controller change (when new SW takes over)
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (refreshing) return;
           refreshing = true;
-          hideUpdateToast();
-          console.log('[SW] Performing coordinated reload...');
-
-          try {
-            // Clear all caches to ensure we get fresh content
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map((name) => caches.delete(name)));
-            console.log('[SW] Cleared all caches before reload');
-          } catch (e) {
-            console.log('[SW] Cache clear failed:', e);
-          }
-
-          // Small delay then reload
-          await new Promise((resolve) => setTimeout(resolve, 200));
           window.location.reload();
-        };
+        });
 
-        // Listen for SW_ACTIVATED message - the SW is ready
+        // Listen for SW_ACTIVATED message
         navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data && event.data.type === 'SW_ACTIVATED') {
-            console.log('[SW] Received activation signal');
-            performCoordinatedReload();
-          }
-        });
-
-        // Fallback: controllerchange means new SW took control
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('[SW] Controller changed');
-          // Wait a bit for SW_ACTIVATED, then reload anyway
-          setTimeout(() => {
             if (!refreshing) {
-              console.log('[SW] Fallback reload on controllerchange');
-              performCoordinatedReload();
+              refreshing = true;
+              window.location.reload();
             }
-          }, 1000);
-        });
-
-        // Handle update button click
-        document.getElementById('updateButton')?.addEventListener('click', () => {
-          console.log('[SW] User clicked update');
-          if (waitingWorker) {
-            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
           }
         });
 
-        // Register service worker
-        navigator.serviceWorker
-          .register(swUrl, swOptions)
-          .then((reg) => {
-            console.log('[SW] Registered successfully');
+        navigator.serviceWorker.register(swUrl, swOptions).then((reg) => {
+          console.log('[SW] Registered');
 
-            // Check for waiting worker immediately
-            if (reg.waiting) {
-              console.log('[SW] Found waiting worker');
-              waitingWorker = reg.waiting;
-              showUpdateToast();
-            }
+          // Check for waiting worker
+          if (reg.waiting) {
+            dispatchUpdateEvent(reg.waiting);
+          }
 
-            // Listen for new workers that finish installing
-            reg.addEventListener('updatefound', () => {
-              const newWorker = reg.installing;
-              console.log('[SW] Update found, new worker installing...');
-
-              newWorker.addEventListener('statechange', () => {
-                console.log('[SW] New worker state:', newWorker.state);
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New SW is installed and waiting
-                  console.log('[SW] New worker installed and waiting');
-                  waitingWorker = newWorker;
-                  showUpdateToast();
-                }
-              });
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                dispatchUpdateEvent(newWorker);
+              }
             });
-          })
-          .catch((error) => {
-            console.log('[SW] Registration failed:', error);
           });
+        });
+
+        function dispatchUpdateEvent(worker) {
+          window.dispatchEvent(
+            new CustomEvent('pwa-update-available', {
+              detail: {
+                updateServiceWorker: () => {
+                  worker.postMessage({ type: 'SKIP_WAITING' });
+                },
+              },
+            })
+          );
+        }
       }
     </script>
   </body>

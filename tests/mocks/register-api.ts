@@ -9,6 +9,7 @@ import {
   mockTrendingLinks,
   mockTrendingStatuses,
   mockInstanceInfo,
+  mockTrendingTags,
 } from './mock-data';
 
 const MASTODON_HOST = 'https://tech.lgbt';
@@ -112,6 +113,10 @@ async function handleMastodonRoute(route: Route) {
     return jsonResponse(route, mockTrendingLinks);
   }
 
+  if (pathname === '/api/v1/trends/tags') {
+    return jsonResponse(route, mockTrendingTags);
+  }
+
   if (pathname === '/api/v1/markers' && method === 'POST') {
     return jsonResponse(route, [
       {
@@ -148,5 +153,7 @@ async function handleFunctionsRoute(route: Route) {
 
 export async function registerMockApis(page: Page) {
   await page.route(`${MASTODON_HOST}/api/v1/**`, handleMastodonRoute);
+  // Also mock mastodon.social for the public preview timeline
+  await page.route('https://mastodon.social/api/v1/**', handleMastodonRoute);
   await page.route(`${FUNCTIONS_HOST}/**`, handleFunctionsRoute);
 }

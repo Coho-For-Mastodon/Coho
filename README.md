@@ -65,64 +65,22 @@ Take control of your digital well-being by hiding likes, boost counts, and other
 
 # Technical
 
-## Tech Stack
+## Intro
 
-- **Frontend**: [Lit](https://lit.dev/) (Web Components), TypeScript
-- **UI Components**: Custom MD3 components
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Backend**: Firebase Functions (TypeScript)
+See [WHY_COHO.md](docs/WHY_COHO.md).
 
 ## Getting Started
 
-### Prerequisites
+See [GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
-- Node.js (v22 or higher)
-- npm
+## Technical Architecture
 
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/jgw96/Otter.git
-   cd Otter
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   The app will be available at `http://localhost:3000`.
-
-### Building for Production
-
-To create a production build with optimized assets:
-
-```bash
-npm run build
-```
-
-This command includes our custom image optimization script which significantly reduces bundle size.
-
-## Project Structure
-
-- `src/components/`: Reusable Lit web components (MD3 & others).
-- `src/pages/`: Top-level application pages.
-- `src/services/`: API interaction, state logic, and data management.
-- `src/styles/`: Global styles and design tokens.
-- `functions/`: Firebase Cloud Functions for backend logic.
-- `public/`: Static assets, service worker, and manifest.
+See [TECHNICAL_ARCHITECTURE.md](docs/TECHNICAL_ARCHITECTURE.md).
 
 ## Contributing
 
 Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-## License
+# License
 
 This project is licensed under the GNU General Public License v2.0

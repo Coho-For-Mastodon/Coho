@@ -12,6 +12,39 @@ const customPlugins = [];
 // Build version - shared between main app and service worker
 const BUILD_VERSION = new Date().toISOString();
 
+// Plugin to build the service worker in dev mode
+customPlugins.push({
+  name: 'dev-service-worker',
+  apply: 'serve',
+  async buildStart() {
+    const { build } = await import('vite');
+    console.log('[dev-sw] Building service worker for dev...');
+    await build({
+      configFile: false,
+      build: {
+        emptyOutDir: false,
+        outDir: 'public',
+        lib: {
+          entry: path.resolve(__dirname, 'src/sw.ts'),
+          formats: ['es'],
+          fileName: () => 'sw.js',
+        },
+        rollupOptions: {
+          output: {
+            inlineDynamicImports: true,
+          },
+        },
+        minify: false,
+      },
+      define: {
+        '__APP_VERSION__': JSON.stringify(BUILD_VERSION),
+        'process.env.NODE_ENV': JSON.stringify('development'),
+      },
+    });
+    console.log('[dev-sw] Service worker built successfully');
+  },
+});
+
 // Plugin to build the service worker as a self-contained bundle
 // Service workers need all dependencies inlined to avoid import issues
 customPlugins.push({

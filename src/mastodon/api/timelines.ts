@@ -153,9 +153,13 @@ export const getPreviewTimeline = async (maxId?: string): Promise<Post[]> => {
     fetchUrl += `&max_id=${maxId}`;
   }
 
-  const response = await fetch(fetchUrl);
-  const data = await response.json();
-  return data;
+  try {
+    const response = await fetch(fetchUrl);
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 };
 
 /**
@@ -169,7 +173,7 @@ export const getTrendingStatuses = async (): Promise<Post[]> => {
   });
 
   const data = await response.json();
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 /**
@@ -183,7 +187,7 @@ export const getTrendingTags = async (): Promise<TrendingTag[]> => {
   });
 
   const data = await response.json();
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 /**
@@ -200,7 +204,7 @@ export const getTrendingLinks = async (): Promise<TrendingLink[]> => {
   );
 
   const data = await response.json();
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 /**

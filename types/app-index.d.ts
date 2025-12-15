@@ -1,6 +1,7 @@
 import { LitElement } from 'lit';
 import './pages/app-login';
 import './components/header';
+import './components/pwa-update';
 export declare class AppIndex extends LitElement {
   static get styles(): import('lit').CSSResult;
   connectedCallback(): Promise<void>;

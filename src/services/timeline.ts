@@ -87,11 +87,27 @@ export const getHomeTimeline = async (): Promise<Post[]> => {
 
 export const mixTimeline = async (type = 'home'): Promise<Post[]> => {
   // run getPaginatedHomeTimeline and getTrendingStatuses in parallel
-  const [home, trending, searched] = await Promise.all([
-    getPaginatedHomeTimeline(type),
-    getTrendingStatuses() as unknown as Promise<Post[]>,
-    addSomeInterestFinds(),
-  ]);
+  const [homeResult, trendingResult, searchedResult] = await Promise.allSettled(
+    [
+      getPaginatedHomeTimeline(type),
+      getTrendingStatuses() as unknown as Promise<Post[]>,
+      addSomeInterestFinds(),
+    ]
+  );
+
+  // Extract successful results as arrays, fallback to empty array on failure
+  const home =
+    homeResult.status === 'fulfilled' && Array.isArray(homeResult.value)
+      ? homeResult.value
+      : [];
+  const trending =
+    trendingResult.status === 'fulfilled' && Array.isArray(trendingResult.value)
+      ? trendingResult.value
+      : [];
+  const searched =
+    searchedResult.status === 'fulfilled' && Array.isArray(searchedResult.value)
+      ? searchedResult.value
+      : [];
 
   const timeline = home.concat(trending);
   const timeline2 = timeline.concat(searched);
@@ -148,7 +164,13 @@ export const getPreviewTimeline = async (): Promise<Post[]> => {
     lastPreviewPageID || undefined
   )) as unknown as Post[];
 
-  if (data && data.length > 0) {
+  // Validate response is an array
+  if (!Array.isArray(data)) {
+    console.warn('getPreviewTimeline: Invalid response, expected array', data);
+    return [];
+  }
+
+  if (data.length > 0) {
     lastPreviewPageID = data[data.length - 1].id;
   }
 
@@ -174,7 +196,16 @@ export const getLastPlaceTimeline = async (): Promise<Post[] | undefined> => {
       last_read_id
     )) as unknown as Post[];
 
-    if (data && data.length > 0) {
+    // Validate response is an array
+    if (!Array.isArray(data)) {
+      console.warn(
+        'getLastPlaceTimeline: Invalid response, expected array',
+        data
+      );
+      return undefined;
+    }
+
+    if (data.length > 0) {
       lastPageID = data[data.length - 1].id;
     }
 
@@ -218,7 +249,16 @@ export const getPaginatedHomeTimeline = async (
 
   const data = await response.json();
 
-  if (data && data.length > 0) {
+  // Validate response is an array (API errors return objects like {error: '...'})
+  if (!Array.isArray(data)) {
+    console.warn(
+      'getPaginatedHomeTimeline: Invalid response, expected array',
+      data
+    );
+    return [];
+  }
+
+  if (data.length > 0) {
     lastPageID = data[data.length - 1].id;
   }
 

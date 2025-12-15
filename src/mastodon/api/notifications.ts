@@ -9,7 +9,7 @@ export const getNotifications = async (): Promise<Notification[]> => {
   });
 
   const data = await notifyResponse.json();
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 export const getNotificationById = async (
