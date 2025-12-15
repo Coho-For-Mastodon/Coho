@@ -1,27 +1,71 @@
 # Coho
 
-**A modern, cross-platform Mastodon PWA built for performance and user experience.**
+**A fast, offline-first Mastodon client that works anywhere.**
 
-[![Status](https://img.shields.io/badge/Status-Public%20Beta-orange)]()
+[![Status](https://img.shields.io/badge/Status-Public%20Alpha-orange)]()
 
-Coho is a Progressive Web App (PWA) client for Mastodon. It emphasizes offline capabilities with a fast and simple user experience.
+Coho is a Progressive Web App (PWA) client for Mastodon built around three core principles: **performance**, **simplicity**, and **offline capability**. Install it on any device or operating system and enjoy a blazing fast, reliable Mastodon experience—even without an internet connection.
 
-[**Get the App**](https://coho-mastodon.web.app)
+> **Public Alpha**: Coho is under active development. Expect bugs and missing features as we work toward a stable release.
+
+[**Try the App →**](https://coho.place)
 
 <div>
   <img src="/public/assets/new-header-graphic.png" alt="Coho For Mastodon" />
 </div>
 
+## Why Coho?
+
+### Performance
+
+Coho is built for speed. No matter what device you're on or how spotty your network connection is, the app stays fast and responsive. We leverage the best of the modern web platform to deliver a native-quality experience.
+
+### Simple & Intuitive
+
+A clean, focused interface that keeps what matters front and center. No clutter, no confusion—just Mastodon done right with thoughtful UX and the latest in Material Design.
+
+### Best-in-Class Offline Support
+
+This is where Coho shines. While you're online, we keep a fresh cache of your timeline on your device. When you go offline, you can still:
+
+- Scroll through your timeline
+- Like and boost posts
+- Create new posts
+- Everything syncs automatically when you're back online
+
+No other Mastodon client handles offline as well as Coho.
+
 ## Features
 
-- **Simple**: Coho keeps things simple, with a clean UI that keeps the core of what you need up front.
-- **Cross Platform**: Fully responsive design that works seamlessly on mobile, tablets, and desktop.
-- **PWA**: Installable on all devices (iOS, Android, Windows, macOS, Linux).
-- **Offline First**: Works exceptionally well offline. View cached content, like posts, and create new content that automatically syncs when you're back online.
-- **On-Device Translations**: Translations powered by on-device AI (when supported by device)
-- **Blazing Fast**: Built for speed on any device and network condition.
-- **Theming**: Choose your primary color and switch between Dark and Light modes.
-- **Wellness Mode**: Take control of your digital well-being by hiding likes, boost counts, and other metrics for a calmer experience.
+### Offline First
+
+Your timeline is cached locally so you can browse even without connectivity. Actions like likes and new posts queue up and sync seamlessly when you reconnect.
+
+### Smart Features, Powered On-Device
+
+Fast, private, and no server required—these features run entirely on your device:
+
+- **Instant translations** — Translate posts without waiting for server round-trips
+- **Auto-generated alt text** — Images missing alt text get descriptions generated automatically
+- **Alt text assistance** — Generate alt text for your own images before posting
+- **Voice input** — Compose posts by speaking
+- **Handwriting input** — Write posts with your handwriting, converted to text instantly
+
+### Cross Platform PWA
+
+Install Coho on any device—iOS, Android, Windows, macOS, or Linux. It's a true progressive web app with full offline support.
+
+### Modern Material Design
+
+Built with the latest Material Design 3 components for a polished, accessible experience.
+
+### Theming
+
+Choose your primary color and switch between Dark and Light modes.
+
+### Wellness Mode
+
+Take control of your digital well-being by hiding likes, boost counts, and other metrics for a calmer experience.
 
 # Technical
 
