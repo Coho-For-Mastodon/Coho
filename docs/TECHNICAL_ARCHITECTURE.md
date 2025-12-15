@@ -68,6 +68,7 @@ The Service Worker (`src/sw.ts`) is a critical part of the architecture, built s
 ### 5. Backend (Firebase Functions)
 
 Located in `functions/`, this layer handles tasks that require secret management or server-side processing, such as:
+
 - **AI Integration**: Proxies requests to OpenAI for features like image generation or text analysis, keeping API keys secure.
 - **CORS Handling**: Manages cross-origin requests for the PWA.
 

@@ -49,10 +49,10 @@ We have implemented a custom set of Material Design 3 components located in `src
 
 ### Available Components
 
--   **Layout**: `md-card`, `md-divider`, `md-tabs`, `md-toolbar`
--   **Input**: `md-text-field`, `md-text-area`, `md-checkbox`, `md-switch`, `md-select`
--   **Actions**: `md-button`, `md-icon-button`, `md-fab`
--   **Feedback**: `md-dialog`, `md-toast`, `md-skeleton`
+- **Layout**: `md-card`, `md-divider`, `md-tabs`, `md-toolbar`
+- **Input**: `md-text-field`, `md-text-area`, `md-checkbox`, `md-switch`, `md-select`
+- **Actions**: `md-button`, `md-icon-button`, `md-fab`
+- **Feedback**: `md-dialog`, `md-toast`, `md-skeleton`
 
 ### Usage Example
 
@@ -60,11 +60,9 @@ We have implemented a custom set of Material Design 3 components located in `src
 <md-card>
   <div slot="headline">Settings</div>
   <div slot="content">
-    <md-text-field label="Username" value=${this.username}></md-text-field>
-    
-    <md-button variant="filled" @click=${this.save}>
-      Save
-    </md-button>
+    <md-text-field label="Username" value="${this.username}"></md-text-field>
+
+    <md-button variant="filled" @click="${this.save}"> Save </md-button>
   </div>
 </md-card>
 ```
@@ -74,19 +72,22 @@ We have implemented a custom set of Material Design 3 components located in `src
 We use CSS variables for theming, allowing for runtime theme switching (e.g., primary color changes).
 
 Common tokens:
--   `--md-sys-color-primary`: Main brand color.
--   `--md-sys-color-surface`: Background color for cards/sheets.
--   `--md-sys-color-on-primary`: Text color on top of primary color.
+
+- `--md-sys-color-primary`: Main brand color.
+- `--md-sys-color-surface`: Background color for cards/sheets.
+- `--md-sys-color-on-primary`: Text color on top of primary color.
 
 ## Best Practices
 
--   **Lazy Loading**: If a component is heavy or only used in specific routes, consider lazy loading it via dynamic imports in the parent component or router.
--   **Event Communication**: Use standard DOM events to communicate up.
-    ```typescript
-    this.dispatchEvent(new CustomEvent('save-success', { 
-      bubbles: true, 
-      composed: true, 
-      detail: { id: 123 } 
-    }));
-    ```
--   **Optimistic UI**: For actions like "Favorite" or "Boost", update the UI state immediately before the API call completes to ensure the app feels snappy. Revert if the call fails.
+- **Lazy Loading**: If a component is heavy or only used in specific routes, consider lazy loading it via dynamic imports in the parent component or router.
+- **Event Communication**: Use standard DOM events to communicate up.
+  ```typescript
+  this.dispatchEvent(
+    new CustomEvent('save-success', {
+      bubbles: true,
+      composed: true,
+      detail: { id: 123 },
+    })
+  );
+  ```
+- **Optimistic UI**: For actions like "Favorite" or "Boost", update the UI state immediately before the API call completes to ensure the app feels snappy. Revert if the call fails.

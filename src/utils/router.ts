@@ -101,18 +101,8 @@ const routeConfig: RouterOptions = {
     {
       path: '/explore',
       title: 'explore',
-      // Redirect /explore to /home in guest mode for backwards compatibility
-      render: () => {
-        // Set guest mode and redirect
-        const enterGuestModeAndRedirect = async () => {
-          const { enterGuestMode } = await import('../services/auth-state');
-          enterGuestMode();
-          const r = await getRouter();
-          r.navigate('/home');
-        };
-        enterGuestModeAndRedirect();
-        return html`<div>Redirecting...</div>`;
-      },
+      plugins: [lazy(() => import('../pages/app-explore.js'))],
+      render: () => html`<app-explore></app-explore>`,
     },
     {
       path: '/media',

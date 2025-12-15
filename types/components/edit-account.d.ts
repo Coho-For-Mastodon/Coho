@@ -3,9 +3,7 @@ import './md/md-text-field';
 import './md/md-text-area';
 import './md/md-switch';
 import './md/md-button';
-import './md/md-tabs';
-import './md/md-tab';
-import './md/md-tab-panel';
+import './md/md-segmented-button';
 import './md/md-select';
 import './md/md-option';
 import './md/md-skeleton';
@@ -16,6 +14,7 @@ export declare class EditAccount extends LitElement {
   private loading;
   private saving;
   private error;
+  private activeSection;
   private displayName;
   private bio;
   private fields;
