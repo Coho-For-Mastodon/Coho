@@ -5,6 +5,7 @@ export declare class AppHeader extends LitElement {
   title: string;
   enableBack: boolean;
   showInstall: boolean;
+  guestMode: boolean;
   static get styles(): import('lit').CSSResult;
   protected firstUpdated(
     _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>

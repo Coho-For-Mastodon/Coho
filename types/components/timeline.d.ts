@@ -61,6 +61,7 @@ export declare class Timeline extends LitElement {
     | 'media'
     | 'for you'
     | 'home and some trending';
+  guestMode: boolean;
   data: Post[] | undefined;
   header: boolean;
   autoLoad: boolean;

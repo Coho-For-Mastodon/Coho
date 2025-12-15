@@ -19,6 +19,7 @@ import '../components/md/md-icon-button';
 import '../components/md/md-toast';
 import '../components/offline-notify';
 import '../components/pwa-install';
+import '../components/guest-login-banner';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
@@ -54,6 +55,7 @@ export declare class AppHome extends LitElement {
   rightClickLoaded: boolean;
   showInstallPrompt: boolean;
   pwaInstallLoaded: boolean;
+  isGuestMode: boolean;
   activeTab: string;
   tabsOrientation: 'horizontal' | 'vertical';
   tabsPlacement: 'top' | 'bottom' | 'start' | 'end';

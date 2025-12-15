@@ -12,6 +12,7 @@ export declare class PostDetail extends LitElement {
   replyingTo: Post | null;
   loading: boolean;
   error: string | null;
+  isGuestMode: boolean;
   passed_tweet: Post | null;
   private replyTextArea;
   static styles: import('lit').CSSResult[];

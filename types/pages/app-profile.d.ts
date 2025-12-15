@@ -35,6 +35,7 @@ export declare class AppProfile extends LitElement {
   bannerReady: boolean;
   bannerFailed: boolean;
   avatarReady: boolean;
+  isGuestMode: boolean;
   avatarFailed: boolean;
   private previewContent;
   private editDialog;
