@@ -1,6 +1,10 @@
 import { set, get } from 'idb-keyval';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 import { Account } from '../types/interfaces/Account';
+import type {
+  CredentialAccount,
+  UpdateCredentialsParams,
+} from '../mastodon/types/account';
 
 // Helper functions to always get fresh values from localStorage
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
@@ -9,7 +13,104 @@ const getServer = () => localStorage.getItem('server') || '';
 // Note: IndexedDB is updated in authToClient() after successful login
 // We don't update it here at module load to avoid overwriting with empty values
 
+/**
+ * Update account credentials with full Mastodon API support
+ * @see https://docs.joinmastodon.org/methods/accounts/#update_credentials
+ */
 export const editAccount = async (
+  params: UpdateCredentialsParams
+): Promise<CredentialAccount> => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+
+  if (!accessToken || !server) {
+    throw new Error('Not authenticated');
+  }
+
+  const formData = new FormData();
+
+  // Basic profile fields
+  if (params.display_name !== undefined) {
+    formData.append('display_name', params.display_name);
+  }
+  if (params.note !== undefined) {
+    formData.append('note', params.note);
+  }
+  if (params.avatar instanceof File) {
+    formData.append('avatar', params.avatar);
+  }
+  if (params.header instanceof File) {
+    formData.append('header', params.header);
+  }
+
+  // Boolean flags
+  if (params.locked !== undefined) {
+    formData.append('locked', String(params.locked));
+  }
+  if (params.bot !== undefined) {
+    formData.append('bot', String(params.bot));
+  }
+  if (params.discoverable !== undefined) {
+    formData.append('discoverable', String(params.discoverable));
+  }
+  if (params.hide_collections !== undefined) {
+    formData.append('hide_collections', String(params.hide_collections));
+  }
+  if (params.indexable !== undefined) {
+    formData.append('indexable', String(params.indexable));
+  }
+
+  // Profile fields (up to 4)
+  if (params.fields_attributes) {
+    params.fields_attributes.forEach((field, index) => {
+      formData.append(`fields_attributes[${index}][name]`, field.name);
+      formData.append(`fields_attributes[${index}][value]`, field.value);
+    });
+  }
+
+  // Source preferences
+  if (params.source?.privacy !== undefined) {
+    formData.append('source[privacy]', params.source.privacy);
+  }
+  if (params.source?.sensitive !== undefined) {
+    formData.append('source[sensitive]', String(params.source.sensitive));
+  }
+  if (params.source?.language !== undefined) {
+    formData.append('source[language]', params.source.language);
+  }
+
+  const response = await fetch(
+    `https://${server}/api/v1/accounts/update_credentials`,
+    {
+      method: 'PATCH',
+      headers: new Headers({
+        // Note: Don't set Content-Type for FormData - browser sets it with boundary
+        Authorization: `Bearer ${accessToken}`,
+      }),
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  // Clear cached user so next getCurrentUser() fetches fresh data
+  currentUser = null;
+
+  return data as CredentialAccount;
+};
+
+/**
+ * Legacy editAccount function for backwards compatibility
+ * @deprecated Use editAccount(params: UpdateCredentialsParams) instead
+ */
+export const editAccountLegacy = async (
   display_name: string,
   note: string,
   locked: string,
@@ -17,36 +118,14 @@ export const editAccount = async (
   avatar: File | string,
   header: File | string
 ) => {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    throw new Error('Not authenticated');
-  }
-
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const formData = new FormData();
-
-  formData.append('display_name', display_name || currentUser.display_name);
-  formData.append('note', note || currentUser.note);
-  formData.append('avatar', avatar || currentUser.avatar);
-  formData.append('header', header || currentUser.header);
-  formData.append('locked', String(locked || currentUser.locked));
-  formData.append('bot', String(bot || currentUser.bot));
-
-  const response = await fetch(
-    `https://${server}/api/v1/accounts/update_credentials`,
-    {
-      method: 'PATCH',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      }),
-      body: formData,
-    }
-  );
-
-  const data = await response.json();
-  return data;
+  return editAccount({
+    display_name,
+    note,
+    locked: locked === 'true',
+    bot: bot === 'true',
+    avatar: avatar instanceof File ? avatar : undefined,
+    header: header instanceof File ? header : undefined,
+  });
 };
 
 export const getPeers = async () => {
@@ -76,6 +155,35 @@ export const checkFollowing = async (id: string) => {
 };
 
 let currentUser: Account | null = null;
+
+/**
+ * Get current user's full credentials for editing (always fetches fresh)
+ * Returns source object with plain-text values for form editing
+ */
+export const getCredentials = async (): Promise<CredentialAccount> => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+
+  if (!accessToken || !server) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(
+    `https://${server}/api/v1/accounts/verify_credentials`,
+    {
+      method: 'GET',
+      headers: new Headers({
+        Authorization: `Bearer ${accessToken}`,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  return response.json();
+};
 
 export const getCurrentUser = async (): Promise<Account | undefined> => {
   // Return in-memory cached user if available

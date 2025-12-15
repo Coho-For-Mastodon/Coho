@@ -10,24 +10,37 @@ export class EditPage extends LitElement {
     css`
       :host {
         display: block;
+        min-height: 100vh;
+        height: 100vh;
+        overflow-y: auto;
+        background: var(--md-sys-color-surface, #fef7ff);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :host {
+          background: var(--md-sys-color-surface, #141218);
+        }
       }
 
       main {
         display: block;
-        padding-top: 44px;
-        margin-top: initial;
+        padding-top: 56px;
+        padding-bottom: 80px;
+        min-height: calc(100vh - 56px);
+      }
 
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+      @media (max-width: 600px) {
+        main {
+          padding-top: 48px;
+          min-height: calc(100vh - 48px);
+        }
       }
     `,
   ];
 
   render() {
     return html`
-      <app-header title="Edit Account" enableBack></app-header>
+      <app-header title="Edit Profile" enableBack></app-header>
 
       <main>
         <edit-account></edit-account>

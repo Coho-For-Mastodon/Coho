@@ -1,274 +1,915 @@
-import { LitElement, html, css } from 'lit';
-import { customElement, state, query } from 'lit/decorators.js';
+import { LitElement, html, css, nothing } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
 
 import './md/md-text-field';
 import './md/md-text-area';
-import './md/md-checkbox';
+import './md/md-switch';
 import './md/md-button';
-import { editAccount, getCurrentUser } from '../services/account';
+import './md/md-tabs';
+import './md/md-tab';
+import './md/md-tab-panel';
+import './md/md-select';
+import './md/md-option';
+import './md/md-skeleton';
+import './md/md-icon';
+import './md/md-icon-button';
+import './md/md-toast';
+
+import { editAccount, getCredentials } from '../services/account';
 import { fileOpen } from 'browser-fs-access';
-import type { MdTextField } from './md/md-text-field';
-import type { MdTextArea } from './md/md-text-area';
-import type { MdCheckbox } from './md/md-checkbox';
+import { router } from '../utils/router';
+
+// Character limits per Mastodon API
+const LIMITS = {
+  displayName: 30,
+  bio: 500,
+  fieldName: 255,
+  fieldValue: 255,
+  maxFields: 4,
+};
+
+// Common languages for default post language
+const LANGUAGES = [
+  { code: '', label: 'Default (Server)' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'fr', label: 'Français' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'pt', label: 'Português' },
+  { code: 'ja', label: '日本語' },
+  { code: 'zh', label: '中文' },
+  { code: 'ko', label: '한국어' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'pl', label: 'Polski' },
+  { code: 'uk', label: 'Українська' },
+];
+
+interface ProfileField {
+  name: string;
+  value: string;
+}
 
 @customElement('edit-account')
 export class EditAccount extends LitElement {
-  @state() newAvatar: File | null = null;
-  @state() newHeader: File | null = null;
+  // Loading and UI states
+  @state() private loading = true;
+  @state() private saving = false;
+  @state() private error: string | null = null;
 
-  @query('#display_name') private displayNameField!: MdTextField;
-  @query('#note') private noteField!: MdTextArea;
-  @query('#locked') private lockedCheckbox!: MdCheckbox;
-  @query('#bot') private botCheckbox!: MdCheckbox;
-  @query('#avatar-preview') private avatarPreview!: HTMLImageElement;
-  @query('#header-preview') private headerPreview!: HTMLImageElement;
-  @query('#avatar') private avatarInput!: HTMLInputElement;
-  @query('#header') private headerInput!: HTMLInputElement;
+  // Form values - Profile
+  @state() private displayName = '';
+  @state() private bio = '';
+  @state() private fields: ProfileField[] = [];
+  @state() private newAvatar: File | null = null;
+  @state() private newHeader: File | null = null;
+  @state() private avatarPreviewUrl = '';
+  @state() private headerPreviewUrl = '';
 
-  static styles = [
-    css`
-      :host {
-        display: block;
+  // Form values - Privacy
+  @state() private locked = false;
+  @state() private bot = false;
+  @state() private discoverable = true;
+  @state() private hideCollections = false;
+  @state() private indexable = true;
+
+  // Form values - Posting defaults
+  @state() private defaultPrivacy:
+    | 'public'
+    | 'unlisted'
+    | 'private'
+    | 'direct' = 'public';
+  @state() private defaultSensitive = false;
+  @state() private defaultLanguage = '';
+
+  static styles = css`
+    :host {
+      display: block;
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .container {
+      padding: 16px;
+      padding-bottom: 32px;
+    }
+
+    /* Loading state */
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .skeleton-header {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .skeleton-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+    }
+
+    .skeleton-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Error state */
+    .error-container {
+      padding: 24px;
+      text-align: center;
+    }
+
+    .error-message {
+      color: var(--md-sys-color-error, #ba1a1a);
+      margin-bottom: 16px;
+    }
+
+    /* Tabs */
+    md-tabs {
+      margin-bottom: 16px;
+    }
+
+    /* Form sections */
+    .form-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant, #49454f);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 8px 0 4px;
+    }
+
+    .section-card {
+      background: var(--md-sys-color-surface-container, #f3edf7);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .section-card {
+        background: var(--md-sys-color-surface-container, #211f26);
+      }
+    }
+
+    /* Image uploads */
+    .images-row {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .image-upload {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .image-upload label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant, #49454f);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .image-preview-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .avatar-preview {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--md-sys-color-outline-variant, #cac4d0);
+    }
+
+    .header-preview {
+      width: 200px;
+      height: 67px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 2px solid var(--md-sys-color-outline-variant, #cac4d0);
+    }
+
+    .image-change-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.2s;
+      cursor: pointer;
+    }
+
+    .avatar-preview + .image-change-overlay {
+      border-radius: 50%;
+    }
+
+    .header-preview + .image-change-overlay {
+      border-radius: 12px;
+    }
+
+    .image-preview-container:hover .image-change-overlay {
+      opacity: 1;
+    }
+
+    .image-change-overlay md-icon {
+      color: white;
+      font-size: 24px;
+    }
+
+    /* Text inputs */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface-variant, #49454f);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-helper {
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant, #49454f);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .char-count {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .char-count.warning {
+      color: var(--md-sys-color-error, #ba1a1a);
+    }
+
+    md-text-field,
+    md-text-area {
+      width: 100%;
+    }
+
+    md-text-area {
+      min-height: 120px;
+    }
+
+    /* Profile fields */
+    .fields-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .field-row md-text-field {
+      min-width: 0;
+    }
+
+    .field-row md-icon-button {
+      margin-top: 4px;
+    }
+
+    .add-field-btn {
+      align-self: flex-start;
+    }
+
+    /* Toggle options */
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant, #cac4d0);
+    }
+
+    .toggle-row:last-child {
+      border-bottom: none;
+    }
+
+    .toggle-info {
+      flex: 1;
+      margin-right: 16px;
+    }
+
+    .toggle-label {
+      font-size: 16px;
+      color: var(--md-sys-color-on-surface, #1d1b20);
+    }
+
+    .toggle-description {
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface-variant, #49454f);
+      margin-top: 2px;
+    }
+
+    /* Select inputs */
+    .select-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    md-select {
+      width: 100%;
+    }
+
+    /* Actions - sticky bottom bar */
+    .actions {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--md-sys-color-surface, #fef7ff);
+      border-top: 1px solid var(--md-sys-color-outline-variant, #cac4d0);
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .actions {
+        background: var(--md-sys-color-surface, #141218);
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    /* Toast notifications */
+    md-toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 600px) {
+      .container {
+        padding: 12px;
       }
 
-      form {
-        display: flex;
+      .section-card {
+        padding: 16px;
+        border-radius: 12px;
+      }
+
+      .images-row {
         flex-direction: column;
-
-        width: 50vw;
-        padding: 10px;
-
-        gap: 10px;
-
-        background: #ffffff12;
-        border-radius: 6px;
-
-        height: 86vh;
-        overflow-y: auto;
+        align-items: flex-start;
       }
 
-      form::-webkit-scrollbar {
-        display: none;
+      .field-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
       }
 
-      form label {
-        font-weight: bold;
+      .field-row md-icon-button {
+        justify-self: end;
       }
 
-      md-text-area {
-        height: 200px;
+      .header-preview {
+        width: 100%;
+        max-width: 280px;
+        height: auto;
+        aspect-ratio: 3 / 1;
       }
+    }
+  `;
 
-      #submit {
-        place-self: flex-end;
-      }
-
-      .image-wrapper {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .image-wrapper img {
-        width: 130px;
-        height: 130px;
-        object-fit: cover;
-        border-radius: 6px;
-      }
-
-      .image-wrapper md-button {
-        place-self: flex-start;
-        margin-top: 10px;
-      }
-
-      @media (max-width: 820px) {
-        form {
-          width: 90vw;
-        }
-      }
-    `,
-  ];
-
-  async firstUpdated() {
-    this.resetForm();
+  connectedCallback() {
+    super.connectedCallback();
+    this.loadCredentials();
   }
 
-  async resetForm() {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) return;
+  private async loadCredentials() {
+    this.loading = true;
+    this.error = null;
 
-    if (this.displayNameField) {
-      this.displayNameField.value = currentUser.display_name;
+    try {
+      const credentials = await getCredentials();
+
+      // Populate form with current values
+      this.displayName = credentials.display_name || '';
+      this.bio = credentials.source?.note || '';
+      this.avatarPreviewUrl = credentials.avatar || '';
+      this.headerPreviewUrl = credentials.header || '';
+
+      // Profile fields from source (plain text)
+      this.fields =
+        credentials.source?.fields?.map((f) => ({
+          name: f.name,
+          value: f.value,
+        })) || [];
+
+      // Privacy settings
+      this.locked = credentials.locked || false;
+      this.bot = credentials.bot || false;
+      this.discoverable = credentials.discoverable ?? true;
+      this.hideCollections = credentials.hide_collections ?? false;
+      this.indexable = credentials.indexable ?? true;
+
+      // Posting defaults
+      this.defaultPrivacy = credentials.source?.privacy || 'public';
+      this.defaultSensitive = credentials.source?.sensitive || false;
+      this.defaultLanguage = credentials.source?.language || '';
+    } catch (err) {
+      console.error('[EditAccount] Failed to load credentials:', err);
+      this.error =
+        err instanceof Error ? err.message : 'Failed to load account';
+    } finally {
+      this.loading = false;
     }
+  }
 
-    if (this.noteField) {
-      this.noteField.value = currentUser.note;
-    }
-
-    if (this.lockedCheckbox) {
-      this.lockedCheckbox.checked = currentUser.locked;
-    }
-
-    if (this.botCheckbox) {
-      this.botCheckbox.checked = currentUser.bot;
-    }
-
-    if (this.avatarPreview) {
-      this.avatarPreview.src = currentUser.avatar;
-    }
-
-    if (this.headerPreview) {
-      this.headerPreview.src = currentUser.header;
-    }
-
-    if (this.avatarInput) {
-      this.avatarInput.addEventListener('change', (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.addEventListener('load', () => {
-          if (this.avatarPreview) {
-            this.avatarPreview.src = reader.result as string;
-          }
-        });
-        reader.readAsDataURL(file);
+  private async changeAvatar() {
+    try {
+      const file = await fileOpen({
+        mimeTypes: ['image/*'],
+        description: 'Avatar image',
+        startIn: 'pictures',
       });
+      this.newAvatar = file;
+      this.avatarPreviewUrl = URL.createObjectURL(file);
+    } catch {
+      // User cancelled
     }
+  }
 
-    if (this.headerInput) {
-      this.headerInput.addEventListener('change', (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.addEventListener('load', () => {
-          if (this.headerPreview) {
-            this.headerPreview.src = reader.result as string;
-          }
-        });
-        reader.readAsDataURL(file);
+  private async changeHeader() {
+    try {
+      const file = await fileOpen({
+        mimeTypes: ['image/*'],
+        description: 'Header image',
+        startIn: 'pictures',
       });
+      this.newHeader = file;
+      this.headerPreviewUrl = URL.createObjectURL(file);
+    } catch {
+      // User cancelled
     }
   }
 
-  async submitProfile() {
-    const data = {
-      display_name: this.displayNameField?.value || '',
-      note: this.noteField?.value || '',
-      locked: this.lockedCheckbox?.checked ? 'true' : 'false',
-      bot: this.botCheckbox?.checked ? 'true' : 'false',
-      avatar: this.newAvatar,
-      header: this.newHeader,
-    };
-
-    console.log(data);
-
-    await editAccount(
-      data.display_name,
-      data.note,
-      data.locked,
-      data.bot,
-      data.avatar || '',
-      data.header || ''
-    );
-  }
-
-  async changeAvatar() {
-    const blob = await fileOpen({
-      mimeTypes: ['image/*'],
-      startIn: 'pictures',
-    });
-
-    const blobURL = URL.createObjectURL(blob);
-
-    if (blobURL) {
-      const avatarPreview = this.shadowRoot?.querySelector('#avatar-preview');
-      if (avatarPreview) {
-        avatarPreview.setAttribute('src', blobURL);
-
-        this.newAvatar = blob;
-      }
+  private addField() {
+    if (this.fields.length < LIMITS.maxFields) {
+      this.fields = [...this.fields, { name: '', value: '' }];
     }
   }
 
-  async changeHeader() {
-    const blob = await fileOpen({
-      mimeTypes: ['image/*'],
-      startIn: 'pictures',
-    });
+  private removeField(index: number) {
+    this.fields = this.fields.filter((_, i) => i !== index);
+  }
 
-    const blobURL = URL.createObjectURL(blob);
+  private updateFieldName(index: number, name: string) {
+    const updated = [...this.fields];
+    updated[index] = { ...updated[index], name };
+    this.fields = updated;
+  }
 
-    if (blobURL) {
-      const headerPreview = this.shadowRoot?.querySelector('#header-preview');
-      if (headerPreview) {
-        headerPreview.setAttribute('src', blobURL);
+  private updateFieldValue(index: number, value: string) {
+    const updated = [...this.fields];
+    updated[index] = { ...updated[index], value };
+    this.fields = updated;
+  }
 
-        this.newHeader = blob;
-      }
+  private async save() {
+    this.saving = true;
+
+    try {
+      await editAccount({
+        display_name: this.displayName,
+        note: this.bio,
+        avatar: this.newAvatar || undefined,
+        header: this.newHeader || undefined,
+        locked: this.locked,
+        bot: this.bot,
+        discoverable: this.discoverable,
+        hide_collections: this.hideCollections,
+        indexable: this.indexable,
+        fields_attributes: this.fields.filter((f) => f.name || f.value),
+        source: {
+          privacy: this.defaultPrivacy,
+          sensitive: this.defaultSensitive,
+          language: this.defaultLanguage || undefined,
+        },
+      });
+
+      // Show success toast
+      this.showToast('Profile updated successfully!', 'success');
+
+      // Navigate back after brief delay
+      setTimeout(() => {
+        router.navigate('/home');
+      }, 1000);
+    } catch (err) {
+      console.error('[EditAccount] Save failed:', err);
+      this.showToast(
+        err instanceof Error ? err.message : 'Failed to save changes',
+        'error'
+      );
+    } finally {
+      this.saving = false;
     }
+  }
+
+  private showToast(message: string, type: 'success' | 'error') {
+    const toast = this.shadowRoot?.querySelector('md-toast');
+    if (toast) {
+      toast.setAttribute('message', message);
+      toast.setAttribute('type', type);
+      (toast as HTMLElement & { show: () => void }).show();
+    }
+  }
+
+  private renderLoading() {
+    return html`
+      <div class="loading-container">
+        <div class="skeleton-header">
+          <md-skeleton class="skeleton-avatar"></md-skeleton>
+          <div class="skeleton-info">
+            <md-skeleton style="height: 24px; width: 60%"></md-skeleton>
+            <md-skeleton style="height: 16px; width: 40%"></md-skeleton>
+          </div>
+        </div>
+        <md-skeleton style="height: 48px"></md-skeleton>
+        <md-skeleton style="height: 120px"></md-skeleton>
+        <md-skeleton style="height: 48px"></md-skeleton>
+        <md-skeleton style="height: 48px"></md-skeleton>
+      </div>
+    `;
+  }
+
+  private renderError() {
+    return html`
+      <div class="error-container">
+        <p class="error-message">${this.error}</p>
+        <md-button variant="filled" @click=${this.loadCredentials}>
+          Try Again
+        </md-button>
+      </div>
+    `;
+  }
+
+  private renderProfileTab() {
+    const displayNameCount = this.displayName.length;
+    const bioCount = this.bio.length;
+
+    return html`
+      <div class="form-section">
+        <!-- Images Section -->
+        <div class="section-card">
+          <span class="section-title">Profile Images</span>
+          <div class="images-row">
+            <div class="image-upload">
+              <label>Avatar</label>
+              <div class="image-preview-container">
+                <img
+                  class="avatar-preview"
+                  src=${this.avatarPreviewUrl || '/assets/icons/256-icon.png'}
+                  alt="Avatar preview"
+                />
+                <div class="image-change-overlay" @click=${this.changeAvatar}>
+                  <md-icon name="camera"></md-icon>
+                </div>
+              </div>
+            </div>
+
+            <div class="image-upload">
+              <label>Header</label>
+              <div class="image-preview-container">
+                <img
+                  class="header-preview"
+                  src=${this.headerPreviewUrl || '/assets/icons/256-icon.png'}
+                  alt="Header preview"
+                />
+                <div class="image-change-overlay" @click=${this.changeHeader}>
+                  <md-icon name="camera"></md-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Basic Info Section -->
+        <div class="section-card">
+          <span class="section-title">Basic Information</span>
+
+          <div class="input-group">
+            <label class="input-label">Display Name</label>
+            <md-text-field
+              .value=${this.displayName}
+              @input=${(e: InputEvent) =>
+                (this.displayName = (e.target as HTMLInputElement).value)}
+              placeholder="Your display name"
+              maxlength=${LIMITS.displayName}
+            ></md-text-field>
+            <div class="input-helper">
+              <span>How you appear to others</span>
+              <span
+                class=${classMap({
+                  'char-count': true,
+                  'warning': displayNameCount > LIMITS.displayName - 5,
+                })}
+              >
+                ${displayNameCount}/${LIMITS.displayName}
+              </span>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Bio</label>
+            <md-text-area
+              .value=${this.bio}
+              @input=${(e: InputEvent) =>
+                (this.bio = (e.target as HTMLTextAreaElement).value)}
+              placeholder="Tell people about yourself..."
+              maxlength=${LIMITS.bio}
+            ></md-text-area>
+            <div class="input-helper">
+              <span>Supports Markdown and custom emoji</span>
+              <span
+                class=${classMap({
+                  'char-count': true,
+                  'warning': bioCount > LIMITS.bio - 50,
+                })}
+              >
+                ${bioCount}/${LIMITS.bio}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Fields Section -->
+        <div class="section-card">
+          <span class="section-title">Profile Metadata</span>
+          <p
+            style="font-size: 13px; color: var(--md-sys-color-on-surface-variant); margin: 0;"
+          >
+            Add up to 4 custom fields to display on your profile. URLs will be
+            verified for link ownership.
+          </p>
+
+          <div class="fields-container">
+            ${this.fields.map(
+              (field, index) => html`
+                <div class="field-row">
+                  <md-text-field
+                    .value=${field.name}
+                    @input=${(e: InputEvent) =>
+                      this.updateFieldName(
+                        index,
+                        (e.target as HTMLInputElement).value
+                      )}
+                    placeholder="Label"
+                    maxlength=${LIMITS.fieldName}
+                  ></md-text-field>
+                  <md-text-field
+                    .value=${field.value}
+                    @input=${(e: InputEvent) =>
+                      this.updateFieldValue(
+                        index,
+                        (e.target as HTMLInputElement).value
+                      )}
+                    placeholder="Content"
+                    maxlength=${LIMITS.fieldValue}
+                  ></md-text-field>
+                  <md-icon-button
+                    name="trash"
+                    @click=${() => this.removeField(index)}
+                    title="Remove field"
+                  ></md-icon-button>
+                </div>
+              `
+            )}
+            ${this.fields.length < LIMITS.maxFields
+              ? html`
+                  <md-button
+                    variant="tonal"
+                    class="add-field-btn"
+                    @click=${this.addField}
+                  >
+                    <md-icon name="add" slot="prefix"></md-icon>
+                    Add Field
+                  </md-button>
+                `
+              : nothing}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderPrivacyTab() {
+    return html`
+      <div class="form-section">
+        <div class="section-card">
+          <span class="section-title">Account Settings</span>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Locked Account</div>
+              <div class="toggle-description">
+                Manually approve who can follow you
+              </div>
+            </div>
+            <md-switch
+              .checked=${this.locked}
+              @change=${(e: Event) =>
+                (this.locked = (e.target as HTMLInputElement).checked)}
+            ></md-switch>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Bot Account</div>
+              <div class="toggle-description">
+                Mark this account as an automated bot
+              </div>
+            </div>
+            <md-switch
+              .checked=${this.bot}
+              @change=${(e: Event) =>
+                (this.bot = (e.target as HTMLInputElement).checked)}
+            ></md-switch>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <span class="section-title">Discovery</span>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Discoverable</div>
+              <div class="toggle-description">
+                Show profile in directory and recommendations
+              </div>
+            </div>
+            <md-switch
+              .checked=${this.discoverable}
+              @change=${(e: Event) =>
+                (this.discoverable = (e.target as HTMLInputElement).checked)}
+            ></md-switch>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Hide Follower Counts</div>
+              <div class="toggle-description">
+                Don't show follower and following counts publicly
+              </div>
+            </div>
+            <md-switch
+              .checked=${this.hideCollections}
+              @change=${(e: Event) =>
+                (this.hideCollections = (e.target as HTMLInputElement).checked)}
+            ></md-switch>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Indexable</div>
+              <div class="toggle-description">
+                Allow public posts to appear in search results
+              </div>
+            </div>
+            <md-switch
+              .checked=${this.indexable}
+              @change=${(e: Event) =>
+                (this.indexable = (e.target as HTMLInputElement).checked)}
+            ></md-switch>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderPostingTab() {
+    return html`
+      <div class="form-section">
+        <div class="section-card">
+          <span class="section-title">Posting Defaults</span>
+
+          <div class="select-group">
+            <label class="input-label">Default Post Privacy</label>
+            <md-select
+              .value=${this.defaultPrivacy}
+              @change=${(e: CustomEvent) =>
+                (this.defaultPrivacy = e.detail.value)}
+            >
+              <md-option value="public">Public</md-option>
+              <md-option value="unlisted">Unlisted</md-option>
+              <md-option value="private">Followers Only</md-option>
+              <md-option value="direct">Mentioned Only</md-option>
+            </md-select>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Sensitive Content</div>
+              <div class="toggle-description">
+                Mark media as sensitive by default
+              </div>
+            </div>
+            <md-switch
+              .checked=${this.defaultSensitive}
+              @change=${(e: Event) =>
+                (this.defaultSensitive = (
+                  e.target as HTMLInputElement
+                ).checked)}
+            ></md-switch>
+          </div>
+
+          <div class="select-group">
+            <label class="input-label">Default Post Language</label>
+            <md-select
+              .value=${this.defaultLanguage}
+              @change=${(e: CustomEvent) =>
+                (this.defaultLanguage = e.detail.value)}
+            >
+              ${LANGUAGES.map(
+                (lang) =>
+                  html`<md-option value=${lang.code}>${lang.label}</md-option>`
+              )}
+            </md-select>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   render() {
+    if (this.loading) {
+      return this.renderLoading();
+    }
+
+    if (this.error) {
+      return this.renderError();
+    }
+
     return html`
-      <form>
-        <label for="name">Name</label>
-        <md-text-field
-          type="text"
-          id="display_name"
-          name="display_name"
-          .placeholder="${'Your name..'}"
-        ></md-text-field>
+      <div class="container">
+        <md-tabs>
+          <md-tab slot="nav" panel="profile">Profile</md-tab>
+          <md-tab slot="nav" panel="privacy">Privacy</md-tab>
+          <md-tab slot="nav" panel="posting">Posting</md-tab>
 
-        <label for="bio">Bio</label>
-        <md-text-area
-          id="note"
-          name="note"
-          .placeholder="${'Write something about yourself..'}"
-        >
-        </md-text-area>
+          <md-tab-panel name="profile">${this.renderProfileTab()}</md-tab-panel>
+          <md-tab-panel name="privacy">${this.renderPrivacyTab()}</md-tab-panel>
+          <md-tab-panel name="posting">${this.renderPostingTab()}</md-tab-panel>
+        </md-tabs>
 
-        <div class="image-wrapper">
-          <label for="avatar">Avatar</label>
-
-          <img
-            id="avatar-preview"
-            src="/assets/icons/256-icon.png"
-            alt="Avatar preview"
-          />
-
-          <md-button variant="filled" @click="${() => this.changeAvatar()}"
-            >Choose New</md-button
+        <div class="actions">
+          <md-button variant="text" @click=${() => router.navigate('/home')}>
+            Cancel
+          </md-button>
+          <md-button
+            variant="filled"
+            @click=${this.save}
+            ?disabled=${this.saving}
           >
+            ${this.saving ? 'Saving...' : 'Save Changes'}
+          </md-button>
         </div>
+      </div>
 
-        <div class="image-wrapper">
-          <label for="header">Header</label>
-
-          <img
-            id="header-preview"
-            src="/assets/icons/256-icon.png"
-            alt="Header preview"
-          />
-
-          <md-button variant="filled" @click="${() => this.changeHeader()}"
-            >Choose New</md-button
-          >
-        </div>
-
-        <label for="locked">Locked</label>
-        <md-checkbox id="locked" name="locked"></md-checkbox>
-
-        <label for="bot">Bot</label>
-        <md-checkbox id="bot" name="bot"></md-checkbox>
-
-        <md-button
-          @click="${() => this.submitProfile()}"
-          id="submit"
-          variant="filled"
-          >Submit</md-button
-        >
-      </form>
+      <md-toast></md-toast>
     `;
   }
 }
