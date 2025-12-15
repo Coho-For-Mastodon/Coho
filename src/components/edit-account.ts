@@ -6,9 +6,7 @@ import './md/md-text-field';
 import './md/md-text-area';
 import './md/md-switch';
 import './md/md-button';
-import './md/md-tabs';
-import './md/md-tab';
-import './md/md-tab-panel';
+import './md/md-segmented-button';
 import './md/md-select';
 import './md/md-option';
 import './md/md-skeleton';
@@ -59,6 +57,7 @@ export class EditAccount extends LitElement {
   @state() private loading = true;
   @state() private saving = false;
   @state() private error: string | null = null;
+  @state() private activeSection: 'profile' | 'privacy' | 'posting' = 'profile';
 
   // Form values - Profile
   @state() private displayName = '';
@@ -136,9 +135,17 @@ export class EditAccount extends LitElement {
       margin-bottom: 16px;
     }
 
-    /* Tabs */
-    md-tabs {
-      margin-bottom: 16px;
+    /* Segmented button */
+    md-segmented-button {
+      margin-bottom: 20px;
+    }
+
+    .section-content {
+      display: none;
+    }
+
+    .section-content.active {
+      display: block;
     }
 
     /* Form sections */
@@ -885,15 +892,37 @@ export class EditAccount extends LitElement {
 
     return html`
       <div class="container">
-        <md-tabs>
-          <md-tab slot="nav" panel="profile">Profile</md-tab>
-          <md-tab slot="nav" panel="privacy">Privacy</md-tab>
-          <md-tab slot="nav" panel="posting">Posting</md-tab>
+        <md-segmented-button
+          .value=${this.activeSection}
+          @segment-change=${(e: CustomEvent) =>
+            (this.activeSection = e.detail.value)}
+        >
+          <md-segment value="profile">Profile</md-segment>
+          <md-segment value="privacy">Privacy</md-segment>
+          <md-segment value="posting">Posting</md-segment>
+        </md-segmented-button>
 
-          <md-tab-panel name="profile">${this.renderProfileTab()}</md-tab-panel>
-          <md-tab-panel name="privacy">${this.renderPrivacyTab()}</md-tab-panel>
-          <md-tab-panel name="posting">${this.renderPostingTab()}</md-tab-panel>
-        </md-tabs>
+        <div
+          class="section-content ${this.activeSection === 'profile'
+            ? 'active'
+            : ''}"
+        >
+          ${this.renderProfileTab()}
+        </div>
+        <div
+          class="section-content ${this.activeSection === 'privacy'
+            ? 'active'
+            : ''}"
+        >
+          ${this.renderPrivacyTab()}
+        </div>
+        <div
+          class="section-content ${this.activeSection === 'posting'
+            ? 'active'
+            : ''}"
+        >
+          ${this.renderPostingTab()}
+        </div>
 
         <div class="actions">
           <md-button variant="text" @click=${() => router.navigate('/home')}>
