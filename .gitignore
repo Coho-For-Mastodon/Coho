@@ -21,3 +21,6 @@ firebase-debug.log
 
 # Bundle analyzer
 stats.html
+
+# Service worker build artifact (generated from src/sw.ts)
+public/sw.js

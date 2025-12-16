@@ -1,4 +1,13 @@
 /// <reference lib="webworker" />
+/**
+ * Service Worker - Single Source of Truth
+ *
+ * This is the main service worker for Coho. It is built by custom Vite plugins:
+ * - Dev: outputs to public/sw.js (unminified)
+ * - Prod: outputs to dist/sw.js (minified with inlined imports)
+ *
+ * See vite.config.ts for build configuration (build-sw-dev and build-sw plugins).
+ */
 
 import { get, set } from 'idb-keyval';
 
@@ -12,6 +21,10 @@ const CACHE_NAMES = {
   share: 'shareTarget',
 };
 
+// Background Sync queue name
+const SYNC_TAG = 'mastodon-api-sync';
+const SYNC_QUEUE_KEY = 'background-sync-queue';
+
 // Log build version for debugging
 console.log('[SW] Build version:', VERSION);
 
@@ -19,6 +32,12 @@ console.log('[SW] Build version:', VERSION);
 interface NavigatorBadge {
   setAppBadge(contents?: number): Promise<void>;
   clearAppBadge(): Promise<void>;
+}
+
+// Type augmentation for Background Sync API
+interface SyncManager {
+  register(tag: string): Promise<void>;
+  getTags(): Promise<string[]>;
 }
 
 // Type augmentation for Service Worker
@@ -32,6 +51,9 @@ declare const self: ServiceWorkerGlobalScope & {
       tag: string,
       payload: { template: string; data: string }
     ) => Promise<void>;
+  };
+  registration: ServiceWorkerRegistration & {
+    sync: SyncManager;
   };
 };
 
@@ -129,9 +151,207 @@ async function cacheFirst(
   return response;
 }
 
-async function networkOnly(request: Request): Promise<Response> {
-  return fetch(request);
+// ============================================================================
+// BACKGROUND SYNC FOR OFFLINE MUTATIONS
+// ============================================================================
+
+interface QueuedRequest {
+  id: string;
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string | null;
+  timestamp: number;
 }
+
+/**
+ * Mastodon API paths that should be queued for background sync when offline.
+ * These are mutation endpoints (POST/PUT/DELETE) that modify user data.
+ */
+const SYNCABLE_PATTERNS = [
+  /\/api\/v1\/statuses$/, // Create post
+  /\/api\/v1\/statuses\/\d+$/, // Edit/delete post
+  /\/api\/v1\/statuses\/\d+\/favourite$/, // Favorite
+  /\/api\/v1\/statuses\/\d+\/unfavourite$/, // Unfavorite
+  /\/api\/v1\/statuses\/\d+\/reblog$/, // Reblog/boost
+  /\/api\/v1\/statuses\/\d+\/unreblog$/, // Unreblog
+  /\/api\/v1\/statuses\/\d+\/bookmark$/, // Bookmark
+  /\/api\/v1\/statuses\/\d+\/unbookmark$/, // Unbookmark
+  /\/api\/v1\/statuses\/\d+\/pin$/, // Pin
+  /\/api\/v1\/statuses\/\d+\/unpin$/, // Unpin
+  /\/api\/v1\/statuses\/\d+\/mute$/, // Mute conversation
+  /\/api\/v1\/statuses\/\d+\/unmute$/, // Unmute conversation
+  /\/api\/v1\/accounts\/\d+\/follow$/, // Follow
+  /\/api\/v1\/accounts\/\d+\/unfollow$/, // Unfollow
+  /\/api\/v1\/accounts\/\d+\/block$/, // Block
+  /\/api\/v1\/accounts\/\d+\/unblock$/, // Unblock
+  /\/api\/v1\/accounts\/\d+\/mute$/, // Mute account
+  /\/api\/v1\/accounts\/\d+\/unmute$/, // Unmute account
+  /\/api\/v1\/polls\/\d+\/votes$/, // Vote in poll
+  /\/api\/v1\/notifications\/clear$/, // Clear notifications
+  /\/api\/v1\/notifications\/\d+\/dismiss$/, // Dismiss notification
+];
+
+/**
+ * Check if a request URL matches a syncable Mastodon API pattern
+ */
+function isSyncableRequest(url: URL, method: string): boolean {
+  if (method === 'GET') return false;
+  return SYNCABLE_PATTERNS.some((pattern) => pattern.test(url.pathname));
+}
+
+/**
+ * Get the current sync queue from IndexedDB
+ */
+async function getSyncQueue(): Promise<QueuedRequest[]> {
+  const queue = await get(SYNC_QUEUE_KEY);
+  return (queue as QueuedRequest[]) || [];
+}
+
+/**
+ * Save the sync queue to IndexedDB
+ */
+async function saveSyncQueue(queue: QueuedRequest[]): Promise<void> {
+  await set(SYNC_QUEUE_KEY, queue);
+}
+
+/**
+ * Add a failed request to the sync queue
+ */
+async function queueRequest(request: Request): Promise<void> {
+  const queue = await getSyncQueue();
+
+  // Serialize the request
+  const headers: Record<string, string> = {};
+  request.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  let body: string | null = null;
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    try {
+      body = await request.clone().text();
+    } catch {
+      // Body may already be consumed
+    }
+  }
+
+  const queuedRequest: QueuedRequest = {
+    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    url: request.url,
+    method: request.method,
+    headers,
+    body,
+    timestamp: Date.now(),
+  };
+
+  queue.push(queuedRequest);
+  await saveSyncQueue(queue);
+
+  console.log('[SW] Queued request for background sync:', request.url);
+
+  // Register for background sync
+  try {
+    await self.registration.sync.register(SYNC_TAG);
+    console.log('[SW] Background sync registered');
+  } catch (err) {
+    console.warn('[SW] Background sync registration failed:', err);
+  }
+}
+
+/**
+ * Replay all queued requests
+ */
+async function replayQueuedRequests(): Promise<void> {
+  const queue = await getSyncQueue();
+  if (queue.length === 0) {
+    console.log('[SW] No queued requests to replay');
+    return;
+  }
+
+  console.log('[SW] Replaying', queue.length, 'queued requests');
+
+  const failedRequests: QueuedRequest[] = [];
+
+  for (const queuedRequest of queue) {
+    try {
+      const init: RequestInit = {
+        method: queuedRequest.method,
+        headers: queuedRequest.headers,
+      };
+
+      if (queuedRequest.body && queuedRequest.method !== 'GET') {
+        init.body = queuedRequest.body;
+      }
+
+      const response = await fetch(queuedRequest.url, init);
+
+      if (response.ok) {
+        console.log('[SW] Successfully replayed:', queuedRequest.url);
+      } else {
+        console.warn(
+          '[SW] Replay failed with status:',
+          response.status,
+          queuedRequest.url
+        );
+        // Don't re-queue 4xx errors (client errors)
+        if (response.status >= 500) {
+          failedRequests.push(queuedRequest);
+        }
+      }
+    } catch (err) {
+      console.error('[SW] Replay network error:', queuedRequest.url, err);
+      failedRequests.push(queuedRequest);
+    }
+  }
+
+  // Save any requests that still failed
+  await saveSyncQueue(failedRequests);
+
+  if (failedRequests.length > 0) {
+    console.log('[SW] Re-queued', failedRequests.length, 'failed requests');
+  }
+}
+
+/**
+ * Handle Mastodon API mutations with background sync fallback
+ */
+async function networkWithBackgroundSync(request: Request): Promise<Response> {
+  try {
+    const response = await fetch(request.clone());
+    return response;
+  } catch (err) {
+    // Network error - queue for background sync
+    console.log(
+      '[SW] Network error, queuing for background sync:',
+      request.url
+    );
+    await queueRequest(request);
+
+    // Return a synthetic response so the UI can update optimistically
+    return new Response(
+      JSON.stringify({
+        queued: true,
+        message: 'Request queued for when you are back online',
+      }),
+      {
+        status: 202,
+        statusText: 'Accepted',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+}
+
+// Listen for background sync events
+self.addEventListener('sync', (event: Event) => {
+  const syncEvent = event as ExtendableEvent & { tag: string };
+  console.log('[SW] Sync event received:', syncEvent.tag);
+
+  if (syncEvent.tag === SYNC_TAG) {
+    syncEvent.waitUntil(replayQueuedRequests());
+  }
+});
 
 // Special handler for navigation to support SPA
 async function navigationHandler(request: Request): Promise<Response> {
@@ -186,6 +406,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Mastodon API mutations with background sync support
+  if (isSyncableRequest(url, request.method)) {
+    event.respondWith(networkWithBackgroundSync(request));
+    return;
+  }
+
   // API / Dynamic content
   if (
     url.pathname.startsWith('/api/') ||
@@ -194,7 +420,8 @@ self.addEventListener('fetch', (event) => {
     if (request.method === 'GET') {
       event.respondWith(networkFirst(request, CACHE_NAMES.pages));
     } else {
-      event.respondWith(networkOnly(request));
+      // Non-Mastodon mutations (e.g., Firebase functions) - use network with background sync
+      event.respondWith(networkWithBackgroundSync(request));
     }
     return;
   }
