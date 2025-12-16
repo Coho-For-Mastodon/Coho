@@ -112,19 +112,19 @@ When a Mastodon API mutation (POST/PUT/DELETE) fails due to network error, the s
 
 The following Mastodon API endpoints are queued for background sync:
 
-| Action | Endpoint Pattern |
-|--------|------------------|
-| Create post | `POST /api/v1/statuses` |
-| Edit/delete post | `PUT/DELETE /api/v1/statuses/:id` |
-| Favorite/unfavorite | `POST /api/v1/statuses/:id/(un)favourite` |
-| Boost/unboost | `POST /api/v1/statuses/:id/(un)reblog` |
-| Bookmark/unbookmark | `POST /api/v1/statuses/:id/(un)bookmark` |
-| Pin/unpin | `POST /api/v1/statuses/:id/(un)pin` |
-| Follow/unfollow | `POST /api/v1/accounts/:id/(un)follow` |
-| Block/unblock | `POST /api/v1/accounts/:id/(un)block` |
-| Mute/unmute | `POST /api/v1/accounts/:id/(un)mute` |
-| Vote in poll | `POST /api/v1/polls/:id/votes` |
-| Clear/dismiss notifications | `POST /api/v1/notifications/...` |
+| Action                      | Endpoint Pattern                          |
+| --------------------------- | ----------------------------------------- |
+| Create post                 | `POST /api/v1/statuses`                   |
+| Edit/delete post            | `PUT/DELETE /api/v1/statuses/:id`         |
+| Favorite/unfavorite         | `POST /api/v1/statuses/:id/(un)favourite` |
+| Boost/unboost               | `POST /api/v1/statuses/:id/(un)reblog`    |
+| Bookmark/unbookmark         | `POST /api/v1/statuses/:id/(un)bookmark`  |
+| Pin/unpin                   | `POST /api/v1/statuses/:id/(un)pin`       |
+| Follow/unfollow             | `POST /api/v1/accounts/:id/(un)follow`    |
+| Block/unblock               | `POST /api/v1/accounts/:id/(un)block`     |
+| Mute/unmute                 | `POST /api/v1/accounts/:id/(un)mute`      |
+| Vote in poll                | `POST /api/v1/polls/:id/votes`            |
+| Clear/dismiss notifications | `POST /api/v1/notifications/...`          |
 
 ### Queue Storage
 
@@ -132,12 +132,12 @@ Queued requests are stored in IndexedDB under the key `background-sync-queue` us
 
 ```typescript
 interface QueuedRequest {
-  id: string;           // Unique ID for deduplication
-  url: string;          // Full request URL
-  method: string;       // HTTP method
+  id: string; // Unique ID for deduplication
+  url: string; // Full request URL
+  method: string; // HTTP method
   headers: Record<string, string>;
-  body: string | null;  // Serialized body
-  timestamp: number;    // When queued
+  body: string | null; // Serialized body
+  timestamp: number; // When queued
 }
 ```
 
