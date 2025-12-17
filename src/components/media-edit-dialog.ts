@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import './md/md-dialog.js';
 import './md/md-button.js';
 import './md/md-text-area.js';
@@ -10,6 +11,7 @@ import {
   generateFilterThumbnail,
 } from '../services/image-filters';
 
+@localized()
 @customElement('media-edit-dialog')
 export class MediaEditDialog extends LitElement {
   @property({ type: Boolean }) open = false;
@@ -283,7 +285,7 @@ export class MediaEditDialog extends LitElement {
 
     return html`
       <md-dialog
-        label="Edit Image"
+        label=${msg('Edit Image')}
         .open="${this.open}"
         @md-dialog-hide="${this.handleDialogHide}"
         @md-dialog-show="${this.handleDialogShow}"
@@ -302,13 +304,15 @@ export class MediaEditDialog extends LitElement {
             : ''}
           ${this.isProcessing
             ? html`<div class="processing-overlay">
-                <span class="processing-text">Applying filter...</span>
+                <span class="processing-text"
+                  >${msg('Applying filter...')}</span
+                >
               </div>`
             : ''}
         </div>
 
         <div class="filter-section">
-          <div class="filter-section-title">Filters</div>
+          <div class="filter-section-title">${msg('Filters')}</div>
           <div class="filter-presets">
             ${Object.entries(FILTER_PRESETS).map(
               ([key, filter]) => html`
@@ -339,8 +343,10 @@ export class MediaEditDialog extends LitElement {
         </div>
 
         <md-text-area
-          label="Alt Text"
-          placeholder="Describe this image for people with visual impairments"
+          label=${msg('Alt Text')}
+          placeholder=${msg(
+            'Describe this image for people with visual impairments'
+          )}
           rows="3"
           .value="${this.description}"
           ?disabled="${this.isUploading}"
@@ -356,9 +362,11 @@ export class MediaEditDialog extends LitElement {
                   size="small"
                   ?disabled="${this.generating || this.isUploading}"
                   @click="${this.handleGenerateAlt}"
-                  title="On-device AI"
+                  title=${msg('On-device AI')}
                 >
-                  ${this.generating ? 'Generating...' : 'Generate Alt Text'}
+                  ${this.generating
+                    ? msg('Generating...')
+                    : msg('Generate Alt Text')}
                 </md-button>
               </div>
             `
@@ -369,7 +377,7 @@ export class MediaEditDialog extends LitElement {
             variant="text"
             @click="${this.close}"
             ?disabled="${this.isUploading}"
-            >Cancel</md-button
+            >${msg('Cancel')}</md-button
           >
           <md-button
             variant="filled"
@@ -377,10 +385,10 @@ export class MediaEditDialog extends LitElement {
             ?disabled="${this.isProcessing || this.isUploading}"
           >
             ${this.isUploading
-              ? 'Uploading...'
+              ? msg('Uploading...')
               : this.isProcessing
-                ? 'Processing...'
-                : 'Save'}
+                ? msg('Processing...')
+                : msg('Save')}
           </md-button>
         </div>
       </md-dialog>

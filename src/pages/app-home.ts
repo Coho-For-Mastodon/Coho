@@ -1,5 +1,7 @@
 import { LitElement, css, html, nothing } from 'lit';
 import { property, customElement, state, query } from 'lit/decorators.js';
+import { msg, str } from '@lit/localize';
+import { localized } from '@lit/localize';
 
 import '../components/timeline';
 import '../components/timeline-item';
@@ -49,6 +51,7 @@ import type {
   ColorChosenEvent,
 } from '../types/events';
 
+@localized()
 @customElement('app-home')
 export class AppHome extends LitElement {
   // For more information on using properties and state in lit
@@ -1420,28 +1423,28 @@ export class AppHome extends LitElement {
                   @menu-item-click=${() => router.navigate('/new-post')}
                 >
                   <md-icon slot="prefix" name="add"></md-icon>
-                  New Post
+                  ${msg('New Post')}
                 </md-menu-item>
 
                 <md-menu-item @click="${() => this.openATab('search')}">
                   <md-icon slot="prefix" name="search"></md-icon>
-                  Explore
+                  ${msg('Explore')}
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('notifications')}">
                   <md-icon slot="prefix" name="notifications"></md-icon>
-                  Notifications
+                  ${msg('Notifications')}
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('messages')}">
                   <md-icon slot="prefix" name="chatbox"></md-icon>
-                  Messages
+                  ${msg('Messages')}
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('bookmarks')}">
                   <md-icon slot="prefix" name="bookmark"></md-icon>
-                  Saved
+                  ${msg('Saved')}
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('faves')}">
                   <md-icon slot="prefix" name="heart"></md-icon>
-                  Favorites
+                  ${msg('Favorites')}
                 </md-menu-item>
               </md-menu>
             </right-click>
@@ -1462,7 +1465,7 @@ export class AppHome extends LitElement {
       <offline-notify></offline-notify>
 
       <!-- PWA Install Dialog -->
-      <md-dialog id="install-dialog" label="Install Coho">
+      <md-dialog id="install-dialog" .label="${msg('Install Coho')}">
         <pwa-install
           @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
           @pwa-install-success="${() => this.handleInstallSuccess()}"
@@ -1470,7 +1473,7 @@ export class AppHome extends LitElement {
         ></pwa-install>
       </md-dialog>
 
-      <otter-drawer label="Theming" id="theming-drawer">
+      <otter-drawer .label="${msg('Theming')}" id="theming-drawer">
         ${this.appThemeLoaded
           ? html`
               <app-theme
@@ -1485,7 +1488,11 @@ export class AppHome extends LitElement {
 
       <post-dialog @published="${() => this.handleReload()}"></post-dialog>
 
-      <otter-drawer id="settings-drawer" placement="end" label="Settings">
+      <otter-drawer
+        id="settings-drawer"
+        placement="end"
+        .label="${msg('Settings')}"
+      >
         <div>
           <div id="settings-profile-inner">
             ${this.user && this.user.avatar
@@ -1497,7 +1504,7 @@ export class AppHome extends LitElement {
                   height="4em"
                 ></md-skeleton>`}
             <div id="username-block">
-              <h3>${this.user ? this.user.display_name : 'Loading...'}</h3>
+              <h3>${this.user ? this.user.display_name : msg('Loading...')}</h3>
 
               <div id="user-actions">
                 <md-dropdown>
@@ -1511,17 +1518,17 @@ export class AppHome extends LitElement {
                         slot="prefix"
                         src="/assets/eye-outline.svg"
                       ></md-icon>
-                      View My Profile
+                      ${msg('View My Profile')}
                     </md-menu-item>
                     <md-menu-item @click="${() => this.shareMyProfile()}">
                       <md-icon
                         slot="prefix"
                         src="/assets/share-social-outline.svg"
                       ></md-icon>
-                      Share My Profile
+                      ${msg('Share My Profile')}
                     </md-menu-item>
                     <md-menu-item @click="${() => this.editMyProfile()}">
-                      Edit My Profile
+                      ${msg('Edit My Profile')}
                     </md-menu-item>
                     <!-- <md-menu-item>
                       Add an existing Account
@@ -1531,20 +1538,26 @@ export class AppHome extends LitElement {
               </div>
             </div>
 
-            <p id="user-url">${this.user ? this.user.url : 'Loading...'}</p>
+            <p id="user-url">
+              ${this.user ? this.user.url : msg('Loading...')}
+            </p>
 
             <div>
               <md-badge
                 variant="filled"
                 clickable
                 @click="${() => this.goToFollowers()}"
-                >${this.user ? this.user.followers_count : '0'} followers
+                >${this.user
+                  ? msg(str`${this.user.followers_count} followers`)
+                  : msg('0 followers')}
               </md-badge>
               <md-badge
                 variant="filled"
                 clickable
                 @click="${() => this.goToFollowing()}"
-                >${this.user ? this.user.following_count : '0'} following
+                >${this.user
+                  ? msg(str`${this.user.following_count} following`)
+                  : msg('0 following')}
               </md-badge>
             </div>
           </div>
@@ -1556,7 +1569,7 @@ export class AppHome extends LitElement {
 
         <div class="setting">
           <div>
-            <h4>Wellness Mode</h4>
+            <h4>${msg('Wellness Mode')}</h4>
 
             <md-switch
               @sl-change="${(e: Event) =>
@@ -1567,12 +1580,12 @@ export class AppHome extends LitElement {
             ></md-switch>
           </div>
 
-          <p>Wellness Mode hides likes and boosts.</p>
+          <p>${msg('Wellness Mode hides likes and boosts.')}</p>
         </div>
 
         <div class="setting">
           <div>
-            <h4>Data Saver Mode</h4>
+            <h4>${msg('Data Saver Mode')}</h4>
 
             <md-switch
               @sl-change="${(e: Event) =>
@@ -1583,11 +1596,13 @@ export class AppHome extends LitElement {
             ></md-switch>
           </div>
 
-          <p>Data Saver Mode reduces the amount of data used by Coho.</p>
+          <p>
+            ${msg('Data Saver Mode reduces the amount of data used by Coho.')}
+          </p>
         </div>
 
         <div class="setting">
-          <h4>Key Shortcuts</h4>
+          <h4>${msg('Key Shortcuts')}</h4>
 
           <ul>
             <li><kbd>g</kbd> + <kbd>h</kbd> - Open Home</li>
@@ -1605,7 +1620,7 @@ export class AppHome extends LitElement {
         ${this.instanceInfo
           ? html`
               <div id="instanceInfo">
-                <h4>Instance Info</h4>
+                <h4>${msg('Instance Info')}</h4>
 
                 ${this.instanceInfo.thumbnail
                   ? html`<img src="${this.instanceInfo.thumbnail}" />`
@@ -1620,11 +1635,15 @@ export class AppHome extends LitElement {
         <div
           style="margin-top: 24px; padding-bottom: 24px; text-align: center; opacity: 0.7; font-size: 12px;"
         >
-          <p>Build: ${new Date(__APP_VERSION__).toLocaleString()}</p>
+          <p>${msg('Build:')} ${new Date(__APP_VERSION__).toLocaleString()}</p>
         </div>
       </otter-drawer>
 
-      <otter-drawer id="replies-drawer" placement="end" label="Comments">
+      <otter-drawer
+        id="replies-drawer"
+        placement="end"
+        .label="${msg('Comments')}"
+      >
         ${this.replies.length > 0
           ? html`<ul>
               ${this.replies.map((reply) => {
@@ -1638,7 +1657,7 @@ export class AppHome extends LitElement {
             </ul>`
           : html`
               <div id="no-replies">
-                <p>No comments yet.</p>
+                <p>${msg('No comments yet.')}</p>
               </div>
             `}
       </otter-drawer>
@@ -1656,11 +1675,11 @@ export class AppHome extends LitElement {
             @click="${() => this.reloadHome()}"
           >
             <md-icon slot="icon" src="/assets/home-outline.svg"></md-icon>
-            <span class="tab-label">Home</span>
+            <span class="tab-label">${msg('Home')}</span>
           </md-tab>
           <md-tab slot="nav" panel="search">
             <md-icon slot="icon" src="/assets/search-outline.svg"></md-icon>
-            <span class="tab-label">Explore</span>
+            <span class="tab-label">${msg('Explore')}</span>
           </md-tab>
           <md-tab
             slot="nav"
@@ -1671,7 +1690,7 @@ export class AppHome extends LitElement {
               slot="icon"
               src="/assets/notifications-outline.svg"
             ></md-icon>
-            <span class="tab-label">Notifications</span>
+            <span class="tab-label">${msg('Notifications')}</span>
             ${this.hasNewNotifications
               ? html`<span class="notification-dot"></span>`
               : nothing}
@@ -1685,7 +1704,7 @@ export class AppHome extends LitElement {
           </md-tab>
           <md-tab slot="nav" panel="bookmarks" ?disabled="${this.isGuestMode}">
             <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
-            <span class="tab-label">Saved</span>
+            <span class="tab-label">${msg('Saved')}</span>
             ${this.isGuestMode
               ? html`<md-icon
                   slot="suffix"
@@ -1696,7 +1715,7 @@ export class AppHome extends LitElement {
           </md-tab>
           <md-tab slot="nav" panel="faves" ?disabled="${this.isGuestMode}">
             <md-icon slot="icon" src="/assets/heart-outline.svg"></md-icon>
-            <span class="tab-label">Favorites</span>
+            <span class="tab-label">${msg('Favorites')}</span>
             ${this.isGuestMode
               ? html`<md-icon
                   slot="suffix"
@@ -1783,15 +1802,16 @@ export class AppHome extends LitElement {
                       name="person-circle"
                       style="font-size: 64px; color: var(--md-sys-color-on-surface-variant);"
                     ></md-icon>
-                    <h3>Welcome to Coho</h3>
+                    <h3>${msg('Welcome to Coho')}</h3>
                     <p style="margin-bottom: 16px;">
-                      You're browsing as a guest. Sign in to interact with posts
-                      and access all features.
+                      ${msg(
+                        "You're browsing as a guest. Sign in to interact with posts and access all features."
+                      )}
                     </p>
                     <md-button
                       variant="filled"
                       @click="${() => router.navigate('/')}"
-                      >Sign In</md-button
+                      >${msg('Sign In')}</md-button
                     >
                   </div>
                 </div>
@@ -1832,7 +1852,7 @@ export class AppHome extends LitElement {
                                 slot="prefix"
                                 src="/assets/eye-outline.svg"
                               ></md-icon>
-                              View My Profile
+                              ${msg('View My Profile')}
                             </md-menu-item>
                             <md-menu-item
                               @click="${() => this.shareMyProfile()}"
@@ -1841,12 +1861,12 @@ export class AppHome extends LitElement {
                                 slot="prefix"
                                 src="/assets/share-social-outline.svg"
                               ></md-icon>
-                              Share My Profile
+                              ${msg('Share My Profile')}
                             </md-menu-item>
                             <md-menu-item
                               @click="${() => this.editMyProfile()}"
                             >
-                              Edit My Profile
+                              ${msg('Edit My Profile')}
                             </md-menu-item>
                           </md-menu>
                         </md-dropdown>
@@ -1867,15 +1887,17 @@ export class AppHome extends LitElement {
                         variant="outlined"
                         clickable
                         @click="${() => this.goToFollowers()}"
-                        >${this.user ? this.user.followers_count : '0'}
-                        followers
+                        >${this.user
+                          ? msg(str`${this.user.followers_count} followers`)
+                          : msg('0 followers')}
                       </md-badge>
                       <md-badge
                         variant="outlined"
                         clickable
                         @click="${() => this.goToFollowing()}"
-                        >${this.user ? this.user.following_count : '0'}
-                        following
+                        >${this.user
+                          ? msg(str`${this.user.following_count} following`)
+                          : msg('0 following')}
                       </md-badge>
                     </div>
                   </div>
@@ -1884,7 +1906,7 @@ export class AppHome extends LitElement {
           ${this.trendingTags && this.trendingTags.length > 0
             ? html`
                 <div class="sidebar-card">
-                  <h3>Trending Tags</h3>
+                  <h3>${msg('Trending Tags')}</h3>
                   ${this.trendingTags.slice(0, 5).map(
                     (tag) => html`
                       <div
@@ -1894,7 +1916,9 @@ export class AppHome extends LitElement {
                       >
                         <span class="tag">#${tag.name}</span>
                         <span class="count"
-                          >${tag.history?.[0]?.uses || 0} posts today</span
+                          >${msg(
+                            str`${tag.history?.[0]?.uses || 0} posts today`
+                          )}</span
                         >
                       </div>
                     `
@@ -1924,7 +1948,7 @@ export class AppHome extends LitElement {
         variant="info"
         position="bottom"
         duration="0"
-        message="Translating post..."
+        .message="${msg('Translating post...')}"
       >
       </md-toast>
 

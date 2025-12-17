@@ -36,6 +36,7 @@
     "@huggingface/transformers": "^3.8.1",
     "@lit-labs/ssr": "^3.3.1",
     "@lit-labs/virtualizer": "^2.0.11",
+    "@lit/localize": "^0.12.2",
     "browser-fs-access": "^0.38.0",
     "fast-blurhash": "^1.1.2",
     "hotkeys-js": "^3.10.1",
@@ -46,6 +47,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.1",
+    "@lit/localize-tools": "^0.8.0",
     "@playwright/test": "^1.57.0",
     "@types/dom-navigation": "^1.0.6",
     "@typescript-eslint/eslint-plugin": "^8.48.1",

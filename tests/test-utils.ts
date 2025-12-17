@@ -11,6 +11,12 @@ export async function bootstrapApp(page: Page, options?: { seed?: boolean }) {
   const seed = options?.seed ?? true;
 
   await registerMockApis(page);
+
+  // Set locale to English BEFORE loading the app for consistent test assertions
+  await page.addInitScript(() => {
+    localStorage.setItem('locale', 'en');
+  });
+
   await page.goto(APP_URL);
 
   if (seed) {
@@ -23,6 +29,8 @@ export async function seedAuth(page: Page) {
     localStorage.setItem('server', server);
     localStorage.setItem('accessToken', token);
     localStorage.setItem('token', token);
+    // Set locale to English for consistent test assertions
+    localStorage.setItem('locale', 'en');
   }, MOCK_AUTH);
 
   await page.reload();

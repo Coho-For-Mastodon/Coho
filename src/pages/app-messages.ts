@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { getMessages } from '../services/messages';
 
 import '../components/header';
 
+@localized()
 @customElement('app-messages')
 export class AppMessages extends LitElement {
   static styles = [
@@ -50,7 +52,7 @@ export class AppMessages extends LitElement {
   render() {
     return html`
       <ul class="scrollbar-hidden">
-        <h2>Coming soon...</h2>
+        <h2>${msg('Coming soon...')}</h2>
       </ul>
     `;
   }

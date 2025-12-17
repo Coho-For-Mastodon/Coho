@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, property, query } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import { router } from '../utils/router';
 
@@ -15,6 +16,7 @@ interface SearchData {
   hashtags?: unknown[];
 }
 
+@localized()
 @customElement('app-search')
 export class Search extends LitElement {
   @state() searchData: SearchData | undefined;
@@ -242,7 +244,7 @@ export class Search extends LitElement {
         </span>
         <input
           type="search"
-          placeholder="Search"
+          placeholder=${msg('Search')}
           .value="${this._inputValue}"
           @input="${this._handleInput}"
           @keydown="${this._handleKeyDown}"

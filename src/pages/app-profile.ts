@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
+import { localized, msg, str } from '@lit/localize';
 import {
   checkFollowing,
   followUser,
@@ -39,6 +40,7 @@ import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 import { editPost } from '../services/posts';
 
+@localized()
 @customElement('app-profile')
 export class AppProfile extends LitElement {
   @state() user: Account | undefined;
@@ -980,13 +982,14 @@ export class AppProfile extends LitElement {
         <app-header ?enableBack="${true}"></app-header>
         <div id="offline-message">
           <md-icon name="cloud-offline"></md-icon>
-          <h2>Profile unavailable</h2>
+          <h2>${msg('Profile unavailable')}</h2>
           <p>
-            This profile hasn't been viewed before and can't be loaded while
-            offline.
+            ${msg(
+              "This profile hasn't been viewed before and can't be loaded while offline."
+            )}
           </p>
           <md-button variant="filled" @click="${() => window.location.reload()}"
-            >Try again</md-button
+            >${msg('Try again')}</md-button
           >
         </div>
       `;
@@ -995,13 +998,15 @@ export class AppProfile extends LitElement {
     return html`
       <app-header ?enableBack="${true}"></app-header>
 
-      <md-dialog id="edit" label="Edit Post">
+      <md-dialog id="edit" .label="${msg('Edit Post')}">
         <span id="preview-content"></span>
 
         <div id="edit-input-block">
           <md-text-area id="content"></md-text-area>
 
-          <md-button @click=${() => this.confirmEdit()}>Save</md-button>
+          <md-button @click=${() => this.confirmEdit()}
+            >${msg('Save')}</md-button
+          >
         </div>
       </md-dialog>
 
@@ -1063,18 +1068,18 @@ export class AppProfile extends LitElement {
                         ? html`<md-button
                             variant="outlined"
                             @click="${() => this.unfollow()}"
-                            >Following</md-button
+                            >${msg('Following')}</md-button
                           >`
                         : html`<md-button
                             variant="filled"
                             @click="${() => this.follow()}"
-                            >Follow</md-button
+                            >${msg('Follow')}</md-button
                           >`}
                       <md-dropdown placement="bottom-end">
                         <md-icon-button
                           slot="trigger"
                           name="ellipsis-vertical"
-                          label="More options"
+                          .label="${msg('More options')}"
                         ></md-icon-button>
                         <md-menu>
                           ${this.muted
@@ -1085,31 +1090,31 @@ export class AppProfile extends LitElement {
                                   slot="prefix"
                                   name="volume-mute"
                                 ></md-icon>
-                                Unmute @${this.user?.acct}
+                                ${msg(str`Unmute @${this.user?.acct}`)}
                               </md-menu-item>`
                             : html`<md-menu-item @click="${() => this.mute()}">
                                 <md-icon
                                   slot="prefix"
                                   name="volume-mute"
                                 ></md-icon>
-                                Mute @${this.user?.acct}
+                                ${msg(str`Mute @${this.user?.acct}`)}
                               </md-menu-item>`}
                           ${this.blocked
                             ? html`<md-menu-item
                                 @click="${() => this.unblock()}"
                               >
                                 <md-icon slot="prefix" name="ban"></md-icon>
-                                Unblock @${this.user?.acct}
+                                ${msg(str`Unblock @${this.user?.acct}`)}
                               </md-menu-item>`
                             : html`<md-menu-item @click="${() => this.block()}">
                                 <md-icon slot="prefix" name="ban"></md-icon>
-                                Block @${this.user?.acct}
+                                ${msg(str`Block @${this.user?.acct}`)}
                               </md-menu-item>`}
                           <md-menu-item
                             @click="${() => this.openReportDialog()}"
                           >
                             <md-icon slot="prefix" name="flag"></md-icon>
-                            Report @${this.user?.acct}
+                            ${msg(str`Report @${this.user?.acct}`)}
                           </md-menu-item>
                         </md-menu>
                       </md-dropdown>
@@ -1137,7 +1142,7 @@ export class AppProfile extends LitElement {
                 ${this.followed && this.following
                   ? html`<span id="mutuals-badge">
                       <md-icon name="people" style="font-size: 14px;"></md-icon>
-                      Mutuals
+                      ${msg('Mutuals')}
                     </span>`
                   : null}
                 ${this.user.note
@@ -1151,7 +1156,7 @@ export class AppProfile extends LitElement {
                         this.user.following_count ?? 0
                       ).toLocaleString()}</span
                     >
-                    <span class="stat-label">Following</span>
+                    <span class="stat-label">${msg('Following')}</span>
                   </span>
                   <span class="stat" @click="${() => this.goToFollowers()}">
                     <span class="stat-count"
@@ -1159,7 +1164,7 @@ export class AppProfile extends LitElement {
                         this.user.followers_count ?? 0
                       ).toLocaleString()}</span
                     >
-                    <span class="stat-label">Followers</span>
+                    <span class="stat-label">${msg('Followers')}</span>
                   </span>
                 </div>
 
@@ -1226,9 +1231,9 @@ export class AppProfile extends LitElement {
                 @segment-change="${(e: CustomEvent) =>
                   this.handleSegmentChange(e)}"
               >
-                <md-segment value="posts">Posts</md-segment>
-                <md-segment value="posts_replies">Replies</md-segment>
-                <md-segment value="media">Media</md-segment>
+                <md-segment value="posts">${msg('Posts')}</md-segment>
+                <md-segment value="posts_replies">${msg('Replies')}</md-segment>
+                <md-segment value="media">${msg('Media')}</md-segment>
               </md-segmented-button>
             `}
       </div>

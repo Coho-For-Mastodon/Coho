@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import './md/md-toast.js';
 import type { MdToast } from './md/md-toast.js';
 
+@localized()
 @customElement('offline-notify')
 export class OfflineNotify extends LitElement {
   @state() public network_status: boolean = true;
@@ -66,7 +68,9 @@ export class OfflineNotify extends LitElement {
         variant="warning"
         duration="4000"
         closable
-        message="You have entered offline mode. Otter will still work, including if you close and reopen the app, but some functionality may be limited."
+        message=${msg(
+          'You have entered offline mode. Otter will still work, including if you close and reopen the app, but some functionality may be limited.'
+        )}
       >
       </md-toast>
 
@@ -75,7 +79,9 @@ export class OfflineNotify extends LitElement {
         variant="success"
         duration="3000"
         closable
-        message="You are back online. Otter will resume normal functionality."
+        message=${msg(
+          'You are back online. Otter will resume normal functionality.'
+        )}
       >
       </md-toast>
     `;

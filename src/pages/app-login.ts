@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { msg, localized } from '@lit/localize';
 
 import '../components/md/md-autocomplete';
 import '../components/md/md-button';
@@ -62,6 +63,7 @@ const POPULAR_INSTANCES: AutocompleteOption[] = [
 
 let scrollWidth: number = 0;
 
+@localized()
 @customElement('app-login')
 export class AppLogin extends LitElement {
   @state() loadIntro: boolean = false;
@@ -487,99 +489,91 @@ export class AppLogin extends LitElement {
     return html`
       ${this.loadIntro
         ? html`
-            <md-dialog label="Intro To Mastodon">
+            <md-dialog .label="${msg('Intro To Mastodon')}">
               <div id="intro-carousel" class="scrollbar-hidden">
                 <div class="scroll-item">
-                  <h2>What is Coho?</h2>
+                  <h2>${msg('What is Coho?')}</h2>
                   <p>
-                    Coho is the app your using 😊. It is an open source,
-                    cross-platform Mastodon client. Coho brings the best of
-                    Mastodon to any device, with a fast and intuitive interface,
-                    no matter your device or internet connection. To use Coho,
-                    you need a Mastodon account. Once you have a Mastodon
-                    account you will need to enter the URL of the Mastodon
-                    instance you signed up at.
+                    ${msg(
+                      'Coho is the app your using 😊. It is an open source, cross-platform Mastodon client. Coho brings the best of Mastodon to any device, with a fast and intuitive interface, no matter your device or internet connection. To use Coho, you need a Mastodon account. Once you have a Mastodon account you will need to enter the URL of the Mastodon instance you signed up at.'
+                    )}
                   </p>
 
                   <md-button variant="text" pill @click="${() => this.next()}"
-                    >Next</md-button
+                    >${msg('Next')}</md-button
                   >
                 </div>
 
                 <div class="scroll-item">
-                  <h2>What Is Mastodon?</h2>
+                  <h2>${msg('What Is Mastodon?')}</h2>
                   <p>
-                    Mastodon is a social media platform that allows users to
-                    create and share short posts, called "toots," and interact
-                    with each other through features like boosting, direct
-                    messaging, and hashtags. It is decentralized, meaning that
-                    it is not controlled by a central authority and users can
-                    choose which communities, called "instances," they want to
-                    join. Mastodon is open-source and free to use.
+                    ${msg(
+                      'Mastodon is a social media platform that allows users to create and share short posts, called "toots," and interact with each other through features like boosting, direct messaging, and hashtags. It is decentralized, meaning that it is not controlled by a central authority and users can choose which communities, called "instances," they want to join. Mastodon is open-source and free to use.'
+                    )}
                   </p>
 
                   <p>
-                    Each instance is run by a different administrator and can
-                    have its own rules and moderation policies.
+                    ${msg(
+                      'Each instance is run by a different administrator and can have its own rules and moderation policies.'
+                    )}
                   </p>
 
                   <md-button variant="text" pill @click="${() => this.next()}"
-                    >Next</md-button
+                    >${msg('Next')}</md-button
                   >
                 </div>
 
                 <div class="scroll-item">
-                  <h2>How do I join Mastodon?</h2>
+                  <h2>${msg('How do I join Mastodon?')}</h2>
 
                   <ol>
                     <li>
-                      Go to
-                      <a href="https://joinmastodon.org/"
-                        >https://joinmastodon.org/</a
-                      >
-                      and select an instance to sign up for. There are many
-                      different Mastodon instances to choose from, each with its
-                      own rules and community guidelines. You can read more
-                      about each instance to find one that fits your interests.
+                      ${msg(
+                        'Go to https://joinmastodon.org/ and select an instance to sign up for. There are many different Mastodon instances to choose from, each with its own rules and community guidelines. You can read more about each instance to find one that fits your interests.'
+                      )}
                     </li>
                     <li>
-                      Click the "Sign up" button on the instance you have
-                      chosen.
+                      ${msg(
+                        'Click the "Sign up" button on the instance you have chosen.'
+                      )}
                     </li>
                     <li>
-                      Fill out the sign-up form with your desired username,
-                      email address, and password.
+                      ${msg(
+                        'Fill out the sign-up form with your desired username, email address, and password.'
+                      )}
                     </li>
                     <li>
-                      Read and agree to the terms of service for the instance.
+                      ${msg(
+                        'Read and agree to the terms of service for the instance.'
+                      )}
                     </li>
                     <li>
-                      Click the "Sign up" button to complete the registration
-                      process.
+                      ${msg(
+                        'Click the "Sign up" button to complete the registration process.'
+                      )}
                     </li>
                     <li>
-                      You will receive an email with a confirmation link. Click
-                      the link to confirm your email address and complete the
-                      sign-up process.
+                      ${msg(
+                        'You will receive an email with a confirmation link. Click the link to confirm your email address and complete the sign-up process.'
+                      )}
                     </li>
                     <li>
-                      Once you have confirmed your email, you can log in to
-                      Mastodon and start using the platform.
+                      ${msg(
+                        'Once you have confirmed your email, you can log in to Mastodon and start using the platform.'
+                      )}
                     </li>
                   </ol>
                   <p>
-                    Note: Some instances may have additional requirements or
-                    restrictions for new users, such as requiring a valid email
-                    address or approving new accounts manually. Be sure to read
-                    the rules and guidelines of the instance you are joining
-                    before signing up.
+                    ${msg(
+                      'Note: Some instances may have additional requirements or restrictions for new users, such as requiring a valid email address or approving new accounts manually. Be sure to read the rules and guidelines of the instance you are joining before signing up.'
+                    )}
                   </p>
 
                   <md-button
                     variant="filled"
                     pill
                     @click="${() => this.getStarted()}"
-                    >Get Started</md-button
+                    >${msg('Get Started')}</md-button
                   >
                 </div>
               </div>
@@ -597,13 +591,15 @@ export class AppLogin extends LitElement {
               alt="Coho Logo"
               class="logo"
             />
-            <h1>Welcome to Coho</h1>
-            <p class="subtitle">Your modern Mastodon client</p>
+            <h1>${msg('Welcome to Coho')}</h1>
+            <p class="subtitle">${msg('Your modern Mastodon client')}</p>
           </div>
 
           <div class="login-form">
             <md-autocomplete
-              placeholder="Search for your server (e.g. mastodon.social)"
+              .placeholder="${msg(
+                'Search for your server (e.g. mastodon.social)'
+              )}"
               .value="${this.chosenServer}"
               .options="${this.instances}"
               .loading="${this.loadingInstances}"
@@ -617,29 +613,29 @@ export class AppLogin extends LitElement {
               variant="filled"
               class="login-button"
             >
-              Login
+              ${msg('Login')}
             </md-button>
           </div>
 
           <div slot="footer" class="login-actions">
             <md-button @click="${() => this.joinMastodon()}" variant="text">
-              Sign up for Mastodon Account
+              ${msg('Sign up for Mastodon Account')}
             </md-button>
             <md-button @click="${() => this.openIntro()}" variant="text">
-              Intro To Mastodon
+              ${msg('Intro To Mastodon')}
             </md-button>
             <md-button @click="${() => this.explore()}" variant="text">
-              Try Coho without an account
+              ${msg('Try Coho without an account')}
             </md-button>
           </div>
         </md-card>
 
         <div class="app-footer">
           <a href="https://github.com/jgw96/mammoth-app#readme" target="_blank">
-            Learn More about Coho
+            ${msg('Learn More about Coho')}
           </a>
           <p style="opacity: 0.5; margin-top: 8px;">
-            Build: ${new Date(__APP_VERSION__).toLocaleString()}
+            ${msg('Build:')} ${new Date(__APP_VERSION__).toLocaleString()}
           </p>
         </div>
       </main>

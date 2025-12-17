@@ -1,4 +1,5 @@
 import { LitElement } from 'lit';
+import './config/localization.js';
 import './pages/app-login';
 import './components/header';
 import './components/pwa-update';

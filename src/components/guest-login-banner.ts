@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { router } from '../utils/router';
 
 import './md/md-button';
@@ -8,6 +9,7 @@ import './md/md-button';
  * A subtle banner prompting guest users to sign in.
  * Displays at the bottom of the screen with a login call-to-action.
  */
+@localized()
 @customElement('guest-login-banner')
 export class GuestLoginBanner extends LitElement {
   static styles = css`
@@ -76,8 +78,10 @@ export class GuestLoginBanner extends LitElement {
   render() {
     return html`
       <div class="banner">
-        <span class="banner-text">Browsing as guest</span>
-        <a class="sign-in-link" @click="${this.handleSignIn}">Sign in</a>
+        <span class="banner-text">${msg('Browsing as guest')}</span>
+        <a class="sign-in-link" @click="${this.handleSignIn}"
+          >${msg('Sign in')}</a
+        >
       </div>
     `;
   }

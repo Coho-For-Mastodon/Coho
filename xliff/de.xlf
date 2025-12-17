@@ -1,0 +1,1071 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+<file target-language="de" source-language="en" original="lit-localize-inputs" datatype="plaintext">
+<body>
+<trans-unit id="s3d93f9ea0c5a13fa">
+  <source>Image</source>
+  <target>Bild</target>
+</trans-unit>
+<trans-unit id="s6c29a443c43e0a7b">
+  <source>Could not submit vote.</source>
+  <target>Abstimmung fehlgeschlagen.</target>
+</trans-unit>
+<trans-unit id="sf113fa256db9617b">
+  <source>Ended</source>
+  <target>Beendet</target>
+</trans-unit>
+<trans-unit id="s5c76cc4ada53f648">
+  <source>Ends in <x id="0" equiv-text="${formatRelativeShort(expiresAt, now)}"/></source>
+  <target>Endet in <x id="0" equiv-text="${formatRelativeShort(expiresAt, now)}"/></target>
+</trans-unit>
+<trans-unit id="s6293baa74e70c618">
+  <source>1 vote</source>
+  <target>1 Stimme</target>
+</trans-unit>
+<trans-unit id="s2f47ae2cbfd32b28">
+  <source><x id="0" equiv-text="${voteCount}"/> votes</source>
+  <target><x id="0" equiv-text="${voteCount}"/> Stimmen</target>
+</trans-unit>
+<trans-unit id="s0a5df04b5c6d2f9f">
+  <source>Your poll</source>
+  <target>Deine Umfrage</target>
+</trans-unit>
+<trans-unit id="se06934af5f7f49eb">
+  <source>Select one or more</source>
+  <target>Wähle eine oder mehrere</target>
+</trans-unit>
+<trans-unit id="se2b273224377e395">
+  <source>Select one</source>
+  <target>Wähle eine</target>
+</trans-unit>
+<trans-unit id="sb33fd019a70e1a18">
+  <source>Poll</source>
+  <target>Umfrage</target>
+</trans-unit>
+<trans-unit id="s204349028adf2f98">
+  <source>Voting…</source>
+  <target>Stimme ab…</target>
+</trans-unit>
+<trans-unit id="sb23eed07fcaf3095">
+  <source>Vote</source>
+  <target>Abstimmen</target>
+</trans-unit>
+<trans-unit id="seb58e0121ea3b4da">
+  <source>Sensitive Content</source>
+  <target>Sensibler Inhalt</target>
+</trans-unit>
+<trans-unit id="sc0894569c67f140e">
+  <source>No spoiler text provided</source>
+  <target>Kein Spoiler-Text angegeben</target>
+</trans-unit>
+<trans-unit id="s7f59f507e02a2f38">
+  <source>View</source>
+  <target>Ansehen</target>
+</trans-unit>
+<trans-unit id="s9843eeda70cff191">
+  <source>Thread</source>
+  <target>Thread</target>
+</trans-unit>
+<trans-unit id="sfa847f22cbd9bff5">
+  <source>Translate</source>
+  <target>Übersetzen</target>
+</trans-unit>
+<trans-unit id="s2df075aface0dab8">
+  <source>Share</source>
+  <target>Teilen</target>
+</trans-unit>
+<trans-unit id="s9736d9cd7c6cb9fe">
+  <source>Mute @<x id="0" equiv-text="${state.tweet?.account.acct}"/></source>
+  <target>Stummschalten @<x id="0" equiv-text="${state.tweet?.account.acct}"/></target>
+</trans-unit>
+<trans-unit id="s402e22fc7dccc104">
+  <source>Block @<x id="0" equiv-text="${state.tweet?.account.acct}"/></source>
+  <target>Blockieren @<x id="0" equiv-text="${state.tweet?.account.acct}"/></target>
+</trans-unit>
+<trans-unit id="s2c0d4dce62441b87">
+  <source>Report @<x id="0" equiv-text="${state.tweet?.account.acct}"/></source>
+  <target>Melden @<x id="0" equiv-text="${state.tweet?.account.acct}"/></target>
+</trans-unit>
+<trans-unit id="sf650656c5aaddb3d">
+  <source>boosted</source>
+  <target>geteilt</target>
+</trans-unit>
+<trans-unit id="s8398a7d620efd238">
+  <source>Reports are sent to your server's moderators. If this user is from another server, a copy of the report can be forwarded to their server's moderators as well.</source>
+  <target>Meldungen werden an die Moderatoren deines Servers gesendet. Wenn dieser Benutzer von einem anderen Server stammt, kann eine Kopie der Meldung auch an dessen Moderatoren weitergeleitet werden.</target>
+</trans-unit>
+<trans-unit id="s079a052719914d71">
+  <source>Category</source>
+  <target>Kategorie</target>
+</trans-unit>
+<trans-unit id="sb60bbe250aad3fa8">
+  <source>Spam</source>
+  <target>Spam</target>
+</trans-unit>
+<trans-unit id="s834c2d0abf165adc">
+  <source>Illegal Content</source>
+  <target>Illegaler Inhalt</target>
+</trans-unit>
+<trans-unit id="s7458f03071f798b4">
+  <source>Rule Violation</source>
+  <target>Regelverstoß</target>
+</trans-unit>
+<trans-unit id="sc9e494c8346b7cb5">
+  <source>Other</source>
+  <target>Andere</target>
+</trans-unit>
+<trans-unit id="s6b4e1b33612e30d5">
+  <source>Additional comments (optional)</source>
+  <target>Zusätzliche Kommentare (optional)</target>
+</trans-unit>
+<trans-unit id="s4d7edc9ec1d5bd3f">
+  <source>Provide any additional context for moderators...</source>
+  <target>Gib den Moderatoren zusätzlichen Kontext...</target>
+</trans-unit>
+<trans-unit id="sfb6d64d0e61d8dba">
+  <source>Forward to remote server</source>
+  <target>An entfernten Server weiterleiten</target>
+</trans-unit>
+<trans-unit id="s5083a4f476e744f5">
+  <source>This user is from another server. Forward a copy of this report to their moderators.</source>
+  <target>Dieser Benutzer ist von einem anderen Server. Leite eine Kopie dieser Meldung an dessen Moderatoren weiter.</target>
+</trans-unit>
+<trans-unit id="s2ceb11be2290bb1b">
+  <source>Cancel</source>
+  <target>Abbrechen</target>
+</trans-unit>
+<trans-unit id="se7c56a68f0ecf6e9">
+  <source>Submitting...</source>
+  <target>Senden...</target>
+</trans-unit>
+<trans-unit id="s0f37b1461ec66221">
+  <source>Submit Report</source>
+  <target>Meldung senden</target>
+</trans-unit>
+<trans-unit id="s5d929ff1619ac0c9">
+  <source>Search</source>
+  <target>Suche</target>
+</trans-unit>
+<trans-unit id="s3572098e54bce8fc">
+  <source>Close drawer</source>
+  <target>Schublade schließen</target>
+</trans-unit>
+<trans-unit id="s8e99c858052cb7c9">
+  <source>You have entered offline mode. Otter will still work, including if you close and reopen the app, but some functionality may be limited.</source>
+  <target>Du bist im Offline-Modus. Otter funktioniert weiterhin, auch wenn du die App schließt und wieder öffnest, aber einige Funktionen sind möglicherweise eingeschränkt.</target>
+</trans-unit>
+<trans-unit id="s87faee1360273399">
+  <source>You are back online. Otter will resume normal functionality.</source>
+  <target>Du bist wieder online. Otter funktioniert wieder normal.</target>
+</trans-unit>
+<trans-unit id="sbd1a5d538201dae8">
+  <source>Launch from your dock or home screen</source>
+  <target>Vom Dock oder Startbildschirm starten</target>
+</trans-unit>
+<trans-unit id="s4c842abc72bd33e9">
+  <source>Opens in its own window</source>
+  <target>Öffnet in einem eigenen Fenster</target>
+</trans-unit>
+<trans-unit id="s6805800a9efd1b99">
+  <source>Notification badges on app icon</source>
+  <target>Benachrichtigungs-Badges auf dem App-Symbol</target>
+</trans-unit>
+<trans-unit id="se271f18f5c1db912">
+  <source>Tap the Share button</source>
+  <target>Tippe auf den Teilen-Button</target>
+</trans-unit>
+<trans-unit id="s0c88c2bbd08d5c11">
+  <source>Look for</source>
+  <target>Suche nach</target>
+</trans-unit>
+<trans-unit id="s737bd67194c4366a">
+  <source>in the toolbar</source>
+  <target>in der Symbolleiste</target>
+</trans-unit>
+<trans-unit id="s0a75f9328a2fb427">
+  <source>Scroll and tap "Add to Home Screen"</source>
+  <target>Scrolle und tippe auf "Zum Home-Bildschirm"</target>
+</trans-unit>
+<trans-unit id="sab85407e37168da0">
+  <source>It may be in the second row of actions</source>
+  <target>Es könnte in der zweiten Reihe der Aktionen sein</target>
+</trans-unit>
+<trans-unit id="s2c42b3093e6cfe5c">
+  <source>Tap "Add" to confirm</source>
+  <target>Tippe auf "Hinzufügen" zum Bestätigen</target>
+</trans-unit>
+<trans-unit id="sf149351f5b768e1e">
+  <source>Coho will appear on your home screen</source>
+  <target>Coho erscheint auf deinem Startbildschirm</target>
+</trans-unit>
+<trans-unit id="sbd20a2111e25f4ea">
+  <source>Got it</source>
+  <target>Verstanden</target>
+</trans-unit>
+<trans-unit id="sb5137a7885462e4e">
+  <source>Installing...</source>
+  <target>Installiere...</target>
+</trans-unit>
+<trans-unit id="s6196153c4b0c1ea0">
+  <source>Install</source>
+  <target>Installieren</target>
+</trans-unit>
+<trans-unit id="s275772c501fb3b2e">
+  <source>Not now</source>
+  <target>Nicht jetzt</target>
+</trans-unit>
+<trans-unit id="s593b3a33d7e3bbc3">
+  <source>Install Coho</source>
+  <target>Coho installieren</target>
+</trans-unit>
+<trans-unit id="s191badfb60321854">
+  <source>Add Coho to your home screen for the best experience</source>
+  <target>Füge Coho zu deinem Startbildschirm hinzu für das beste Erlebnis</target>
+</trans-unit>
+<trans-unit id="s5dbfdae6bc66a0ed">
+  <source>Install Coho for a more immersive experience</source>
+  <target>Installiere Coho für ein besseres Erlebnis</target>
+</trans-unit>
+<trans-unit id="sab151407b715e730">
+  <source>Browsing as guest</source>
+  <target>Als Gast surfen</target>
+</trans-unit>
+<trans-unit id="s5e27738a2e8eb763">
+  <source>Sign in</source>
+  <target>Anmelden</target>
+</trans-unit>
+<trans-unit id="s9ac7f1d0c67c0118">
+  <source>Edit Image</source>
+  <target>Bild bearbeiten</target>
+</trans-unit>
+<trans-unit id="sb16c59bda3cb5c45">
+  <source>Applying filter...</source>
+  <target>Filter anwenden...</target>
+</trans-unit>
+<trans-unit id="sa8beb6b1182241ac">
+  <source>Filters</source>
+  <target>Filter</target>
+</trans-unit>
+<trans-unit id="sff9d51b6c5a73163">
+  <source>Alt Text</source>
+  <target>Alt-Text</target>
+</trans-unit>
+<trans-unit id="s0cd1ee3b3658262e">
+  <source>Describe this image for people with visual impairments</source>
+  <target>Beschreibe dieses Bild für Menschen mit Sehbehinderungen</target>
+</trans-unit>
+<trans-unit id="s8fc670830dd9c491">
+  <source>On-device AI</source>
+  <target>Geräteinterne KI</target>
+</trans-unit>
+<trans-unit id="s8bf481a0b5d8a689">
+  <source>Generating...</source>
+  <target>Generiere...</target>
+</trans-unit>
+<trans-unit id="se3380e8555fc0680">
+  <source>Generate Alt Text</source>
+  <target>Alt-Text generieren</target>
+</trans-unit>
+<trans-unit id="se7692167f1edeef2">
+  <source>Uploading...</source>
+  <target>Hochladen...</target>
+</trans-unit>
+<trans-unit id="s21f68e65dbf5b5a4">
+  <source>Processing...</source>
+  <target>Verarbeite...</target>
+</trans-unit>
+<trans-unit id="s33f85f24c0f5f008">
+  <source>Save</source>
+  <target>Speichern</target>
+</trans-unit>
+<trans-unit id="sdab8ddc9c2d7a44f">
+  <source>Write your post</source>
+  <target>Schreibe deinen Beitrag</target>
+</trans-unit>
+<trans-unit id="s5f7ab55b6ba8729c">
+  <source>Write something here...</source>
+  <target>Schreibe hier etwas...</target>
+</trans-unit>
+<trans-unit id="sb4f1dffbb6be6302">
+  <source>Clear</source>
+  <target>Löschen</target>
+</trans-unit>
+<trans-unit id="sbb15471af4d8dc52">
+  <source>Recognizing...</source>
+  <target>Erkenne...</target>
+</trans-unit>
+<trans-unit id="s0379fc73608ab971">
+  <source>Done</source>
+  <target>Fertig</target>
+</trans-unit>
+<trans-unit id="sf6f5d8ff2a4899c5">
+  <source>New Post</source>
+  <target>Neuer Beitrag</target>
+</trans-unit>
+<trans-unit id="s8f9c15bbb8ec6408">
+  <source>What's on your mind?</source>
+  <target>Was machst du gerade?</target>
+</trans-unit>
+<trans-unit id="s3c30b8ed468a13b3">
+  <source>Looks good!</source>
+  <target>Sieht gut aus!</target>
+</trans-unit>
+<trans-unit id="s12d6dde9b30c3093">
+  <source>Dismiss</source>
+  <target>Verwerfen</target>
+</trans-unit>
+<trans-unit id="sb78a66c8b3d23215">
+  <source>Checking...</source>
+  <target>Prüfe...</target>
+</trans-unit>
+<trans-unit id="s3470e760730da229">
+  <source>Proofread</source>
+  <target>Korrekturlesen</target>
+</trans-unit>
+<trans-unit id="s897531ca8a270ee9">
+  <source>Suggested revision</source>
+  <target>Vorgeschlagene Änderung</target>
+</trans-unit>
+<trans-unit id="sb8f855b49234b81b">
+  <source>Apply</source>
+  <target>Anwenden</target>
+</trans-unit>
+<trans-unit id="sb32cad250448883a">
+  <source>Stop recording</source>
+  <target>Aufnahme stoppen</target>
+</trans-unit>
+<trans-unit id="s3a2bb6dcce214e95">
+  <source>Transcribing...</source>
+  <target>Transkribiere...</target>
+</trans-unit>
+<trans-unit id="sf886a1d8bd2479a9">
+  <source>Voice input</source>
+  <target>Spracheingabe</target>
+</trans-unit>
+<trans-unit id="s2d054d97a4f96f9c">
+  <source>Handwriting input</source>
+  <target>Handschrifteingabe</target>
+</trans-unit>
+<trans-unit id="s4fa317f81c22728b">
+  <source>Write your warning here</source>
+  <target>Schreibe deine Warnung hier</target>
+</trans-unit>
+<trans-unit id="sddba42e047ca1c93">
+  <source>Add 2–4 options</source>
+  <target>Füge 2–4 Optionen hinzu</target>
+</trans-unit>
+<trans-unit id="scb9da282dc6a8c06">
+  <source>Option <x id="0" equiv-text="${idx + 1}"/></source>
+  <target>Option <x id="0" equiv-text="${idx + 1}"/></target>
+</trans-unit>
+<trans-unit id="s06e80274b5700572">
+  <source>Remove option</source>
+  <target>Option entfernen</target>
+</trans-unit>
+<trans-unit id="s2d30555e682a8525">
+  <source>Add option</source>
+  <target>Option hinzufügen</target>
+</trans-unit>
+<trans-unit id="sf40cb1ac8887e1a1">
+  <source>5 minutes</source>
+  <target>5 Minuten</target>
+</trans-unit>
+<trans-unit id="s801744c4d83f671f">
+  <source>30 minutes</source>
+  <target>30 Minuten</target>
+</trans-unit>
+<trans-unit id="s9899f07ee811b5ca">
+  <source>1 hour</source>
+  <target>1 Stunde</target>
+</trans-unit>
+<trans-unit id="s1741ba7f5b595722">
+  <source>6 hours</source>
+  <target>6 Stunden</target>
+</trans-unit>
+<trans-unit id="sd73e89fb5ca7534e">
+  <source>1 day</source>
+  <target>1 Tag</target>
+</trans-unit>
+<trans-unit id="sf33721989eec7cc5">
+  <source>3 days</source>
+  <target>3 Tage</target>
+</trans-unit>
+<trans-unit id="sd636599a979f0d59">
+  <source>7 days</source>
+  <target>7 Tage</target>
+</trans-unit>
+<trans-unit id="sc2b1e7582843b682">
+  <source>Allow multiple choices</source>
+  <target>Mehrfachauswahl erlauben</target>
+</trans-unit>
+<trans-unit id="see38600121f45267">
+  <source>Enter a prompt to generate an image with AI!</source>
+  <target>Gib einen Prompt ein, um ein Bild mit KI zu generieren!</target>
+</trans-unit>
+<trans-unit id="sdd1ff479d04ac140">
+  <source>Public</source>
+  <target>Öffentlich</target>
+</trans-unit>
+<trans-unit id="sf9ca5cc93c622eb7">
+  <source>Unlisted</source>
+  <target>Nicht gelistet</target>
+</trans-unit>
+<trans-unit id="s2ebf8d3bea24ed8e">
+  <source>Followers Only</source>
+  <target>Nur Follower</target>
+</trans-unit>
+<trans-unit id="s075ba6594b3909dc">
+  <source>Direct</source>
+  <target>Direkt</target>
+</trans-unit>
+<trans-unit id="sfc57b05ec2c53fbe">
+  <source>Remove Poll</source>
+  <target>Umfrage entfernen</target>
+</trans-unit>
+<trans-unit id="sf3b5565dc087a931">
+  <source>Add Poll</source>
+  <target>Umfrage hinzufügen</target>
+</trans-unit>
+<trans-unit id="s0d601895b709b59a">
+  <source>Content Warning</source>
+  <target>Inhaltswarnung</target>
+</trans-unit>
+<trans-unit id="sfa3341f85163e600">
+  <source>Attach Media</source>
+  <target>Medien anhängen</target>
+</trans-unit>
+<trans-unit id="s0843b2fcef33fcc8">
+  <source>Publish</source>
+  <target>Veröffentlichen</target>
+</trans-unit>
+<trans-unit id="s84126fa92f00b4ef">
+  <source>just now</source>
+  <target>gerade eben</target>
+</trans-unit>
+<trans-unit id="s2fb19c2ef3675ab9">
+  <source>liked your post</source>
+  <target>hat deinen Beitrag favorisiert</target>
+</trans-unit>
+<trans-unit id="s81b3489564c36496">
+  <source>boosted your post</source>
+  <target>hat deinen Beitrag geteilt</target>
+</trans-unit>
+<trans-unit id="sacbda1472734da67">
+  <source>mentioned you</source>
+  <target>hat dich erwähnt</target>
+</trans-unit>
+<trans-unit id="s893df469185fe612">
+  <source>followed you</source>
+  <target>folgt dir jetzt</target>
+</trans-unit>
+<trans-unit id="saccb9cc846d8abd3">
+  <source>edited a post</source>
+  <target>hat einen Beitrag bearbeitet</target>
+</trans-unit>
+<trans-unit id="sdc240973988e1d0d">
+  <source>interacted with you</source>
+  <target>hat mit dir interagiert</target>
+</trans-unit>
+<trans-unit id="s7b3c41df47089bbc">
+  <source>followers</source>
+  <target>Follower</target>
+</trans-unit>
+<trans-unit id="s9f50e1df5bdfdcf8">
+  <source>following</source>
+  <target>Folge ich</target>
+</trans-unit>
+<trans-unit id="see408bd5cd983758">
+  <source>Following</source>
+  <target>Folge ich</target>
+</trans-unit>
+<trans-unit id="s251903053fa7a51e">
+  <source>Following...</source>
+  <target>Folge...</target>
+</trans-unit>
+<trans-unit id="s72abba286df2986b">
+  <source>Follow Back</source>
+  <target>Zurückfolgen</target>
+</trans-unit>
+<trans-unit id="sf49e7c08807f5651">
+  <source>Push Notifications</source>
+  <target>Push-Benachrichtigungen</target>
+</trans-unit>
+<trans-unit id="s76d1628d0e8b9245">
+  <source>Clear All</source>
+  <target>Alle löschen</target>
+</trans-unit>
+<trans-unit id="sf993bb199fefbe04">
+  <source>All</source>
+  <target>Alle</target>
+</trans-unit>
+<trans-unit id="s4880dc3125543292">
+  <source>Mentions</source>
+  <target>Erwähnungen</target>
+</trans-unit>
+<trans-unit id="s35570fa59a9bc199">
+  <source>Follows</source>
+  <target>Follower</target>
+</trans-unit>
+<trans-unit id="s146b4c6baf012f64">
+  <source>No notifications yet</source>
+  <target>Noch keine Benachrichtigungen</target>
+</trans-unit>
+<trans-unit id="s07c165a4537f8c77">
+  <source>No mentions yet</source>
+  <target>Noch keine Erwähnungen</target>
+</trans-unit>
+<trans-unit id="s39ac3fc7cccc167d">
+  <source>No new followers yet</source>
+  <target>Noch keine neuen Follower</target>
+</trans-unit>
+<trans-unit id="se48bd9e6c2a3109d">
+  <source>Accounts</source>
+  <target>Konten</target>
+</trans-unit>
+<trans-unit id="sc15ed31aec49dd18">
+  <source>Trending</source>
+  <target>Trends</target>
+</trans-unit>
+<trans-unit id="s0fd75cc6a1aad906">
+  <source>News</source>
+  <target>Nachrichten</target>
+</trans-unit>
+<trans-unit id="s16565219b102f81e">
+  <source>Bot</source>
+  <target>Bot</target>
+</trans-unit>
+<trans-unit id="scd91ebd5bba41f1c">
+  <source>Followers</source>
+  <target>Follower</target>
+</trans-unit>
+<trans-unit id="se13b1d97003596bc">
+  <source>Posts</source>
+  <target>Beiträge</target>
+</trans-unit>
+<trans-unit id="s9a46ff9baa276602">
+  <source>back</source>
+  <target>zurück</target>
+</trans-unit>
+<trans-unit id="s1bb6c905f66815eb">
+  <source>Install App</source>
+  <target>App installieren</target>
+</trans-unit>
+<trans-unit id="s5fde10c5205e8e41">
+  <source>Open Theme Settings</source>
+  <target>Design-Einstellungen öffnen</target>
+</trans-unit>
+<trans-unit id="s5e94738a2eeb8943">
+  <source>Sign In</source>
+  <target>Anmelden</target>
+</trans-unit>
+<trans-unit id="s70178e04a3b691b6">
+  <source>Open Settings</source>
+  <target>Einstellungen öffnen</target>
+</trans-unit>
+<trans-unit id="s94e12cd85415427d">
+  <source>Coming soon...</source>
+  <target>Demnächst...</target>
+</trans-unit>
+<trans-unit id="sc565503c7584ed60">
+  <source>Interests</source>
+  <target>Interessen</target>
+</trans-unit>
+<trans-unit id="se088dfba6684a16f">
+  <source>Technology</source>
+  <target>Technologie</target>
+</trans-unit>
+<trans-unit id="s8a127bd255333eda">
+  <source>Sports</source>
+  <target>Sport</target>
+</trans-unit>
+<trans-unit id="sb0a26af3eb6ab88e">
+  <source>Politics</source>
+  <target>Politik</target>
+</trans-unit>
+<trans-unit id="sb8f030e19d93bb79">
+  <source>Entertainment</source>
+  <target>Unterhaltung</target>
+</trans-unit>
+<trans-unit id="s233ae776268cd44b">
+  <source>Business</source>
+  <target>Wirtschaft</target>
+</trans-unit>
+<trans-unit id="s08ce549fa4d15dfd">
+  <source>Science</source>
+  <target>Wissenschaft</target>
+</trans-unit>
+<trans-unit id="sbaf0a7c417e388af">
+  <source>Health</source>
+  <target>Gesundheit</target>
+</trans-unit>
+<trans-unit id="sbb87af74ab3706b9">
+  <source>Travel</source>
+  <target>Reisen</target>
+</trans-unit>
+<trans-unit id="s07a00d850d958329">
+  <source>Food</source>
+  <target>Essen</target>
+</trans-unit>
+<trans-unit id="s19617036a468a75f">
+  <source>Fashion</source>
+  <target>Mode</target>
+</trans-unit>
+<trans-unit id="sbec848a6b81917c0">
+  <source>Lifestyle</source>
+  <target>Lifestyle</target>
+</trans-unit>
+<trans-unit id="sf9f8d719a044edca">
+  <source>Art</source>
+  <target>Kunst</target>
+</trans-unit>
+<trans-unit id="s9ca372a6096ddd54">
+  <source>Music</source>
+  <target>Musik</target>
+</trans-unit>
+<trans-unit id="sdc71496dfa9818bc">
+  <source>Explore</source>
+  <target>Entdecken</target>
+</trans-unit>
+<trans-unit id="s5be3c6d61cd9182f">
+  <source>Notifications</source>
+  <target>Benachrichtigungen</target>
+</trans-unit>
+<trans-unit id="sbdeedc1c60306b35">
+  <source>Messages</source>
+  <target>Nachrichten</target>
+</trans-unit>
+<trans-unit id="s44fa1773e1e78784">
+  <source>Saved</source>
+  <target>Gespeichert</target>
+</trans-unit>
+<trans-unit id="s20a500234e838dda">
+  <source>Favorites</source>
+  <target>Favoriten</target>
+</trans-unit>
+<trans-unit id="s810cea9e8370d035">
+  <source>Theming</source>
+  <target>Design</target>
+</trans-unit>
+<trans-unit id="s9d8b8aa2b404c2c8">
+  <source>Settings</source>
+  <target>Einstellungen</target>
+</trans-unit>
+<trans-unit id="s49730f3d5751a433">
+  <source>Loading...</source>
+  <target>Laden...</target>
+</trans-unit>
+<trans-unit id="s0d6296d6b3a3cc3b">
+  <source>View My Profile</source>
+  <target>Mein Profil ansehen</target>
+</trans-unit>
+<trans-unit id="s8f6226e73ab42abb">
+  <source>Share My Profile</source>
+  <target>Mein Profil teilen</target>
+</trans-unit>
+<trans-unit id="s3eda2095ade513d4">
+  <source>Edit My Profile</source>
+  <target>Mein Profil bearbeiten</target>
+</trans-unit>
+<trans-unit id="saab40039130949c6">
+  <source><x id="0" equiv-text="${this.user.followers_count}"/> followers</source>
+  <target><x id="0" equiv-text="${this.user.followers_count}"/> Follower</target>
+</trans-unit>
+<trans-unit id="se09b308c799d5a44">
+  <source>0 followers</source>
+  <target>0 Follower</target>
+</trans-unit>
+<trans-unit id="s1026f0394bca89aa">
+  <source><x id="0" equiv-text="${this.user.following_count}"/> following</source>
+  <target><x id="0" equiv-text="${this.user.following_count}"/> Folge ich</target>
+</trans-unit>
+<trans-unit id="s782f208c3e558ce0">
+  <source>0 following</source>
+  <target>0 Folge ich</target>
+</trans-unit>
+<trans-unit id="s8997c16cd0e93271">
+  <source>Wellness Mode</source>
+  <target>Wellness-Modus</target>
+</trans-unit>
+<trans-unit id="sae77551833d7117b">
+  <source>Wellness Mode hides likes and boosts.</source>
+  <target>Der Wellness-Modus blendet Likes und Boosts aus.</target>
+</trans-unit>
+<trans-unit id="s582c084765f8ef4b">
+  <source>Data Saver Mode</source>
+  <target>Datensparmodus</target>
+</trans-unit>
+<trans-unit id="s4ea587caa42bf467">
+  <source>Data Saver Mode reduces the amount of data used by Coho.</source>
+  <target>Der Datensparmodus reduziert die von Coho verbrauchte Datenmenge.</target>
+</trans-unit>
+<trans-unit id="s57f16b1fd6e7ff8f">
+  <source>Key Shortcuts</source>
+  <target>Tastenkombinationen</target>
+</trans-unit>
+<trans-unit id="s7ff6b94fb8c44dc6">
+  <source>Instance Info</source>
+  <target>Instanz-Info</target>
+</trans-unit>
+<trans-unit id="s6b15221d718f753b">
+  <source>Build:</source>
+  <target>Build:</target>
+</trans-unit>
+<trans-unit id="sdc12d4d35420eeb7">
+  <source>Comments</source>
+  <target>Kommentare</target>
+</trans-unit>
+<trans-unit id="s607c7678dadf5f9c">
+  <source>No comments yet.</source>
+  <target>Noch keine Kommentare.</target>
+</trans-unit>
+<trans-unit id="s6abb1cd87fe0114e">
+  <source>Home</source>
+  <target>Startseite</target>
+</trans-unit>
+<trans-unit id="s1f5b155d540c53fb">
+  <source>Welcome to Coho</source>
+  <target>Willkommen bei Coho</target>
+</trans-unit>
+<trans-unit id="se1ec1972bbf775cb">
+  <source>You're browsing as a guest. Sign in to interact with posts and access all features.</source>
+  <target>Du surfst als Gast. Melde dich an, um mit Beiträgen zu interagieren und alle Funktionen zu nutzen.</target>
+</trans-unit>
+<trans-unit id="s2fd64efc7cd297d1">
+  <source>Trending Tags</source>
+  <target>Trend-Tags</target>
+</trans-unit>
+<trans-unit id="sdee2dd4540cbfa57">
+  <source><x id="0" equiv-text="${tag.history?.[0]?.uses || 0}"/> posts today</source>
+  <target><x id="0" equiv-text="${tag.history?.[0]?.uses || 0}"/> Beiträge heute</target>
+</trans-unit>
+<trans-unit id="s6de2f62083c9af52">
+  <source>Translating post...</source>
+  <target>Übersetze Beitrag...</target>
+</trans-unit>
+<trans-unit id="s98fe6004cdd5fca4">
+  <source>Profile unavailable</source>
+  <target>Profil nicht verfügbar</target>
+</trans-unit>
+<trans-unit id="s3107c7be03ba6bf0">
+  <source>This profile hasn't been viewed before and can't be loaded while offline.</source>
+  <target>Dieses Profil wurde noch nicht angesehen und kann offline nicht geladen werden.</target>
+</trans-unit>
+<trans-unit id="scd1dd6ff53d0d01a">
+  <source>Try again</source>
+  <target>Erneut versuchen</target>
+</trans-unit>
+<trans-unit id="s0a3a833266cb4585">
+  <source>Edit Post</source>
+  <target>Beitrag bearbeiten</target>
+</trans-unit>
+<trans-unit id="s4fd78d90908a11f0">
+  <source>Follow</source>
+  <target>Folgen</target>
+</trans-unit>
+<trans-unit id="s664a8e6c99e374be">
+  <source>More options</source>
+  <target>Mehr Optionen</target>
+</trans-unit>
+<trans-unit id="s0f2c1f1aaf765577">
+  <source>Unmute @<x id="0" equiv-text="${this.user?.acct}"/></source>
+  <target>Stummschaltung aufheben @<x id="0" equiv-text="${this.user?.acct}"/></target>
+</trans-unit>
+<trans-unit id="sa23e9f89b092ea6b">
+  <source>Unblock @<x id="0" equiv-text="${this.user?.acct}"/></source>
+  <target>Entblocken @<x id="0" equiv-text="${this.user?.acct}"/></target>
+</trans-unit>
+<trans-unit id="s4ae28745a97a868e">
+  <source>Mutuals</source>
+  <target>Gegenseitig</target>
+</trans-unit>
+<trans-unit id="s6eef72b19442f4df">
+  <source>Replies</source>
+  <target>Antworten</target>
+</trans-unit>
+<trans-unit id="s72f2a02e2a5a4ee3">
+  <source>Media</source>
+  <target>Medien</target>
+</trans-unit>
+<trans-unit id="sa2f1a31fd506c141">
+  <source>Your Followers</source>
+  <target>Deine Follower</target>
+</trans-unit>
+<trans-unit id="se7f0c9e37b065d61">
+  <source>About Page</source>
+  <target>Über-Seite</target>
+</trans-unit>
+<trans-unit id="scc232c2080d7e071">
+  <source>Did you know?</source>
+  <target>Wusstest du schon?</target>
+</trans-unit>
+<trans-unit id="sddad2205954cd2eb">
+  <source>PWAs have access to many useful APIs in modern browsers! These APIs have enabled many new types of apps that can be built as PWAs, such as advanced graphics editing apps, games, apps that use machine learning and more!</source>
+  <target>PWAs haben Zugriff auf viele nützliche APIs in modernen Browsern! Diese APIs haben viele neue Arten von Apps ermöglicht, die als PWAs erstellt werden können, wie z. B. fortschrittliche Grafikbearbeitungs-Apps, Spiele, Apps, die maschinelles Lernen verwenden, und mehr!</target>
+</trans-unit>
+<trans-unit id="sf6c42af4514cfead">
+  <source>Check out these docs to learn more about the advanced features that you can use in your PWA</source>
+  <target>Schau dir diese Dokumentation an, um mehr über die erweiterten Funktionen zu erfahren, die du in deiner PWA verwenden kannst</target>
+</trans-unit>
+<trans-unit id="s8946af4df69fe739">
+  <source>You are Following</source>
+  <target>Du folgst</target>
+</trans-unit>
+<trans-unit id="sfe2f8c98d9edbf7a">
+  <source>Post not found</source>
+  <target>Beitrag nicht gefunden</target>
+</trans-unit>
+<trans-unit id="s5c9971c0a0a32300">
+  <source>Replying to @<x id="0" equiv-text="${this.replyingTo.account.acct}"/></source>
+  <target>Antwort an @<x id="0" equiv-text="${this.replyingTo.account.acct}"/></target>
+</trans-unit>
+<trans-unit id="s9d3248be9803bbe0">
+  <source>Reply to this post...</source>
+  <target>Antworte auf diesen Beitrag...</target>
+</trans-unit>
+<trans-unit id="s0b7ae9543c001867">
+  <source>Reply</source>
+  <target>Antworten</target>
+</trans-unit>
+<trans-unit id="s8cdcbe65c5e46f7a">
+  <source>Try Again</source>
+  <target>Erneut versuchen</target>
+</trans-unit>
+<trans-unit id="s46fbca35bbdfd144">
+  <source>Profile Images</source>
+  <target>Profilbilder</target>
+</trans-unit>
+<trans-unit id="s1967faf9ed8d3504">
+  <source>Avatar</source>
+  <target>Avatar</target>
+</trans-unit>
+<trans-unit id="s5e56630e6ab32428">
+  <source>Avatar preview</source>
+  <target>Avatar-Vorschau</target>
+</trans-unit>
+<trans-unit id="s75d83fc3f0cfab40">
+  <source>Header</source>
+  <target>Kopfbild</target>
+</trans-unit>
+<trans-unit id="s642aaa3e16ff0404">
+  <source>Header preview</source>
+  <target>Kopfbild-Vorschau</target>
+</trans-unit>
+<trans-unit id="s7d38fc29b20f951b">
+  <source>Basic Information</source>
+  <target>Grundlegende Informationen</target>
+</trans-unit>
+<trans-unit id="s11b2e9ecce28690c">
+  <source>Display Name</source>
+  <target>Anzeigename</target>
+</trans-unit>
+<trans-unit id="s46f4308652e64eff">
+  <source>Your display name</source>
+  <target>Dein Anzeigename</target>
+</trans-unit>
+<trans-unit id="sfdfc05708c242107">
+  <source>How you appear to others</source>
+  <target>Wie du für andere erscheinst</target>
+</trans-unit>
+<trans-unit id="s165d3919b108ec51">
+  <source>Bio</source>
+  <target>Bio</target>
+</trans-unit>
+<trans-unit id="s47b14e48f9b6dec5">
+  <source>Tell people about yourself...</source>
+  <target>Erzähl den Leuten etwas über dich...</target>
+</trans-unit>
+<trans-unit id="s610b3a7a2f25c118">
+  <source>Supports Markdown and custom emoji</source>
+  <target>Unterstützt Markdown und benutzerdefinierte Emojis</target>
+</trans-unit>
+<trans-unit id="s3d2189f1eea57a8f">
+  <source>Profile Metadata</source>
+  <target>Profil-Metadaten</target>
+</trans-unit>
+<trans-unit id="s8817c5d4e10d15ad">
+  <source>Add up to 4 custom fields to display on your profile. URLs will be verified for link ownership.</source>
+  <target>Füge bis zu 4 benutzerdefinierte Felder hinzu, die in deinem Profil angezeigt werden. URLs werden auf Link-Eigentum überprüft.</target>
+</trans-unit>
+<trans-unit id="s5590dbf7e425789d">
+  <source>Label</source>
+  <target>Label</target>
+</trans-unit>
+<trans-unit id="s642a4070f6bcfee2">
+  <source>Content</source>
+  <target>Inhalt</target>
+</trans-unit>
+<trans-unit id="s17fb3f4805f4f4b9">
+  <source>Remove field</source>
+  <target>Feld entfernen</target>
+</trans-unit>
+<trans-unit id="s02891b5712eb3c40">
+  <source>Add Field</source>
+  <target>Feld hinzufügen</target>
+</trans-unit>
+<trans-unit id="s8641b6c3688a0cec">
+  <source>Edit Profile</source>
+  <target>Profil bearbeiten</target>
+</trans-unit>
+<trans-unit id="se8d2fd10daf171b5">
+  <source>Already have an account? Log in to your server. Otherwise, sign up for a account to follow people, like posts, and more!</source>
+  <target>Hast du schon ein Konto? Melde dich bei deinem Server an. Andernfalls registriere dich für ein Konto, um Leuten zu folgen, Beiträge zu liken und mehr!</target>
+</trans-unit>
+<trans-unit id="sc8da3cc71de63832">
+  <source>Login</source>
+  <target>Anmelden</target>
+</trans-unit>
+<trans-unit id="s5e6b698a2ec87331">
+  <source>Sign up</source>
+  <target>Registrieren</target>
+</trans-unit>
+<trans-unit id="sd14599a1d51f5fa8">
+  <source>What is this?</source>
+  <target>Was ist das?</target>
+</trans-unit>
+<trans-unit id="s5dcb461b65a0024b">
+  <source>Otter is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.</source>
+  <target>Otter ist ein Mastodon-Client, der mit Webtechnologien erstellt wurde. Es ist eine progressive Web-App, was bedeutet, dass du sie auf deinem Telefon oder Desktop installieren kannst. Es ist auch Open Source und kann auf GitHub gefunden werden.</target>
+</trans-unit>
+<trans-unit id="s321c03399a143242">
+  <source>Create Account</source>
+  <target>Konto erstellen</target>
+</trans-unit>
+<trans-unit id="sc24793fb8ec3d327">
+  <source>Go Create An Account</source>
+  <target>Gehe Konto erstellen</target>
+</trans-unit>
+<trans-unit id="s6777491c1a3b144c">
+  <source>Account Created</source>
+  <target>Konto erstellt</target>
+</trans-unit>
+<trans-unit id="sc03db9ce6bb8c242">
+  <source>A confirmation email has been sent to the provided email address, please click the link in the email to confirm your account</source>
+  <target>Eine Bestätigungs-E-Mail wurde an die angegebene E-Mail-Adresse gesendet. Bitte klicke auf den Link in der E-Mail, um dein Konto zu bestätigen</target>
+</trans-unit>
+<trans-unit id="s7e8e808d9576fe5e">
+  <source>Account Confirmed, Login</source>
+  <target>Konto bestätigt, Anmelden</target>
+</trans-unit>
+<trans-unit id="sf7902ac2315ab44d">
+  <source>Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Otter and login to start using Otter as your Mastodon client.</source>
+  <target>Mastodon ist ein dezentrales soziales Netzwerk, das es Benutzern ermöglicht, Communities zu erstellen und ihnen beizutreten. Um Mastodon zu nutzen, musst du einen Server wählen, der dein Konto hostet und dich mit anderen Servern verbindet. Die Wahl eines Servers ist eine wichtige Entscheidung, da sie deine Privatsphäre, Moderation und Inhaltsrichtlinien beeinflusst. Du kannst die Liste der Server unten durchsuchen, um einen zu finden, der deinen Bedürfnissen und Vorlieben entspricht. Sobald du ein Konto auf deinem gewählten Server erstellt hast, komm zurück zu Otter und melde dich an, um Otter als deinen Mastodon-Client zu nutzen.</target>
+</trans-unit>
+<trans-unit id="s279b9e6f821888b9">
+  <source><x id="0" equiv-text="${server.users}"/> users</source>
+  <target><x id="0" equiv-text="${server.users}"/> Benutzer</target>
+</trans-unit>
+<trans-unit id="sf0584b1ec3b8cab6">
+  <source>No Description...</source>
+  <target>Keine Beschreibung...</target>
+</trans-unit>
+<trans-unit id="s8c4538a366214c51">
+  <source>Intro To Mastodon</source>
+  <target>Einführung in Mastodon</target>
+</trans-unit>
+<trans-unit id="s5ace63b6a4cac0a1">
+  <source>What is Coho?</source>
+  <target>Was ist Coho?</target>
+</trans-unit>
+<trans-unit id="s7db77a785d40fbd7">
+  <source>Coho is the app your using 😊. It is an open source, cross-platform Mastodon client. Coho brings the best of Mastodon to any device, with a fast and intuitive interface, no matter your device or internet connection. To use Coho, you need a Mastodon account. Once you have a Mastodon account you will need to enter the URL of the Mastodon instance you signed up at.</source>
+  <target>Coho ist die App, die du gerade benutzt 😊. Es ist ein Open-Source, plattformübergreifender Mastodon-Client. Coho bringt das Beste von Mastodon auf jedes Gerät, mit einer schnellen und intuitiven Oberfläche, unabhängig von deinem Gerät oder deiner Internetverbindung. Um Coho zu nutzen, benötigst du ein Mastodon-Konto. Sobald du ein Mastodon-Konto hast, musst du die URL der Mastodon-Instanz eingeben, bei der du dich registriert hast.</target>
+</trans-unit>
+<trans-unit id="s0fbf6dc6a1966408">
+  <source>Next</source>
+  <target>Weiter</target>
+</trans-unit>
+<trans-unit id="scf212088af34eb89">
+  <source>What Is Mastodon?</source>
+  <target>Was ist Mastodon?</target>
+</trans-unit>
+<trans-unit id="s477483a5217f7706">
+  <source>Mastodon is a social media platform that allows users to create and share short posts, called "toots," and interact with each other through features like boosting, direct messaging, and hashtags. It is decentralized, meaning that it is not controlled by a central authority and users can choose which communities, called "instances," they want to join. Mastodon is open-source and free to use.</source>
+  <target>Mastodon ist eine Social-Media-Plattform, die es Benutzern ermöglicht, kurze Beiträge, sogenannte "Toots", zu erstellen und zu teilen und über Funktionen wie Boosting, Direktnachrichten und Hashtags miteinander zu interagieren. Es ist dezentralisiert, was bedeutet, dass es nicht von einer zentralen Behörde kontrolliert wird und Benutzer wählen können, welchen Communities, sogenannten "Instanzen", sie beitreten möchten. Mastodon ist Open Source und kostenlos zu nutzen.</target>
+</trans-unit>
+<trans-unit id="sb86339f84521b777">
+  <source>Each instance is run by a different administrator and can have its own rules and moderation policies.</source>
+  <target>Jede Instanz wird von einem anderen Administrator betrieben und kann ihre eigenen Regeln und Moderationsrichtlinien haben.</target>
+</trans-unit>
+<trans-unit id="s85b909448bae5adf">
+  <source>How do I join Mastodon?</source>
+  <target>Wie trete ich Mastodon bei?</target>
+</trans-unit>
+<trans-unit id="s9af13e637f171912">
+  <source>Go to https://joinmastodon.org/ and select an instance to sign up for. There are many different Mastodon instances to choose from, each with its own rules and community guidelines. You can read more about each instance to find one that fits your interests.</source>
+  <target>Gehe zu https://joinmastodon.org/ und wähle eine Instanz aus, um dich anzumelden. Es gibt viele verschiedene Mastodon-Instanzen zur Auswahl, jede mit ihren eigenen Regeln und Community-Richtlinien. Du kannst mehr über jede Instanz lesen, um eine zu finden, die deinen Interessen entspricht.</target>
+</trans-unit>
+<trans-unit id="se13361c041595f42">
+  <source>Click the "Sign up" button on the instance you have chosen.</source>
+  <target>Klicke auf den "Registrieren"-Button auf der Instanz, die du gewählt hast.</target>
+</trans-unit>
+<trans-unit id="sa649809c164d478b">
+  <source>Fill out the sign-up form with your desired username, email address, and password.</source>
+  <target>Fülle das Anmeldeformular mit deinem gewünschten Benutzernamen, deiner E-Mail-Adresse und deinem Passwort aus.</target>
+</trans-unit>
+<trans-unit id="s0869b2e20641012a">
+  <source>Read and agree to the terms of service for the instance.</source>
+  <target>Lies und akzeptiere die Nutzungsbedingungen für die Instanz.</target>
+</trans-unit>
+<trans-unit id="s672bb0bde1fef2bb">
+  <source>Click the "Sign up" button to complete the registration process.</source>
+  <target>Klicke auf den "Registrieren"-Button, um den Registrierungsprozess abzuschließen.</target>
+</trans-unit>
+<trans-unit id="sf194494949913780">
+  <source>You will receive an email with a confirmation link. Click the link to confirm your email address and complete the sign-up process.</source>
+  <target>Du erhältst eine E-Mail mit einem Bestätigungslink. Klicke auf den Link, um deine E-Mail-Adresse zu bestätigen und den Anmeldeprozess abzuschließen.</target>
+</trans-unit>
+<trans-unit id="s2e467d152d65afe6">
+  <source>Once you have confirmed your email, you can log in to Mastodon and start using the platform.</source>
+  <target>Sobald du deine E-Mail bestätigt hast, kannst du dich bei Mastodon anmelden und die Plattform nutzen.</target>
+</trans-unit>
+<trans-unit id="s7de4970a89814d38">
+  <source>Note: Some instances may have additional requirements or restrictions for new users, such as requiring a valid email address or approving new accounts manually. Be sure to read the rules and guidelines of the instance you are joining before signing up.</source>
+  <target>Hinweis: Einige Instanzen können zusätzliche Anforderungen oder Einschränkungen für neue Benutzer haben, wie z. B. die Anforderung einer gültigen E-Mail-Adresse oder die manuelle Genehmigung neuer Konten. Lies unbedingt die Regeln und Richtlinien der Instanz, der du beitrittst, bevor du dich anmeldest.</target>
+</trans-unit>
+<trans-unit id="s15361efa1eef6aee">
+  <source>Get Started</source>
+  <target>Loslegen</target>
+</trans-unit>
+<trans-unit id="sadf9c2063e1497b7">
+  <source>Your modern Mastodon client</source>
+  <target>Dein moderner Mastodon-Client</target>
+</trans-unit>
+<trans-unit id="s2e4746455431001d">
+  <source>Search for your server (e.g. mastodon.social)</source>
+  <target>Suche nach deinem Server (z. B. mastodon.social)</target>
+</trans-unit>
+<trans-unit id="s1dc17af39243deee">
+  <source>Sign up for Mastodon Account</source>
+  <target>Für Mastodon-Konto registrieren</target>
+</trans-unit>
+<trans-unit id="se7f201d4f94c338b">
+  <source>Try Coho without an account</source>
+  <target>Coho ohne Konto ausprobieren</target>
+</trans-unit>
+<trans-unit id="s84ffa1c5ebb5cdf6">
+  <source>Learn More about Coho</source>
+  <target>Mehr über Coho erfahren</target>
+</trans-unit>
+<trans-unit id="s4ba4473f3d4ec896">
+  <source>New version available</source>
+  <target>Neue Version verfügbar</target>
+</trans-unit>
+<trans-unit id="sd5b6130b4937488c">
+  <source>Reload</source>
+  <target>Neu laden</target>
+</trans-unit>
+<trans-unit id="s8ac625bb85ed202b">
+  <source>alpha</source>
+  <target>Alpha</target>
+</trans-unit>
+<trans-unit id="sd7e63207a8918d92">
+  <source>Hello, I am MammothBot. I can help you with Mastodon, such as by generating posts etc, summarizing posts and more. You can chat with me like you would anyone else, no need to talk like a robot 😊</source>
+  <target>Hallo, ich bin MammothBot. Ich kann dir bei Mastodon helfen, z. B. beim Generieren von Beiträgen usw., beim Zusammenfassen von Beiträgen und mehr. Du kannst mit mir chatten wie mit jedem anderen auch, du musst nicht wie ein Roboter sprechen 😊</target>
+</trans-unit>
+<trans-unit id="s57adf424d57c8a0f">
+  <source>Send</source>
+  <target>Senden</target>
+</trans-unit>
+</body>
+</file>
+</xliff>

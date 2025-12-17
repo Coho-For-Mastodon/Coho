@@ -1,5 +1,6 @@
 import { LitElement, css, html, PropertyValueMap, nothing } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import './md/md-icon.js';
 import './md/md-icon-button.js';
@@ -13,6 +14,7 @@ import type {
   OpenInstallEvent,
 } from '../types/events';
 
+@localized()
 @customElement('app-header')
 export class AppHeader extends LitElement {
   @property({ type: String }) title = 'Otter';
@@ -191,7 +193,7 @@ export class AppHeader extends LitElement {
           ${this.enableBack
             ? html`<md-icon-button
                 @click="${() => this.goBack()}"
-                title="back"
+                title=${msg('back')}
                 size="small"
                 href="/home"
                 pill
@@ -225,7 +227,7 @@ export class AppHeader extends LitElement {
         <div id="actions">
           ${this.showInstall
             ? html`<md-icon-button
-                title="Install App"
+                title=${msg('Install App')}
                 id="install-button"
                 @click="${() => this.openInstall()}"
               >
@@ -234,7 +236,7 @@ export class AppHeader extends LitElement {
             : nothing}
 
           <md-icon-button
-            title="Open Theme Settings"
+            title=${msg('Open Theme Settings')}
             id="open-button"
             @click="${() => this.handleTheming()}"
           >
@@ -247,7 +249,7 @@ export class AppHeader extends LitElement {
           ${this.guestMode
             ? html`<md-icon-button
                 id="login-button"
-                title="Sign In"
+                title=${msg('Sign In')}
                 @click="${() => {
                   import('../utils/router').then((m) => m.router.navigate('/'));
                 }}"
@@ -256,7 +258,7 @@ export class AppHeader extends LitElement {
               </md-icon-button>`
             : html`<md-icon-button
                 id="settings-button"
-                title="Open Settings"
+                title=${msg('Open Settings')}
                 @click="${() => this.openSettings()}"
               >
                 <md-icon src="/assets/settings-outline.svg"></md-icon>

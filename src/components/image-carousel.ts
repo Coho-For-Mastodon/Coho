@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { getBlurhashWorker } from '../services/blurhash-worker';
 import type { MediaAttachment } from '../types/interfaces/MediaAttachment';
 
+@localized()
 @customElement('image-carousel')
 export class ImageCarousel extends LitElement {
   @property({ type: Array }) images: MediaAttachment[] = [];
@@ -205,7 +207,7 @@ export class ImageCarousel extends LitElement {
                   : null}
                 <img
                   src="${image.url}"
-                  alt="${image.description || 'Image'}"
+                  alt="${image.description || msg('Image')}"
                   @load="${this.handleImageLoad}"
                   class="${blurhashUrl ? '' : 'loaded'}"
                 />

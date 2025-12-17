@@ -1,5 +1,6 @@
 import { LitElement, html, css, PropertyValueMap } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { localized, msg, str } from '@lit/localize';
 import { getServers } from '../services/account';
 
 import '../components/md/md-dialog.js';
@@ -20,6 +21,7 @@ interface ServerInfo {
   };
 }
 
+@localized()
 @customElement('create-account')
 export class CreateAccount extends LitElement {
   @state() servers: ServerInfo[] = [];
@@ -158,38 +160,35 @@ export class CreateAccount extends LitElement {
     return html`
       <app-header ?enableBack=${true}></app-header>
 
-      <md-dialog id="create-dialog" label="Create Account">
+      <md-dialog id="create-dialog" .label="${msg('Create Account')}">
         <span .innerHTML="${this.fullDesc || ''}"></span>
 
         <md-button
           @click="${() => this.doRegister()}"
           slot="footer"
           variant="filled"
-          >Go Create An Account</md-button
+          >${msg('Go Create An Account')}</md-button
         >
       </md-dialog>
 
-      <md-dialog id="registered-dialog" label="Account Created">
+      <md-dialog id="registered-dialog" .label="${msg('Account Created')}">
         <p>
-          A confirmation email has been sent to the provided email address,
-          please click the link in the email to confirm your account
+          ${msg(
+            'A confirmation email has been sent to the provided email address, please click the link in the email to confirm your account'
+          )}
         </p>
 
-        <md-button variant="filled">Account Confirmed, Login</md-button>
+        <md-button variant="filled"
+          >${msg('Account Confirmed, Login')}</md-button
+        >
       </md-dialog>
 
       <main>
-        <h1>Create Account</h1>
+        <h1>${msg('Create Account')}</h1>
         <p>
-          Mastodon is a decentralized social network that allows users to create
-          and join communities of their interest. To use Mastodon, you need to
-          choose a server that hosts your account and connects you to other
-          servers. Choosing a server is an important decision, as it affects
-          your privacy, moderation, and content policies. You can browse the
-          list of servers below to find one that suits your needs and
-          preferences. Once you have created an account at your chosen server,
-          come back to Otter and login to start using Otter as your Mastodon
-          client.
+          ${msg(
+            'Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Otter and login to start using Otter as your Mastodon client.'
+          )}
         </p>
 
         <ul>
@@ -200,16 +199,18 @@ export class CreateAccount extends LitElement {
                 <div class="info">
                   <div class="tags">
                     <md-badge apperance="accent"
-                      >${server.users} users</md-badge
+                      >${msg(str`${server.users} users`)}</md-badge
                     >
                   </div>
                   <span class="name">${server.name}</span>
 
-                  <p>${server.info.short_description || 'No Description...'}</p>
+                  <p>
+                    ${server.info.short_description || msg('No Description...')}
+                  </p>
                 </div>
 
                 <md-button @click="${() => this.startRegister(server)}"
-                  >Create Account</md-button
+                  >${msg('Create Account')}</md-button
                 >
               </li>
             `;

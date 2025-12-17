@@ -3,6 +3,9 @@ import { customElement } from 'lit/decorators.js';
 
 import { router } from './utils/router';
 
+// Initialize localization (must be imported early)
+import './config/localization.js';
+
 import './pages/app-login';
 import './components/header';
 import './components/pwa-update';

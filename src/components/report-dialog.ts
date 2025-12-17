@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { msg, str, localized } from '@lit/localize';
 
 import './md/md-dialog';
 import './md/md-select';
@@ -21,6 +22,7 @@ export interface ReportSubmitDetail {
  * A dialog for reporting users to moderators with category selection,
  * comment field, and option to forward to remote instance.
  */
+@localized()
 @customElement('report-dialog')
 export class ReportDialog extends LitElement {
   @property({ type: String }) accountId = '';
@@ -175,35 +177,37 @@ export class ReportDialog extends LitElement {
   render() {
     return html`
       <md-dialog
-        label="Report @${this.accountAcct}"
+        label=${msg(str`Report @${this.accountAcct}`)}
         .open=${this.open}
         @md-dialog-hide=${this._handleCancel}
       >
         <div class="report-form">
           <p class="report-info">
-            Reports are sent to your server's moderators. If this user is from
-            another server, a copy of the report can be forwarded to their
-            server's moderators as well.
+            ${msg(
+              "Reports are sent to your server's moderators. If this user is from another server, a copy of the report can be forwarded to their server's moderators as well."
+            )}
           </p>
 
           <div class="form-field">
-            <label>Category</label>
+            <label>${msg('Category')}</label>
             <md-select
               .value=${this._category}
               @change=${this._handleCategoryChange}
             >
-              <md-option value="spam">Spam</md-option>
-              <md-option value="legal">Illegal Content</md-option>
-              <md-option value="violation">Rule Violation</md-option>
-              <md-option value="other">Other</md-option>
+              <md-option value="spam">${msg('Spam')}</md-option>
+              <md-option value="legal">${msg('Illegal Content')}</md-option>
+              <md-option value="violation">${msg('Rule Violation')}</md-option>
+              <md-option value="other">${msg('Other')}</md-option>
             </md-select>
           </div>
 
           <div class="form-field">
-            <label>Additional comments (optional)</label>
+            <label>${msg('Additional comments (optional)')}</label>
             <md-text-area
               .value=${this._comment}
-              placeholder="Provide any additional context for moderators..."
+              placeholder=${msg(
+                'Provide any additional context for moderators...'
+              )}
               rows="4"
               maxlength="1000"
               @input=${this._handleCommentInput}
@@ -218,10 +222,11 @@ export class ReportDialog extends LitElement {
                     @change=${this._handleForwardChange}
                   ></md-checkbox>
                   <div class="forward-label">
-                    <span>Forward to remote server</span>
+                    <span>${msg('Forward to remote server')}</span>
                     <small
-                      >This user is from another server. Forward a copy of this
-                      report to their moderators.</small
+                      >${msg(
+                        'This user is from another server. Forward a copy of this report to their moderators.'
+                      )}</small
                     >
                   </div>
                 </div>
@@ -235,14 +240,14 @@ export class ReportDialog extends LitElement {
             @click=${this._handleCancel}
             ?disabled=${this._submitting}
           >
-            Cancel
+            ${msg('Cancel')}
           </md-button>
           <md-button
             variant="filled"
             @click=${this._handleSubmit}
             ?disabled=${this._submitting}
           >
-            ${this._submitting ? 'Submitting...' : 'Submit Report'}
+            ${this._submitting ? msg('Submitting...') : msg('Submit Report')}
           </md-button>
         </div>
       </md-dialog>

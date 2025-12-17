@@ -1,8 +1,10 @@
 import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import './md/md-toast.js';
 
+@localized()
 @customElement('pwa-update')
 export class PwaUpdate extends LitElement {
   @state() private updateAvailable = false;
@@ -42,8 +44,8 @@ export class PwaUpdate extends LitElement {
     return html`
       <md-toast
         open
-        message="New version available"
-        action-label="Reload"
+        message=${msg('New version available')}
+        action-label=${msg('Reload')}
         .duration=${0}
         @action-click=${this.doUpdate}
       ></md-toast>

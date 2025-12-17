@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import '../components/header';
 import '../components/edit-account';
 
+@localized()
 @customElement('edit-page')
 export class EditPage extends LitElement {
   static styles = [
@@ -40,7 +42,7 @@ export class EditPage extends LitElement {
 
   render() {
     return html`
-      <app-header title="Edit Profile" enableBack></app-header>
+      <app-header .title="${msg('Edit Profile')}" enableBack></app-header>
 
       <main>
         <edit-account></edit-account>

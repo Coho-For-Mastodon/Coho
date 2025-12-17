@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
+import { msg, str, localized } from '@lit/localize';
 
 import './md/md-dialog.js';
 import './md/md-button.js';
@@ -48,6 +49,7 @@ interface LocalAttachment {
   file?: File; // Store file for deferred upload
 }
 
+@localized()
 @customElement('post-dialog')
 export class PostDialog extends LitElement {
   @state() attachmentPreview: string | undefined;
@@ -1345,7 +1347,7 @@ export class PostDialog extends LitElement {
     return html`
       <md-dialog
         id="notify-dialog"
-        label="New Post"
+        label=${msg('New Post')}
         ?fullscreen=${this.isMobile}
         ?no-backdrop-close=${this.isMobile}
       >
@@ -1354,7 +1356,7 @@ export class PostDialog extends LitElement {
             @change="${(e: Event) => this.handleStatus(e)}"
             @input="${(e: Event) => this.handleStatus(e)}"
             autofocus
-            placeholder="What's on your mind?"
+            placeholder=${msg("What's on your mind?")}
             rows="6"
             maxlength="${this.maxChars}"
           ></md-text-area>
@@ -1367,10 +1369,10 @@ export class PostDialog extends LitElement {
                     this.proofreadResult.corrections.length === 0
                       ? html`
                           <span class="proofread-success">
-                            ✓ Looks good!
+                            ✓ ${msg('Looks good!')}
                             <md-icon-button
                               class="proofread-button"
-                              label="Dismiss"
+                              label=${msg('Dismiss')}
                               src="/assets/close-outline.svg"
                               @click="${() => this.dismissProofread()}"
                             ></md-icon-button>
@@ -1382,8 +1384,8 @@ export class PostDialog extends LitElement {
                               ? 'proofreading'
                               : ''}"
                             label="${this.proofreading
-                              ? 'Checking...'
-                              : 'Proofread'}"
+                              ? msg('Checking...')
+                              : msg('Proofread')}"
                             src="/assets/sparkles-outline.svg"
                             ?disabled=${!this.hasStatus || this.proofreading}
                             @click="${() => this.doProofread()}"
@@ -1396,7 +1398,7 @@ export class PostDialog extends LitElement {
                           <div class="proofread-dropdown">
                             <div class="proofread-dropdown-header">
                               <span class="proofread-dropdown-label">
-                                Suggested revision
+                                ${msg('Suggested revision')}
                                 (${this.proofreadResult.corrections.length}
                                 change${this.proofreadResult.corrections
                                   .length > 1
@@ -1409,13 +1411,13 @@ export class PostDialog extends LitElement {
                                   variant="filled"
                                   pill
                                   @click="${() => this.applyCorrections()}"
-                                  >Apply</md-button
+                                  >${msg('Apply')}</md-button
                                 >
                                 <md-button
                                   size="small"
                                   variant="text"
                                   @click="${() => this.dismissProofread()}"
-                                  >Dismiss</md-button
+                                  >${msg('Dismiss')}</md-button
                                 >
                               </div>
                             </div>
@@ -1435,10 +1437,10 @@ export class PostDialog extends LitElement {
                       ? 'recording'
                       : ''} ${this.isTranscribing ? 'transcribing' : ''}"
                     label="${this.isRecording
-                      ? 'Stop recording'
+                      ? msg('Stop recording')
                       : this.isTranscribing
-                        ? 'Transcribing...'
-                        : 'Voice input'}"
+                        ? msg('Transcribing...')
+                        : msg('Voice input')}"
                     src="${this.isRecording
                       ? '/assets/stop-circle-outline.svg'
                       : '/assets/mic-outline.svg'}"
@@ -1454,7 +1456,7 @@ export class PostDialog extends LitElement {
               ? html`
                   <md-icon-button
                     class="pen-button"
-                    label="Handwriting input"
+                    label=${msg('Handwriting input')}
                     src="/assets/brush-outline.svg"
                     @click="${() => this.openHandwritingDialog()}"
                     title="On-device AI"
@@ -1467,7 +1469,7 @@ export class PostDialog extends LitElement {
           ? html`<div id="sensitive-warning">
               <md-text-field
                 id="sensitive-input"
-                placeholder="Write your warning here"
+                placeholder=${msg('Write your warning here')}
               ></md-text-field>
             </div>`
           : null}
@@ -1475,8 +1477,8 @@ export class PostDialog extends LitElement {
         <div class="poll-wrapper ${this.pollEnabled ? 'open' : ''}">
           <div class="poll-composer">
             <div class="poll-header">
-              <div class="poll-title">Poll</div>
-              <div class="poll-subtitle">Add 2–4 options</div>
+              <div class="poll-title">${msg('Poll')}</div>
+              <div class="poll-subtitle">${msg('Add 2–4 options')}</div>
             </div>
 
             <div class="poll-options">
@@ -1485,14 +1487,14 @@ export class PostDialog extends LitElement {
                   <div class="poll-option-row">
                     <md-text-field
                       class="poll-option-input"
-                      placeholder="Option ${idx + 1}"
+                      placeholder=${msg(str`Option ${idx + 1}`)}
                       .value=${String(opt ?? '')}
                       @input=${(e: Event) =>
                         this._setPollOption(idx, this._readInputEventValue(e))}
                     ></md-text-field>
 
                     <md-icon-button
-                      label="Remove option"
+                      label=${msg('Remove option')}
                       src="/assets/close-outline.svg"
                       ?disabled=${this.pollOptions.length <= 2}
                       @click=${() => this._removePollOption(idx)}
@@ -1509,7 +1511,7 @@ export class PostDialog extends LitElement {
                   ?disabled=${this.pollOptions.length >= 4}
                   @click=${() => this._addPollOption()}
                 >
-                  Add option
+                  ${msg('Add option')}
                 </md-button>
               </div>
             </div>
@@ -1522,16 +1524,26 @@ export class PostDialog extends LitElement {
                 pill
                 style="width: 180px; min-width: 180px;"
               >
-                <md-option value="${String(5 * 60)}">5 minutes</md-option>
-                <md-option value="${String(30 * 60)}">30 minutes</md-option>
-                <md-option value="${String(60 * 60)}">1 hour</md-option>
-                <md-option value="${String(6 * 60 * 60)}">6 hours</md-option>
-                <md-option value="${String(24 * 60 * 60)}">1 day</md-option>
+                <md-option value="${String(5 * 60)}"
+                  >${msg('5 minutes')}</md-option
+                >
+                <md-option value="${String(30 * 60)}"
+                  >${msg('30 minutes')}</md-option
+                >
+                <md-option value="${String(60 * 60)}"
+                  >${msg('1 hour')}</md-option
+                >
+                <md-option value="${String(6 * 60 * 60)}"
+                  >${msg('6 hours')}</md-option
+                >
+                <md-option value="${String(24 * 60 * 60)}"
+                  >${msg('1 day')}</md-option
+                >
                 <md-option value="${String(3 * 24 * 60 * 60)}"
-                  >3 days</md-option
+                  >${msg('3 days')}</md-option
                 >
                 <md-option value="${String(7 * 24 * 60 * 60)}"
-                  >7 days</md-option
+                  >${msg('7 days')}</md-option
                 >
               </md-select>
 
@@ -1540,7 +1552,7 @@ export class PostDialog extends LitElement {
                 @change=${(e: CustomEvent<{ checked: boolean }>) =>
                   (this.pollMultiple = e.detail.checked)}
               >
-                Allow multiple choices
+                ${msg('Allow multiple choices')}
               </md-checkbox>
             </div>
 
@@ -1557,7 +1569,9 @@ export class PostDialog extends LitElement {
                   ? html` <img src="${this.generatedImage}" /> `
                   : this.showPrompt && this.generatingImage === false
                     ? html`<div id="ai-preview-block">
-                        <p>Enter a prompt to generate an image with AI!</p>
+                        <p>
+                          ${msg('Enter a prompt to generate an image with AI!')}
+                        </p>
                       </div>`
                     : html`<div id="ai-preview-block">
                         <md-skeleton></md-skeleton>
@@ -1574,10 +1588,10 @@ export class PostDialog extends LitElement {
               style="width: 140px; min-width: 140px;"
               pill
             >
-              <md-option value="public">Public</md-option>
-              <md-option value="unlisted">Unlisted</md-option>
-              <md-option value="private">Followers Only</md-option>
-              <md-option value="direct">Direct</md-option>
+              <md-option value="public">${msg('Public')}</md-option>
+              <md-option value="unlisted">${msg('Unlisted')}</md-option>
+              <md-option value="private">${msg('Followers Only')}</md-option>
+              <md-option value="direct">${msg('Direct')}</md-option>
             </md-select>
 
             <md-button
@@ -1586,7 +1600,7 @@ export class PostDialog extends LitElement {
               ?disabled=${this.attachments.length > 0}
               @click="${() => this._togglePoll()}"
             >
-              ${this.pollEnabled ? 'Remove Poll' : 'Add Poll'}
+              ${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
             </md-button>
 
             <md-button
@@ -1594,7 +1608,7 @@ export class PostDialog extends LitElement {
               variant="outlined"
               @click="${() => this.markAsSensitive()}"
             >
-              Content Warning
+              ${msg('Content Warning')}
               <md-icon src="/assets/eye-outline.svg"></md-icon>
             </md-button>
 
@@ -1605,14 +1619,14 @@ export class PostDialog extends LitElement {
               @click="${() => this.attachFile()}"
               ?disabled=${this.pollEnabled}
             >
-              Attach Media
+              ${msg('Attach Media')}
               <md-icon src="/assets/attach-outline.svg"></md-icon>
             </md-button>
 
             <!-- Mobile icon buttons -->
             <md-icon-button
               class="mobile-icon-button"
-              label="${this.pollEnabled ? 'Remove Poll' : 'Add Poll'}"
+              label="${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}"
               src="/assets/chatbox-outline.svg"
               ?disabled=${this.attachments.length > 0}
               @click="${() => this._togglePoll()}"
@@ -1620,14 +1634,14 @@ export class PostDialog extends LitElement {
 
             <md-icon-button
               class="mobile-icon-button"
-              label="Content Warning"
+              label=${msg('Content Warning')}
               src="/assets/eye-outline.svg"
               @click="${() => this.markAsSensitive()}"
             ></md-icon-button>
 
             <md-icon-button
               class="mobile-icon-button"
-              label="Attach Media"
+              label=${msg('Attach Media')}
               src="/assets/attach-outline.svg"
               @click="${() => this.attachFile()}"
               ?disabled=${this.pollEnabled}
@@ -1640,7 +1654,7 @@ export class PostDialog extends LitElement {
             pill
             variant="filled"
             @click="${() => this.publish()}"
-            >Publish</md-button
+            >${msg('Publish')}</md-button
           >
         </div>
 

@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
+import { localized, msg, str } from '@lit/localize';
 
 import '../components/header';
 import '../components/timeline-item';
@@ -15,6 +16,7 @@ import type { MdTextArea } from '../components/md/md-text-area';
 import { router } from '../utils/router';
 import { getNotificationById } from '../mastodon/api/notifications';
 
+@localized()
 @customElement('post-detail')
 export class PostDetail extends LitElement {
   @state() tweet: Post | null = null;
@@ -434,7 +436,7 @@ export class PostDetail extends LitElement {
         <main>
           <div class="scroller">
             <section class="post-section">
-              <p>Post not found</p>
+              <p>${msg('Post not found')}</p>
             </section>
           </div>
         </main>
@@ -460,7 +462,7 @@ export class PostDetail extends LitElement {
 
           <section class="replies-section">
             ${this.replies.length > 0
-              ? html`<h2 class="replies-title">Replies</h2>`
+              ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
               : nothing}
 
             <ul class="replies-list">
@@ -491,8 +493,9 @@ export class PostDetail extends LitElement {
                       ? html`
                           <div class="replying-to-indicator">
                             <span
-                              >Replying to
-                              @${this.replyingTo.account.acct}</span
+                              >${msg(
+                                str`Replying to @${this.replyingTo.account.acct}`
+                              )}</span
                             >
                             <md-icon-button
                               name="close"
@@ -506,7 +509,7 @@ export class PostDetail extends LitElement {
                       class="reply-input"
                       variant="outlined"
                       rows="2"
-                      placeholder="Reply to this post..."
+                      .placeholder="${msg('Reply to this post...')}"
                     ></md-text-area>
 
                     <div class="composer-actions">
@@ -517,7 +520,7 @@ export class PostDetail extends LitElement {
                         pill
                         size="small"
                       >
-                        Reply
+                        ${msg('Reply')}
                         <md-icon
                           slot="suffix"
                           src="/assets/add-outline.svg"

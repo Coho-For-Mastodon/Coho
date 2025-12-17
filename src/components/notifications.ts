@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { msg, localized } from '@lit/localize';
 import { router } from '../utils/router';
 import { parseEmojis } from '../utils/emoji-parser';
 
@@ -14,6 +15,7 @@ import { Post } from '../interfaces/Post';
 import { Notification } from '../interfaces/Notification';
 import type { Account } from '../mastodon/types';
 
+@localized()
 @customElement('app-notifications')
 export class Notifications extends LitElement {
   @state() notifications: Notification[] = [];
@@ -527,7 +529,7 @@ export class Notifications extends LitElement {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'just now';
+    if (diffMins < 1) return msg('just now');
     if (diffMins < 60) return `${diffMins}m`;
     if (diffHours < 24) return `${diffHours}h`;
     if (diffDays < 7) return `${diffDays}d`;
@@ -602,17 +604,17 @@ export class Notifications extends LitElement {
   getNotificationActionText(type: string): string {
     switch (type) {
       case 'favourite':
-        return 'liked your post';
+        return msg('liked your post');
       case 'reblog':
-        return 'boosted your post';
+        return msg('boosted your post');
       case 'mention':
-        return 'mentioned you';
+        return msg('mentioned you');
       case 'follow':
-        return 'followed you';
+        return msg('followed you');
       case 'update':
-        return 'edited a post';
+        return msg('edited a post');
       default:
-        return 'interacted with you';
+        return msg('interacted with you');
     }
   }
 
@@ -707,13 +709,13 @@ export class Notifications extends LitElement {
                   <strong
                     >${account.followers_count?.toLocaleString() || 0}</strong
                   >
-                  followers
+                  ${msg('followers')}
                 </span>
                 <span class="follow-stat">
                   <strong
                     >${account.following_count?.toLocaleString() || 0}</strong
                   >
-                  following
+                  ${msg('following')}
                 </span>
               </div>
             </div>
@@ -723,7 +725,7 @@ export class Notifications extends LitElement {
             ${isFollowing
               ? html`
                   <md-button variant="outlined" pill size="small" disabled>
-                    Following
+                    ${msg('Following')}
                   </md-button>
                 `
               : html`
@@ -735,7 +737,7 @@ export class Notifications extends LitElement {
                     ?disabled="${isLoading}"
                     @click="${(e: Event) => this.followBack(account.id, e)}"
                   >
-                    ${isLoading ? 'Following...' : 'Follow Back'}
+                    ${isLoading ? msg('Following...') : msg('Follow Back')}
                   </md-button>
                 `}
           </div>
@@ -816,7 +818,7 @@ export class Notifications extends LitElement {
             ?checked="${this.subbed}"
             @change="${(e: CustomEvent<{ checked: boolean }>) =>
               this.sub(e.detail.checked)}"
-            >Push Notifications</md-switch
+            >${msg('Push Notifications')}</md-switch
           >
         </div>
         <md-button
@@ -824,7 +826,7 @@ export class Notifications extends LitElement {
           pill
           size="small"
           @click="${() => this.clear()}"
-          >Clear All</md-button
+          >${msg('Clear All')}</md-button
         >
       </div>
 
@@ -833,9 +835,9 @@ export class Notifications extends LitElement {
         @segment-change="${(e: CustomEvent) =>
           (this.activeSegment = e.detail.value)}"
       >
-        <md-segment value="all">All</md-segment>
-        <md-segment value="mentions">Mentions</md-segment>
-        <md-segment value="follows">Follows</md-segment>
+        <md-segment value="all">${msg('All')}</md-segment>
+        <md-segment value="mentions">${msg('Mentions')}</md-segment>
+        <md-segment value="follows">${msg('Follows')}</md-segment>
       </md-segmented-button>
 
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
@@ -847,7 +849,7 @@ export class Notifications extends LitElement {
             : html`
                 <div id="no">
                   <img src="/assets/notify-done.svg" alt="no notifications" />
-                  <p>No notifications yet</p>
+                  <p>${msg('No notifications yet')}</p>
                 </div>
               `}
         </ul>
@@ -862,7 +864,7 @@ export class Notifications extends LitElement {
             : html`
                 <div id="no">
                   <img src="/assets/notify-done.svg" alt="no mentions" />
-                  <p>No mentions yet</p>
+                  <p>${msg('No mentions yet')}</p>
                 </div>
               `}
         </ul>
@@ -877,7 +879,7 @@ export class Notifications extends LitElement {
             : html`
                 <div id="no">
                   <img src="/assets/notify-done.svg" alt="no followers" />
-                  <p>No new followers yet</p>
+                  <p>${msg('No new followers yet')}</p>
                 </div>
               `}
         </ul>

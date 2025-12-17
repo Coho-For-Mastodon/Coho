@@ -1,10 +1,12 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { getFollowing } from '../services/account';
 
 import '../components/user-profile';
 import type { Account } from '../mastodon/types';
 
+@localized()
 @customElement('app-following')
 export class Appfollowing extends LitElement {
   @state() following: Account[] = [];
@@ -92,7 +94,7 @@ export class Appfollowing extends LitElement {
       <app-header ?enableBack="${true}"></app-header>
 
       <main>
-        <h2>You are Following</h2>
+        <h2>${msg('You are Following')}</h2>
         <ul class="scrollbar-hidden">
           ${this.following.map((follower) => {
             return html`

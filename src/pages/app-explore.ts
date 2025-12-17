@@ -1,11 +1,13 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { getPreviewTimeline } from '../services/timeline';
 
 import '../components/preview-timeline';
 import '../components/md/md-text-field';
 import type { Post } from '../interfaces/Post';
 
+@localized()
 @customElement('app-explore')
 export class AppExplore extends LitElement {
   @state() timeline: Post[] = [];
@@ -134,8 +136,9 @@ export class AppExplore extends LitElement {
         <div>
           <div id="sign-up-block">
             <p>
-              Already have an account? Log in to your server. Otherwise, sign up
-              for a account to follow people, like posts, and more!
+              ${msg(
+                'Already have an account? Log in to your server. Otherwise, sign up for a account to follow people, like posts, and more!'
+              )}
             </p>
             <md-text-field
               id="server-input"
@@ -143,24 +146,19 @@ export class AppExplore extends LitElement {
               pill
             ></md-text-field>
             <md-button id="login-button" variant="filled" @click="${this.login}"
-              >Login</md-button
+              >${msg('Login')}</md-button
             >
             <md-button variant="outlined" @click="${this.signup}"
-              >Sign up</md-button
+              >${msg('Sign up')}</md-button
             >
           </div>
 
           <div>
-            <strong>What is this?</strong>
+            <strong>${msg('What is this?')}</strong>
             <p>
-              Otter is a <a href="https://joinmastodon.org">Mastodon</a> client
-              that is built with web technologies. It is a
-              <a
-                href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps"
-                >progressive web app</a
-              >, which means you can install it on your phone or desktop. It is
-              also open source, and can be found on
-              <a href="https://github.com/jgw96/mammoth-app">GitHub</a>.
+              ${msg(
+                'Otter is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.'
+              )}
             </p>
           </div>
         </div>

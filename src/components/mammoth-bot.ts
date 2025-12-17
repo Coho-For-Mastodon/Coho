@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import '../components/md/md-text-area';
 import { requestMammothBot } from '../services/ai';
@@ -10,6 +11,7 @@ interface ChatMessage {
   content: string;
 }
 
+@localized()
 @customElement('mammoth-bot')
 export class MammothBot extends LitElement {
   @state() previousMessages: ChatMessage[] = [];
@@ -166,7 +168,7 @@ export class MammothBot extends LitElement {
 
   render() {
     return html`
-      <span>alpha</span>
+      <span>${msg('alpha')}</span>
       <ul>
         ${this.previousMessages.map((message) => {
           return html`
@@ -188,12 +190,14 @@ export class MammothBot extends LitElement {
       </ul>
 
       <md-text-area
-        placeholder="Hello, I am MammothBot. I can help you with Mastodon, such as by generating posts etc, summarizing posts and more. You can chat with me like you would anyone else, no need to talk like a robot 😊"
+        placeholder=${msg(
+          'Hello, I am MammothBot. I can help you with Mastodon, such as by generating posts etc, summarizing posts and more. You can chat with me like you would anyone else, no need to talk like a robot 😊'
+        )}
         rows="3"
       ></md-text-area>
 
       <md-button @click="${() => this.handleInput()}" variant="filled"
-        >Send</md-button
+        >${msg('Send')}</md-button
       >
     `;
   }

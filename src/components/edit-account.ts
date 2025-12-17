@@ -1,6 +1,7 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { localized, msg } from '@lit/localize';
 
 import './md/md-text-field';
 import './md/md-text-area';
@@ -51,6 +52,7 @@ interface ProfileField {
   value: string;
 }
 
+@localized()
 @customElement('edit-account')
 export class EditAccount extends LitElement {
   // Loading and UI states
@@ -588,7 +590,7 @@ export class EditAccount extends LitElement {
       <div class="error-container">
         <p class="error-message">${this.error}</p>
         <md-button variant="filled" @click=${this.loadCredentials}>
-          Try Again
+          ${msg('Try Again')}
         </md-button>
       </div>
     `;
@@ -602,15 +604,15 @@ export class EditAccount extends LitElement {
       <div class="form-section">
         <!-- Images Section -->
         <div class="section-card">
-          <span class="section-title">Profile Images</span>
+          <span class="section-title">${msg('Profile Images')}</span>
           <div class="images-row">
             <div class="image-upload">
-              <label>Avatar</label>
+              <label>${msg('Avatar')}</label>
               <div class="image-preview-container">
                 <img
                   class="avatar-preview"
                   src=${this.avatarPreviewUrl || '/assets/icons/256-icon.png'}
-                  alt="Avatar preview"
+                  alt=${msg('Avatar preview')}
                 />
                 <div class="image-change-overlay" @click=${this.changeAvatar}>
                   <md-icon name="camera"></md-icon>
@@ -619,12 +621,12 @@ export class EditAccount extends LitElement {
             </div>
 
             <div class="image-upload">
-              <label>Header</label>
+              <label>${msg('Header')}</label>
               <div class="image-preview-container">
                 <img
                   class="header-preview"
                   src=${this.headerPreviewUrl || '/assets/icons/256-icon.png'}
-                  alt="Header preview"
+                  alt=${msg('Header preview')}
                 />
                 <div class="image-change-overlay" @click=${this.changeHeader}>
                   <md-icon name="camera"></md-icon>
@@ -636,19 +638,19 @@ export class EditAccount extends LitElement {
 
         <!-- Basic Info Section -->
         <div class="section-card">
-          <span class="section-title">Basic Information</span>
+          <span class="section-title">${msg('Basic Information')}</span>
 
           <div class="input-group">
-            <label class="input-label">Display Name</label>
+            <label class="input-label">${msg('Display Name')}</label>
             <md-text-field
               .value=${this.displayName}
               @input=${(e: InputEvent) =>
                 (this.displayName = (e.target as HTMLInputElement).value)}
-              placeholder="Your display name"
+              placeholder=${msg('Your display name')}
               maxlength=${LIMITS.displayName}
             ></md-text-field>
             <div class="input-helper">
-              <span>How you appear to others</span>
+              <span>${msg('How you appear to others')}</span>
               <span
                 class=${classMap({
                   'char-count': true,
@@ -661,16 +663,16 @@ export class EditAccount extends LitElement {
           </div>
 
           <div class="input-group">
-            <label class="input-label">Bio</label>
+            <label class="input-label">${msg('Bio')}</label>
             <md-text-area
               .value=${this.bio}
               @input=${(e: InputEvent) =>
                 (this.bio = (e.target as HTMLTextAreaElement).value)}
-              placeholder="Tell people about yourself..."
+              placeholder=${msg('Tell people about yourself...')}
               maxlength=${LIMITS.bio}
             ></md-text-area>
             <div class="input-helper">
-              <span>Supports Markdown and custom emoji</span>
+              <span>${msg('Supports Markdown and custom emoji')}</span>
               <span
                 class=${classMap({
                   'char-count': true,
@@ -685,12 +687,13 @@ export class EditAccount extends LitElement {
 
         <!-- Profile Fields Section -->
         <div class="section-card">
-          <span class="section-title">Profile Metadata</span>
+          <span class="section-title">${msg('Profile Metadata')}</span>
           <p
             style="font-size: 13px; color: var(--md-sys-color-on-surface-variant); margin: 0;"
           >
-            Add up to 4 custom fields to display on your profile. URLs will be
-            verified for link ownership.
+            ${msg(
+              'Add up to 4 custom fields to display on your profile. URLs will be verified for link ownership.'
+            )}
           </p>
 
           <div class="fields-container">
@@ -704,7 +707,7 @@ export class EditAccount extends LitElement {
                         index,
                         (e.target as HTMLInputElement).value
                       )}
-                    placeholder="Label"
+                    placeholder=${msg('Label')}
                     maxlength=${LIMITS.fieldName}
                   ></md-text-field>
                   <md-text-field
@@ -714,13 +717,13 @@ export class EditAccount extends LitElement {
                         index,
                         (e.target as HTMLInputElement).value
                       )}
-                    placeholder="Content"
+                    placeholder=${msg('Content')}
                     maxlength=${LIMITS.fieldValue}
                   ></md-text-field>
                   <md-icon-button
                     name="trash"
                     @click=${() => this.removeField(index)}
-                    title="Remove field"
+                    title=${msg('Remove field')}
                   ></md-icon-button>
                 </div>
               `
@@ -733,7 +736,7 @@ export class EditAccount extends LitElement {
                     @click=${this.addField}
                   >
                     <md-icon name="add" slot="prefix"></md-icon>
-                    Add Field
+                    ${msg('Add Field')}
                   </md-button>
                 `
               : nothing}
