@@ -12,6 +12,7 @@ type LocaleModule = typeof import('../generated/locales/es.js');
 // (template literal dynamic imports don't work well with Vite's build)
 const localeModules: Record<string, () => Promise<LocaleModule>> = {
   es: () => import('../generated/locales/es.js'),
+  de: () => import('../generated/locales/de.js'),
 };
 
 export const { getLocale, setLocale } = configureLocalization({

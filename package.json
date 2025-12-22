@@ -8,7 +8,7 @@
     "dev-server": "vite --port 3000",
     "dev": "npm run dev-server",
     "dev-task": "vite",
-    "build": "tsc && vite build && tsx scripts/generate-ssr-skeleton.ts",
+    "build": "npm run localize:build && tsc && vite build && tsx scripts/generate-ssr-skeleton.ts",
     "start": "npm run dev",
     "start-remote": "vite --host",
     "start-for-tests": "npm run build && vite preview --port 3000",
@@ -18,6 +18,8 @@
     "lint:fix": "eslint \"src/**/*.{ts,js}\" \"functions/src/**/*.{ts,js}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
+    "localize:extract": "lit-localize extract",
+    "localize:build": "lit-localize build",
     "prepare": "husky"
   },
   "lint-staged": {

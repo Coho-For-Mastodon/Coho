@@ -60,11 +60,23 @@ tsconfig.localize.json          # TypeScript config for lit-localize tools
 
 ```bash
 # Extract strings from source code to XLIFF files
-npx lit-localize extract
+npm run localize:extract
 
 # Build locale modules from translated XLIFF files
-npx lit-localize build
+npm run localize:build
 ```
+
+## Workflow: Adding & Updating Translations
+
+Follow this process to add new strings or update existing translations:
+
+1.  **Add Strings in Code**: Wrap user-facing text with `msg()` in your components.
+2.  **Extract**: Run `npm run localize:extract`. This updates `xliff/*.xlf` files with new strings.
+3.  **Translate**: Open the `.xlf` files and add translations for the new `<trans-unit>` elements.
+    - _Tip: Use an XLIFF editor or a text editor to modify the `<target>` tags._
+4.  **Build**: Run `npm run localize:build`. This generates the TypeScript files in `src/generated/locales/`.
+5.  **Verify**: Start the app and switch locales to verify the new translations.
+6.  **Commit**: Commit the changes to source code, XLIFF files, and generated locale files.
 
 ## Adding Strings to a Component
 
