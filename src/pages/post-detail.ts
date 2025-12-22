@@ -21,6 +21,7 @@ import { getNotificationById } from '../mastodon/api/notifications';
 export class PostDetail extends LitElement {
   @state() tweet: Post | null = null;
   @state() replies: Post[] = [];
+  @state() ancestors: Post[] = [];
   @state() replyingTo: Post | null = null;
   @state() loading = false;
   @state() error: string | null = null;
@@ -93,6 +94,10 @@ export class PostDetail extends LitElement {
       #main {
         min-height: 230px;
         view-transition-name: card;
+      }
+
+      .ancestors-section {
+        margin-bottom: 10px;
       }
 
       .replies-section {
@@ -306,6 +311,8 @@ export class PostDetail extends LitElement {
       this.toggleAttribute('embedded', this.passed_tweet !== null);
       if (this.passed_tweet) {
         this.tweet = this.passed_tweet;
+        this.replies = [];
+        this.ancestors = [];
         // Ensure replies load even if passed_tweet is set after firstUpdated.
         void this.loadReplies();
       }
@@ -328,6 +335,7 @@ export class PostDetail extends LitElement {
       console.log('replies', replies);
 
       this.replies = replies.descendants;
+      this.ancestors = replies.ancestors;
     }
   }
 
@@ -378,6 +386,8 @@ export class PostDetail extends LitElement {
     if (this.passed_tweet) {
       this.tweet = tweet;
       this.replyingTo = null;
+      this.replies = [];
+      this.ancestors = [];
       await this.loadReplies();
 
       const scroller = this.renderRoot?.querySelector(
@@ -450,6 +460,23 @@ export class PostDetail extends LitElement {
 
       <main>
         <div class="scroller">
+          <section class="ancestors-section">
+            <ul class="replies-list">
+              ${this.ancestors.map(
+                (ancestor) => html`
+                  <timeline-item
+                    .tweet="${ancestor}"
+                    ?guestMode="${this.isGuestMode}"
+                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                      this.handleOpenPost(e)}"
+                    @reply-clicked="${(e: CustomEvent) =>
+                      this.handleReplyClick(e)}"
+                  ></timeline-item>
+                `
+              )}
+            </ul>
+          </section>
+
           <section class="post-section">
             <timeline-item
               id="main"

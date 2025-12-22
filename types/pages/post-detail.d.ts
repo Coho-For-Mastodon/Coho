@@ -9,6 +9,7 @@ import { Post } from '../interfaces/Post';
 export declare class PostDetail extends LitElement {
   tweet: Post | null;
   replies: Post[];
+  ancestors: Post[];
   replyingTo: Post | null;
   loading: boolean;
   error: string | null;
