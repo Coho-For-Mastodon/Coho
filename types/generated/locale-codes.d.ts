@@ -6,8 +6,8 @@ export declare const sourceLocale = 'en';
  * The other locale codes that this application is localized into. Sorted
  * lexicographically.
  */
-export declare const targetLocales: readonly ['es'];
+export declare const targetLocales: readonly ['de', 'es'];
 /**
  * All valid project locale codes. Sorted lexicographically.
  */
-export declare const allLocales: readonly ['en', 'es'];
+export declare const allLocales: readonly ['de', 'en', 'es'];
