@@ -12,6 +12,7 @@ export declare class PostDetail extends LitElement {
   ancestors: Post[];
   replyingTo: Post | null;
   loading: boolean;
+  loadingThread: boolean;
   error: string | null;
   isGuestMode: boolean;
   passed_tweet: Post | null;

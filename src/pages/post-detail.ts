@@ -24,6 +24,7 @@ export class PostDetail extends LitElement {
   @state() ancestors: Post[] = [];
   @state() replyingTo: Post | null = null;
   @state() loading = false;
+  @state() loadingThread = false;
   @state() error: string | null = null;
   @state() isGuestMode = false;
 
@@ -330,12 +331,17 @@ export class PostDetail extends LitElement {
 
   private async loadReplies() {
     if (this.tweet && this.tweet.id) {
-      // get post replies
-      const replies = await getReplies(this.tweet.id);
-      console.log('replies', replies);
+      this.loadingThread = true;
+      try {
+        // get post replies
+        const replies = await getReplies(this.tweet.id);
+        console.log('replies', replies);
 
-      this.replies = replies.descendants;
-      this.ancestors = replies.ancestors;
+        this.replies = replies.descendants;
+        this.ancestors = replies.ancestors;
+      } finally {
+        this.loadingThread = false;
+      }
     }
   }
 
@@ -461,6 +467,9 @@ export class PostDetail extends LitElement {
       <main>
         <div class="scroller">
           <section class="ancestors-section">
+            ${this.loadingThread
+              ? html`<md-skeleton-card count="1"></md-skeleton-card>`
+              : nothing}
             <ul class="replies-list">
               ${this.ancestors.map(
                 (ancestor) => html`
@@ -488,6 +497,9 @@ export class PostDetail extends LitElement {
           </section>
 
           <section class="replies-section">
+            ${this.loadingThread
+              ? html`<md-skeleton-card count="3"></md-skeleton-card>`
+              : nothing}
             ${this.replies.length > 0
               ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
               : nothing}
