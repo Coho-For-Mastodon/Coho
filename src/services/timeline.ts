@@ -16,7 +16,7 @@ import {
   getMediaTimeline as mastodonGetMediaTimeline,
   saveMarker as mastodonSaveMarker,
   enrichPostsWithReplyContext as mastodonEnrichPostsWithReplyContext,
-} from '../mastodon';
+} from '../mastodon/api/timelines';
 
 // Type for marker response
 interface MarkerResponse {

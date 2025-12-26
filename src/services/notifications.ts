@@ -4,7 +4,7 @@ import {
   clearNotifications as mastodonClearNotifications,
   checkNewNotifications as mastodonCheckNewNotifications,
   markNotificationsRead as mastodonMarkNotificationsRead,
-} from '../mastodon';
+} from '../mastodon/api/notifications';
 
 import { getClientConfig } from '../mastodon/config/client';
 
