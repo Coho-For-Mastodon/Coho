@@ -35,6 +35,7 @@ import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
 import { router } from '../utils/router';
 import { lazyLoad, componentLoaders } from '../utils/lazy-component-loader';
+import { LazyOverlayManager } from '../utils/lazy-overlay';
 // import { resetLastPageID } from '../services/timeline';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
@@ -98,6 +99,18 @@ export class AppHome extends LitElement {
 
   // Guest mode state
   @state() isGuestMode: boolean = false;
+
+  // Lazy overlay manager for dialogs/drawers/toasts
+  // This keeps overlays out of DOM until they're needed
+  private overlays = new LazyOverlayManager(this, [
+    'settings-drawer',
+    'theming-drawer',
+    'replies-drawer',
+    'install-dialog',
+    'summary-dialog',
+    'translation-toast',
+    'error-toast',
+  ]);
 
   @state() activeTab: string = 'general';
 
@@ -305,19 +318,26 @@ export class AppHome extends LitElement {
    * Set up listener for global toast events from optimistic updates
    */
   private setupGlobalToastListener() {
-    window.addEventListener('app-toast', ((
-      event: CustomEvent<{ message: string; variant: string }>
-    ) => {
-      if (this.errorToast && event.detail) {
-        this.errorToast.message = event.detail.message;
-        this.errorToast.variant = event.detail.variant as
-          | 'error'
-          | 'warning'
-          | 'info'
-          | 'success';
-        this.errorToast.show();
+    window.addEventListener('app-toast', async (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        message: string;
+        variant: string;
+      }>;
+      if (customEvent.detail) {
+        // Add toast to DOM first
+        await this.overlays.show('error-toast');
+        // Then configure and show it
+        if (this.errorToast) {
+          this.errorToast.message = customEvent.detail.message;
+          this.errorToast.variant = customEvent.detail.variant as
+            | 'error'
+            | 'warning'
+            | 'info'
+            | 'success';
+          this.errorToast.show();
+        }
       }
-    }) as EventListener);
+    });
   }
 
   async shareTarget(name: string) {
@@ -403,6 +423,9 @@ export class AppHome extends LitElement {
 
   async openSettingsDrawer() {
     await this.loadUserTerms();
+    // Add drawer to DOM first
+    await this.overlays.show('settings-drawer');
+    // Then show it (triggers animation)
     await this.settingsDrawer?.show();
 
     const { getInstanceInfo } = await import('../services/account');
@@ -416,6 +439,9 @@ export class AppHome extends LitElement {
 
     this.replyID = id;
 
+    // Add drawer to DOM first
+    await this.overlays.show('replies-drawer');
+    // Then show it (triggers animation)
     await this.repliesDrawer?.show();
   }
 
@@ -433,6 +459,9 @@ export class AppHome extends LitElement {
 
   async openThemingDrawer() {
     await this.loadAppTheme();
+    // Add drawer to DOM first
+    await this.overlays.show('theming-drawer');
+    // Then show it (triggers animation)
     await this.themingDrawer?.show();
   }
 
@@ -515,16 +544,23 @@ export class AppHome extends LitElement {
     this.botDrawer?.show();
   }
 
-  showSummary($event: HandleSummaryEvent) {
+  async showSummary($event: HandleSummaryEvent) {
     console.log('show summary', $event.detail.data);
     const summary = $event.detail.data;
     this.summary = summary;
 
     // Hide translation toast if it's open
-    if (this.translationToast?.open) {
+    if (
+      this.overlays.isVisible('translation-toast') &&
+      this.translationToast?.open
+    ) {
       this.translationToast.hide();
+      this.overlays.hide('translation-toast');
     }
 
+    // Add dialog to DOM first
+    await this.overlays.show('summary-dialog');
+    // Then show it (triggers animation)
     this.summaryDialog?.show();
   }
 
@@ -640,18 +676,25 @@ export class AppHome extends LitElement {
     }
   }
 
-  openInstallDialog() {
+  async openInstallDialog() {
+    // Add dialog to DOM first
+    await this.overlays.show('install-dialog');
+    // Then show it (triggers animation)
     this.installDialog?.show();
   }
 
-  handleInstallDismiss() {
+  async handleInstallDismiss() {
     this.showInstallPrompt = false;
-    this.installDialog?.hide();
+    await this.installDialog?.hide();
+    // Remove from DOM after close animation
+    this.overlays.hide('install-dialog');
   }
 
-  handleInstallSuccess() {
+  async handleInstallSuccess() {
     this.showInstallPrompt = false;
-    this.installDialog?.hide();
+    await this.installDialog?.hide();
+    // Remove from DOM after close animation
+    this.overlays.hide('install-dialog');
   }
 
   async handleTabChange(event: TabChangeEvent) {
@@ -692,6 +735,8 @@ export class AppHome extends LitElement {
 
   async handleTranslating(_event: HandleTranslatingEvent) {
     console.log('handle translating event received');
+    // Add toast to DOM first
+    await this.overlays.show('translation-toast');
     // Show translation toast
     console.log(
       'Toast element:',
@@ -758,70 +803,121 @@ export class AppHome extends LitElement {
       <!-- Offline status notifications -->
       <offline-notify></offline-notify>
 
-      <!-- PWA Install Dialog -->
-      <md-dialog id="install-dialog" .label="${msg('Install Coho')}">
-        <pwa-install
-          @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
-          @pwa-install-success="${() => this.handleInstallSuccess()}"
-          @pwa-installed="${() => this.handleInstallSuccess()}"
-        ></pwa-install>
-      </md-dialog>
+      <!-- PWA Install - component always in DOM for install detection, dialog is lazy -->
+      ${this.overlays.isVisible('install-dialog')
+        ? html`
+            <md-dialog
+              id="install-dialog"
+              .label="${msg('Install Coho')}"
+              @md-dialog-hide="${() => this.overlays.hide('install-dialog')}"
+            >
+              <pwa-install
+                @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
+                @pwa-install-success="${() => this.handleInstallSuccess()}"
+                @pwa-installed="${() => this.handleInstallSuccess()}"
+              ></pwa-install>
+            </md-dialog>
+          `
+        : html`
+            <pwa-install
+              style="display: none;"
+              @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
+              @pwa-install-success="${() => this.handleInstallSuccess()}"
+              @pwa-installed="${() => this.handleInstallSuccess()}"
+            ></pwa-install>
+          `}
 
-      <otter-drawer .label="${msg('Theming')}" id="theming-drawer">
-        ${this.appThemeLoaded
-          ? html`
-              <app-theme
-                @color-chosen="${($event: ColorChosenEvent) =>
-                  this.handlePrimaryColor($event.detail.color)}"
-              ></app-theme>
-            `
-          : nothing}
-      </otter-drawer>
+      <!-- Theming Drawer - only in DOM when needed -->
+      ${this.overlays.render(
+        'theming-drawer',
+        () => html`
+          <otter-drawer
+            .label="${msg('Theming')}"
+            id="theming-drawer"
+            @otter-hide="${() => this.overlays.hide('theming-drawer')}"
+          >
+            ${this.appThemeLoaded
+              ? html`
+                  <app-theme
+                    @color-chosen="${($event: ColorChosenEvent) =>
+                      this.handlePrimaryColor($event.detail.color)}"
+                  ></app-theme>
+                `
+              : nothing}
+          </otter-drawer>
+        `
+      )}
 
-      <md-dialog id="summary-dialog" label=""> ${this.summary} </md-dialog>
+      <!-- Summary Dialog - only in DOM when needed -->
+      ${this.overlays.render(
+        'summary-dialog',
+        () => html`
+          <md-dialog
+            id="summary-dialog"
+            label=""
+            @md-dialog-hide="${() => this.overlays.hide('summary-dialog')}"
+          >
+            ${this.summary}
+          </md-dialog>
+        `
+      )}
 
       <post-dialog @published="${() => this.handleReload()}"></post-dialog>
 
-      <otter-drawer
-        id="settings-drawer"
-        placement="end"
-        .label="${msg('Settings')}"
-      >
-        <settings-drawer-content
-          .user="${this.user}"
-          .instanceInfo="${this.instanceInfo}"
-          .wellnessMode="${this.wellnessMode}"
-          .dataSaverMode="${this.dataSaverMode}"
-          .userTermsLoaded="${this.userTermsLoaded}"
-          @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
-            this.handleWellnessMode(e.detail.checked)}"
-          @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
-            this.handleDataSaverMode(e.detail.checked)}"
-        ></settings-drawer-content>
-      </otter-drawer>
+      <!-- Settings Drawer - only in DOM when needed -->
+      ${this.overlays.render(
+        'settings-drawer',
+        () => html`
+          <otter-drawer
+            id="settings-drawer"
+            placement="end"
+            .label="${msg('Settings')}"
+            @otter-hide="${() => this.overlays.hide('settings-drawer')}"
+          >
+            <settings-drawer-content
+              .user="${this.user}"
+              .instanceInfo="${this.instanceInfo}"
+              .wellnessMode="${this.wellnessMode}"
+              .dataSaverMode="${this.dataSaverMode}"
+              .userTermsLoaded="${this.userTermsLoaded}"
+              @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleWellnessMode(e.detail.checked)}"
+              @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleDataSaverMode(e.detail.checked)}"
+            ></settings-drawer-content>
+          </otter-drawer>
+        `
+      )}
 
-      <otter-drawer
-        id="replies-drawer"
-        placement="end"
-        .label="${msg('Comments')}"
-      >
-        ${this.replies.length > 0
-          ? html`<ul>
-              ${this.replies.map((reply) => {
-                return html`
-                  <timeline-item
-                    ?show="${false}"
-                    .tweet="${reply}"
-                  ></timeline-item>
-                `;
-              })}
-            </ul>`
-          : html`
-              <div id="no-replies">
-                <p>${msg('No comments yet.')}</p>
-              </div>
-            `}
-      </otter-drawer>
+      <!-- Replies Drawer - only in DOM when needed -->
+      ${this.overlays.render(
+        'replies-drawer',
+        () => html`
+          <otter-drawer
+            id="replies-drawer"
+            placement="end"
+            .label="${msg('Comments')}"
+            @otter-hide="${() => this.overlays.hide('replies-drawer')}"
+          >
+            ${this.replies.length > 0
+              ? html`<ul>
+                  ${this.replies.map((reply) => {
+                    return html`
+                      <timeline-item
+                        ?show="${false}"
+                        .tweet="${reply}"
+                      ></timeline-item>
+                    `;
+                  })}
+                </ul>`
+              : html`
+                  <div id="no-replies">
+                    <p>${msg('No comments yet.')}</p>
+                  </div>
+                `}
+          </otter-drawer>
+        `
+      )}
 
       <main>
         <md-tabs
@@ -975,24 +1071,38 @@ export class AppHome extends LitElement {
         ? html`<guest-login-banner></guest-login-banner>`
         : nothing}
 
-      <md-toast
-        id="translation-toast"
-        variant="info"
-        position="bottom"
-        duration="0"
-        .message="${msg('Translating post...')}"
-      >
-      </md-toast>
+      <!-- Translation Toast - only in DOM when needed -->
+      ${this.overlays.render(
+        'translation-toast',
+        () => html`
+          <md-toast
+            id="translation-toast"
+            variant="info"
+            position="bottom"
+            duration="0"
+            .message="${msg('Translating post...')}"
+            @hide="${() => this.overlays.hide('translation-toast')}"
+          >
+          </md-toast>
+        `
+      )}
 
-      <md-toast
-        id="error-toast"
-        variant="error"
-        position="bottom"
-        duration="4000"
-        closable
-        message=""
-      >
-      </md-toast>
+      <!-- Error Toast - only in DOM when needed -->
+      ${this.overlays.render(
+        'error-toast',
+        () => html`
+          <md-toast
+            id="error-toast"
+            variant="error"
+            position="bottom"
+            duration="4000"
+            closable
+            message=""
+            @hide="${() => this.overlays.hide('error-toast')}"
+          >
+          </md-toast>
+        `
+      )}
     `;
   }
 }
