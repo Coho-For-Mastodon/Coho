@@ -542,20 +542,22 @@ export class SearchPage extends LitElement {
   ];
 
   async handleSearch(search: { searchData: SearchData }) {
-    console.log(search);
     this.searchData = search.searchData;
 
-    const { getTrendingStatuses, getTrendingLinks } =
-      await import('../services/timeline');
+    const [{ getTrendingStatuses }, { getTrendingLinks }] = await Promise.all([
+      import('../services/timeline'),
+      import('../services/timeline'),
+    ]);
 
-    const trendingStatuses = await getTrendingStatuses();
+    const [trendingStatuses, trendingLinks] = await Promise.all([
+      getTrendingStatuses(),
+      getTrendingLinks(),
+    ]);
+
     console.log('trendingStatuses', trendingStatuses);
-
     this.trending = trendingStatuses;
 
-    const trendingLinks = await getTrendingLinks();
     console.log('trendingLinks', trendingLinks);
-
     this.trendingLinks = trendingLinks;
   }
 
