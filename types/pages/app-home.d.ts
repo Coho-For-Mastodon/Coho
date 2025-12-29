@@ -54,6 +54,7 @@ export declare class AppHome extends LitElement {
   showInstallPrompt: boolean;
   pwaInstallLoaded: boolean;
   isGuestMode: boolean;
+  private overlays;
   activeTab: string;
   tabsOrientation: 'horizontal' | 'vertical';
   tabsPlacement: 'top' | 'bottom' | 'start' | 'end';
@@ -91,7 +92,7 @@ export declare class AppHome extends LitElement {
   openATab(name: string): void;
   handleReload(): Promise<void>;
   openBotDrawer(): void;
-  showSummary($event: HandleSummaryEvent): void;
+  showSummary($event: HandleSummaryEvent): Promise<void>;
   onMoveHandler(
     ev: {
       deltaX: number;
@@ -112,9 +113,9 @@ export declare class AppHome extends LitElement {
   loadUserTerms(): Promise<void>;
   loadRightClick(): Promise<void>;
   checkInstallPrompt(): Promise<void>;
-  openInstallDialog(): void;
-  handleInstallDismiss(): void;
-  handleInstallSuccess(): void;
+  openInstallDialog(): Promise<void>;
+  handleInstallDismiss(): Promise<void>;
+  handleInstallSuccess(): Promise<void>;
   handleTabChange(event: TabChangeEvent): Promise<void>;
   handleTranslating(_event: HandleTranslatingEvent): Promise<void>;
   render(): import('lit-html').TemplateResult<1>;
