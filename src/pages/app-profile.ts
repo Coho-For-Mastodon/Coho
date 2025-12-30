@@ -2,7 +2,6 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
 import { localized, msg, str } from '@lit/localize';
 import {
-  checkFollowing,
   followUser,
   getAccount,
   getUsersPosts,
@@ -735,7 +734,19 @@ export class AppProfile extends LitElement {
       this.loadingPosts = true;
       this._resetImageStates();
 
-      const accountData = await getAccount(id);
+      // Determine if we need to fetch relationship data
+      const shouldFetchRelationship = !this.isOwnProfile && !this.isGuestMode;
+
+      // Fetch account, posts, and relationship data in parallel for faster loading
+      const [accountData, postsData, relationshipData] = await Promise.all([
+        getAccount(id),
+        getUsersPosts(id),
+        // isFollowingMe returns the full relationship object with following, followed_by, muting, blocking
+        shouldFetchRelationship
+          ? isFollowingMe(id).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
       console.log(accountData);
 
       if (accountData) {
@@ -748,34 +759,21 @@ export class AppProfile extends LitElement {
         return;
       }
 
-      const postsData = await getUsersPosts(id);
       console.log(postsData);
-
       this.posts = Array.isArray(postsData) ? postsData : [];
       this.loadingProfile = false;
       this.loadingPosts = false;
 
-      // Only check follow status if not viewing own profile and not a guest
-      if (!this.isOwnProfile && !this.isGuestMode) {
-        try {
-          const followCheck = await checkFollowing(id);
-          console.log('followCheck', followCheck);
-          if (Array.isArray(followCheck) && followCheck[0]) {
-            this.followed = followCheck[0].following;
-          }
-
-          const followedCheck = await isFollowingMe(id);
-          console.log('followedCheck', followedCheck);
-          if (Array.isArray(followedCheck) && followCheck[0]) {
-            this.following = followedCheck[0].followed_by;
-            this.muted = followedCheck[0].muting;
-            this.blocked = followedCheck[0].blocking;
-          }
-          this.followStatusLoaded = true;
-        } catch (error) {
-          console.log('Error checking follow status:', error);
-          this.followStatusLoaded = true;
+      // Process relationship data if we fetched it
+      if (shouldFetchRelationship && relationshipData) {
+        console.log('relationshipData', relationshipData);
+        if (Array.isArray(relationshipData) && relationshipData[0]) {
+          this.followed = relationshipData[0].following;
+          this.following = relationshipData[0].followed_by;
+          this.muted = relationshipData[0].muting;
+          this.blocked = relationshipData[0].blocking;
         }
+        this.followStatusLoaded = true;
       }
     }
   }
