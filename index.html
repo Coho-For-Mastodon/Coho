@@ -19,6 +19,21 @@
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141314" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
 
+    <!-- Early theme color application - synchronous to prevent flash -->
+    <script>
+      (function () {
+        var c = localStorage.getItem('coho-theme-color');
+        if (c) {
+          var s = document.documentElement.style;
+          s.setProperty('--sl-color-primary-600', c);
+          s.setProperty('--sl-color-primary-500', c);
+          s.setProperty('--sl-color-primary-700', c);
+          s.setProperty('--md-sys-color-primary', c);
+          s.setProperty('--md-sys-color-outline', c);
+        }
+      })();
+    </script>
+
     <!-- These meta tags are Apple-specific, and set the web application to run in full-screen mode with a black status bar. Learn more at https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html-->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Coho" />

@@ -42,7 +42,12 @@ export async function setSettings(settings: Settings) {
       ? settings.sensitive
       : currentSettings.sensitive,
   };
-  // localStorage.setItem('settings', JSON.stringify(savedSettings));
+
+  // Also store theme color in localStorage for instant access on page load
+  if (savedSettings.primary_color) {
+    localStorage.setItem('coho-theme-color', savedSettings.primary_color);
+  }
+
   const { set } = await import('idb-keyval');
 
   await set('settings', savedSettings);

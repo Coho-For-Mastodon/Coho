@@ -86,6 +86,10 @@ export class AppIndex extends LitElement {
     const potentialColor = settings.primary_color;
 
     if (potentialColor) {
+      // Sync to localStorage for instant theme on next load (migration for existing users)
+      if (!localStorage.getItem('coho-theme-color')) {
+        localStorage.setItem('coho-theme-color', potentialColor);
+      }
       this.applyThemeColor(potentialColor);
     } else {
       // get css variable color
