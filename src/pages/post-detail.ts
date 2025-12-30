@@ -231,6 +231,21 @@ export class PostDetail extends LitElement {
       return;
     }
 
+    // First, check if we have a post stored from navigation (instant render path)
+    const storedPost = sessionStorage.getItem('coho:navigating-post');
+    if (storedPost) {
+      try {
+        this.tweet = JSON.parse(storedPost);
+        // Clear it so back/forward navigation doesn't reuse stale data
+        sessionStorage.removeItem('coho:navigating-post');
+        // No skeleton shown - post renders immediately
+        return;
+      } catch (err) {
+        console.error('Failed to parse stored post:', err);
+        sessionStorage.removeItem('coho:navigating-post');
+      }
+    }
+
     // Check for ID-based route (/post/:id or /post/notification?notification_id=xxx)
     const pathMatch = window.location.pathname.match(/\/post\/(.+)/);
     if (pathMatch) {
@@ -338,7 +353,41 @@ export class PostDetail extends LitElement {
         console.log('replies', replies);
 
         this.replies = replies.descendants;
-        this.ancestors = replies.ancestors;
+
+        // If there are ancestors, we need to adjust scroll position
+        // to keep the main post visually stable when ancestors render above it
+        if (replies.ancestors.length > 0) {
+          // Get current scroll position and main post position
+          const scroller = this.shadowRoot?.querySelector('.scroller');
+          const mainPost = this.shadowRoot?.querySelector('#main');
+
+          if (scroller && mainPost) {
+            const mainPostRect = mainPost.getBoundingClientRect();
+            const scrollerRect = scroller.getBoundingClientRect();
+            const mainPostOffsetFromTop = mainPostRect.top - scrollerRect.top;
+
+            // Set ancestors (this will cause a re-render)
+            this.ancestors = replies.ancestors;
+
+            // After the update, adjust scroll to keep main post at same visual position
+            await this.updateComplete;
+            requestAnimationFrame(() => {
+              const newMainPostRect = mainPost.getBoundingClientRect();
+              const newMainPostOffsetFromTop =
+                newMainPostRect.top - scrollerRect.top;
+              const scrollAdjustment =
+                newMainPostOffsetFromTop - mainPostOffsetFromTop;
+
+              if (scrollAdjustment > 0) {
+                scroller.scrollTop += scrollAdjustment;
+              }
+            });
+          } else {
+            this.ancestors = replies.ancestors;
+          }
+        } else {
+          this.ancestors = replies.ancestors;
+        }
       } finally {
         this.loadingThread = false;
       }
@@ -403,8 +452,9 @@ export class PostDetail extends LitElement {
       return;
     }
 
-    // Full-page mode: navigate to the new post route.
-    router.navigate(`/home/post?${encodeURIComponent(JSON.stringify(tweet))}`);
+    // Full-page mode: store post for instant render and navigate.
+    sessionStorage.setItem('coho:navigating-post', JSON.stringify(tweet));
+    router.navigate(`/home/post/${tweet.id}`);
   }
 
   render() {
@@ -467,9 +517,6 @@ export class PostDetail extends LitElement {
       <main>
         <div class="scroller">
           <section class="ancestors-section">
-            ${this.loadingThread
-              ? html`<md-skeleton-card count="1"></md-skeleton-card>`
-              : nothing}
             <ul class="replies-list">
               ${this.ancestors.map(
                 (ancestor) => html`

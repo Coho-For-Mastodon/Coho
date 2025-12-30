@@ -486,8 +486,9 @@ export class Notifications extends LitElement {
 
   async openPost(tweet: Post | undefined) {
     if (!tweet) return;
-    const serialized = encodeURIComponent(JSON.stringify(tweet));
-    await router.navigate(`/home/post?${serialized}`);
+    // Store post for instant render
+    sessionStorage.setItem('coho:navigating-post', JSON.stringify(tweet));
+    await router.navigate(`/home/post/${tweet.id}`);
   }
 
   async openProfile(account: Account) {

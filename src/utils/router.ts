@@ -63,6 +63,12 @@ const routes: Route[] = [
     render: () => html`<app-hashtags></app-hashtags>`,
   },
   {
+    path: '/home/post/:id',
+    title: 'post',
+    plugins: [lazy(() => import('../pages/post-detail.js'))],
+    render: () => html`<post-detail></post-detail>`,
+  },
+  {
     path: '/home/post',
     title: 'post',
     plugins: [lazy(() => import('../pages/post-detail.js'))],
