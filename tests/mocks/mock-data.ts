@@ -1,4 +1,6 @@
-const now = new Date().toISOString();
+// Use static timestamps for deterministic tests
+const MOCK_TIMESTAMP = '2025-01-01T12:00:00.000Z';
+const MOCK_TIMESTAMP_EARLIER = '2025-01-01T11:55:00.000Z';
 
 const mockAccount = {
   id: 'acct_mock_1',
@@ -7,7 +9,7 @@ const mockAccount = {
   display_name: 'Coho Bot',
   locked: false,
   bot: false,
-  created_at: now,
+  created_at: MOCK_TIMESTAMP,
   note: '<p>Resident test account</p>',
   url: 'https://tech.lgbt/@coho',
   avatar: '/assets/icons/icon-128.png',
@@ -23,7 +25,7 @@ const mockAccount = {
 
 const basePost = {
   id: 'post_mock_1',
-  created_at: now,
+  created_at: MOCK_TIMESTAMP,
   in_reply_to_id: null,
   in_reply_to_account_id: null,
   sensitive: false,
@@ -60,7 +62,7 @@ const basePost = {
 const secondaryPost = {
   ...basePost,
   id: 'post_mock_2',
-  created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  created_at: MOCK_TIMESTAMP_EARLIER,
   content: '<p>Timeline post number two.</p>',
   replies_count: 1,
   favourites_count: 2,
@@ -90,21 +92,21 @@ export const mockNotifications = [
   {
     id: 'notify_follow_1',
     type: 'follow',
-    created_at: now,
+    created_at: MOCK_TIMESTAMP,
     account: mockAccount,
     status: basePost,
   },
   {
     id: 'notify_favourite_1',
     type: 'favourite',
-    created_at: now,
+    created_at: MOCK_TIMESTAMP,
     account: mockAccount,
     status: secondaryPost,
   },
   {
     id: 'notify_mention_1',
     type: 'mention',
-    created_at: now,
+    created_at: MOCK_TIMESTAMP,
     account: mockAccount,
     status: {
       ...basePost,
