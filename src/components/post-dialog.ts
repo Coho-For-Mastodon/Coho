@@ -620,7 +620,7 @@ export class PostDialog extends LitElement {
     this.handwritingAvailable = await isHandwritingRecognitionAvailable();
   }
 
-  public async openNewDialog() {
+  public async openNewDialog(shareName?: string) {
     // Ensure the component's shadow DOM is ready
     await this.updateComplete;
 
@@ -629,14 +629,13 @@ export class PostDialog extends LitElement {
 
     this.notifyDialog?.show();
 
-    const urlParams = new URLSearchParams(window.location.search);
+    // If shareName is passed directly (from share target), use it
+    // Otherwise fall back to URL params for backwards compatibility
+    const nameToUse =
+      shareName ?? new URLSearchParams(window.location.search).get('name');
 
-    if (urlParams.has('name')) {
-      const name = urlParams.get('name');
-
-      if (name) {
-        await this.shareTarget(name);
-      }
+    if (nameToUse) {
+      await this.shareTarget(nameToUse);
     }
   }
 

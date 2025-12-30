@@ -113,16 +113,43 @@ export class AppIndex extends LitElement {
    */
   private imagePreviewInitialized = false;
   private initLazyImagePreview() {
-    const handler = async () => {
-      if (this.imagePreviewInitialized) return;
+    console.log('[App] Setting up lazy image preview listener');
+    const handler = async (e: Event) => {
+      console.log(
+        '[App] preview-image event received',
+        (e as CustomEvent).detail
+      );
+      if (this.imagePreviewInitialized) {
+        console.log('[App] Already initialized, skipping');
+        return;
+      }
       this.imagePreviewInitialized = true;
 
       // Import the component (registers the custom element)
       await import('./components/image-preview-dialog');
+      console.log('[App] image-preview-dialog imported');
+
+      // Wait for the custom element to be defined
+      await customElements.whenDefined('image-preview-dialog');
+      console.log('[App] Custom element defined');
 
       // Create and append the dialog to the shadow root
       const dialog = document.createElement('image-preview-dialog');
-      this.shadowRoot?.appendChild(dialog);
+      document.body?.appendChild(dialog);
+      console.log('[App] Dialog appended to shadow root');
+
+      // Wait a frame to ensure connectedCallback has run and listener is registered
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      console.log('[App] Re-dispatching event');
+
+      // Re-dispatch the original event so the dialog can handle it
+      window.dispatchEvent(
+        new CustomEvent('preview-image', {
+          detail: (e as CustomEvent).detail,
+          bubbles: true,
+          composed: true,
+        })
+      );
     };
 
     window.addEventListener('preview-image', handler, { once: true });

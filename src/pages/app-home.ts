@@ -363,7 +363,7 @@ export class AppHome extends LitElement {
 
     if (response) {
       console.log('[Share Target] Found cached file, opening dialog');
-      await this.openNewDialog();
+      await this.openNewDialog(decodedName);
     } else {
       console.log('[Share Target] No cached file found');
     }
@@ -388,7 +388,7 @@ export class AppHome extends LitElement {
     }
   }
 
-  async openNewDialog() {
+  async openNewDialog(shareName?: string) {
     // if on desktop, open the dialog
     // if (window.innerWidth > 600) {
     await import('../components/post-dialog');
@@ -402,7 +402,7 @@ export class AppHome extends LitElement {
     // Wait for the post-dialog's own shadow DOM to render
     if (this.postDialog) {
       await this.postDialog.updateComplete;
-      this.postDialog.openNewDialog();
+      this.postDialog.openNewDialog(shareName);
     }
     // }
     // else {

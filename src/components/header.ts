@@ -31,19 +31,15 @@ export class AppHeader extends LitElement {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: transparent;
         color: white;
         padding-right: 5px;
         position: fixed;
         left: env(titlebar-area-x, 0);
         top: env(titlebar-area-y, 0);
         right: 0;
-        height: env(titlebar-area-height, 33px);
         app-region: drag;
 
-        backdrop-filter: blur(46px);
-
-        width: calc(env(titlebar-area-width, intitial) + -23px);
+        width: env(titlebar-area-width, intitial);
         padding-top: 4px;
         padding-left: 12px;
 
@@ -51,6 +47,10 @@ export class AppHeader extends LitElement {
         contain: layout;
 
         z-index: 99999;
+
+        backdrop-filter: unset;
+        background: var(--md-sys-color-background);
+        height: calc(env(titlebar-area-height, 33px) - 4px);
       }
 
       #actions {
