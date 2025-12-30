@@ -58,7 +58,7 @@ export declare class PostDialog extends LitElement {
   private mediaEditDialog;
   static styles: import('lit').CSSResult[];
   protected firstUpdated(): Promise<void>;
-  openNewDialog(): Promise<void>;
+  openNewDialog(shareName?: string): Promise<void>;
   shareTarget(name: string): Promise<void>;
   private _togglePoll;
   private _setPollOption;

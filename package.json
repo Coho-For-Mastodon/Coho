@@ -8,7 +8,7 @@
     "dev-server": "vite --port 3000",
     "dev": "npm run dev-server",
     "dev-task": "vite",
-    "build": "npm run localize:build && tsc && vite build && tsx scripts/generate-ssr-skeleton.ts",
+    "build": "npm run localize:build && tsc && vite build",
     "start": "npm run dev",
     "start-remote": "vite --host",
     "bundle:analyze": "ANALYZE_BUNDLE=true npm run build",
@@ -36,7 +36,6 @@
   "dependencies": {
     "@fluentui/web-components": "^2.5.16",
     "@huggingface/transformers": "^3.8.1",
-    "@lit-labs/ssr": "^3.3.1",
     "@lit-labs/virtualizer": "^2.0.11",
     "@lit/localize": "^0.12.2",
     "browser-fs-access": "^0.38.0",

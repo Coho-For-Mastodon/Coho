@@ -78,7 +78,7 @@ export declare class AppHome extends LitElement {
   shareTarget(name: string): Promise<void>;
   handlePrimaryColor(color: string): void;
   share(): void;
-  openNewDialog(): Promise<void>;
+  openNewDialog(shareName?: string): Promise<void>;
   publish(): Promise<void>;
   openSettingsDrawer(): Promise<void>;
   handleReplies(replies: Post[], id: string): Promise<void>;

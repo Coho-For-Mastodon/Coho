@@ -48,4 +48,8 @@ export declare class AppIndex extends LitElement {
   private adjustColorBrightness;
   firstUpdated(): void;
   render(): import('lit-html').TemplateResult<1>;
+  /**
+   * Render to light DOM so View Transitions can see the content
+   */
+  createRenderRoot(): this;
 }
