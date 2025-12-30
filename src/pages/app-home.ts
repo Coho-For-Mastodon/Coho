@@ -114,8 +114,13 @@ export class AppHome extends LitElement {
 
   @state() activeTab: string = 'general';
 
-  @state() tabsOrientation: 'horizontal' | 'vertical' = 'vertical';
-  @state() tabsPlacement: 'top' | 'bottom' | 'start' | 'end' = 'start';
+  @state() tabsOrientation: 'horizontal' | 'vertical' = window.matchMedia(
+    '(max-width: 820px)'
+  ).matches
+    ? 'horizontal'
+    : 'vertical';
+  @state() tabsPlacement: 'top' | 'bottom' | 'start' | 'end' =
+    window.matchMedia('(max-width: 820px)').matches ? 'bottom' : 'start';
 
   // DOM element references using @query for type safety
   @query('#settings-drawer') private settingsDrawer!: OtterDrawer;

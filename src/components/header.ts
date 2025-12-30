@@ -178,11 +178,14 @@ export class AppHeader extends LitElement {
   }
 
   async goBack() {
-    if ('navigation' in window && window.navigation.canGoBack) {
-      const result = window.navigation.back();
-      await result.finished;
-    } else {
-      window.history.back();
+    // if ('navigation' in window && window.navigation.canGoBack) {
+    //   const result = window.navigation.back();
+    //   await result.finished;
+    // } else {
+    //   window.history.back();
+    // }
+    if (window.navigation.canGoBack) {
+      window.navigation.back();
     }
   }
 
@@ -195,7 +198,6 @@ export class AppHeader extends LitElement {
                 @click="${() => this.goBack()}"
                 title=${msg('back')}
                 size="small"
-                href="/home"
                 pill
               >
                 <svg

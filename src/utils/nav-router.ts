@@ -68,25 +68,48 @@ export class Router extends EventTarget {
     window.navigation.addEventListener('navigate', (event) => {
       // Only handle same-origin navigations
       const url = new URL(event.destination.url);
+      const isBackNavigation =
+        event.navigationType === 'traverse' &&
+        event.destination.index < (window.navigation.currentEntry?.index ?? 0);
+
+      console.log(
+        '[Router] navigate event:',
+        url.pathname,
+        'type:',
+        event.navigationType,
+        'isBack:',
+        isBackNavigation
+      );
+
       if (url.origin !== window.location.origin) {
+        console.log('[Router] Skipping: cross-origin');
         return;
       }
 
       // Don't intercept downloads or form submissions
       if (event.downloadRequest || event.formData) {
+        console.log('[Router] Skipping: download or form');
+        return;
+      }
+
+      // Can't intercept this navigation (e.g., cross-origin)
+      if (!event.canIntercept) {
+        console.log('[Router] Skipping: canIntercept is false');
         return;
       }
 
       const route = this.matchRoute(url.pathname);
       if (!route) {
+        console.log('[Router] Skipping: no matching route');
         return; // Let the browser handle unknown routes
       }
 
+      console.log('[Router] Intercepting navigation to:', route.path);
       event.intercept({
         focusReset: 'manual',
         scroll: 'manual',
         handler: async () => {
-          await this.handleNavigation(route);
+          await this.handleNavigation(route, isBackNavigation);
         },
       });
     });
@@ -94,8 +117,8 @@ export class Router extends EventTarget {
     // Handle popstate for back/forward that might not trigger navigate event
     window.addEventListener('popstate', () => {
       const route = this.matchRoute(window.location.pathname);
-      if (route && route !== this.currentRoute) {
-        this.handleNavigation(route);
+      if (route && route.path !== this.currentRoute?.path) {
+        this.handleNavigation(route, true); // Assume back for popstate
       }
     });
   }
@@ -115,7 +138,10 @@ export class Router extends EventTarget {
   /**
    * Run plugins and update current route
    */
-  private async handleNavigation(route: Route): Promise<void> {
+  private async handleNavigation(
+    route: Route,
+    isBack: boolean = false
+  ): Promise<void> {
     // Run global beforeNavigation plugins
     for (const plugin of this.globalPlugins) {
       if (plugin.beforeNavigation) {
@@ -146,18 +172,36 @@ export class Router extends EventTarget {
     };
 
     // Skip view transition for /home (has fixed elements that flash)
-    const skipTransition = route.path === '/home';
+    const skipTransition = false;
 
     if ('startViewTransition' in document && !skipTransition) {
-      const transition = (
-        document as Document & {
-          startViewTransition: (cb: () => void) => {
-            finished: Promise<void>;
-          };
+      try {
+        // Add class to document for back navigation animation direction
+        if (isBack) {
+          document.documentElement.classList.add('back-navigation');
         }
-      ).startViewTransition(updateDOM);
 
-      await transition.finished;
+        const transition = (
+          document as Document & {
+            startViewTransition: (cb: () => void) => {
+              ready: Promise<void>;
+              finished: Promise<void>;
+              updateCallbackDone: Promise<void>;
+            };
+          }
+        ).startViewTransition(updateDOM);
+
+        // Wait for animations to finish
+        await transition.finished;
+
+        // Clean up class
+        document.documentElement.classList.remove('back-navigation');
+      } catch (e) {
+        // If transition fails, just update DOM normally
+        console.warn('View transition failed:', e);
+        document.documentElement.classList.remove('back-navigation');
+        updateDOM();
+      }
     } else {
       updateDOM();
     }

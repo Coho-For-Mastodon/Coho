@@ -991,20 +991,8 @@ export class Timeline extends LitElement {
 
   async showImage(imageURL: string) {
     console.log('show image', imageURL);
-    // this.imgPreview = imageURL;
-
-    // const dialog = this.shadowRoot?.querySelector('#img-preview') as any;
-    // await dialog.show();
-
-    if ('startViewTransition' in document) {
-      const transition = document.startViewTransition(() => {
-        router.navigate(`/home/img-preview?src=${imageURL}`);
-      });
-      await transition.finished;
-      return;
-    }
-
-    router.navigate(`/home/img-preview?src=${imageURL}`);
+    // Navigate - the router handles view transitions internally
+    await router.navigate(`/home/img-preview?src=${imageURL}`);
   }
 
   async showAnalyze(

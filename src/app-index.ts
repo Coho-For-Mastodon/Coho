@@ -297,4 +297,11 @@ export class AppIndex extends LitElement {
       <pwa-update></pwa-update>
     `;
   }
+
+  /**
+   * Render to light DOM so View Transitions can see the content
+   */
+  createRenderRoot() {
+    return this;
+  }
 }
