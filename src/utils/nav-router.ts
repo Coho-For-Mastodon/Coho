@@ -1,4 +1,5 @@
 import type { TemplateResult } from 'lit';
+import { ensurePolyfills, isBrowser } from './router-polyfills.js';
 
 /**
  * Route plugin interface - called during navigation lifecycle
@@ -55,61 +56,48 @@ export class Router extends EventTarget {
     this.routes = options.routes;
     this.globalPlugins = options.plugins || [];
 
-    // Build URLPattern matchers for each route
-    for (const route of this.routes) {
-      const pattern = new URLPattern({ pathname: route.path });
-      this.patterns.set(pattern, route);
+    // Skip initialization if not in browser (SSR)
+    if (!isBrowser()) {
+      return;
     }
 
-    // Set initial route (plugins run lazily on first render)
-    this.currentRoute = this.matchRoute(window.location.pathname);
+    // Patterns will be built after polyfills are loaded in init()
+  }
 
+  /**
+   * Set up Navigation API event listeners
+   * Called after polyfills are loaded
+   */
+  private setupNavigationListeners(): void {
     // Listen for Navigation API navigate events (handles anchor clicks, back/forward, etc.)
     window.navigation.addEventListener('navigate', (event) => {
       // Only handle same-origin navigations
       const url = new URL(event.destination.url);
-      const isBackNavigation =
-        event.navigationType === 'traverse' &&
-        event.destination.index < (window.navigation.currentEntry?.index ?? 0);
-
-      console.log(
-        '[Router] navigate event:',
-        url.pathname,
-        'type:',
-        event.navigationType,
-        'isBack:',
-        isBackNavigation
-      );
 
       if (url.origin !== window.location.origin) {
-        console.log('[Router] Skipping: cross-origin');
         return;
       }
 
       // Don't intercept downloads or form submissions
       if (event.downloadRequest || event.formData) {
-        console.log('[Router] Skipping: download or form');
         return;
       }
 
       // Can't intercept this navigation (e.g., cross-origin)
       if (!event.canIntercept) {
-        console.log('[Router] Skipping: canIntercept is false');
         return;
       }
 
       const route = this.matchRoute(url.pathname);
       if (!route) {
-        console.log('[Router] Skipping: no matching route');
         return; // Let the browser handle unknown routes
       }
 
-      console.log('[Router] Intercepting navigation to:', route.path);
       event.intercept({
         focusReset: 'manual',
         scroll: 'manual',
         handler: async () => {
-          await this.handleNavigation(route, isBackNavigation);
+          await this.handleNavigation(route);
         },
       });
     });
@@ -118,7 +106,7 @@ export class Router extends EventTarget {
     window.addEventListener('popstate', () => {
       const route = this.matchRoute(window.location.pathname);
       if (route && route.path !== this.currentRoute?.path) {
-        this.handleNavigation(route, true); // Assume back for popstate
+        this.handleNavigation(route);
       }
     });
   }
@@ -138,10 +126,7 @@ export class Router extends EventTarget {
   /**
    * Run plugins and update current route
    */
-  private async handleNavigation(
-    route: Route,
-    isBack: boolean = false
-  ): Promise<void> {
+  private async handleNavigation(route: Route): Promise<void> {
     // Run global beforeNavigation plugins
     for (const plugin of this.globalPlugins) {
       if (plugin.beforeNavigation) {
@@ -171,16 +156,8 @@ export class Router extends EventTarget {
       );
     };
 
-    // Skip view transition for /home (has fixed elements that flash)
-    const skipTransition = false;
-
-    if ('startViewTransition' in document && !skipTransition) {
+    if ('startViewTransition' in document) {
       try {
-        // Add class to document for back navigation animation direction
-        if (isBack) {
-          document.documentElement.classList.add('back-navigation');
-        }
-
         const transition = (
           document as Document & {
             startViewTransition: (cb: () => void) => {
@@ -193,13 +170,9 @@ export class Router extends EventTarget {
 
         // Wait for animations to finish
         await transition.finished;
-
-        // Clean up class
-        document.documentElement.classList.remove('back-navigation');
       } catch (e) {
         // If transition fails, just update DOM normally
         console.warn('View transition failed:', e);
-        document.documentElement.classList.remove('back-navigation');
         updateDOM();
       }
     } else {
@@ -244,14 +217,39 @@ export class Router extends EventTarget {
 
   /**
    * Initialize the router - must be called before first render
-   * Loads plugins for the initial route
+   * Loads polyfills if needed, builds patterns, and runs plugins for initial route
    */
   async init(): Promise<void> {
-    if (this.initialized || !this.currentRoute) {
+    if (this.initialized) {
       return;
     }
+
+    // Skip initialization if not in browser (SSR)
+    if (!isBrowser()) {
+      return;
+    }
+
+    // Load polyfills if needed (URLPattern, Navigation API)
+    await ensurePolyfills();
+
+    // Build URLPattern matchers for each route (after polyfill is loaded)
+    for (const route of this.routes) {
+      const pattern = new URLPattern({ pathname: route.path });
+      this.patterns.set(pattern, route);
+    }
+
+    // Set initial route
+    this.currentRoute = this.matchRoute(window.location.pathname);
+
+    // Set up Navigation API listeners
+    this.setupNavigationListeners();
+
     this.initialized = true;
-    await this.handleNavigation(this.currentRoute);
+
+    // Run plugins for initial route
+    if (this.currentRoute) {
+      await this.handleNavigation(this.currentRoute);
+    }
   }
 
   /**

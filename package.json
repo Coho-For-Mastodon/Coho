@@ -38,12 +38,14 @@
     "@huggingface/transformers": "^3.8.1",
     "@lit-labs/virtualizer": "^2.0.11",
     "@lit/localize": "^0.12.2",
+    "@virtualstate/navigation": "^1.0.1-alpha.212",
     "browser-fs-access": "^0.38.0",
     "fast-blurhash": "^1.1.2",
     "hotkeys-js": "^3.10.1",
     "idb-keyval": "^6.2.0",
     "lit": "^3.3.1",
-    "marked": "^17.0.0"
+    "marked": "^17.0.0",
+    "urlpattern-polyfill": "^10.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
