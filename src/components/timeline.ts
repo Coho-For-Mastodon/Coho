@@ -55,6 +55,7 @@ import '../components/md/md-skeleton-card';
 import '../components/md/md-divider';
 import '@lit-labs/virtualizer';
 import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
+import type { RenderItemFunction } from '@lit-labs/virtualizer/virtualize.js';
 
 import '../components/timeline-item';
 import '../components/search';
@@ -85,6 +86,44 @@ export class Timeline extends LitElement {
   private _threshold: number = 80;
   private _hapticTriggered: boolean = false;
   private _prefetchedIds = new Set<string>();
+
+  // Bound render function for lit-virtualizer
+  private _renderTimelineItem: RenderItemFunction<Post> = (
+    tweet: Post,
+    index: number
+  ) => {
+    const isLastItem = index === this.timeline.length - 1;
+    return html`<div class="timeline-list-item">
+      <timeline-item
+        @open="${($event: CustomEvent) => this.handleOpen($event.detail.tweet)}"
+        @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
+          this.handleSummary($event)}"
+        @translating="${($event: CustomEvent<HandleTranslatingDetail>) =>
+          this.handleTranslating($event)}"
+        tweetID="${tweet.id}"
+        @delete="${() => this.refreshTimeline()}"
+        @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
+          this.showAnalyze(
+            $event.detail.data as AnalyzeData,
+            $event.detail.imageData as ImageAnalyzeData | null,
+            $event.detail.tweet
+          )}"
+        @openimage="${($event: CustomEvent<OpenImageDetail>) =>
+          this.showImage($event.detail.imageURL)}"
+        ?show="${true}"
+        ?guestMode="${this.guestMode}"
+        @replies="${($event: CustomEvent<RepliesDetail>) =>
+          this.handleReplies($event.detail.data)}"
+        .tweet="${tweet}"
+      ></timeline-item>
+      ${isLastItem
+        ? html`<div id="load-more-indicator">
+            <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
+            <span>Loading more...</span>
+          </div>`
+        : null}
+    </div>`;
+  };
 
   // Cached element references for pull-to-refresh performance
   private _refreshIndicator: HTMLElement | null = null;
@@ -1152,68 +1191,7 @@ export class Timeline extends LitElement {
               class="scrollbar-hidden"
               scroller
               .items=${this.timeline}
-              .renderItem=${((tweet: Post, index: number) =>
-                index === this.timeline.length - 1
-                  ? html`<div class="timeline-list-item">
-                      <timeline-item
-                        @open="${($event: CustomEvent) =>
-                          this.handleOpen($event.detail.tweet)}"
-                        @summarize="${(
-                          $event: CustomEvent<HandleSummaryDetail>
-                        ) => this.handleSummary($event)}"
-                        @translating="${(
-                          $event: CustomEvent<HandleTranslatingDetail>
-                        ) => this.handleTranslating($event)}"
-                        tweetID="${tweet.id}"
-                        @delete="${() => this.refreshTimeline()}"
-                        @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                          this.showAnalyze(
-                            $event.detail.data as AnalyzeData,
-                            $event.detail.imageData as ImageAnalyzeData | null,
-                            $event.detail.tweet
-                          )}"
-                        @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                          this.showImage($event.detail.imageURL)}"
-                        ?show="${true}"
-                        ?guestMode="${this.guestMode}"
-                        @replies="${($event: CustomEvent<RepliesDetail>) =>
-                          this.handleReplies($event.detail.data)}"
-                        .tweet="${tweet}"
-                      ></timeline-item>
-                      <div id="load-more-indicator">
-                        <md-icon
-                          src="/assets/refresh-circle-outline.svg"
-                        ></md-icon>
-                        <span>Loading more...</span>
-                      </div>
-                    </div>`
-                  : html`<div class="timeline-list-item">
-                      <timeline-item
-                        @open="${($event: CustomEvent) =>
-                          this.handleOpen($event.detail.tweet)}"
-                        @summarize="${(
-                          $event: CustomEvent<HandleSummaryDetail>
-                        ) => this.handleSummary($event)}"
-                        @translating="${(
-                          $event: CustomEvent<HandleTranslatingDetail>
-                        ) => this.handleTranslating($event)}"
-                        tweetID="${tweet.id}"
-                        @delete="${() => this.refreshTimeline()}"
-                        @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-                          this.showAnalyze(
-                            $event.detail.data as AnalyzeData,
-                            $event.detail.imageData as ImageAnalyzeData | null,
-                            $event.detail.tweet
-                          )}"
-                        @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-                          this.showImage($event.detail.imageURL)}"
-                        ?show="${true}"
-                        ?guestMode="${this.guestMode}"
-                        @replies="${($event: CustomEvent<RepliesDetail>) =>
-                          this.handleReplies($event.detail.data)}"
-                        .tweet="${tweet}"
-                      ></timeline-item>
-                    </div>`) as unknown}
+              .renderItem=${this._renderTimelineItem}
               @visibilityChanged=${this._handleVisibilityChanged}
             >
             </lit-virtualizer>

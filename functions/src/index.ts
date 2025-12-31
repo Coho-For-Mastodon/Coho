@@ -23,7 +23,7 @@ const applyCors = (
   response: { set: (key: string, value: string) => void }
 ) => {
   const origin = request.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  if (origin && allowedOrigins.includes(origin)) {
     response.set('Access-Control-Allow-Origin', origin);
   }
   response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
