@@ -270,4 +270,5 @@ export const templates = {
   sfdfc05708c242107: `Wie du für andere erscheinst`,
   sfe2f8c98d9edbf7a: `Beitrag nicht gefunden`,
   sff9d51b6c5a73163: `Alt-Text`,
+  s216407f266691656: `Failed to load shared image. Please try sharing again.`,
 };

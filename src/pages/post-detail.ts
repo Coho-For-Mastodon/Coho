@@ -246,8 +246,8 @@ export class PostDetail extends LitElement {
       }
     }
 
-    // Check for ID-based route (/post/:id or /post/notification?notification_id=xxx)
-    const pathMatch = window.location.pathname.match(/\/post\/(.+)/);
+    // Check for ID-based route (/post/:id, /home/post/:id, or /post/notification?notification_id=xxx)
+    const pathMatch = window.location.pathname.match(/(?:\/home)?\/post\/(.+)/);
     if (pathMatch) {
       const pathId = pathMatch[1];
       const urlParams = new URLSearchParams(window.location.search);

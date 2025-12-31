@@ -39,6 +39,11 @@ export declare class Router extends EventTarget {
   private initialized;
   constructor(options: RouterOptions);
   /**
+   * Set up Navigation API event listeners
+   * Called after polyfills are loaded
+   */
+  private setupNavigationListeners;
+  /**
    * Match a pathname to a route using URLPattern
    */
   private matchRoute;
@@ -52,7 +57,7 @@ export declare class Router extends EventTarget {
   navigate(path: string | URL): Promise<void>;
   /**
    * Initialize the router - must be called before first render
-   * Loads plugins for the initial route
+   * Loads polyfills if needed, builds patterns, and runs plugins for initial route
    */
   init(): Promise<void>;
   /**

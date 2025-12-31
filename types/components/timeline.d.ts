@@ -51,10 +51,12 @@ export declare class Timeline extends LitElement {
   private _threshold;
   private _hapticTriggered;
   private _prefetchedIds;
+  private _renderTimelineItem;
   private _refreshIndicator;
   private _refreshIcon;
   private _scrollContainer;
   private _rafId;
+  private _pullToRefreshSetup;
   timelineType:
     | 'home'
     | 'public'
@@ -75,6 +77,7 @@ export declare class Timeline extends LitElement {
   protected willUpdate(changedProperties: PropertyValues): void;
   static styles: import('lit').CSSResult[];
   firstUpdated(): void;
+  updated(changedProperties: PropertyValues): void;
   private _setupPullToRefresh;
   private _getScrollContainer;
   private _getRefreshIndicator;

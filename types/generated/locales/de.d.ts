@@ -265,4 +265,5 @@ export declare const templates: {
   sfdfc05708c242107: string;
   sfe2f8c98d9edbf7a: string;
   sff9d51b6c5a73163: string;
+  s216407f266691656: string;
 };
