@@ -366,6 +366,15 @@ export class AppHome extends LitElement {
       await this.openNewDialog(decodedName);
     } else {
       console.log('[Share Target] No cached file found');
+      // Show error toast to user
+      await this.overlays.show('error-toast');
+      if (this.errorToast) {
+        this.errorToast.message = msg(
+          'Failed to load shared image. Please try sharing again.'
+        );
+        this.errorToast.variant = 'error';
+        this.errorToast.show();
+      }
     }
   }
 

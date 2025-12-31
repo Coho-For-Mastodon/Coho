@@ -382,15 +382,18 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Navigation
-  if (request.mode === 'navigate') {
-    event.respondWith(navigationHandler(request));
+  // Share target - MUST be checked before navigation handler
+  // POST form submissions have request.mode === 'navigate', so if we check
+  // navigation first, share target requests would be incorrectly handled
+  if (url.pathname === '/share' && request.method === 'POST') {
+    console.log('[SW] Share target POST intercepted');
+    event.respondWith(shareTargetHandler({ event }));
     return;
   }
 
-  // Share target
-  if (url.pathname === '/share' && request.method === 'POST') {
-    event.respondWith(shareTargetHandler({ event }));
+  // Navigation
+  if (request.mode === 'navigate') {
+    event.respondWith(navigationHandler(request));
     return;
   }
 
@@ -790,27 +793,46 @@ interface ShareTargetHandlerEvent {
 async function shareTargetHandler({
   event,
 }: ShareTargetHandlerEvent): Promise<Response> {
-  const formData = await event.request.formData();
-  const mediaFiles = formData.getAll('image') as File[];
-  const cache = await caches.open('shareTarget');
+  console.log('[SW] shareTargetHandler invoked');
 
-  console.log('[SW] Share target received', mediaFiles.length, 'files');
+  try {
+    const formData = await event.request.formData();
+    const mediaFiles = formData.getAll('image') as File[];
+    const cache = await caches.open('shareTarget');
 
-  for (const mediaFile of mediaFiles) {
-    const cacheKey = `/_share/${encodeURIComponent(mediaFile.name)}`;
-    console.log('[SW] Caching file with key:', cacheKey);
-    await cache.put(
-      cacheKey,
-      new Response(mediaFile, {
-        headers: {
-          'content-length': mediaFile.size.toString(),
-          'content-type': mediaFile.type,
-        },
-      })
-    );
+    console.log('[SW] Share target received', mediaFiles.length, 'files');
+
+    if (mediaFiles.length === 0) {
+      console.warn('[SW] Share target: No files received in form data');
+      return Response.redirect('/home', 303);
+    }
+
+    for (const mediaFile of mediaFiles) {
+      const cacheKey = `/_share/${encodeURIComponent(mediaFile.name)}`;
+      console.log(
+        '[SW] Caching file with key:',
+        cacheKey,
+        'size:',
+        mediaFile.size,
+        'type:',
+        mediaFile.type
+      );
+      await cache.put(
+        cacheKey,
+        new Response(mediaFile, {
+          headers: {
+            'content-length': mediaFile.size.toString(),
+            'content-type': mediaFile.type,
+          },
+        })
+      );
+    }
+
+    const redirectUrl = `/home?name=${encodeURIComponent(mediaFiles[0].name)}`;
+    console.log('[SW] Redirecting to:', redirectUrl);
+    return Response.redirect(redirectUrl, 303);
+  } catch (error) {
+    console.error('[SW] shareTargetHandler error:', error);
+    return Response.redirect('/home', 303);
   }
-
-  const redirectUrl = `/home?name=${encodeURIComponent(mediaFiles[0].name)}`;
-  console.log('[SW] Redirecting to:', redirectUrl);
-  return Response.redirect(redirectUrl, 303);
 }

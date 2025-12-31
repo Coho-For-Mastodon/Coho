@@ -172,7 +172,7 @@ describe('md-card', () => {
 
     it('dispatches card-click event when clicked and clickable', async () => {
       const el = await fixture<MdCard>(html`<md-card clickable></md-card>`);
-      const card = el.shadowRoot!.querySelector('.card')!;
+      const card = el.shadowRoot!.querySelector('.card')! as HTMLElement;
       const clickHandler = vi.fn();
 
       el.addEventListener('card-click', clickHandler);
@@ -184,7 +184,7 @@ describe('md-card', () => {
 
     it('does not dispatch card-click when not clickable', async () => {
       const el = await fixture<MdCard>(html`<md-card></md-card>`);
-      const card = el.shadowRoot!.querySelector('.card')!;
+      const card = el.shadowRoot!.querySelector('.card')! as HTMLElement;
       const clickHandler = vi.fn();
 
       el.addEventListener('card-click', clickHandler);
@@ -208,7 +208,7 @@ describe('md-card', () => {
       const el = await fixture<MdCard>(
         html`<md-card clickable disabled></md-card>`
       );
-      const card = el.shadowRoot!.querySelector('.card')!;
+      const card = el.shadowRoot!.querySelector('.card')! as HTMLElement;
       const clickHandler = vi.fn();
 
       el.addEventListener('card-click', clickHandler);

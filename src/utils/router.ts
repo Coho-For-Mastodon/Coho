@@ -15,6 +15,12 @@ const routes: Route[] = [
     render: () => html`<app-login></app-login>`,
   },
   {
+    path: '/share',
+    title: 'share',
+    plugins: [lazy(() => import('../pages/app-home.js'))],
+    render: () => html`<app-home></app-home>`,
+  },
+  {
     path: '/home',
     title: 'home',
     plugins: [lazy(() => import('../pages/app-home.js'))],
