@@ -5,7 +5,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     environment: 'happy-dom',
     globals: true,
-    setupFiles: ['./tests/setup.ts'],
+    setupFiles: ['urlpattern-polyfill', './tests/setup.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
