@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fixture, html } from '@open-wc/testing';
+import { fixture, html } from '../../test-utils';
 import '../../../src/components/md/md-menu';
 import '../../../src/components/md/md-menu-item';
 import type { MdMenu } from '../../../src/components/md/md-menu';

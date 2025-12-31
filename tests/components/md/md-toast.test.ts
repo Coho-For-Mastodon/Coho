@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fixture, html, elementUpdated } from '@open-wc/testing';
+import { fixture, html, elementUpdated } from '../../test-utils';
 import '../../../src/components/md/md-toast';
 import type { MdToast } from '../../../src/components/md/md-toast';
 

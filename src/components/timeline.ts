@@ -130,6 +130,7 @@ export class Timeline extends LitElement {
   private _refreshIcon: HTMLElement | null = null;
   private _scrollContainer: HTMLElement | null = null;
   private _rafId: number | null = null;
+  private _pullToRefreshSetup: boolean = false;
 
   @property({ type: String }) timelineType:
     | 'home'
@@ -463,11 +464,26 @@ export class Timeline extends LitElement {
   ];
 
   firstUpdated() {
-    // The lit-virtualizer with scroller attribute is itself the scroll container
-    this._setupPullToRefresh();
+    // Pull-to-refresh setup moved to updated() to handle conditional rendering
+  }
+
+  updated(changedProperties: PropertyValues) {
+    super.updated(changedProperties);
+
+    // Setup pull-to-refresh when virtualizer becomes available
+    if (
+      !this._pullToRefreshSetup &&
+      !this.loadingData &&
+      this.timeline.length > 0
+    ) {
+      this._setupPullToRefresh();
+    }
   }
 
   private async _setupPullToRefresh() {
+    // Prevent duplicate setup
+    if (this._pullToRefreshSetup) return;
+
     // Wait for lit-virtualizer to render
     await this.updateComplete;
 
@@ -480,6 +496,9 @@ export class Timeline extends LitElement {
     ) as HTMLElement;
 
     if (scrollContainer) {
+      // Clear cached reference to ensure fresh lookup
+      this._scrollContainer = scrollContainer;
+
       scrollContainer.addEventListener(
         'touchstart',
         this._handleTouchStart.bind(this),
@@ -495,6 +514,8 @@ export class Timeline extends LitElement {
         this._handleTouchEnd.bind(this),
         { passive: true }
       );
+
+      this._pullToRefreshSetup = true;
     }
   }
 

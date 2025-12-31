@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fixture, html, elementUpdated } from '@open-wc/testing';
+import { fixture, html, elementUpdated } from '../../test-utils';
 import '../../../src/components/md/md-divider';
 import type { MdDivider } from '../../../src/components/md/md-divider';
 

@@ -10,6 +10,9 @@ build
 /playwright-report/
 /playwright/.cache/
 
+# Vitest browser mode screenshots
+**/__screenshots__/
+
 # Environment variables
 .env
 .env.local

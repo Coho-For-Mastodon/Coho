@@ -17,6 +17,8 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
       - run: npm run test:run
 
   lint:

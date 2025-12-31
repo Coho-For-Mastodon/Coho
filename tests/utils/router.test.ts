@@ -9,7 +9,7 @@ vi.mock('../../src/utils/router-polyfills.js', () => ({
 
 describe('Router', () => {
   let router: Router;
-  let mockNavigationListeners: Map<string, EventListener>;
+  let originalPathname: string;
 
   const createTestRoutes = (): Route[] => [
     {
@@ -42,53 +42,22 @@ describe('Router', () => {
     },
   ];
 
+  // Helper to change URL in browser mode using history API
+  const navigateToPath = (path: string) => {
+    history.pushState({}, '', path);
+  };
+
   beforeEach(() => {
-    // Reset URL
-    Object.defineProperty(window, 'location', {
-      value: {
-        pathname: '/',
-        origin: 'http://localhost:3000',
-        href: 'http://localhost:3000/',
-      },
-      writable: true,
-      configurable: true,
-    });
-
-    // Track navigation listeners
-    mockNavigationListeners = new Map();
-
-    // Mock Navigation API
-    const mockNavigation = {
-      addEventListener: vi.fn((event: string, listener: EventListener) => {
-        mockNavigationListeners.set(event, listener);
-      }),
-      removeEventListener: vi.fn(),
-      navigate: vi.fn().mockImplementation(() => ({
-        committed: Promise.resolve(),
-        finished: Promise.resolve(),
-      })),
-      currentEntry: {
-        url: 'http://localhost:3000/',
-        index: 0,
-      },
-    };
-
-    Object.defineProperty(window, 'navigation', {
-      value: mockNavigation,
-      writable: true,
-      configurable: true,
-    });
-
-    // Mock document.title
-    Object.defineProperty(document, 'title', {
-      value: '',
-      writable: true,
-      configurable: true,
-    });
+    // Save original pathname
+    originalPathname = window.location.pathname;
+    // Reset to root
+    history.pushState({}, '', '/');
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    // Restore original pathname
+    history.pushState({}, '', originalPathname);
   });
 
   describe('constructor', () => {
@@ -113,33 +82,35 @@ describe('Router', () => {
   describe('init', () => {
     it('should initialize the router and set up listeners', async () => {
       router = new Router({ routes: createTestRoutes() });
+      const addEventListenerSpy = vi.spyOn(
+        window.navigation,
+        'addEventListener'
+      );
       await router.init();
 
-      expect(window.navigation.addEventListener).toHaveBeenCalledWith(
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
         'navigate',
         expect.any(Function)
       );
+      addEventListenerSpy.mockRestore();
     });
 
     it('should only initialize once', async () => {
       router = new Router({ routes: createTestRoutes() });
+      const addEventListenerSpy = vi.spyOn(
+        window.navigation,
+        'addEventListener'
+      );
       await router.init();
       await router.init();
 
       // addEventListener should only be called once
-      expect(window.navigation.addEventListener).toHaveBeenCalledTimes(1);
+      expect(addEventListenerSpy).toHaveBeenCalledTimes(1);
+      addEventListenerSpy.mockRestore();
     });
 
     it('should set initial route based on current pathname', async () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/about',
-          origin: 'http://localhost:3000',
-          href: 'http://localhost:3000/about',
-        },
-        writable: true,
-        configurable: true,
-      });
+      navigateToPath('/about');
 
       router = new Router({ routes: createTestRoutes() });
       await router.init();
@@ -160,21 +131,8 @@ describe('Router', () => {
   });
 
   describe('route matching', () => {
-    beforeEach(async () => {
-      router = new Router({ routes: createTestRoutes() });
-      await router.init();
-    });
-
     it('should match static routes', async () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/about',
-          origin: 'http://localhost:3000',
-          href: 'http://localhost:3000/about',
-        },
-        writable: true,
-        configurable: true,
-      });
+      navigateToPath('/about');
 
       router = new Router({ routes: createTestRoutes() });
       await router.init();
@@ -184,15 +142,7 @@ describe('Router', () => {
     });
 
     it('should match routes with single parameter', async () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/user/123',
-          origin: 'http://localhost:3000',
-          href: 'http://localhost:3000/user/123',
-        },
-        writable: true,
-        configurable: true,
-      });
+      navigateToPath('/user/123');
 
       router = new Router({ routes: createTestRoutes() });
       await router.init();
@@ -202,15 +152,7 @@ describe('Router', () => {
     });
 
     it('should match routes with multiple parameters', async () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/post/456/comment/789',
-          origin: 'http://localhost:3000',
-          href: 'http://localhost:3000/post/456/comment/789',
-        },
-        writable: true,
-        configurable: true,
-      });
+      navigateToPath('/post/456/comment/789');
 
       router = new Router({ routes: createTestRoutes() });
       await router.init();
@@ -220,15 +162,7 @@ describe('Router', () => {
     });
 
     it('should return null for unmatched routes', async () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/nonexistent',
-          origin: 'http://localhost:3000',
-          href: 'http://localhost:3000/nonexistent',
-        },
-        writable: true,
-        configurable: true,
-      });
+      navigateToPath('/nonexistent');
 
       router = new Router({ routes: createTestRoutes() });
       await router.init();
@@ -245,46 +179,44 @@ describe('Router', () => {
     });
 
     it('should call Navigation API navigate', async () => {
+      const navigateSpy = vi.spyOn(window.navigation, 'navigate');
       await router.navigate('/about');
 
-      expect(window.navigation.navigate).toHaveBeenCalledWith(
-        'http://localhost:3000/about',
+      expect(navigateSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/about'),
         expect.objectContaining({ history: 'push' })
       );
+      navigateSpy.mockRestore();
     });
 
     it('should handle URL objects', async () => {
-      const url = new URL('/about', 'http://localhost:3000');
+      const navigateSpy = vi.spyOn(window.navigation, 'navigate');
+      const url = new URL('/about', window.location.origin);
       await router.navigate(url);
 
-      expect(window.navigation.navigate).toHaveBeenCalledWith(
-        'http://localhost:3000/about',
+      expect(navigateSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/about'),
         expect.any(Object)
       );
+      navigateSpy.mockRestore();
     });
 
     it('should handle array input (bug fix)', async () => {
+      const navigateSpy = vi.spyOn(window.navigation, 'navigate');
       // This tests the existing bug workaround
       await router.navigate(['/about'] as unknown as string);
 
-      expect(window.navigation.navigate).toHaveBeenCalledWith(
-        'http://localhost:3000/about',
+      expect(navigateSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/about'),
         expect.any(Object)
       );
+      navigateSpy.mockRestore();
     });
   });
 
   describe('render', () => {
     it('should return null when no route matches', async () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          pathname: '/unknown-route',
-          origin: 'http://localhost:3000',
-          href: 'http://localhost:3000/unknown-route',
-        },
-        writable: true,
-        configurable: true,
-      });
+      navigateToPath('/unknown-route');
 
       router = new Router({ routes: createTestRoutes() });
       await router.init();

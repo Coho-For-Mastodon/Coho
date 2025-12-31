@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fixture, html, elementUpdated } from '@open-wc/testing';
+import { fixture, html, elementUpdated } from '../../test-utils';
 import '../../../src/components/md/md-dialog';
 import type { MdDialog } from '../../../src/components/md/md-dialog';
 
@@ -61,11 +61,17 @@ describe('md-dialog', () => {
 
     it('hide method closes dialog', async () => {
       const el = await fixture<MdDialog>(html`<md-dialog open></md-dialog>`);
-      const dialog = el.shadowRoot!.querySelector('dialog')!;
 
-      // Mock animationend since we're not in a real browser environment
-      const hidePromise = el.hide();
-      dialog.dispatchEvent(new Event('animationend'));
+      // Listen for the hide event which fires after dialog is fully closed
+      const hidePromise = new Promise<void>((resolve) => {
+        el.addEventListener('md-dialog-hide', () => resolve(), { once: true });
+      });
+
+      // Call hide - this starts the closing animation
+      el.hide();
+
+      // The dialog has a 0.2s animation, wait for it to complete
+      // In browser mode, we need to wait for the actual animation
       await hidePromise;
       await elementUpdated(el);
 
