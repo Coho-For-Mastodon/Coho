@@ -1,5 +1,4 @@
 import { LitElement } from 'lit';
-import './md/md-toast.js';
 export declare class PwaUpdate extends LitElement {
   private updateAvailable;
   private updateCallback;

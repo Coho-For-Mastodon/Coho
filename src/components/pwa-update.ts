@@ -2,8 +2,6 @@ import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 
-import './md/md-toast.js';
-
 @localized()
 @customElement('pwa-update')
 export class PwaUpdate extends LitElement {
@@ -27,8 +25,10 @@ export class PwaUpdate extends LitElement {
   }
 
   private handleUpdate = (event: CustomEvent) => {
-    this.updateAvailable = true;
-    this.updateCallback = event.detail.updateServiceWorker;
+    import('./md/md-toast.js').then(() => {
+      this.updateAvailable = true;
+      this.updateCallback = event.detail.updateServiceWorker;
+    });
   };
 
   private doUpdate() {
