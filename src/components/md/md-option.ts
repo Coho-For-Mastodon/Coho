@@ -180,8 +180,8 @@ export class MdOption extends LitElement {
           ? 'disabled'
           : ''}"
         role="option"
-        aria-selected="${this.selected}"
-        aria-disabled="${this.disabled}"
+        aria-selected="${this.selected ? 'true' : 'false'}"
+        aria-disabled="${this.disabled ? 'true' : 'false'}"
       >
         <div class="content">
           <slot></slot>

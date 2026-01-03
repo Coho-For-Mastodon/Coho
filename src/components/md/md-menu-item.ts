@@ -268,7 +268,7 @@ export class MdMenuItem extends LitElement {
       <div
         class="menu-item ${this.disabled ? 'disabled' : ''}"
         role="menuitem"
-        aria-selected="${this.selected}"
+        aria-selected="${this.selected ? 'true' : 'false'}"
         tabindex="${this.disabled ? '-1' : '0'}"
         title=${ifDefined(this.title || undefined)}
         @click="${this._handleClick}"

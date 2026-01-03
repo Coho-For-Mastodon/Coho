@@ -257,7 +257,7 @@ export class MdCard extends LitElement {
         @click=${this.handleClick}
         tabindex="${this.clickable && !this.disabled ? '0' : '-1'}"
         role="${this.clickable ? 'button' : 'article'}"
-        aria-disabled="${this.disabled}"
+        aria-disabled="${this.disabled ? 'true' : 'false'}"
       >
         <div class="card__image">
           <slot name="image"></slot>
