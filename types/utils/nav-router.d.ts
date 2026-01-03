@@ -1,11 +1,10 @@
 import type { TemplateResult } from 'lit';
 /**
- * Route plugin interface - called during navigation lifecycle
+ * Route plugin interface - called before navigation completes
  */
 export interface RouterPlugin {
   name?: string;
   beforeNavigation?: () => void | Promise<void>;
-  afterNavigation?: () => void | Promise<void>;
 }
 /**
  * Route configuration
@@ -21,7 +20,6 @@ export interface Route {
  */
 export interface RouterOptions {
   routes: Route[];
-  plugins?: RouterPlugin[];
 }
 /**
  * Creates a lazy loading plugin that imports a module before navigation
@@ -33,7 +31,6 @@ export declare function lazy(importFn: () => Promise<unknown>): RouterPlugin;
  */
 export declare class Router extends EventTarget {
   private routes;
-  private globalPlugins;
   private patterns;
   private currentRoute;
   private initialized;

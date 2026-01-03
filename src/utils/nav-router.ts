@@ -2,12 +2,11 @@ import type { TemplateResult } from 'lit';
 import { ensurePolyfills, isBrowser } from './router-polyfills.js';
 
 /**
- * Route plugin interface - called during navigation lifecycle
+ * Route plugin interface - called before navigation completes
  */
 export interface RouterPlugin {
   name?: string;
   beforeNavigation?: () => void | Promise<void>;
-  afterNavigation?: () => void | Promise<void>;
 }
 
 /**
@@ -25,7 +24,6 @@ export interface Route {
  */
 export interface RouterOptions {
   routes: Route[];
-  plugins?: RouterPlugin[];
 }
 
 /**
@@ -46,7 +44,6 @@ export function lazy(importFn: () => Promise<unknown>): RouterPlugin {
  */
 export class Router extends EventTarget {
   private routes: Route[];
-  private globalPlugins: RouterPlugin[];
   private patterns: Map<URLPattern, Route> = new Map();
   private currentRoute: Route | null = null;
   private initialized = false;
@@ -54,7 +51,6 @@ export class Router extends EventTarget {
   constructor(options: RouterOptions) {
     super();
     this.routes = options.routes;
-    this.globalPlugins = options.plugins || [];
 
     // Skip initialization if not in browser (SSR)
     if (!isBrowser()) {
@@ -127,14 +123,7 @@ export class Router extends EventTarget {
    * Run plugins and update current route
    */
   private async handleNavigation(route: Route): Promise<void> {
-    // Run global beforeNavigation plugins
-    for (const plugin of this.globalPlugins) {
-      if (plugin.beforeNavigation) {
-        await plugin.beforeNavigation();
-      }
-    }
-
-    // Run route-specific beforeNavigation plugins
+    // Run route-specific beforeNavigation plugins (e.g., lazy loading)
     if (route.plugins) {
       for (const plugin of route.plugins) {
         if (plugin.beforeNavigation) {
@@ -178,33 +167,12 @@ export class Router extends EventTarget {
     } else {
       updateDOM();
     }
-
-    // Run global afterNavigation plugins
-    for (const plugin of this.globalPlugins) {
-      if (plugin.afterNavigation) {
-        await plugin.afterNavigation();
-      }
-    }
-
-    // Run route-specific afterNavigation plugins
-    if (route.plugins) {
-      for (const plugin of route.plugins) {
-        if (plugin.afterNavigation) {
-          await plugin.afterNavigation();
-        }
-      }
-    }
   }
 
   /**
    * Programmatically navigate to a path
    */
   async navigate(path: string | URL): Promise<void> {
-    // Handle array passed by mistake (fixes existing bug in codebase)
-    if (Array.isArray(path)) {
-      path = path[0];
-    }
-
     const url =
       typeof path === 'string' ? new URL(path, window.location.origin) : path;
 

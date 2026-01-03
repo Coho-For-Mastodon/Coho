@@ -121,6 +121,40 @@ customPlugins.push({
   },
 });
 
+// Plugin to minify HTML in Lit component tagged templates
+customPlugins.push({
+  name: 'minify-lit-html',
+  enforce: 'pre',
+  transform(code: string, id: string) {
+    // Only process TypeScript/JavaScript files
+    if (!/\.(ts|js|tsx|jsx)$/.test(id)) return null;
+
+    // Only process files that contain Lit html`` templates
+    if (!code.includes('html`')) return null;
+
+    // Minify HTML inside html`` tagged templates
+    // Be careful to preserve template expressions ${...}
+    const minified = code.replace(/html`([\s\S]*?)`/g, (match, html) => {
+      const minifiedHtml = html
+        .replace(/<!--[\s\S]*?-->/g, '') // Remove HTML comments
+        .replace(/>\s+</g, '><') // Remove whitespace between tags
+        .replace(/\s+/g, ' ') // Collapse multiple whitespace to single space
+        .replace(/>\s+\$/g, '>$') // Remove space before template expressions after >
+        .replace(/\$\s+</g, '$<') // Remove space after template expressions before <
+        .replace(/"\s+>/g, '">') // Remove space before > after attribute value
+        .replace(/'\s+>/g, "'>") // Remove space before > after single-quoted attribute
+        .trim();
+      return `html\`${minifiedHtml}\``;
+    });
+
+    if (minified !== code) {
+      return { code: minified, map: null };
+    }
+
+    return null;
+  },
+});
+
 // Plugin to minify HTML
 customPlugins.push({
   name: 'html-minifier',
@@ -204,7 +238,6 @@ export default defineConfig({
         main: 'index.html',
       },
       output: {
-        entryFileNames: 'code/[name].js',
         manualChunks(id) {
           if (id.includes('node_modules')) {
             // Exclude lit-virtualizer from vendor-lit - let it bundle naturally with components

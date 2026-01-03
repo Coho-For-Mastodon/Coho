@@ -9,8 +9,8 @@ export declare class AppLogin extends LitElement {
   private _searchDebounceTimer;
   static styles: import('lit').CSSResult[];
   firstUpdated(): Promise<void>;
-  private determinePostAuthRedirect;
-  login(): Promise<void>;
+  private getPostAuthRedirect;
+  private login;
   handleServerInput(
     event:
       | Event
@@ -18,9 +18,9 @@ export declare class AppLogin extends LitElement {
           value: string;
         }>
   ): void;
-  doSearchInstances(query: string): Promise<void>;
+  private doSearchInstances;
   handleServerSelect(event: CustomEvent): void;
-  joinMastodon(): Promise<void>;
-  explore(): Promise<void>;
+  private joinMastodon;
+  private explore;
   render(): import('lit-html').TemplateResult<1>;
 }

@@ -5,62 +5,10 @@ import { msg, localized } from '@lit/localize';
 import '../components/md/md-autocomplete';
 import '../components/md/md-button';
 import type { AutocompleteOption } from '../components/md/md-autocomplete';
+import { POPULAR_INSTANCES } from '../services/instance-search';
 
 // Dynamic import to avoid loading router during SSR
 const getRouter = () => import('../utils/router').then((m) => m.router);
-
-// Lazy load instance search - only loaded when user starts typing
-const getInstanceSearch = () => import('../services/instance-search');
-
-// Popular Mastodon instances for initial display (duplicated for initial render without loading service)
-const POPULAR_INSTANCES = [
-  {
-    value: 'mastodon.social',
-    label: 'mastodon.social',
-    description: 'The original Mastodon server',
-  },
-  {
-    value: 'mastodon.online',
-    label: 'mastodon.online',
-    description: 'A newer official Mastodon server',
-  },
-  {
-    value: 'mstdn.social',
-    label: 'mstdn.social',
-    description: 'A general-purpose server',
-  },
-  {
-    value: 'fosstodon.org',
-    label: 'fosstodon.org',
-    description: 'For Free & Open Source Software enthusiasts',
-  },
-  {
-    value: 'hachyderm.io',
-    label: 'hachyderm.io',
-    description: 'For tech industry professionals',
-  },
-  {
-    value: 'infosec.exchange',
-    label: 'infosec.exchange',
-    description: 'For the infosec community',
-  },
-  {
-    value: 'tech.lgbt',
-    label: 'tech.lgbt',
-    description: 'For LGBTQ+ people in tech',
-  },
-  {
-    value: 'universeodon.com',
-    label: 'universeodon.com',
-    description: 'A general-purpose server',
-  },
-  { value: 'mas.to', label: 'mas.to', description: 'A general-purpose server' },
-  {
-    value: 'social.vivaldi.net',
-    label: 'social.vivaldi.net',
-    description: 'Vivaldi browser community',
-  },
-];
 
 @localized()
 @customElement('app-login')
@@ -98,31 +46,11 @@ export class AppLogin extends LitElement {
         overflow: hidden;
       }
 
-      .background-decoration {
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        opacity: 0.3;
-        z-index: 0;
-        pointer-events: none;
-      }
-
       .login-card {
         max-width: 400px;
         width: 100%;
         z-index: 1;
         padding: 32px;
-        background: var(--md-sys-color-surface, #fff);
-        border-radius: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      @media (prefers-color-scheme: dark) {
-        .login-card {
-          background: var(--md-sys-color-surface, #1e1e24);
-        }
       }
 
       .login-header {
@@ -217,21 +145,16 @@ export class AppLogin extends LitElement {
     const state = urlParams.get('state');
 
     const accessToken = localStorage.getItem('accessToken');
-
     const server = localStorage.getItem('server');
-
-    const getPostAuthTarget = this.determinePostAuthRedirect();
 
     if (code && state) {
       const { authToClient } = await import('../services/account');
-
       await authToClient(code, state);
-
       const router = await getRouter();
-      await router.navigate(getPostAuthTarget());
+      await router.navigate(this.getPostAuthRedirect());
     } else if (accessToken && server) {
       const router = await getRouter();
-      await router.navigate(getPostAuthTarget());
+      await router.navigate(this.getPostAuthRedirect());
     }
 
     window.requestIdleCallback(async () => {
@@ -242,50 +165,46 @@ export class AppLogin extends LitElement {
     });
   }
 
-  private determinePostAuthRedirect() {
-    return (): string => {
-      // If the current URL already carries an intent (rare, but possible),
-      // preserve it when we redirect to /home.
-      const currentParams = new URLSearchParams(window.location.search);
-      if (
-        currentParams.has('tab') ||
-        currentParams.has('newPost') ||
-        currentParams.has('name')
-      ) {
-        return `/home${window.location.search}${window.location.hash}`;
-      }
+  private getPostAuthRedirect(): string {
+    // If the current URL already carries an intent (rare, but possible),
+    // preserve it when we redirect to /home.
+    const currentParams = new URLSearchParams(window.location.search);
+    if (
+      currentParams.has('tab') ||
+      currentParams.has('newPost') ||
+      currentParams.has('name')
+    ) {
+      return `/home${window.location.search}${window.location.hash}`;
+    }
 
-      // Otherwise, prefer the initial launch URL (manifest shortcut / deep link)
-      // if it points at /home with intent params.
-      try {
-        const launchUrl = sessionStorage.getItem('coho:launchUrl') || '';
-        if (launchUrl) {
-          const launch = new URL(launchUrl, window.location.origin);
-          const hasIntent =
-            launch.searchParams.has('tab') ||
-            launch.searchParams.has('newPost') ||
-            launch.searchParams.has('name');
+    // Otherwise, prefer the initial launch URL (manifest shortcut / deep link)
+    // if it points at /home with intent params.
+    try {
+      const launchUrl = sessionStorage.getItem('coho:launchUrl') || '';
+      if (launchUrl) {
+        const launch = new URL(launchUrl, window.location.origin);
+        const hasIntent =
+          launch.searchParams.has('tab') ||
+          launch.searchParams.has('newPost') ||
+          launch.searchParams.has('name');
 
-          if (launch.pathname === '/home' && hasIntent) {
-            return `${launch.pathname}${launch.search}${launch.hash}`;
-          }
+        if (launch.pathname === '/home' && hasIntent) {
+          return `${launch.pathname}${launch.search}${launch.hash}`;
         }
-      } catch {
-        // sessionStorage may be unavailable in some privacy contexts; ignore.
       }
+    } catch {
+      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
 
-      return '/home';
-    };
+    return '/home';
   }
 
-  async login() {
+  private login = async () => {
     let serverURL = this.chosenServer;
     if (serverURL.length > 0) {
       if (serverURL.includes('https://')) {
-        // remove https://
         serverURL = serverURL.replace('https://', '');
       }
-
       try {
         const { initAuth } = await import('../services/account');
         await initAuth(serverURL);
@@ -293,7 +212,7 @@ export class AppLogin extends LitElement {
         console.error(err);
       }
     }
-  }
+  };
 
   handleServerInput(event: Event | CustomEvent<{ value: string }>) {
     const value =
@@ -318,48 +237,38 @@ export class AppLogin extends LitElement {
     }, 300);
   }
 
-  async doSearchInstances(query: string) {
+  private doSearchInstances = async (query: string) => {
     this.loadingInstances = true;
-
     try {
-      const { searchInstances } = await getInstanceSearch();
+      const { searchInstances } = await import('../services/instance-search');
       this.instances = await searchInstances(query);
     } catch (error) {
       console.error('Failed to search instances:', error);
-      // Fallback to filtering popular instances
-      const matchingPopular = POPULAR_INSTANCES.filter((inst) =>
-        inst.value.toLowerCase().includes(query.toLowerCase())
-      );
-      this.instances =
-        matchingPopular.length > 0 ? matchingPopular : POPULAR_INSTANCES;
+      this.instances = POPULAR_INSTANCES;
     } finally {
       this.loadingInstances = false;
     }
-  }
+  };
 
   handleServerSelect(event: CustomEvent) {
     this.chosenServer = event.detail.value;
   }
 
-  async joinMastodon() {
-    // open https://joinmastodon.org/servers in new tab
+  private joinMastodon = async () => {
     const router = await getRouter();
     router.navigate('/createaccount');
-  }
+  };
 
-  async explore() {
+  private explore = async () => {
     const { enterGuestMode } = await import('../services/auth-state');
     enterGuestMode();
-
     const router = await getRouter();
     router.navigate('/home');
-  }
+  };
 
   render() {
     return html`
       <main>
-        <div class="background-decoration"></div>
-
         <div class="login-card">
           <div class="login-header">
             <img
@@ -385,7 +294,7 @@ export class AppLogin extends LitElement {
             </md-autocomplete>
 
             <md-button
-              @click="${() => this.login()}"
+              @click="${this.login}"
               variant="filled"
               class="login-button"
             >
@@ -394,10 +303,10 @@ export class AppLogin extends LitElement {
           </div>
 
           <div class="login-actions">
-            <md-button @click="${() => this.joinMastodon()}" variant="text">
+            <md-button @click="${this.joinMastodon}" variant="text">
               ${msg('Sign up for Mastodon Account')}
             </md-button>
-            <md-button @click="${() => this.explore()}" variant="text">
+            <md-button @click="${this.explore}" variant="text">
               ${msg('Try Coho without an account')}
             </md-button>
           </div>
