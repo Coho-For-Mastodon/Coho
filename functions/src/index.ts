@@ -144,7 +144,7 @@ export const translateStatus = onRequest(
 
     try {
       const result = await openai.responses.create({
-        model: 'gpt-5-mini',
+        model: 'gpt-5-nano',
         input: `Translate the following text to ${target_language}: ${content} . Provide only the translated text.`,
       });
 

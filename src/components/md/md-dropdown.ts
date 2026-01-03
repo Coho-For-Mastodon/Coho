@@ -89,7 +89,6 @@ export class MdDropdown extends LitElement {
       z-index: 100000;
       opacity: 0;
       transform: scale(0.95);
-      transform-origin: top left;
       transition: opacity 0.15s cubic-bezier(0.2, 0, 0, 1), transform 0.15s cubic-bezier(0.2, 0, 0, 1);
     `;
 
@@ -174,36 +173,82 @@ export class MdDropdown extends LitElement {
 
     const rect = triggerEl.getBoundingClientRect();
     const popupRect = this._popupContainer.getBoundingClientRect();
-
-    let top = rect.bottom + this.distance;
-    let left = rect.left;
-
-    // Adjust for placement
-    if (this.placement === 'bottom-end') {
-      left = rect.right - popupRect.width;
-    } else if (this.placement === 'top-start') {
-      top = rect.top - popupRect.height - this.distance;
-    } else if (this.placement === 'top-end') {
-      top = rect.top - popupRect.height - this.distance;
-      left = rect.right - popupRect.width;
-    }
-
-    // Keep within viewport bounds
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const margin = 8;
 
-    if (left + popupRect.width > viewportWidth) {
-      left = viewportWidth - popupRect.width - 8;
+    // Parse requested placement
+    let [vertical, horizontal] = this.placement.split('-') as [
+      'top' | 'bottom',
+      'start' | 'end',
+    ];
+
+    // Calculate available space in each direction
+    const spaceBelow = viewportHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    const spaceRight = viewportWidth - rect.left - margin;
+    const spaceLeft = rect.right - margin;
+
+    // Flip vertical if needed
+    if (
+      vertical === 'bottom' &&
+      popupRect.height > spaceBelow &&
+      spaceAbove > spaceBelow
+    ) {
+      vertical = 'top';
+    } else if (
+      vertical === 'top' &&
+      popupRect.height > spaceAbove &&
+      spaceBelow > spaceAbove
+    ) {
+      vertical = 'bottom';
     }
-    if (left < 8) {
-      left = 8;
+
+    // Flip horizontal if needed
+    if (
+      horizontal === 'start' &&
+      popupRect.width > spaceRight &&
+      spaceLeft > spaceRight
+    ) {
+      horizontal = 'end';
+    } else if (
+      horizontal === 'end' &&
+      popupRect.width > spaceLeft &&
+      spaceRight > spaceLeft
+    ) {
+      horizontal = 'start';
     }
-    if (top + popupRect.height > viewportHeight) {
+
+    // Calculate position based on computed placement
+    let top: number;
+    let left: number;
+
+    if (vertical === 'bottom') {
+      top = rect.bottom + this.distance;
+    } else {
       top = rect.top - popupRect.height - this.distance;
     }
-    if (top < 8) {
-      top = 8;
+
+    if (horizontal === 'start') {
+      left = rect.left;
+    } else {
+      left = rect.right - popupRect.width;
     }
+
+    // Final clamp to viewport (in case popup is larger than available space)
+    left = Math.max(
+      margin,
+      Math.min(left, viewportWidth - popupRect.width - margin)
+    );
+    top = Math.max(
+      margin,
+      Math.min(top, viewportHeight - popupRect.height - margin)
+    );
+
+    // Set transform-origin based on computed placement for natural animation
+    const originY = vertical === 'bottom' ? 'top' : 'bottom';
+    const originX = horizontal === 'start' ? 'left' : 'right';
+    this._popupContainer.style.transformOrigin = `${originY} ${originX}`;
 
     this._popupContainer.style.top = `${top}px`;
     this._popupContainer.style.left = `${left}px`;

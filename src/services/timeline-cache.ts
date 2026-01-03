@@ -8,7 +8,7 @@ interface TimelineCache {
 }
 
 const CACHE_KEY_PREFIX = 'timeline_cache_';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 1 * 60 * 1000; // 1 minute - short TTL since we use stale-while-revalidate
 
 /**
  * Save timeline data to sessionStorage

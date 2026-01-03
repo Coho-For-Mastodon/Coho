@@ -4,15 +4,16 @@ import { msg, localized } from '@lit/localize';
 
 import '../components/md/md-autocomplete';
 import '../components/md/md-button';
-import '../components/md/md-card';
 import type { AutocompleteOption } from '../components/md/md-autocomplete';
-import type { MdDialog } from '../components/md/md-dialog';
 
 // Dynamic import to avoid loading router during SSR
 const getRouter = () => import('../utils/router').then((m) => m.router);
 
-// Popular Mastodon instances for fallback/initial suggestions
-const POPULAR_INSTANCES: AutocompleteOption[] = [
+// Lazy load instance search - only loaded when user starts typing
+const getInstanceSearch = () => import('../services/instance-search');
+
+// Popular Mastodon instances for initial display (duplicated for initial render without loading service)
+const POPULAR_INSTANCES = [
   {
     value: 'mastodon.social',
     label: 'mastodon.social',
@@ -61,12 +62,9 @@ const POPULAR_INSTANCES: AutocompleteOption[] = [
   },
 ];
 
-let scrollWidth: number = 0;
-
 @localized()
 @customElement('app-login')
 export class AppLogin extends LitElement {
-  @state() loadIntro: boolean = false;
   @state() instances: AutocompleteOption[] = POPULAR_INSTANCES;
   @state() chosenServer: string = '';
   @state() loadingInstances: boolean = false;
@@ -111,11 +109,20 @@ export class AppLogin extends LitElement {
         pointer-events: none;
       }
 
-      md-card {
+      .login-card {
         max-width: 400px;
         width: 100%;
         z-index: 1;
-        --md-card-padding: 32px;
+        padding: 32px;
+        background: var(--md-sys-color-surface, #fff);
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .login-card {
+          background: var(--md-sys-color-surface, #1e1e24);
+        }
       }
 
       .login-header {
@@ -188,44 +195,8 @@ export class AppLogin extends LitElement {
         text-decoration: underline;
       }
 
-      md-dialog::part(base) {
-        z-index: 99999;
-      }
-
-      md-dialog::part(panel) {
-        backdrop-filter: blur(80px);
-        width: min(600px, 90vw);
-        max-height: 85vh;
-      }
-
-      md-dialog a {
-        color: var(--sl-color-primary-600);
-      }
-
-      #intro-carousel {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        gap: 0;
-        width: 100%;
-      }
-
-      .scroll-item {
-        flex: 0 0 100%;
-        scroll-snap-align: center;
-        padding: 0 4px;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .scroll-item md-button {
-        align-self: center;
-        margin-top: 16px;
-      }
-
       @media (max-width: 820px) {
-        md-card {
+        .login-card {
           box-shadow: none;
           background: transparent;
           border: none;
@@ -249,7 +220,30 @@ export class AppLogin extends LitElement {
 
     const server = localStorage.getItem('server');
 
-    const getPostAuthTarget = (): string => {
+    const getPostAuthTarget = this.determinePostAuthRedirect();
+
+    if (code && state) {
+      const { authToClient } = await import('../services/account');
+
+      await authToClient(code, state);
+
+      const router = await getRouter();
+      await router.navigate(getPostAuthTarget());
+    } else if (accessToken && server) {
+      const router = await getRouter();
+      await router.navigate(getPostAuthTarget());
+    }
+
+    window.requestIdleCallback(async () => {
+      if (this.shadowRoot) {
+        const { enableVibrate } = await import('../utils/handle-vibrate');
+        enableVibrate(this.shadowRoot);
+      }
+    });
+  }
+
+  private determinePostAuthRedirect() {
+    return (): string => {
       // If the current URL already carries an intent (rare, but possible),
       // preserve it when we redirect to /home.
       const currentParams = new URLSearchParams(window.location.search);
@@ -282,25 +276,6 @@ export class AppLogin extends LitElement {
 
       return '/home';
     };
-
-    if (code && state) {
-      const { authToClient } = await import('../services/account');
-
-      await authToClient(code, state);
-
-      const router = await getRouter();
-      await router.navigate(getPostAuthTarget());
-    } else if (accessToken && server) {
-      const router = await getRouter();
-      await router.navigate(getPostAuthTarget());
-    }
-
-    window.requestIdleCallback(async () => {
-      if (this.shadowRoot) {
-        const { enableVibrate } = await import('../utils/handle-vibrate');
-        enableVibrate(this.shadowRoot);
-      }
-    });
   }
 
   async login() {
@@ -318,47 +293,6 @@ export class AppLogin extends LitElement {
         console.error(err);
       }
     }
-  }
-
-  async openIntro() {
-    await import('../components/md/md-dialog.js');
-    this.loadIntro = true;
-
-    await this.updateComplete;
-
-    const dialog = this.shadowRoot?.querySelector(
-      'md-dialog'
-    ) as MdDialog | null;
-
-    dialog?.show();
-  }
-
-  scrollToItem(scroller: Element, width: number) {
-    const newWidth = scrollWidth + width;
-    scrollWidth = newWidth;
-
-    scroller.scrollTo({
-      top: 0,
-      left: newWidth,
-      behavior: 'smooth',
-    });
-  }
-
-  next() {
-    const scroller = this.shadowRoot?.querySelector('#intro-carousel');
-
-    if (scroller) {
-      this.scrollToItem(scroller, 1000);
-    }
-  }
-
-  async getStarted() {
-    const dialog = this.shadowRoot?.querySelector(
-      'md-dialog'
-    ) as MdDialog | null;
-    await dialog?.hide();
-
-    scrollWidth = 0;
   }
 
   handleServerInput(event: Event | CustomEvent<{ value: string }>) {
@@ -380,80 +314,16 @@ export class AppLogin extends LitElement {
     }
 
     this._searchDebounceTimer = setTimeout(() => {
-      this.searchInstances(value);
+      this.doSearchInstances(value);
     }, 300);
   }
 
-  async searchInstances(query: string) {
+  async doSearchInstances(query: string) {
     this.loadingInstances = true;
 
     try {
-      // First, filter popular instances that match
-      const matchingPopular = POPULAR_INSTANCES.filter((inst) =>
-        inst.value.toLowerCase().includes(query.toLowerCase())
-      );
-
-      // Try to fetch from instances.social API
-      const instancesToken = import.meta.env.VITE_INSTANCES_SOCIAL_TOKEN;
-      if (!instancesToken) {
-        console.warn(
-          'VITE_INSTANCES_SOCIAL_TOKEN not set, using local filtering only'
-        );
-        this.instances =
-          matchingPopular.length > 0 ? matchingPopular : POPULAR_INSTANCES;
-        this.loadingInstances = false;
-        return;
-      }
-
-      const response = await fetch(
-        `https://instances.social/api/1.0/instances/search?q=${encodeURIComponent(query)}&count=10&name=true`,
-        {
-          headers: {
-            Authorization: `Bearer ${instancesToken}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        interface InstanceResult {
-          name: string;
-          users?: number;
-          thumbnail?: string;
-          info?: {
-            short_description?: string;
-            full_description?: string;
-          };
-        }
-        const apiInstances: AutocompleteOption[] = (
-          (data.instances || []) as InstanceResult[]
-        ).map((inst) => ({
-          value: inst.name,
-          label: inst.name,
-          description:
-            inst.info?.short_description ||
-            inst.info?.full_description?.substring(0, 100) ||
-            `${inst.users || '?'} users`,
-          icon: inst.thumbnail,
-        }));
-
-        // Combine popular matches with API results, removing duplicates
-        const seenValues = new Set<string>();
-        const combined: AutocompleteOption[] = [];
-
-        for (const inst of [...matchingPopular, ...apiInstances]) {
-          if (!seenValues.has(inst.value)) {
-            seenValues.add(inst.value);
-            combined.push(inst);
-          }
-        }
-
-        this.instances = combined.length > 0 ? combined : matchingPopular;
-      } else {
-        // Fallback to filtering popular instances
-        this.instances =
-          matchingPopular.length > 0 ? matchingPopular : POPULAR_INSTANCES;
-      }
+      const { searchInstances } = await getInstanceSearch();
+      this.instances = await searchInstances(query);
     } catch (error) {
       console.error('Failed to search instances:', error);
       // Fallback to filtering popular instances
@@ -487,104 +357,10 @@ export class AppLogin extends LitElement {
 
   render() {
     return html`
-      ${this.loadIntro
-        ? html`
-            <md-dialog .label="${msg('Intro To Mastodon')}">
-              <div id="intro-carousel" class="scrollbar-hidden">
-                <div class="scroll-item">
-                  <h2>${msg('What is Coho?')}</h2>
-                  <p>
-                    ${msg(
-                      'Coho is the app your using 😊. It is an open source, cross-platform Mastodon client. Coho brings the best of Mastodon to any device, with a fast and intuitive interface, no matter your device or internet connection. To use Coho, you need a Mastodon account. Once you have a Mastodon account you will need to enter the URL of the Mastodon instance you signed up at.'
-                    )}
-                  </p>
-
-                  <md-button variant="text" pill @click="${() => this.next()}"
-                    >${msg('Next')}</md-button
-                  >
-                </div>
-
-                <div class="scroll-item">
-                  <h2>${msg('What Is Mastodon?')}</h2>
-                  <p>
-                    ${msg(
-                      'Mastodon is a social media platform that allows users to create and share short posts, called "toots," and interact with each other through features like boosting, direct messaging, and hashtags. It is decentralized, meaning that it is not controlled by a central authority and users can choose which communities, called "instances," they want to join. Mastodon is open-source and free to use.'
-                    )}
-                  </p>
-
-                  <p>
-                    ${msg(
-                      'Each instance is run by a different administrator and can have its own rules and moderation policies.'
-                    )}
-                  </p>
-
-                  <md-button variant="text" pill @click="${() => this.next()}"
-                    >${msg('Next')}</md-button
-                  >
-                </div>
-
-                <div class="scroll-item">
-                  <h2>${msg('How do I join Mastodon?')}</h2>
-
-                  <ol>
-                    <li>
-                      ${msg(
-                        'Go to https://joinmastodon.org/ and select an instance to sign up for. There are many different Mastodon instances to choose from, each with its own rules and community guidelines. You can read more about each instance to find one that fits your interests.'
-                      )}
-                    </li>
-                    <li>
-                      ${msg(
-                        'Click the "Sign up" button on the instance you have chosen.'
-                      )}
-                    </li>
-                    <li>
-                      ${msg(
-                        'Fill out the sign-up form with your desired username, email address, and password.'
-                      )}
-                    </li>
-                    <li>
-                      ${msg(
-                        'Read and agree to the terms of service for the instance.'
-                      )}
-                    </li>
-                    <li>
-                      ${msg(
-                        'Click the "Sign up" button to complete the registration process.'
-                      )}
-                    </li>
-                    <li>
-                      ${msg(
-                        'You will receive an email with a confirmation link. Click the link to confirm your email address and complete the sign-up process.'
-                      )}
-                    </li>
-                    <li>
-                      ${msg(
-                        'Once you have confirmed your email, you can log in to Mastodon and start using the platform.'
-                      )}
-                    </li>
-                  </ol>
-                  <p>
-                    ${msg(
-                      'Note: Some instances may have additional requirements or restrictions for new users, such as requiring a valid email address or approving new accounts manually. Be sure to read the rules and guidelines of the instance you are joining before signing up.'
-                    )}
-                  </p>
-
-                  <md-button
-                    variant="filled"
-                    pill
-                    @click="${() => this.getStarted()}"
-                    >${msg('Get Started')}</md-button
-                  >
-                </div>
-              </div>
-            </md-dialog>
-          `
-        : null}
-
       <main>
         <div class="background-decoration"></div>
 
-        <md-card class="login-card" variant="elevated">
+        <div class="login-card">
           <div class="login-header">
             <img
               src="/assets/icons/new-icons/icon-144x144.png"
@@ -617,18 +393,15 @@ export class AppLogin extends LitElement {
             </md-button>
           </div>
 
-          <div slot="footer" class="login-actions">
+          <div class="login-actions">
             <md-button @click="${() => this.joinMastodon()}" variant="text">
               ${msg('Sign up for Mastodon Account')}
-            </md-button>
-            <md-button @click="${() => this.openIntro()}" variant="text">
-              ${msg('Intro To Mastodon')}
             </md-button>
             <md-button @click="${() => this.explore()}" variant="text">
               ${msg('Try Coho without an account')}
             </md-button>
           </div>
-        </md-card>
+        </div>
 
         <div class="app-footer">
           <a href="https://github.com/jgw96/mammoth-app#readme" target="_blank">

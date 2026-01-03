@@ -2,11 +2,22 @@ import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
 import { Notification } from '../types';
 
-export const getNotifications = async (): Promise<Notification[]> => {
+export const getNotifications = async (
+  maxId?: string,
+  limit: number = 20
+): Promise<Notification[]> => {
   const { url } = getClientConfig();
-  const notifyResponse = await apiFetch(`https://${url}/api/v1/notifications`, {
-    method: 'GET',
-  });
+  const params = new URLSearchParams();
+  params.set('limit', limit.toString());
+  if (maxId) {
+    params.set('max_id', maxId);
+  }
+  const notifyResponse = await apiFetch(
+    `https://${url}/api/v1/notifications?${params.toString()}`,
+    {
+      method: 'GET',
+    }
+  );
 
   const data = await notifyResponse.json();
   return Array.isArray(data) ? data : [];

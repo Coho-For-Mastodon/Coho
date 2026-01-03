@@ -45,6 +45,8 @@ export declare class Timeline extends LitElement {
   imageDesc: string | undefined;
   analyzeTweet: Post | null;
   isRefreshing: boolean;
+  pendingNewPosts: Post[];
+  isCheckingForNewPosts: boolean;
   private _pullStartY;
   private _isPulling;
   private _pullDistance;
@@ -82,6 +84,7 @@ export declare class Timeline extends LitElement {
   private _getScrollContainer;
   private _getRefreshIndicator;
   private _getRefreshIcon;
+  private _getRefreshIconInner;
   _handleTouchStart(e: TouchEvent): void;
   _handleTouchMove(e: TouchEvent): void;
   _handleTouchEnd(): Promise<void>;
@@ -93,6 +96,16 @@ export declare class Timeline extends LitElement {
   disconnectedCallback(): void;
   refreshTimeline(skipCache?: boolean): Promise<void>;
   loadMore(): Promise<void>;
+  /**
+   * Check for new posts in the background without disrupting the user.
+   * If new posts are found, store them in pendingNewPosts to show "X new posts" button.
+   */
+  private checkForNewPosts;
+  /**
+   * Show pending new posts by prepending them to the timeline.
+   * Called when user clicks the "X new posts" button.
+   */
+  showPendingPosts(): void;
   handleReplies(data: Array<Post>): void;
   showImage(imageURL: string): Promise<void>;
   showAnalyze(

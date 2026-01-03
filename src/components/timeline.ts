@@ -7,6 +7,7 @@ import {
   mixTimeline,
   getLastPlaceTimeline,
   prefetchNextPage,
+  resetLastPageID,
 } from '../services/timeline';
 import { Post } from '../interfaces/Post';
 import {
@@ -80,6 +81,8 @@ export class Timeline extends LitElement {
   @state() analyzeTweet: Post | null = null;
 
   @state() isRefreshing: boolean = false;
+  @state() pendingNewPosts: Post[] = [];
+  @state() isCheckingForNewPosts: boolean = false;
   private _pullStartY: number = 0;
   private _isPulling: boolean = false;
   private _pullDistance: number = 0;
@@ -361,26 +364,51 @@ export class Timeline extends LitElement {
         position: relative;
       }
 
-      #refresh-indicator md-icon {
-        transform: rotate(0deg) scale(0.5);
+      #refresh-indicator .indicator-container {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(
+          --md-sys-color-surface-container-highest,
+          rgba(128, 128, 128, 0.15)
+        );
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transform: scale(0.5);
         transition:
           transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
           opacity 0.3s ease;
-        width: 32px;
-        height: 32px;
-        font-size: 32px;
+      }
+
+      #refresh-indicator md-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
         color: var(--md-sys-color-primary);
-        opacity: 0;
       }
 
       #refresh-indicator.refreshing {
         height: 60px;
       }
 
-      #refresh-indicator.refreshing md-icon {
-        animation: spin 1s linear infinite;
+      #refresh-indicator.refreshing .indicator-container {
         transform: scale(1);
         opacity: 1;
+      }
+
+      #refresh-indicator.refreshing md-icon {
+        animation: md3-spin 1.4s ease-in-out infinite;
+      }
+
+      @keyframes md3-spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
       }
 
       @keyframes spin {
@@ -459,6 +487,32 @@ export class Timeline extends LitElement {
         height: 20px;
         animation: spin 1s linear infinite;
         color: var(--md-sys-color-primary);
+      }
+
+      #new-posts-button {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        justify-content: center;
+        padding: 8px 0;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      #new-posts-button md-button {
+        --md-sys-color-primary: var(--md-sys-color-primary);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      @keyframes slideDown {
+        from {
+          transform: translateY(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
       }
     `,
   ];
@@ -540,10 +594,14 @@ export class Timeline extends LitElement {
   private _getRefreshIcon(): HTMLElement | null {
     if (!this._refreshIcon) {
       this._refreshIcon = this._getRefreshIndicator()?.querySelector(
-        'md-icon'
+        '.indicator-container'
       ) as HTMLElement;
     }
     return this._refreshIcon;
+  }
+
+  private _getRefreshIconInner(): HTMLElement | null {
+    return this._getRefreshIndicator()?.querySelector('md-icon') as HTMLElement;
   }
 
   _handleTouchStart(e: TouchEvent) {
@@ -602,26 +660,33 @@ export class Timeline extends LitElement {
 
       this._rafId = requestAnimationFrame(() => {
         const indicator = this._getRefreshIndicator();
-        const icon = this._getRefreshIcon();
+        const container = this._getRefreshIcon();
+        const icon = this._getRefreshIconInner();
 
         if (indicator) {
           indicator.style.height = `${Math.min(this._pullDistance, 150)}px`;
           indicator.style.transition = 'none';
         }
 
-        if (icon) {
+        if (container) {
           // Calculate progress (0 to 1)
           const progress = Math.min(this._pullDistance / this._threshold, 1);
-          // MD3-style: rotate multiple times as you pull (up to 540 degrees)
-          const rotation = progress * 540;
           // Scale from 0.5 to 1 as you pull
           const scale = 0.5 + progress * 0.5;
           // Opacity from 0 to 1
           const opacity = progress;
 
+          container.style.transition = 'none';
+          container.style.transform = `scale(${scale})`;
+          container.style.opacity = `${opacity}`;
+        }
+
+        if (icon) {
+          // MD3-style: rotate multiple times as you pull (up to 540 degrees)
+          const progress = Math.min(this._pullDistance / this._threshold, 1);
+          const rotation = progress * 540;
           icon.style.transition = 'none';
-          icon.style.transform = `rotate(${rotation}deg) scale(${scale})`;
-          icon.style.opacity = `${opacity}`;
+          icon.style.transform = `rotate(${rotation}deg)`;
         }
 
         this._rafId = null;
@@ -657,15 +722,19 @@ export class Timeline extends LitElement {
     }
 
     const indicator = this._getRefreshIndicator();
-    const icon = this._getRefreshIcon();
+    const container = this._getRefreshIcon();
+    const icon = this._getRefreshIconInner();
 
     // Re-enable transitions for smooth animation
     if (indicator) {
       indicator.style.transition = 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
     }
-    if (icon) {
-      icon.style.transition =
+    if (container) {
+      container.style.transition =
         'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease';
+    }
+    if (icon) {
+      icon.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
     }
 
     if (this._pullDistance >= this._threshold) {
@@ -674,9 +743,12 @@ export class Timeline extends LitElement {
 
       // Reset height to fixed loading height
       if (indicator) indicator.style.height = '60px';
+      if (container) {
+        container.style.transform = 'scale(1)';
+        container.style.opacity = '1';
+      }
       if (icon) {
-        icon.style.transform = 'rotate(0deg) scale(1)';
-        icon.style.opacity = '1';
+        icon.style.transform = 'rotate(0deg)';
       }
 
       await this.refreshTimeline(true);
@@ -686,16 +758,22 @@ export class Timeline extends LitElement {
         indicator.classList.remove('refreshing');
         indicator.style.height = '0px';
       }
+      if (container) {
+        container.style.transform = 'scale(0.5)';
+        container.style.opacity = '0';
+      }
       if (icon) {
-        icon.style.transform = 'rotate(0deg) scale(0.5)';
-        icon.style.opacity = '0';
+        icon.style.transform = 'rotate(0deg)';
       }
     } else {
       // Snap back animation - animate back to initial state
       if (indicator) indicator.style.height = '0px';
+      if (container) {
+        container.style.transform = 'scale(0.5)';
+        container.style.opacity = '0';
+      }
       if (icon) {
-        icon.style.transform = 'rotate(0deg) scale(0.5)';
-        icon.style.opacity = '0';
+        icon.style.transform = 'rotate(0deg)';
       }
     }
 
@@ -739,6 +817,9 @@ export class Timeline extends LitElement {
           );
         }
       });
+
+      // Background check for new posts (stale-while-revalidate)
+      this.checkForNewPosts();
     } else {
       // No cache, fetch fresh data
       console.log('No cache found, fetching fresh timeline');
@@ -846,6 +927,17 @@ export class Timeline extends LitElement {
   public async refreshTimeline(skipCache: boolean = true) {
     if (!this.autoLoad) {
       return;
+    }
+
+    // Clear any pending new posts since we're doing a full refresh
+    this.pendingNewPosts = [];
+
+    // When doing a pull-to-refresh, clear the "last read" marker, pagination state,
+    // and session cache so we fetch completely fresh posts from the top
+    if (skipCache) {
+      sessionStorage.removeItem('latest-read');
+      clearTimelineCache(this.timelineType);
+      await resetLastPageID();
     }
 
     console.log('refreshing timeline', this.timelineType);
@@ -1036,6 +1128,118 @@ export class Timeline extends LitElement {
     );
   }
 
+  /**
+   * Check for new posts in the background without disrupting the user.
+   * If new posts are found, store them in pendingNewPosts to show "X new posts" button.
+   */
+  private async checkForNewPosts() {
+    if (this.isCheckingForNewPosts || this.timeline.length === 0) {
+      return;
+    }
+
+    this.isCheckingForNewPosts = true;
+    console.log('Checking for new posts in background...');
+
+    try {
+      let freshPosts: Post[] = [];
+
+      // Fetch fresh data based on timeline type
+      switch (this.timelineType) {
+        case 'for you':
+        case 'home and some trending': {
+          freshPosts = await mixTimeline('home');
+          break;
+        }
+        case 'home': {
+          freshPosts = await getPaginatedHomeTimeline('home');
+          break;
+        }
+        case 'public': {
+          freshPosts = await getPreviewTimeline();
+          break;
+        }
+        case 'media': {
+          const mediaData = await getPaginatedHomeTimeline('home');
+          freshPosts = mediaData.filter(
+            (post: Post) => post.media_attachments.length > 0
+          );
+          break;
+        }
+        default:
+          break;
+      }
+
+      if (freshPosts.length === 0) {
+        return;
+      }
+
+      // Deduplicate fresh posts
+      const uniqueFreshPosts = Array.from(
+        new Map(freshPosts.map((post: Post) => [post.id, post])).values()
+      ) as Post[];
+
+      // Find posts that are newer than our current first post
+      const currentFirstId = this.timeline[0]?.id;
+      if (!currentFirstId) {
+        return;
+      }
+
+      // Filter to only posts with IDs greater than our current first post
+      // Mastodon IDs are Snowflake-like, so lexicographic comparison works for ordering
+      const newPosts = uniqueFreshPosts.filter(
+        (post) => post.id > currentFirstId
+      );
+
+      if (newPosts.length > 0) {
+        // Enrich new posts with reply context
+        const enrichedNewPosts = await enrichPostsWithReplyContext(newPosts);
+        this.pendingNewPosts = enrichedNewPosts;
+        console.log(`Found ${enrichedNewPosts.length} new posts`);
+      } else {
+        console.log('No new posts found');
+      }
+    } catch (error) {
+      // Silently fail - user still has cached content
+      console.log(
+        'Background check for new posts failed (likely offline):',
+        error
+      );
+    } finally {
+      this.isCheckingForNewPosts = false;
+    }
+  }
+
+  /**
+   * Show pending new posts by prepending them to the timeline.
+   * Called when user clicks the "X new posts" button.
+   */
+  public showPendingPosts() {
+    if (this.pendingNewPosts.length === 0) {
+      return;
+    }
+
+    // Scroll to top first
+    const virtualizer = this.shadowRoot?.querySelector(
+      'lit-virtualizer'
+    ) as HTMLElement;
+    if (virtualizer) {
+      virtualizer.scrollTop = 0;
+    }
+
+    // Prepend new posts to timeline
+    this.timeline = [...this.pendingNewPosts, ...this.timeline];
+    this.pendingNewPosts = [];
+
+    // Update cache with new data
+    saveTimelineCache(this.timelineType, this.timeline, 0);
+
+    console.log(
+      'Showed pending posts, timeline now has',
+      this.timeline.length,
+      'posts'
+    );
+  }
+
   handleReplies(data: Array<Post>) {
     console.log('reply', data);
 
@@ -1200,9 +1404,28 @@ export class Timeline extends LitElement {
         : null}
 
       <div id="refresh-indicator">
-        <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
+        <div class="indicator-container">
+          <md-icon src="/assets/loading-indicator.svg"></md-icon>
+        </div>
       </div>
 
+      ${this.pendingNewPosts.length > 0
+        ? html`
+            <div id="new-posts-button">
+              <md-button
+                variant="filled"
+                @click="${() => this.showPendingPosts()}"
+              >
+                <md-icon
+                  slot="prefix"
+                  src="/assets/arrow-up-outline.svg"
+                ></md-icon>
+                ${this.pendingNewPosts.length} new
+                post${this.pendingNewPosts.length === 1 ? '' : 's'}
+              </md-button>
+            </div>
+          `
+        : null}
       ${this.loadingData && this.timeline.length === 0
         ? html`<md-skeleton-card count="5"></md-skeleton-card>`
         : html`

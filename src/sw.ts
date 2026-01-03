@@ -119,15 +119,16 @@ async function networkFirst(
   request: Request,
   cacheName: string
 ): Promise<Response> {
+  const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cache = await caches.open(cacheName);
       cache.put(request, response.clone());
     }
     return response;
   } catch (error) {
-    const cachedResponse = await caches.match(request);
+    // Important: search only in the specific versioned cache
+    const cachedResponse = await cache.match(request);
     if (cachedResponse) {
       return cachedResponse;
     }
@@ -139,13 +140,15 @@ async function cacheFirst(
   request: Request,
   cacheName: string
 ): Promise<Response> {
-  const cachedResponse = await caches.match(request);
+  // Important: search only in the specific versioned cache, not all caches
+  // This prevents serving stale assets from old cache versions
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
   if (cachedResponse) {
     return cachedResponse;
   }
   const response = await fetch(request);
   if (response.ok) {
-    const cache = await caches.open(cacheName);
     cache.put(request, response.clone());
   }
   return response;
@@ -355,10 +358,10 @@ self.addEventListener('sync', (event: Event) => {
 
 // Special handler for navigation to support SPA
 async function navigationHandler(request: Request): Promise<Response> {
+  const cache = await caches.open(CACHE_NAMES.pages);
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cache = await caches.open(CACHE_NAMES.pages);
       cache.put(request, response.clone());
       return response;
     }
@@ -366,12 +369,12 @@ async function navigationHandler(request: Request): Promise<Response> {
     // ignore
   }
 
-  // Try matching the request in cache
-  const cachedResponse = await caches.match(request);
+  // Try matching the request in the versioned cache
+  const cachedResponse = await cache.match(request);
   if (cachedResponse) return cachedResponse;
 
-  // Fallback to index.html
-  const index = await caches.match('/index.html');
+  // Fallback to index.html from versioned cache
+  const index = await cache.match('/index.html');
   if (index) return index;
 
   // If everything fails

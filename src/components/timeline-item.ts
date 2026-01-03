@@ -177,29 +177,35 @@ export class TimelineItem extends LitElement {
 
       .link-card {
         display: flex;
-        flex-direction: row;
         align-items: stretch;
-        gap: 0;
-
         background: #ffffff0d;
-        border-radius: 12px;
-
+        border-radius: 8px;
         overflow: hidden;
-        height: 100px;
+        margin-top: 10px;
+        cursor: pointer;
+        flex-direction: column;
+        height: auto;
+        gap: 10px;
+      }
+
+      .link-card:hover {
+        background: rgba(255, 255, 255, 0.08);
       }
 
       .link-card h4 {
-        margin-bottom: 4px;
+        margin-bottom: 8px;
         margin-top: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-size: 0.9em;
       }
 
       .link-card img {
         height: 100%;
-        width: 100px;
-        min-width: 100px;
+        min-height: 280px;
+        width: 100%;
+        min-width: 80px;
         border-radius: 0;
         object-fit: cover;
       }
@@ -208,14 +214,14 @@ export class TimelineItem extends LitElement {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding: 10px;
+        padding: 8px 10px;
         flex: 1;
         min-width: 0;
       }
 
       .link-card p {
         margin: 0;
-        font-size: 12px;
+        font-size: 11px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -224,6 +230,14 @@ export class TimelineItem extends LitElement {
       }
 
       @media (prefers-color-scheme: light) {
+        .link-card {
+          background: rgba(0, 0, 0, 0.05);
+        }
+
+        .link-card:hover {
+          background: rgba(0, 0, 0, 0.08);
+        }
+
         .sensitive {
           background: white;
         }
