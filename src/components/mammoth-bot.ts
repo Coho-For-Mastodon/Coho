@@ -180,7 +180,7 @@ export class MammothBot extends LitElement {
                   @click="${() => this.copyContent(message.content)}"
                   class="copy-button"
                 >
-                  <img src="/assets/copy-outline.svg" />
+                  <img src="/assets/copy-outline.svg" alt="${msg('Copy')}" />
                 </button>
               </div>
               <div>${message.content}</div>

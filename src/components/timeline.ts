@@ -1347,6 +1347,7 @@ export class Timeline extends LitElement {
         ${this.imgPreview
           ? html`<img
               src="${this.imgPreview}"
+              alt="Image preview"
               style="width:100%;border-radius:6px;"
             />`
           : null}

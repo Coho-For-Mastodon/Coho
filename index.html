@@ -262,59 +262,64 @@
 
     <!-- register service worker -->
     <script>
-      if ('serviceWorker' in navigator) {
-        const swUrl = '/sw.js';
-        const swOptions = { scope: '/', type: 'module' };
+      window.onload = () => {
+        // delay service worker registration to prioritize loading
+        setTimeout(() => {
+          if ('serviceWorker' in navigator) {
+            const swUrl = '/sw.js';
+            const swOptions = { scope: '/', type: 'module' };
 
-        let refreshing = false;
+            let refreshing = false;
 
-        // Listen for controller change (when new SW takes over)
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          refreshing = true;
-          window.location.reload();
-        });
-
-        // Listen for SW_ACTIVATED message
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'SW_ACTIVATED') {
-            if (!refreshing) {
+            // Listen for controller change (when new SW takes over)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (refreshing) return;
               refreshing = true;
               window.location.reload();
-            }
-          }
-        });
+            });
 
-        navigator.serviceWorker.register(swUrl, swOptions).then((reg) => {
-          console.log('[SW] Registered');
-
-          // Check for waiting worker
-          if (reg.waiting) {
-            dispatchUpdateEvent(reg.waiting);
-          }
-
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                dispatchUpdateEvent(newWorker);
+            // Listen for SW_ACTIVATED message
+            navigator.serviceWorker.addEventListener('message', (event) => {
+              if (event.data && event.data.type === 'SW_ACTIVATED') {
+                if (!refreshing) {
+                  refreshing = true;
+                  window.location.reload();
+                }
               }
             });
-          });
-        });
 
-        function dispatchUpdateEvent(worker) {
-          window.dispatchEvent(
-            new CustomEvent('pwa-update-available', {
-              detail: {
-                updateServiceWorker: () => {
-                  worker.postMessage({ type: 'SKIP_WAITING' });
-                },
-              },
-            })
-          );
-        }
-      }
+            navigator.serviceWorker.register(swUrl, swOptions).then((reg) => {
+              console.log('[SW] Registered');
+
+              // Check for waiting worker
+              if (reg.waiting) {
+                dispatchUpdateEvent(reg.waiting);
+              }
+
+              reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    dispatchUpdateEvent(newWorker);
+                  }
+                });
+              });
+            });
+
+            function dispatchUpdateEvent(worker) {
+              window.dispatchEvent(
+                new CustomEvent('pwa-update-available', {
+                  detail: {
+                    updateServiceWorker: () => {
+                      worker.postMessage({ type: 'SKIP_WAITING' });
+                    },
+                  },
+                })
+              );
+            }
+          }
+        }, 5000);
+      };
     </script>
   </body>
 </html>

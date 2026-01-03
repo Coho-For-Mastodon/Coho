@@ -169,6 +169,7 @@ export class UserProfile extends LitElement {
           src="/assets/icons/new-icons/icon-72x72.png"
           data-src="${this.account?.avatar_static ||
           '/assets/icons/new-icons/icon-72x72.png'}"
+          alt="${this.account?.display_name || ''}"
         />
         <div>
           <h4

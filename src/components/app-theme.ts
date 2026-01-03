@@ -8,7 +8,7 @@ import { getSettings, setSettings, Settings } from '../services/settings';
 
 @customElement('app-theme')
 export class AppTheme extends LitElement {
-  @state() primary_color: string = '#809bce';
+  @state() primary_color: string = '#5171a5';
   @state() font_size: string = '16px';
 
   settings: Settings | undefined;
@@ -35,7 +35,7 @@ export class AppTheme extends LitElement {
       }
 
       #blue {
-        background-color: #809bce;
+        background-color: #5171a5;
       }
 
       #green {
@@ -363,7 +363,7 @@ export class AppTheme extends LitElement {
             <div
               class="color"
               id="blue"
-              @click="${() => this.chooseColor('#809bce')}"
+              @click="${() => this.chooseColor('#5171a5')}"
             ></div>
             <div
               class="color"

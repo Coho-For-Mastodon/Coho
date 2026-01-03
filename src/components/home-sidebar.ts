@@ -237,7 +237,10 @@ export class HomeSidebar extends LitElement {
       <div class="sidebar-card">
         <div id="profile-card-content">
           ${this.user && this.user.avatar
-            ? html`<img src="${this.user.avatar}" />`
+            ? html`<img
+                src="${this.user.avatar}"
+                alt="${this.user.display_name}"
+              />`
             : html`<md-skeleton
                 id="profile-avatar"
                 shape="circle"

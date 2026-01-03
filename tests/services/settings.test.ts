@@ -19,7 +19,7 @@ describe('settings service', () => {
       const settings = await getSettings();
 
       expect(settings).toBeDefined();
-      expect(settings.primary_color).toBe('#809bce');
+      expect(settings.primary_color).toBe('#5171a5');
       expect(settings.font_size).toBe('16px');
       expect(settings.data_saver).toBe(false);
       expect(settings.wellness).toBe(false);
@@ -70,7 +70,7 @@ describe('settings service', () => {
       expect(settings.data_saver).toBe(true);
 
       // Should preserve defaults for other fields
-      expect(settings.primary_color).toBe('#809bce');
+      expect(settings.primary_color).toBe('#5171a5');
       expect(settings.font_size).toBe('16px');
     });
 

@@ -1565,7 +1565,12 @@ export class PostDialog extends LitElement {
           ${this.showPrompt
             ? html`<div id="ai-image">
                 ${this.showPrompt && this.generatedImage
-                  ? html` <img src="${this.generatedImage}" /> `
+                  ? html`
+                      <img
+                        src="${this.generatedImage}"
+                        alt="${msg('AI generated image')}"
+                      />
+                    `
                   : this.showPrompt && this.generatingImage === false
                     ? html`<div id="ai-preview-block">
                         <p>

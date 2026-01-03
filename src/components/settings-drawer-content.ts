@@ -182,7 +182,10 @@ export class SettingsDrawerContent extends LitElement {
       <div>
         <div id="settings-profile-inner">
           ${this.user && this.user.avatar
-            ? html`<img src="${this.user.avatar}" />`
+            ? html`<img
+                src="${this.user.avatar}"
+                alt="${this.user.display_name}"
+              />`
             : html`<md-skeleton
                 id="profile-avatar"
                 shape="circle"
@@ -294,7 +297,10 @@ export class SettingsDrawerContent extends LitElement {
               <h4>${msg('Instance Info')}</h4>
 
               ${this.instanceInfo.thumbnail
-                ? html`<img src="${this.instanceInfo.thumbnail}" />`
+                ? html`<img
+                    src="${this.instanceInfo.thumbnail}"
+                    alt="${this.instanceInfo.title}"
+                  />`
                 : nothing}
               <p>${this.instanceInfo.title}</p>
 

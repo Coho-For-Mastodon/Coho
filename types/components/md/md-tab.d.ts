@@ -19,25 +19,29 @@ import { LitElement } from 'lit';
  * ```
  */
 export declare class MdTab extends LitElement {
-    /**
-     * Panel ID this tab controls
-     */
-    panel: string;
-    /**
-     * Whether tab is currently active
-     */
-    active: boolean;
-    /**
-     * Whether tab is disabled
-     */
-    disabled: boolean;
-    static styles: import("lit").CSSResult;
-    private _handleClick;
-    private _handleKeyDown;
-    render(): import("lit-html").TemplateResult<1>;
+  /**
+   * Panel ID this tab controls
+   */
+  panel: string;
+  /**
+   * Whether tab is currently active
+   */
+  active: boolean;
+  /**
+   * Whether tab is disabled
+   */
+  disabled: boolean;
+  static styles: import('lit').CSSResult;
+  private _handleClick;
+  private _handleKeyDown;
+  /**
+   * Focus the tab button (used for keyboard navigation)
+   */
+  focus(): void;
+  render(): import('lit-html').TemplateResult<1>;
 }
 declare global {
-    interface HTMLElementTagNameMap {
-        'md-tab': MdTab;
-    }
+  interface HTMLElementTagNameMap {
+    'md-tab': MdTab;
+  }
 }

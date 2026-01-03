@@ -253,6 +253,8 @@ export const templates = {
   sfdfc05708c242107: `Wie du für andere erscheinst`,
   sfe2f8c98d9edbf7a: `Beitrag nicht gefunden`,
   sff9d51b6c5a73163: `Alt-Text`,
+  s8d10c896a6f5e373: `AI generated image`,
   s5eee3dd2675292f6: `Loading more...`,
   s216407f266691656: `Failed to load shared image. Please try sharing again.`,
+  s3687049d1af562c4: `Copy`,
 };
