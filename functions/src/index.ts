@@ -493,6 +493,7 @@ export const getUserPosts = onRequest(async (request, response) => {
   const id = request.query.id as string;
   const excludeReplies = request.query.exclude_replies as string;
   const onlyMedia = request.query.only_media as string;
+  const maxId = request.query.max_id as string;
 
   if (!accessToken || !server || !id) {
     response.status(400).json({ error: 'Missing required parameters' });
@@ -507,6 +508,9 @@ export const getUserPosts = onRequest(async (request, response) => {
     }
     if (onlyMedia === 'true') {
       url += '&only_media=true';
+    }
+    if (maxId) {
+      url += `&max_id=${maxId}`;
     }
 
     const apiResponse = await fetch(url, {

@@ -15,6 +15,9 @@ import {
   type ProfilePostsFilter,
 } from '../services/account';
 import { withOptimisticUpdate } from '../utils/optimistic-updates';
+import { shouldLoadMore } from '../utils/infinite-scroll';
+import '@lit-labs/virtualizer';
+import type { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 
 import '../components/timeline-item';
 import '../components/md/md-dialog';
@@ -54,6 +57,8 @@ export class AppProfile extends LitElement {
   @state() showReportDialog: boolean = false;
   @state() activeSegment: ProfilePostsFilter = 'posts';
   @state() loadingPosts: boolean = false;
+  @state() loadingMorePosts: boolean = false;
+  @state() hasMorePosts: boolean = true;
   @state() loadingProfile: boolean = true;
   @state() profileLoadFailed: boolean = false;
   @state() bannerReady: boolean = false;
@@ -476,6 +481,16 @@ export class AppProfile extends LitElement {
         padding: 0 16px;
       }
 
+      lit-virtualizer {
+        display: block;
+        contain: none;
+      }
+
+      .post-item {
+        padding-bottom: 16px;
+        width: 100%;
+      }
+
       ul {
         display: flex;
         flex-direction: column;
@@ -488,6 +503,12 @@ export class AppProfile extends LitElement {
       .posts-loading {
         opacity: 0.5;
         pointer-events: none;
+      }
+
+      .load-more-indicator {
+        display: flex;
+        justify-content: center;
+        padding: 20px;
       }
 
       /* Responsive */
@@ -816,11 +837,71 @@ export class AppProfile extends LitElement {
   async reloadPosts() {
     if (!this.user) return;
     this.loadingPosts = true;
+    this.hasMorePosts = true; // Reset pagination state
     const postsData = await getUsersPosts(this.user.id, this.activeSegment);
     console.log(postsData);
 
     this.posts = postsData;
     this.loadingPosts = false;
+  }
+
+  /** Handle visibility changes from lit-virtualizer to trigger load more */
+  private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
+    if (shouldLoadMore(e, this.posts.length, this.loadingMorePosts)) {
+      await this.loadMorePosts();
+    }
+  }
+
+  /** Load more posts for infinite scroll */
+  private async loadMorePosts() {
+    if (!this.user || this.loadingMorePosts || !this.hasMorePosts) return;
+
+    this.loadingMorePosts = true;
+
+    try {
+      // Get the last post ID to use for pagination
+      const lastPostId =
+        this.posts.length > 0
+          ? this.posts[this.posts.length - 1].id
+          : undefined;
+
+      if (!lastPostId) {
+        this.loadingMorePosts = false;
+        return;
+      }
+
+      const newPosts = await getUsersPosts(
+        this.user.id,
+        this.activeSegment,
+        lastPostId
+      );
+
+      if (!Array.isArray(newPosts) || newPosts.length === 0) {
+        // No more posts to load
+        this.hasMorePosts = false;
+        this.loadingMorePosts = false;
+        return;
+      }
+
+      // Deduplicate posts by ID to prevent showing duplicates
+      const existingIds = new Set(this.posts.map((post) => post.id));
+      const uniqueNewPosts = newPosts.filter(
+        (post) => !existingIds.has(post.id)
+      );
+
+      if (uniqueNewPosts.length === 0) {
+        this.hasMorePosts = false;
+        this.loadingMorePosts = false;
+        return;
+      }
+
+      // Append new posts to existing list
+      this.posts = [...this.posts, ...uniqueNewPosts];
+    } catch (err) {
+      console.error('[loadMorePosts] Failed to load more posts:', err);
+    } finally {
+      this.loadingMorePosts = false;
+    }
   }
 
   async handleSegmentChange(e: CustomEvent<{ value: string }>) {
@@ -1241,21 +1322,27 @@ export class AppProfile extends LitElement {
         ${this.loadingPosts && this.posts.length === 0
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : html`
-              <ul class="${this.loadingPosts ? 'posts-loading' : ''}">
-                ${this.posts.map(
-                  (post) => html`
-                    <li>
-                      <timeline-item
-                        @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.editPost(e.detail.tweet)}"
-                        @delete="${() => this.reloadPosts()}"
-                        .tweet=${post}
-                        ?guestMode="${this.isGuestMode}"
-                      ></timeline-item>
-                    </li>
-                  `
-                )}
-              </ul>
+              <lit-virtualizer
+                class="${this.loadingPosts ? 'posts-loading' : ''}"
+                .items=${this.posts}
+                .renderItem=${(post: Post) => html`
+                  <div class="post-item">
+                    <timeline-item
+                      @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                        this.editPost(e.detail.tweet)}"
+                      @delete="${() => this.reloadPosts()}"
+                      .tweet=${post}
+                      ?guestMode="${this.isGuestMode}"
+                    ></timeline-item>
+                  </div>
+                `}
+                @visibilityChanged=${this._handleVisibilityChanged}
+              ></lit-virtualizer>
+              ${this.loadingMorePosts
+                ? html`<div class="load-more-indicator">
+                    <md-skeleton width="100%" height="120px"></md-skeleton>
+                  </div>`
+                : null}
             `}
       </div>
 
