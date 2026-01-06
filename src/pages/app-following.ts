@@ -49,11 +49,7 @@ export class Appfollowing extends LitElement {
         background: var(--sl-color-gray-50);
         border-radius: 6px;
         padding: 10px;
-      }
-
-      li a {
-        text-decoration: none;
-        color: white;
+        cursor: pointer;
       }
 
       @media (max-width: 820px) {
@@ -68,10 +64,6 @@ export class Appfollowing extends LitElement {
 
       @media (prefers-color-scheme: light) {
         ul li {
-          color: black;
-        }
-
-        li a {
           color: black;
         }
       }
@@ -100,9 +92,7 @@ export class Appfollowing extends LitElement {
             return html`
               ${follower && follower.id
                 ? html`<li>
-                    <a href="/account?id=${follower.id}">
-                      <user-profile .account=${follower}></user-profile>
-                    </a>
+                    <user-profile .account=${follower}></user-profile>
                   </li>`
                 : null}
             `;

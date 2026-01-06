@@ -408,7 +408,9 @@ export function renderReblog(
         class="boost-indicator"
         @click="${(e: Event) => {
           e.stopPropagation();
-          router.navigate(`/account?id=${state.tweet?.account.id}`);
+          router.navigate(`/account?id=${state.tweet?.account.id}`, {
+            state: { account: state.tweet?.account },
+          });
         }}"
       >
         <md-icon name="repeat"></md-icon>

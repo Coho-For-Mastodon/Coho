@@ -39,6 +39,12 @@ const routes: Route[] = [
     render: () => html`<app-profile></app-profile>`,
   },
   {
+    path: '/account/post/:id',
+    title: 'post',
+    plugins: [lazy(() => import('../pages/post-detail.js'))],
+    render: () => html`<post-detail></post-detail>`,
+  },
+  {
     path: '/followers',
     title: 'followers',
     plugins: [lazy(() => import('../pages/app-followers.js'))],

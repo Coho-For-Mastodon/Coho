@@ -1,5 +1,16 @@
 import type { TemplateResult } from 'lit';
 import { ensurePolyfills, isBrowser } from './router-polyfills.js';
+import type { Post } from '../interfaces/Post.js';
+import type { Account } from '../mastodon/types/index.js';
+
+/**
+ * Navigation state that can be passed during navigation.
+ * Use this to pass data (like a Post or Account) to the destination page.
+ */
+export interface NavigationState {
+  post?: Post;
+  account?: Account;
+}
 
 /**
  * Route plugin interface - called before navigation completes
@@ -171,16 +182,33 @@ export class Router extends EventTarget {
 
   /**
    * Programmatically navigate to a path
+   * @param path - The path or URL to navigate to
+   * @param options - Optional navigation options including state to pass to the destination
    */
-  async navigate(path: string | URL): Promise<void> {
+  async navigate(
+    path: string | URL,
+    options?: { state?: NavigationState }
+  ): Promise<void> {
     const url =
       typeof path === 'string' ? new URL(path, window.location.origin) : path;
 
     // Use Navigation API with View Transitions
+    // Pass state to the history entry so it's available via navigation.currentEntry.getState()
     await window.navigation.navigate(url.href, {
       history: 'push',
       info: { viewTransition: true },
+      state: options?.state,
     }).finished;
+  }
+
+  /**
+   * Get the current navigation state from the current history entry.
+   * Returns undefined if no state was passed during navigation.
+   */
+  getNavigationState(): NavigationState | undefined {
+    return window.navigation?.currentEntry?.getState() as
+      | NavigationState
+      | undefined;
   }
 
   /**

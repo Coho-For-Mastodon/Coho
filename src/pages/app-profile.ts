@@ -41,6 +41,7 @@ import '../components/md/md-divider';
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 import { editPost } from '../services/posts';
+import { router } from '../utils/router';
 
 @localized()
 @customElement('app-profile')
@@ -755,12 +756,20 @@ export class AppProfile extends LitElement {
       this.loadingPosts = true;
       this._resetImageStates();
 
+      // Check if account was passed via Navigation API state (instant render path)
+      const navState = router.getNavigationState();
+      if (navState?.account && navState.account.id === id) {
+        this.user = navState.account;
+        this.loadingProfile = false;
+      }
+
       // Determine if we need to fetch relationship data
       const shouldFetchRelationship = !this.isOwnProfile && !this.isGuestMode;
 
-      // Fetch account, posts, and relationship data in parallel for faster loading
+      // Fetch account (if not already from nav state), posts, and relationship data in parallel
       const [accountData, postsData, relationshipData] = await Promise.all([
-        getAccount(id),
+        // Skip account fetch if we already have it from navigation state
+        this.user ? Promise.resolve(this.user) : getAccount(id),
         getUsersPosts(id),
         // isFollowingMe returns the full relationship object with following, followed_by, muting, blocking
         shouldFetchRelationship
@@ -1030,6 +1039,10 @@ export class AppProfile extends LitElement {
     }
 
     this.editDialog?.show();
+  }
+
+  handleOpenPost(tweet: Post) {
+    router.navigate(`/account/post/${tweet.id}`, { state: { post: tweet } });
   }
 
   async confirmEdit() {
@@ -1328,6 +1341,8 @@ export class AppProfile extends LitElement {
                 .renderItem=${(post: Post) => html`
                   <div class="post-item">
                     <timeline-item
+                      @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                        this.handleOpenPost(e.detail.tweet)}"
                       @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                         this.editPost(e.detail.tweet)}"
                       @delete="${() => this.reloadPosts()}"

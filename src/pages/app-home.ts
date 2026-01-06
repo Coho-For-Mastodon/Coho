@@ -592,11 +592,9 @@ export class AppHome extends LitElement {
   }
 
   async handleOpenTweet(tweet: Post) {
-    // Store the post in sessionStorage so post-detail can render it immediately
+    // Pass post via Navigation API state so post-detail can render it immediately
     // This avoids showing a skeleton when we already have the post data
-    sessionStorage.setItem('coho:navigating-post', JSON.stringify(tweet));
-    // Always use full-page navigation for better UX + supports back/forward/history
-    router.navigate(`/home/post/${tweet.id}`);
+    router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
   }
 
   async disconnectedCallback() {

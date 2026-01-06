@@ -177,7 +177,9 @@ export class HomeSidebar extends LitElement {
 
   private viewMyProfile() {
     if (!this.user) return;
-    router.navigate(`/account?id=${this.user.id}`);
+    router.navigate(`/account?id=${this.user.id}`, {
+      state: { account: this.user },
+    });
   }
 
   private async shareMyProfile() {

@@ -139,7 +139,10 @@ export class UserProfile extends LitElement {
       'profile-image';
 
     // Navigate - the router handles view transitions internally
-    await router.navigate(`/account?id=${this.account?.id}`);
+    // Pass account via Navigation API state for instant render
+    await router.navigate(`/account?id=${this.account?.id}`, {
+      state: { account: this.account },
+    });
 
     // Best-effort cleanup (component may be disconnected after navigation)
     try {

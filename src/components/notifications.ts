@@ -666,14 +666,13 @@ export class Notifications extends LitElement {
 
   async openPost(tweet: Post | undefined) {
     if (!tweet) return;
-    // Store post for instant render
-    sessionStorage.setItem('coho:navigating-post', JSON.stringify(tweet));
-    await router.navigate(`/home/post/${tweet.id}`);
+    // Pass post via Navigation API state for instant render
+    await router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
   }
 
   async openProfile(account: Account) {
     if (!account) return;
-    await router.navigate(`/account?id=${account.id}`);
+    await router.navigate(`/account?id=${account.id}`, { state: { account } });
   }
 
   openLinkCard(url: string, e: Event) {

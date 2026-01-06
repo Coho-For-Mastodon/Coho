@@ -231,19 +231,12 @@ export class PostDetail extends LitElement {
       return;
     }
 
-    // First, check if we have a post stored from navigation (instant render path)
-    const storedPost = sessionStorage.getItem('coho:navigating-post');
-    if (storedPost) {
-      try {
-        this.tweet = JSON.parse(storedPost);
-        // Clear it so back/forward navigation doesn't reuse stale data
-        sessionStorage.removeItem('coho:navigating-post');
-        // No skeleton shown - post renders immediately
-        return;
-      } catch (err) {
-        console.error('Failed to parse stored post:', err);
-        sessionStorage.removeItem('coho:navigating-post');
-      }
+    // First, check if we have a post passed from navigation (instant render path)
+    const navState = router.getNavigationState();
+    if (navState?.post) {
+      this.tweet = navState.post;
+      // No skeleton shown - post renders immediately
+      return;
     }
 
     // Check for ID-based route (/post/:id, /home/post/:id, or /post/notification?notification_id=xxx)
@@ -452,9 +445,8 @@ export class PostDetail extends LitElement {
       return;
     }
 
-    // Full-page mode: store post for instant render and navigate.
-    sessionStorage.setItem('coho:navigating-post', JSON.stringify(tweet));
-    router.navigate(`/home/post/${tweet.id}`);
+    // Full-page mode: pass post via Navigation API state for instant render.
+    router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
   }
 
   render() {
