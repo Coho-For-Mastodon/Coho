@@ -322,74 +322,6 @@
   <source>No Description...</source>
   <target>Sin descripción...</target>
 </trans-unit>
-<trans-unit id="s8c4538a366214c51">
-  <source>Intro To Mastodon</source>
-  <target>Introducción a Mastodon</target>
-</trans-unit>
-<trans-unit id="s5ace63b6a4cac0a1">
-  <source>What is Coho?</source>
-  <target>¿Qué es Coho?</target>
-</trans-unit>
-<trans-unit id="s7db77a785d40fbd7">
-  <source>Coho is the app your using 😊. It is an open source, cross-platform Mastodon client. Coho brings the best of Mastodon to any device, with a fast and intuitive interface, no matter your device or internet connection. To use Coho, you need a Mastodon account. Once you have a Mastodon account you will need to enter the URL of the Mastodon instance you signed up at.</source>
-  <target>Coho es la aplicación que estás usando 😊. Es un cliente de Mastodon de código abierto y multiplataforma. Coho trae lo mejor de Mastodon a cualquier dispositivo, con una interfaz rápida e intuitiva, sin importar tu dispositivo o conexión a internet. Para usar Coho, necesitas una cuenta de Mastodon. Una vez que tengas una cuenta de Mastodon, deberás ingresar la URL de la instancia de Mastodon donde te registraste.</target>
-</trans-unit>
-<trans-unit id="s0fbf6dc6a1966408">
-  <source>Next</source>
-  <target>Siguiente</target>
-</trans-unit>
-<trans-unit id="scf212088af34eb89">
-  <source>What Is Mastodon?</source>
-  <target>¿Qué es Mastodon?</target>
-</trans-unit>
-<trans-unit id="s477483a5217f7706">
-  <source>Mastodon is a social media platform that allows users to create and share short posts, called "toots," and interact with each other through features like boosting, direct messaging, and hashtags. It is decentralized, meaning that it is not controlled by a central authority and users can choose which communities, called "instances," they want to join. Mastodon is open-source and free to use.</source>
-  <target>Mastodon es una plataforma de redes sociales que permite a los usuarios crear y compartir publicaciones cortas, llamadas "toots", e interactuar entre sí mediante funciones como impulsar, mensajes directos y etiquetas. Es descentralizada, lo que significa que no está controlada por una autoridad central y los usuarios pueden elegir a qué comunidades, llamadas "instancias", quieren unirse. Mastodon es de código abierto y de uso gratuito.</target>
-</trans-unit>
-<trans-unit id="sb86339f84521b777">
-  <source>Each instance is run by a different administrator and can have its own rules and moderation policies.</source>
-  <target>Cada instancia es administrada por un administrador diferente y puede tener sus propias reglas y políticas de moderación.</target>
-</trans-unit>
-<trans-unit id="s85b909448bae5adf">
-  <source>How do I join Mastodon?</source>
-  <target>¿Cómo me uno a Mastodon?</target>
-</trans-unit>
-<trans-unit id="s9af13e637f171912">
-  <source>Go to https://joinmastodon.org/ and select an instance to sign up for. There are many different Mastodon instances to choose from, each with its own rules and community guidelines. You can read more about each instance to find one that fits your interests.</source>
-  <target>Ve a https://joinmastodon.org/ y selecciona una instancia para registrarte. Hay muchas instancias de Mastodon diferentes para elegir, cada una con sus propias reglas y pautas comunitarias. Puedes leer más sobre cada instancia para encontrar una que se ajuste a tus intereses.</target>
-</trans-unit>
-<trans-unit id="se13361c041595f42">
-  <source>Click the "Sign up" button on the instance you have chosen.</source>
-  <target>Haz clic en el botón "Registrarse" en la instancia que hayas elegido.</target>
-</trans-unit>
-<trans-unit id="sa649809c164d478b">
-  <source>Fill out the sign-up form with your desired username, email address, and password.</source>
-  <target>Completa el formulario de registro con tu nombre de usuario deseado, dirección de correo electrónico y contraseña.</target>
-</trans-unit>
-<trans-unit id="s0869b2e20641012a">
-  <source>Read and agree to the terms of service for the instance.</source>
-  <target>Lee y acepta los términos de servicio de la instancia.</target>
-</trans-unit>
-<trans-unit id="s672bb0bde1fef2bb">
-  <source>Click the "Sign up" button to complete the registration process.</source>
-  <target>Haz clic en el botón "Registrarse" para completar el proceso de registro.</target>
-</trans-unit>
-<trans-unit id="sf194494949913780">
-  <source>You will receive an email with a confirmation link. Click the link to confirm your email address and complete the sign-up process.</source>
-  <target>Recibirás un correo electrónico con un enlace de confirmación. Haz clic en el enlace para confirmar tu dirección de correo electrónico y completar el proceso de registro.</target>
-</trans-unit>
-<trans-unit id="s2e467d152d65afe6">
-  <source>Once you have confirmed your email, you can log in to Mastodon and start using the platform.</source>
-  <target>Una vez que hayas confirmado tu correo electrónico, puedes iniciar sesión en Mastodon y comenzar a usar la plataforma.</target>
-</trans-unit>
-<trans-unit id="s7de4970a89814d38">
-  <source>Note: Some instances may have additional requirements or restrictions for new users, such as requiring a valid email address or approving new accounts manually. Be sure to read the rules and guidelines of the instance you are joining before signing up.</source>
-  <target>Nota: Algunas instancias pueden tener requisitos o restricciones adicionales para nuevos usuarios, como requerir una dirección de correo electrónico válida o aprobar cuentas nuevas manualmente. Asegúrate de leer las reglas y pautas de la instancia a la que te unes antes de registrarte.</target>
-</trans-unit>
-<trans-unit id="s15361efa1eef6aee">
-  <source>Get Started</source>
-  <target>Comenzar</target>
-</trans-unit>
 <trans-unit id="sadf9c2063e1497b7">
   <source>Your modern Mastodon client</source>
   <target>Tu cliente moderno de Mastodon</target>
@@ -1065,6 +997,18 @@
 <trans-unit id="s57adf424d57c8a0f">
   <source>Send</source>
   <target>Enviar</target>
+</trans-unit>
+<trans-unit id="s3687049d1af562c4">
+  <source>Copy</source>
+</trans-unit>
+<trans-unit id="s5eee3dd2675292f6">
+  <source>Loading more...</source>
+</trans-unit>
+<trans-unit id="s8d10c896a6f5e373">
+  <source>AI generated image</source>
+</trans-unit>
+<trans-unit id="s216407f266691656">
+  <source>Failed to load shared image. Please try sharing again.</source>
 </trans-unit>
 </body>
 </file>
