@@ -227,44 +227,50 @@ export class AppHeader extends LitElement {
         </div>
 
         <div id="actions">
-          ${this.showInstall
-            ? html`<md-icon-button
-                title=${msg('Install App')}
-                id="install-button"
-                @click="${() => this.openInstall()}"
-              >
-                <md-icon src="/assets/download-outline.svg"></md-icon>
-              </md-icon-button>`
+          ${!this.enableBack
+            ? html`
+                ${this.showInstall
+                  ? html`<md-icon-button
+                      title=${msg('Install App')}
+                      id="install-button"
+                      @click="${() => this.openInstall()}"
+                    >
+                      <md-icon src="/assets/download-outline.svg"></md-icon>
+                    </md-icon-button>`
+                  : nothing}
+
+                <md-icon-button
+                  title=${msg('Open Theme Settings')}
+                  id="open-button"
+                  @click="${() => this.handleTheming()}"
+                >
+                  <md-icon
+                    src="/assets/color-palette-outline.svg"
+                    alt="Theme"
+                  ></md-icon>
+                </md-icon-button>
+
+                ${this.guestMode
+                  ? html`<md-icon-button
+                      id="login-button"
+                      title=${msg('Sign In')}
+                      @click="${() => {
+                        import('../utils/router').then((m) =>
+                          m.router.navigate('/')
+                        );
+                      }}"
+                    >
+                      <md-icon name="log-in"></md-icon>
+                    </md-icon-button>`
+                  : html`<md-icon-button
+                      id="settings-button"
+                      title=${msg('Open Settings')}
+                      @click="${() => this.openSettings()}"
+                    >
+                      <md-icon src="/assets/settings-outline.svg"></md-icon>
+                    </md-icon-button>`}
+              `
             : nothing}
-
-          <md-icon-button
-            title=${msg('Open Theme Settings')}
-            id="open-button"
-            @click="${() => this.handleTheming()}"
-          >
-            <md-icon
-              src="/assets/color-palette-outline.svg"
-              alt="Theme"
-            ></md-icon>
-          </md-icon-button>
-
-          ${this.guestMode
-            ? html`<md-icon-button
-                id="login-button"
-                title=${msg('Sign In')}
-                @click="${() => {
-                  import('../utils/router').then((m) => m.router.navigate('/'));
-                }}"
-              >
-                <md-icon name="log-in"></md-icon>
-              </md-icon-button>`
-            : html`<md-icon-button
-                id="settings-button"
-                title=${msg('Open Settings')}
-                @click="${() => this.openSettings()}"
-              >
-                <md-icon src="/assets/settings-outline.svg"></md-icon>
-              </md-icon-button>`}
         </div>
       </header>
     `;
