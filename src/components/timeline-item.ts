@@ -559,6 +559,10 @@ export class TimelineItem extends LitElement {
       { errorMessage: 'Failed to favorite post.' }
     );
 
+    // Invalidate favorites preload cache so the favorites tab shows fresh data
+    const { invalidatePreloadCache } = await import('../services/preload');
+    invalidatePreloadCache('favorites');
+
     // fire custom event
     this.dispatchEvent(
       new CustomEvent('favorite', {

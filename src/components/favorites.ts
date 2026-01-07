@@ -36,40 +36,56 @@ export class Favorites extends LitElement {
     `,
   ];
 
-  async firstUpdated() {
+  private observer: IntersectionObserver | null = null;
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.setupObserver();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.observer?.disconnect();
+    this.observer = null;
+  }
+
+  private setupObserver() {
     const options = {
       root: null,
       rootMargin: '0px',
       threshold: 0.1,
     };
 
-    const observer = new IntersectionObserver((entries, observer) => {
+    this.observer = new IntersectionObserver((entries) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
-          this.isLoading = true;
-
-          // First, check for preloaded data for instant display
-          const { getPreloadedFavorites } = await import('../services/preload');
-          const preloaded = getPreloadedFavorites();
-
-          if (preloaded && preloaded.length > 0) {
-            console.log('[Favorites] Using preloaded data');
-            this.favorites = preloaded;
-          } else {
-            // Fallback to fetching if no preloaded data
-            const { getFavorites } = await import('../services/favorites');
-            const favoritesData = await getFavorites();
-            console.log(favoritesData);
-            this.favorites = favoritesData;
-          }
-
-          this.isLoading = false;
-          observer.disconnect();
+          await this.loadFavorites();
+          this.observer?.disconnect();
         }
       });
     }, options);
 
-    observer.observe(this);
+    this.observer.observe(this);
+  }
+
+  private async loadFavorites() {
+    this.isLoading = true;
+
+    // First, check for preloaded data for instant display
+    const { getPreloadedFavorites } = await import('../services/preload');
+    const preloaded = getPreloadedFavorites();
+
+    if (preloaded && preloaded.length > 0) {
+      console.log('[Favorites] Using preloaded data');
+      this.favorites = preloaded;
+    }
+
+    // Always fetch fresh data to ensure we have the latest
+    const { getFavorites } = await import('../services/favorites');
+    const favoritesData = await getFavorites();
+    this.favorites = favoritesData;
+
+    this.isLoading = false;
   }
 
   render() {

@@ -253,18 +253,21 @@ export const boost = onRequest(async (request, response) => {
   }
 
   try {
-    const apiResponse = await fetch(`${server}/api/v1/statuses/${id}/reblog`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const apiResponse = await fetch(
+      `${server}/api/v1/statuses/${id}/favourite`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     const data = await apiResponse.json();
     response.json(data);
   } catch (error) {
-    logger.error('Boost failed', { error });
-    response.status(500).json({ error: 'Boost failed' });
+    logger.error('Favourite failed', { error });
+    response.status(500).json({ error: 'Favourite failed' });
   }
 });
 
