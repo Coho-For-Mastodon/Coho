@@ -11,6 +11,7 @@ import './md/md-icon-button';
 import './md/md-dropdown';
 import './md/md-menu';
 import './md/md-menu-item';
+import './md/md-button';
 
 import type { Account } from '../mastodon/types/account';
 import type { Instance } from '../mastodon/types/instance';
@@ -285,12 +286,23 @@ export class SettingsDrawerContent extends LitElement {
         <h4>${msg('Key Shortcuts')}</h4>
 
         <ul>
-          <li><kbd>g</kbd> + <kbd>h</kbd> - Open Home</li>
-          <li><kbd>g</kbd> + <kbd>n</kbd> - Open Notifications</li>
-          <li><kbd>g</kbd> + <kbd>s</kbd> - Open Search</li>
-          <li><kbd>g</kbd> + <kbd>b</kbd> - Open Bookmarks</li>
-          <li><kbd>g</kbd> + <kbd>f</kbd> - Open Favorites</li>
+          <li><kbd>g</kbd> + <kbd>h</kbd> - ${msg('Open Home')}</li>
+          <li><kbd>g</kbd> + <kbd>n</kbd> - ${msg('Open Notifications')}</li>
+          <li><kbd>g</kbd> + <kbd>s</kbd> - ${msg('Open Search')}</li>
+          <li><kbd>g</kbd> + <kbd>b</kbd> - ${msg('Open Bookmarks')}</li>
+          <li><kbd>g</kbd> + <kbd>f</kbd> - ${msg('Open Favorites')}</li>
+          <li><kbd>j</kbd> / <kbd>k</kbd> - ${msg('Navigate posts')}</li>
+          <li><kbd>n</kbd> - ${msg('New post')}</li>
+          <li><kbd>?</kbd> - ${msg('Show all shortcuts')}</li>
         </ul>
+
+        <md-button
+          variant="text"
+          @click="${() =>
+            window.dispatchEvent(new CustomEvent('show-shortcuts-help'))}"
+        >
+          ${msg('View all keyboard shortcuts')}
+        </md-button>
       </div>
 
       ${this.instanceInfo

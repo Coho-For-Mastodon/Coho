@@ -70,6 +70,7 @@ export declare class AppProfile extends LitElement {
   handleReportSubmit(e: CustomEvent<ReportSubmitDetail>): Promise<void>;
   handleReportCancel(): void;
   editPost(tweet: Post): void;
+  handleOpenPost(tweet: Post): void;
   confirmEdit(): Promise<void>;
   private goToFollowers;
   private goToFollowing;

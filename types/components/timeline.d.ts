@@ -47,6 +47,7 @@ export declare class Timeline extends LitElement {
   isRefreshing: boolean;
   pendingNewPosts: Post[];
   isCheckingForNewPosts: boolean;
+  focusedIndex: number;
   private _pullStartY;
   private _isPulling;
   private _pullDistance;
@@ -70,15 +71,27 @@ export declare class Timeline extends LitElement {
   header: boolean;
   autoLoad: boolean;
   get timelineTitle():
+    | 'Timeline'
     | 'Home'
     | 'Public'
     | 'Media'
     | 'For You'
-    | 'Home & Trending'
-    | 'Timeline';
+    | 'Home & Trending';
   protected willUpdate(changedProperties: PropertyValues): void;
   static styles: import('lit').CSSResult[];
   firstUpdated(): void;
+  disconnectedCallback(): void;
+  private _keyboardScope;
+  private _setupKeyboardNavigation;
+  private _handleRefreshEvent;
+  private _cleanupKeyboardNavigation;
+  private _navigateToNextPost;
+  private _navigateToPreviousPost;
+  private _scrollToFocusedPost;
+  private _updateFocusedItem;
+  private _dispatchFocusEvent;
+  /** Get the currently focused post */
+  getFocusedPost(): Post | null;
   updated(changedProperties: PropertyValues): void;
   private _setupPullToRefresh;
   private _getScrollContainer;
@@ -93,7 +106,6 @@ export declare class Timeline extends LitElement {
   private _isDataSaverEnabled;
   /** Handle visibility changes from lit-virtualizer to trigger load more */
   private _handleVisibilityChanged;
-  disconnectedCallback(): void;
   refreshTimeline(skipCache?: boolean): Promise<void>;
   loadMore(): Promise<void>;
   /**

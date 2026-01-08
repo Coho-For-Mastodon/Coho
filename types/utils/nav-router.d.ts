@@ -1,4 +1,14 @@
 import type { TemplateResult } from 'lit';
+import type { Post } from '../interfaces/Post.js';
+import type { Account } from '../mastodon/types/index.js';
+/**
+ * Navigation state that can be passed during navigation.
+ * Use this to pass data (like a Post or Account) to the destination page.
+ */
+export interface NavigationState {
+  post?: Post;
+  account?: Account;
+}
 /**
  * Route plugin interface - called before navigation completes
  */
@@ -50,8 +60,20 @@ export declare class Router extends EventTarget {
   private handleNavigation;
   /**
    * Programmatically navigate to a path
+   * @param path - The path or URL to navigate to
+   * @param options - Optional navigation options including state to pass to the destination
    */
-  navigate(path: string | URL): Promise<void>;
+  navigate(
+    path: string | URL,
+    options?: {
+      state?: NavigationState;
+    }
+  ): Promise<void>;
+  /**
+   * Get the current navigation state from the current history entry.
+   * Returns undefined if no state was passed during navigation.
+   */
+  getNavigationState(): NavigationState | undefined;
   /**
    * Initialize the router - must be called before first render
    * Loads polyfills if needed, builds patterns, and runs plugins for initial route

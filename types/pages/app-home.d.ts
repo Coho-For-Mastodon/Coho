@@ -103,6 +103,8 @@ export declare class AppHome extends LitElement {
   ): void;
   handleOpenTweet(tweet: Post): Promise<void>;
   disconnectedCallback(): Promise<void>;
+  private _handleSwitchTab;
+  private _handleOpenPostDialog;
   reloadHome(): void;
   loadBookmarks(): Promise<void>;
   loadFavorites(): Promise<void>;

@@ -10,6 +10,7 @@ export declare class TimelineItem extends LitElement {
   show: boolean;
   showreply: boolean;
   guestMode: boolean;
+  focused: boolean;
   isBoosted: boolean;
   isReblogged: boolean;
   isBookmarked: boolean;
@@ -27,6 +28,8 @@ export declare class TimelineItem extends LitElement {
   static styles: import('lit').CSSResult[];
   showThread(): Promise<void>;
   firstUpdated(): Promise<void>;
+  disconnectedCallback(): void;
+  private _handleKeydown;
   /**
    * Show login prompt for guests trying to use auth-required features
    */

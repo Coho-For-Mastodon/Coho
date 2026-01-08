@@ -618,7 +618,23 @@ export class PostDialog extends LitElement {
 
     // Check if handwriting recognition is available
     this.handwritingAvailable = await isHandwritingRecognitionAvailable();
+
+    // Add keyboard shortcut for Ctrl/Cmd+Enter to publish
+    this.addEventListener('keydown', this._handleKeydown);
   }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener('keydown', this._handleKeydown);
+  }
+
+  private _handleKeydown = (event: KeyboardEvent) => {
+    // Ctrl/Cmd+Enter to publish
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      this.publish();
+    }
+  };
 
   public async openNewDialog(shareName?: string) {
     // Ensure the component's shadow DOM is ready

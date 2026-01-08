@@ -26,6 +26,9 @@ import type {
   OpenImageDetail,
 } from '../types/events';
 
+// Keyboard navigation handler bound reference
+import hotkeys from 'hotkeys-js';
+
 // Types for analyze feature
 interface AnalyzeEntity {
   text: string;
@@ -83,6 +86,10 @@ export class Timeline extends LitElement {
   @state() isRefreshing: boolean = false;
   @state() pendingNewPosts: Post[] = [];
   @state() isCheckingForNewPosts: boolean = false;
+
+  // Keyboard navigation state
+  @state() focusedIndex: number = -1;
+
   private _pullStartY: number = 0;
   private _isPulling: boolean = false;
   private _pullDistance: number = 0;
@@ -115,6 +122,8 @@ export class Timeline extends LitElement {
           this.showImage($event.detail.imageURL)}"
         ?show="${true}"
         ?guestMode="${this.guestMode}"
+        ?focused="${index === this.focusedIndex}"
+        tabindex="${index === this.focusedIndex ? '0' : '-1'}"
         @replies="${($event: CustomEvent<RepliesDetail>) =>
           this.handleReplies($event.detail.data)}"
         .tweet="${tweet}"
@@ -519,6 +528,133 @@ export class Timeline extends LitElement {
 
   firstUpdated() {
     // Pull-to-refresh setup moved to updated() to handle conditional rendering
+    this._setupKeyboardNavigation();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._cleanupKeyboardNavigation();
+
+    if (!this.autoLoad) {
+      return;
+    }
+
+    // Save timeline to cache when navigating away
+    if (this.timeline.length > 0) {
+      console.log('Saving timeline to cache on disconnect');
+      saveTimelineCache(
+        this.timelineType,
+        this.timeline,
+        this.lastScrollPosition
+      );
+    }
+  }
+
+  // Keyboard navigation methods
+  private _keyboardScope = 'timeline';
+
+  private _setupKeyboardNavigation() {
+    // Set up j/k navigation with a specific scope for this timeline
+    hotkeys('j,k', this._keyboardScope, (event, handler) => {
+      // Only handle if this timeline is visible/active
+      if (!this.isConnected || this.timeline.length === 0) return;
+
+      event.preventDefault();
+
+      if (handler.key === 'j') {
+        this._navigateToNextPost();
+      } else if (handler.key === 'k') {
+        this._navigateToPreviousPost();
+      }
+    });
+
+    // Set scope to allow timeline navigation
+    hotkeys.setScope(this._keyboardScope);
+
+    // Listen for refresh timeline event
+    window.addEventListener('refresh-timeline', this._handleRefreshEvent);
+  }
+
+  private _handleRefreshEvent = () => {
+    if (this.isConnected && this.autoLoad) {
+      clearTimelineCache(this.timelineType);
+      this.refreshTimeline(true);
+    }
+  };
+
+  private _cleanupKeyboardNavigation() {
+    hotkeys.unbind('j,k', this._keyboardScope);
+    window.removeEventListener('refresh-timeline', this._handleRefreshEvent);
+  }
+
+  private _navigateToNextPost() {
+    const maxIndex = this.timeline.length - 1;
+    if (this.focusedIndex < maxIndex) {
+      this.focusedIndex++;
+      this._scrollToFocusedPost();
+      this._dispatchFocusEvent();
+    }
+  }
+
+  private _navigateToPreviousPost() {
+    if (this.focusedIndex > 0) {
+      this.focusedIndex--;
+      this._scrollToFocusedPost();
+      this._dispatchFocusEvent();
+    } else if (this.focusedIndex === -1 && this.timeline.length > 0) {
+      // If nothing focused yet, focus first item
+      this.focusedIndex = 0;
+      this._scrollToFocusedPost();
+      this._dispatchFocusEvent();
+    }
+  }
+
+  private _scrollToFocusedPost() {
+    const virtualizer = this.shadowRoot?.querySelector(
+      'lit-virtualizer'
+    ) as HTMLElement & {
+      scrollToIndex?: (index: number, position?: string) => void;
+    };
+
+    if (virtualizer?.scrollToIndex) {
+      virtualizer.scrollToIndex(this.focusedIndex, 'center');
+    }
+
+    // Also update the focused timeline-item
+    this._updateFocusedItem();
+  }
+
+  private _updateFocusedItem() {
+    // Remove focus from all items
+    const items = this.shadowRoot?.querySelectorAll('timeline-item');
+    items?.forEach((item, index) => {
+      if (index === this.focusedIndex) {
+        item.setAttribute('focused', '');
+        item.setAttribute('tabindex', '0');
+        (item as HTMLElement).focus();
+      } else {
+        item.removeAttribute('focused');
+        item.setAttribute('tabindex', '-1');
+      }
+    });
+  }
+
+  private _dispatchFocusEvent() {
+    const focusedPost = this.timeline[this.focusedIndex];
+    if (focusedPost) {
+      this.dispatchEvent(
+        new CustomEvent('post-focused', {
+          detail: { post: focusedPost, index: this.focusedIndex },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
+  }
+
+  /** Get the currently focused post */
+  public getFocusedPost(): Post | null {
+    return this.focusedIndex >= 0 ? this.timeline[this.focusedIndex] : null;
   }
 
   updated(changedProperties: PropertyValues) {
@@ -903,24 +1039,6 @@ export class Timeline extends LitElement {
       } finally {
         this.loadingData = false;
       }
-    }
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-
-    if (!this.autoLoad) {
-      return;
-    }
-
-    // Save timeline to cache when navigating away
-    if (this.timeline.length > 0) {
-      console.log('Saving timeline to cache on disconnect');
-      saveTimelineCache(
-        this.timelineType,
-        this.timeline,
-        this.lastScrollPosition
-      );
     }
   }
 

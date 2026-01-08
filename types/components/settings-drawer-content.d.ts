@@ -7,6 +7,7 @@ import './md/md-icon-button';
 import './md/md-dropdown';
 import './md/md-menu';
 import './md/md-menu-item';
+import './md/md-button';
 import type { Account } from '../mastodon/types/account';
 import type { Instance } from '../mastodon/types/instance';
 /**

@@ -145,6 +145,12 @@ export class AppHome extends LitElement {
       await import('../services/auth-state');
     this.isGuestMode = checkGuestMode();
 
+    // Listen for keyboard shortcut tab switches
+    window.addEventListener('switch-tab', this._handleSwitchTab);
+
+    // Listen for keyboard shortcut to open new post dialog
+    window.addEventListener('open-post-dialog', this._handleOpenPostDialog);
+
     // Use the current URL params, but fall back to the initial launch URL if
     // something in boot dropped our query string (e.g. PWA manifest shortcut
     // /home?tab=notifications getting normalized to /home).
@@ -598,7 +604,15 @@ export class AppHome extends LitElement {
   }
 
   async disconnectedCallback() {
+    super.disconnectedCallback();
     console.log('home disconnected');
+
+    // Remove keyboard shortcut tab switch listener
+    window.removeEventListener('switch-tab', this._handleSwitchTab);
+
+    // Remove keyboard shortcut new post dialog listener
+    window.removeEventListener('open-post-dialog', this._handleOpenPostDialog);
+
     const lastPageID = sessionStorage.getItem('latest-read');
     console.log('lastPageID', lastPageID);
     if (lastPageID) {
@@ -606,6 +620,39 @@ export class AppHome extends LitElement {
       await savePlace(lastPageID);
     }
   }
+
+  private _handleSwitchTab = async (event: Event) => {
+    const customEvent = event as CustomEvent<{ tab: string }>;
+    const tabName = customEvent.detail?.tab;
+    if (!tabName) return;
+
+    // Preload the component for the requested tab
+    switch (tabName) {
+      case 'bookmarks':
+        await this.loadBookmarks();
+        break;
+      case 'faves':
+        await this.loadFavorites();
+        break;
+      case 'notifications':
+        await this.loadNotifications();
+        break;
+      case 'search':
+        await this.loadSearch();
+        break;
+      case 'messages':
+        await this.loadMessages();
+        break;
+    }
+
+    // Wait for the component to be ready before switching tabs
+    await this.updateComplete;
+    this.openATab(tabName);
+  };
+
+  private _handleOpenPostDialog = () => {
+    this.openNewDialog();
+  };
 
   reloadHome() {
     this.homeTimeline?.refreshTimeline();

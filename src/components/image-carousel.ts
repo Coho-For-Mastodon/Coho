@@ -9,6 +9,7 @@ import type { MediaAttachment } from '../types/interfaces/MediaAttachment';
 export class ImageCarousel extends LitElement {
   @property({ type: Array }) images: MediaAttachment[] = [];
   @state() blurhashUrls: Map<string, string> = new Map();
+  @state() currentIndex: number = 0;
 
   static styles = [
     css`
@@ -95,6 +96,9 @@ export class ImageCarousel extends LitElement {
 
   firstUpdated() {
     console.log('image-carousel firstUpdated, images:', this.images);
+    this.addEventListener('keydown', this._handleKeydown);
+    // Make carousel focusable for keyboard navigation
+    this.setAttribute('tabindex', '0');
   }
 
   updated(changedProperties: Map<string, unknown>) {
@@ -106,6 +110,49 @@ export class ImageCarousel extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this.removeEventListener('keydown', this._handleKeydown);
+  }
+
+  private _handleKeydown = (event: KeyboardEvent) => {
+    if (this.images.length <= 1) return;
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        event.preventDefault();
+        this._navigatePrevious();
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        this._navigateNext();
+        break;
+      default:
+        break;
+    }
+  };
+
+  private _navigatePrevious() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      this._scrollToCurrentImage();
+    }
+  }
+
+  private _navigateNext() {
+    if (this.currentIndex < this.images.length - 1) {
+      this.currentIndex++;
+      this._scrollToCurrentImage();
+    }
+  }
+
+  private _scrollToCurrentImage() {
+    const list = this.shadowRoot?.querySelector('#list') as HTMLElement;
+    if (list) {
+      const imageWidth = list.offsetWidth;
+      list.scrollTo({
+        left: this.currentIndex * imageWidth,
+        behavior: 'smooth',
+      });
+    }
   }
 
   private generateBlurhashes() {
