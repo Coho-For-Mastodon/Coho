@@ -5,8 +5,8 @@
  * Use these utilities to update the UI immediately before API calls complete,
  * providing a snappy user experience while handling failures gracefully.
  *
- * Note: This works with the service worker's BackgroundSyncPlugin for offline
- * support. Failed requests are queued and retried when back online.
+ * Note: This works with the service worker's background sync implementation
+ * in src/sw.ts. Failed mutation requests are queued and retried when back online.
  */
 
 import { ApiError, NetworkError } from './api-client.js';
@@ -77,8 +77,9 @@ export interface OptimisticResult<T> {
  * 3. On error while online, rolls back the UI and shows a toast
  * 4. On error while offline, keeps the UI update (background sync will retry)
  *
- * For offline support, the service worker's BackgroundSyncPlugin will queue
- * failed POST requests and retry them when the connection is restored.
+ * For offline support, the service worker queues failed mutation requests
+ * (POST/PUT/DELETE) to IndexedDB and retries them via the Background Sync API
+ * when connectivity is restored. See src/sw.ts for implementation.
  *
  * @param apply - Function to apply the optimistic update (runs immediately)
  * @param execute - The actual async operation to perform

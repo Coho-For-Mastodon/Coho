@@ -20,6 +20,7 @@ export declare class ImagePreviewDialog extends LitElement {
   static styles: import('lit').CSSResult;
   connectedCallback(): void;
   disconnectedCallback(): void;
+  private _handleKeydown;
   updated(changedProperties: Map<string, unknown>): void;
   private handlePreviewImage;
   private handleImageLoad;

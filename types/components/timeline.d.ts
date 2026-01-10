@@ -45,16 +45,21 @@ export declare class Timeline extends LitElement {
   imageDesc: string | undefined;
   analyzeTweet: Post | null;
   isRefreshing: boolean;
+  pendingNewPosts: Post[];
+  isCheckingForNewPosts: boolean;
+  focusedIndex: number;
   private _pullStartY;
   private _isPulling;
   private _pullDistance;
   private _threshold;
   private _hapticTriggered;
   private _prefetchedIds;
+  private _renderTimelineItem;
   private _refreshIndicator;
   private _refreshIcon;
   private _scrollContainer;
   private _rafId;
+  private _pullToRefreshSetup;
   timelineType:
     | 'home'
     | 'public'
@@ -66,19 +71,33 @@ export declare class Timeline extends LitElement {
   header: boolean;
   autoLoad: boolean;
   get timelineTitle():
+    | 'Timeline'
     | 'Home'
     | 'Public'
     | 'Media'
     | 'For You'
-    | 'Home & Trending'
-    | 'Timeline';
+    | 'Home & Trending';
   protected willUpdate(changedProperties: PropertyValues): void;
   static styles: import('lit').CSSResult[];
   firstUpdated(): void;
+  disconnectedCallback(): void;
+  private _keyboardScope;
+  private _setupKeyboardNavigation;
+  private _handleRefreshEvent;
+  private _cleanupKeyboardNavigation;
+  private _navigateToNextPost;
+  private _navigateToPreviousPost;
+  private _scrollToFocusedPost;
+  private _updateFocusedItem;
+  private _dispatchFocusEvent;
+  /** Get the currently focused post */
+  getFocusedPost(): Post | null;
+  updated(changedProperties: PropertyValues): void;
   private _setupPullToRefresh;
   private _getScrollContainer;
   private _getRefreshIndicator;
   private _getRefreshIcon;
+  private _getRefreshIconInner;
   _handleTouchStart(e: TouchEvent): void;
   _handleTouchMove(e: TouchEvent): void;
   _handleTouchEnd(): Promise<void>;
@@ -87,9 +106,18 @@ export declare class Timeline extends LitElement {
   private _isDataSaverEnabled;
   /** Handle visibility changes from lit-virtualizer to trigger load more */
   private _handleVisibilityChanged;
-  disconnectedCallback(): void;
   refreshTimeline(skipCache?: boolean): Promise<void>;
   loadMore(): Promise<void>;
+  /**
+   * Check for new posts in the background without disrupting the user.
+   * If new posts are found, store them in pendingNewPosts to show "X new posts" button.
+   */
+  private checkForNewPosts;
+  /**
+   * Show pending new posts by prepending them to the timeline.
+   * Called when user clicks the "X new posts" button.
+   */
+  showPendingPosts(): void;
   handleReplies(data: Array<Post>): void;
   showImage(imageURL: string): Promise<void>;
   showAnalyze(

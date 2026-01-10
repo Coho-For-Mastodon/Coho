@@ -76,14 +76,53 @@ export class RightClick extends LitElement {
         scope.addEventListener('contextmenu', (event) => {
           event.preventDefault();
           const { clientX: mouseX, clientY: mouseY } = event;
-          contextMenu.style.top = `${mouseY}px`;
-          contextMenu.style.left = `${mouseX}px`;
 
-          contextMenu.classList.remove('visible');
-
+          // Temporarily show to measure dimensions
+          contextMenu.style.visibility = 'hidden';
           contextMenu.classList.add('visible');
 
-          event.preventDefault();
+          const menuRect = contextMenu.getBoundingClientRect();
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const margin = 8;
+
+          // Calculate available space
+          const spaceRight = viewportWidth - mouseX - margin;
+          const spaceBelow = viewportHeight - mouseY - margin;
+
+          // Determine position with flip logic
+          let left = mouseX;
+          let top = mouseY;
+          let originX = 'left';
+          let originY = 'top';
+
+          if (menuRect.width > spaceRight && mouseX > menuRect.width) {
+            left = mouseX - menuRect.width;
+            originX = 'right';
+          }
+
+          if (menuRect.height > spaceBelow && mouseY > menuRect.height) {
+            top = mouseY - menuRect.height;
+            originY = 'bottom';
+          }
+
+          // Final clamp to viewport
+          left = Math.max(
+            margin,
+            Math.min(left, viewportWidth - menuRect.width - margin)
+          );
+          top = Math.max(
+            margin,
+            Math.min(top, viewportHeight - menuRect.height - margin)
+          );
+
+          contextMenu.style.top = `${top}px`;
+          contextMenu.style.left = `${left}px`;
+          contextMenu.style.transformOrigin = `${originY} ${originX}`;
+          contextMenu.style.visibility = '';
+
+          contextMenu.classList.remove('visible');
+          contextMenu.classList.add('visible');
         });
 
         scope.addEventListener('click', (e) => {

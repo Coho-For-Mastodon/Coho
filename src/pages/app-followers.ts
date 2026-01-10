@@ -1,10 +1,12 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { getUsersFollowers } from '../services/account';
 
 import '../components/user-profile';
 import type { Account } from '../mastodon/types';
 
+@localized()
 @customElement('app-followers')
 export class AppFollowers extends LitElement {
   @state() followers: Account[] = [];
@@ -48,13 +50,9 @@ export class AppFollowers extends LitElement {
         background: var(--sl-color-gray-50);
         border-radius: 6px;
         padding: 10px;
+        cursor: pointer;
 
         animation: slideUp 0.3s ease-in-out;
-      }
-
-      li a {
-        text-decoration: none;
-        color: white;
       }
 
       @media (max-width: 820px) {
@@ -93,10 +91,6 @@ export class AppFollowers extends LitElement {
         ul li {
           color: black;
         }
-
-        li a {
-          color: black;
-        }
       }
     `,
   ];
@@ -117,15 +111,13 @@ export class AppFollowers extends LitElement {
       <app-header ?enableBack="${true}"></app-header>
 
       <main>
-        <h2>Your Followers</h2>
+        <h2>${msg('Your Followers')}</h2>
         <ul class="scrollbar-hidden">
           ${this.followers.map((follower) => {
             return html`
               ${follower && follower.id
                 ? html`<li>
-                    <a href="/account?id=${follower.id}">
-                      <user-profile .account=${follower}></user-profile>
-                    </a>
+                    <user-profile .account=${follower}></user-profile>
                   </li>`
                 : null}
             `;

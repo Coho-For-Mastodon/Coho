@@ -1,9 +1,17 @@
 import { LitElement } from 'lit';
+import './config/localization.js';
 import './pages/app-login';
 import './components/header';
+import './components/pwa-update';
 export declare class AppIndex extends LitElement {
   static get styles(): import('lit').CSSResult;
   connectedCallback(): Promise<void>;
+  /**
+   * Lazy-load and initialize the shortcuts help dialog
+   * Only loads when user first presses ? key
+   */
+  private shortcutsHelpInitialized;
+  private initLazyShortcutsHelp;
   /**
    * Lazy-load and initialize the image preview dialog
    * Only loads when user first clicks an image
@@ -46,4 +54,8 @@ export declare class AppIndex extends LitElement {
   private adjustColorBrightness;
   firstUpdated(): void;
   render(): import('lit-html').TemplateResult<1>;
+  /**
+   * Render to light DOM so View Transitions can see the content
+   */
+  createRenderRoot(): this;
 }

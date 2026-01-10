@@ -1,10 +1,12 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { getFollowing } from '../services/account';
 
 import '../components/user-profile';
 import type { Account } from '../mastodon/types';
 
+@localized()
 @customElement('app-following')
 export class Appfollowing extends LitElement {
   @state() following: Account[] = [];
@@ -47,11 +49,7 @@ export class Appfollowing extends LitElement {
         background: var(--sl-color-gray-50);
         border-radius: 6px;
         padding: 10px;
-      }
-
-      li a {
-        text-decoration: none;
-        color: white;
+        cursor: pointer;
       }
 
       @media (max-width: 820px) {
@@ -66,10 +64,6 @@ export class Appfollowing extends LitElement {
 
       @media (prefers-color-scheme: light) {
         ul li {
-          color: black;
-        }
-
-        li a {
           color: black;
         }
       }
@@ -92,15 +86,13 @@ export class Appfollowing extends LitElement {
       <app-header ?enableBack="${true}"></app-header>
 
       <main>
-        <h2>You are Following</h2>
+        <h2>${msg('You are Following')}</h2>
         <ul class="scrollbar-hidden">
           ${this.following.map((follower) => {
             return html`
               ${follower && follower.id
                 ? html`<li>
-                    <a href="/account?id=${follower.id}">
-                      <user-profile .account=${follower}></user-profile>
-                    </a>
+                    <user-profile .account=${follower}></user-profile>
                   </li>`
                 : null}
             `;

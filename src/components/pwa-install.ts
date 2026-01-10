@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, property } from 'lit/decorators.js';
+import { msg, localized } from '@lit/localize';
 
 import './md/md-button.js';
 import './md/md-icon.js';
@@ -32,6 +33,7 @@ type InstallMethod =
  * Provides install prompts via Web Install API, beforeinstallprompt, or Safari instructions.
  * Designed to be embedded inside a dialog or bottom sheet by a parent component.
  */
+@localized()
 @customElement('pwa-install')
 export class PwaInstall extends LitElement {
   /** Whether the app is already installed (standalone mode) */
@@ -525,7 +527,7 @@ export class PwaInstall extends LitElement {
               d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"
             />
           </svg>
-          <span>Launch from your dock or home screen</span>
+          <span>${msg('Launch from your dock or home screen')}</span>
         </div>
         <div class="benefit-item">
           <svg class="benefit-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -533,7 +535,7 @@ export class PwaInstall extends LitElement {
               d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H5V6h14v12z"
             />
           </svg>
-          <span>Opens in its own window</span>
+          <span>${msg('Opens in its own window')}</span>
         </div>
         <div class="benefit-item">
           <svg class="benefit-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -541,7 +543,7 @@ export class PwaInstall extends LitElement {
               d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"
             />
           </svg>
-          <span>Notification badges on app icon</span>
+          <span>${msg('Notification badges on app icon')}</span>
         </div>
       </div>
     `;
@@ -553,33 +555,35 @@ export class PwaInstall extends LitElement {
         <div class="safari-step">
           <span class="step-number">1</span>
           <div class="step-content">
-            <span class="step-title">Tap the Share button</span>
+            <span class="step-title">${msg('Tap the Share button')}</span>
             <span class="step-description">
-              Look for
+              ${msg('Look for')}
               <svg class="share-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path
                   d="M16 5l-1.42 1.42-1.59-1.59V16h-2V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .9 2 2z"
                 />
               </svg>
-              in the toolbar
+              ${msg('in the toolbar')}
             </span>
           </div>
         </div>
         <div class="safari-step">
           <span class="step-number">2</span>
           <div class="step-content">
-            <span class="step-title">Scroll and tap "Add to Home Screen"</span>
+            <span class="step-title"
+              >${msg('Scroll and tap "Add to Home Screen"')}</span
+            >
             <span class="step-description"
-              >It may be in the second row of actions</span
+              >${msg('It may be in the second row of actions')}</span
             >
           </div>
         </div>
         <div class="safari-step">
           <span class="step-number">3</span>
           <div class="step-content">
-            <span class="step-title">Tap "Add" to confirm</span>
+            <span class="step-title">${msg('Tap "Add" to confirm')}</span>
             <span class="step-description"
-              >Coho will appear on your home screen</span
+              >${msg('Coho will appear on your home screen')}</span
             >
           </div>
         </div>
@@ -592,7 +596,7 @@ export class PwaInstall extends LitElement {
       return html`
         <div class="actions">
           <md-button variant="text" @click="${() => this.dismiss()}"
-            >Got it</md-button
+            >${msg('Got it')}</md-button
           >
         </div>
       `;
@@ -605,10 +609,10 @@ export class PwaInstall extends LitElement {
           @click="${() => this.install()}"
           ?disabled="${this.installing}"
         >
-          ${this.installing ? 'Installing...' : 'Install'}
+          ${this.installing ? msg('Installing...') : msg('Install')}
         </md-button>
         <md-button variant="text" @click="${() => this.dismiss()}"
-          >Not now</md-button
+          >${msg('Not now')}</md-button
         >
       </div>
     `;
@@ -628,12 +632,12 @@ export class PwaInstall extends LitElement {
           alt="Coho"
         />
 
-        <h2 class="install-title">Install Coho</h2>
+        <h2 class="install-title">${msg('Install Coho')}</h2>
 
         <p class="install-description">
           ${this.installMethod === 'safari'
-            ? 'Add Coho to your home screen for the best experience'
-            : 'Install Coho for a more immersive experience'}
+            ? msg('Add Coho to your home screen for the best experience')
+            : msg('Install Coho for a more immersive experience')}
         </p>
 
         ${this.installMethod === 'safari'

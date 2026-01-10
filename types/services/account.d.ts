@@ -35,7 +35,8 @@ export declare const getAccount: (id: string) => Promise<Account | undefined>;
 export type ProfilePostsFilter = 'posts' | 'posts_replies' | 'media';
 export declare const getUsersPosts: (
   id: string,
-  filter?: ProfilePostsFilter
+  filter?: ProfilePostsFilter,
+  maxId?: string
 ) => Promise<any>;
 export declare const getUsersFollowers: (id: string) => Promise<any>;
 export declare const getFollowing: (id: string) => Promise<any>;

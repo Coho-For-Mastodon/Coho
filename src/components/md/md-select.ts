@@ -315,7 +315,7 @@ export class MdSelect extends LitElement {
           @click=${this._handleInputClick}
           tabindex="${this.disabled ? -1 : 0}"
           role="combobox"
-          aria-expanded="${this._open}"
+          aria-expanded="${this._open ? 'true' : 'false'}"
           aria-haspopup="listbox"
           aria-label="${this.placeholder}"
         >

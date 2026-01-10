@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import '../components/search';
 import '../components/media-timeline';
@@ -19,6 +20,7 @@ interface SearchData {
   hashtags?: TrendingTag[];
 }
 
+@localized()
 @customElement('search-page')
 export class SearchPage extends LitElement {
   @state() searchData: SearchData | undefined;
@@ -540,20 +542,22 @@ export class SearchPage extends LitElement {
   ];
 
   async handleSearch(search: { searchData: SearchData }) {
-    console.log(search);
     this.searchData = search.searchData;
 
-    const { getTrendingStatuses, getTrendingLinks } =
-      await import('../services/timeline');
+    const [{ getTrendingStatuses }, { getTrendingLinks }] = await Promise.all([
+      import('../services/timeline'),
+      import('../services/timeline'),
+    ]);
 
-    const trendingStatuses = await getTrendingStatuses();
+    const [trendingStatuses, trendingLinks] = await Promise.all([
+      getTrendingStatuses(),
+      getTrendingLinks(),
+    ]);
+
     console.log('trendingStatuses', trendingStatuses);
-
     this.trending = trendingStatuses;
 
-    const trendingLinks = await getTrendingLinks();
     console.log('trendingLinks', trendingLinks);
-
     this.trendingLinks = trendingLinks;
   }
 
@@ -602,9 +606,9 @@ export class SearchPage extends LitElement {
           @segment-change="${(e: CustomEvent) =>
             (this.activeSegment = e.detail.value)}"
         >
-          <md-segment value="accounts">Accounts</md-segment>
-          <md-segment value="trending">Trending</md-segment>
-          <md-segment value="news">News</md-segment>
+          <md-segment value="accounts">${msg('Accounts')}</md-segment>
+          <md-segment value="trending">${msg('Trending')}</md-segment>
+          <md-segment value="news">${msg('News')}</md-segment>
         </md-segmented-button>
 
         <div class="panel ${this.activeSegment === 'accounts' ? 'active' : ''}">
@@ -641,7 +645,9 @@ export class SearchPage extends LitElement {
                             <p class="card-display-name">
                               ${account.display_name || account.username}
                               ${account.bot
-                                ? html`<span class="bot-badge">Bot</span>`
+                                ? html`<span class="bot-badge"
+                                    >${msg('Bot')}</span
+                                  >`
                                 : null}
                             </p>
                             <p class="card-username">@${account.acct}</p>
@@ -656,7 +662,9 @@ export class SearchPage extends LitElement {
                                   account.followers_count
                                 )}</span
                               >
-                              <span class="stat-label">Followers</span>
+                              <span class="stat-label"
+                                >${msg('Followers')}</span
+                              >
                             </div>
                             <div class="stat">
                               <span class="stat-value"
@@ -664,7 +672,9 @@ export class SearchPage extends LitElement {
                                   account.following_count
                                 )}</span
                               >
-                              <span class="stat-label">Following</span>
+                              <span class="stat-label"
+                                >${msg('Following')}</span
+                              >
                             </div>
                             <div class="stat">
                               <span class="stat-value"
@@ -672,7 +682,7 @@ export class SearchPage extends LitElement {
                                   account.statuses_count
                                 )}</span
                               >
-                              <span class="stat-label">Posts</span>
+                              <span class="stat-label">${msg('Posts')}</span>
                             </div>
                           </div>
                         </div>

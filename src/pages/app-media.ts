@@ -69,7 +69,7 @@ export class AppMedia extends LitElement {
         <ul>
           ${this.media.map((file) => {
             return html`<li>
-              <img src="${URL.createObjectURL(file)}" />
+              <img src="${URL.createObjectURL(file)}" alt="${file.name}" />
             </li>`;
           })}
         </ul>

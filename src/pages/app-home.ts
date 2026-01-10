@@ -1,5 +1,7 @@
-import { LitElement, css, html, nothing } from 'lit';
+import { LitElement, html, nothing } from 'lit';
 import { property, customElement, state, query } from 'lit/decorators.js';
+import { msg } from '@lit/localize';
+import { localized } from '@lit/localize';
 
 import '../components/timeline';
 import '../components/timeline-item';
@@ -7,13 +9,9 @@ import '../components/md/md-skeleton';
 
 import '../components/otter-drawer';
 import '../components/md/md-button';
-import '../components/md/md-badge';
-import '../components/md/md-toolbar';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
 import '../components/md/md-dialog';
-import '../components/md/md-switch';
-import '../components/md/md-dropdown';
 import '../components/md/md-tabs';
 import '../components/md/md-tab';
 import '../components/md/md-tab-panel';
@@ -23,6 +21,8 @@ import '../components/md/md-toast';
 import '../components/offline-notify';
 import '../components/pwa-install';
 import '../components/guest-login-banner';
+import '../components/home-sidebar';
+import '../components/settings-drawer-content';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -32,7 +32,10 @@ import type { PostDialog } from '../components/post-dialog';
 import type { PwaInstall } from '../components/pwa-install';
 
 import { styles } from '../styles/shared-styles';
+import { homeStyles } from '../styles/home-styles';
 import { router } from '../utils/router';
+import { lazyLoad, componentLoaders } from '../utils/lazy-component-loader';
+import { LazyOverlayManager } from '../utils/lazy-overlay';
 // import { resetLastPageID } from '../services/timeline';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
@@ -49,6 +52,7 @@ import type {
   ColorChosenEvent,
 } from '../types/events';
 
+@localized()
 @customElement('app-home')
 export class AppHome extends LitElement {
   // For more information on using properties and state in lit
@@ -96,10 +100,27 @@ export class AppHome extends LitElement {
   // Guest mode state
   @state() isGuestMode: boolean = false;
 
+  // Lazy overlay manager for dialogs/drawers/toasts
+  // This keeps overlays out of DOM until they're needed
+  private overlays = new LazyOverlayManager(this, [
+    'settings-drawer',
+    'theming-drawer',
+    'replies-drawer',
+    'install-dialog',
+    'summary-dialog',
+    'translation-toast',
+    'error-toast',
+  ]);
+
   @state() activeTab: string = 'general';
 
-  @state() tabsOrientation: 'horizontal' | 'vertical' = 'vertical';
-  @state() tabsPlacement: 'top' | 'bottom' | 'start' | 'end' = 'start';
+  @state() tabsOrientation: 'horizontal' | 'vertical' = window.matchMedia(
+    '(max-width: 820px)'
+  ).matches
+    ? 'horizontal'
+    : 'vertical';
+  @state() tabsPlacement: 'top' | 'bottom' | 'start' | 'end' =
+    window.matchMedia('(max-width: 820px)').matches ? 'bottom' : 'start';
 
   // DOM element references using @query for type safety
   @query('#settings-drawer') private settingsDrawer!: OtterDrawer;
@@ -115,671 +136,7 @@ export class AppHome extends LitElement {
   @query('pwa-install') private pwaInstall!: PwaInstall;
 
   static get styles() {
-    return [
-      styles,
-      css`
-        #welcomeBar {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          flex-direction: column;
-        }
-
-        app-timeline,
-        app-bookmarks,
-        app-notifications,
-        app-favorites,
-        app-bookmarks,
-        search-page {
-          margin-left: 0;
-          margin-right: 0;
-          width: 100%;
-          max-width: 600px;
-        }
-
-        md-tabs {
-          height: calc(100vh - 54px);
-          grid-column: 1 / 3;
-          gap: 32px;
-          margin-top: -54px;
-          padding-top: 54px;
-        }
-
-        md-tab-panel::part(panel-content) {
-          display: flex;
-          justify-content: center;
-        }
-
-        md-tab {
-          width: 80px;
-          flex: none;
-        }
-
-        .new-post-container {
-          padding: 16px 12px;
-          width: 80px;
-          box-sizing: border-box;
-          display: flex;
-          justify-content: center;
-          margin-top: 8px;
-        }
-
-        .new-post-btn md-icon {
-          width: 24px;
-          height: 24px;
-        }
-
-        md-tab-panel {
-          overflow: visible;
-        }
-
-        md-tab md-icon {
-          width: 1.8em;
-          height: 1.8em;
-        }
-
-        app-timeline.homeTimeline {
-          width: 100%;
-        }
-
-        .notification-dot {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          width: 8px;
-          height: 8px;
-          background-color: var(--md-sys-color-primary);
-          border-radius: 50%;
-          z-index: 10;
-        }
-
-        /* Dark mode support for tabs */
-        @media (prefers-color-scheme: dark) {
-          /* md-tabs {
-            --md-sys-color-surface: #0f1118;
-            --md-sys-color-outline-variant: #2a2d36;
-          } */
-
-          md-tab {
-            --md-sys-color-on-surface-variant: #c4c6cf;
-          }
-
-          .tab-label {
-            color: #c4c6cf;
-          }
-        }
-
-        md-menu-item {
-          --neutral-fill-stealth-hover: #141314;
-        }
-
-        #install-dialog::part(body) {
-          padding: 0;
-        }
-
-        mammoth-bot {
-          position: fixed;
-          bottom: 12px;
-          right: 12px;
-        }
-
-        #bot-drawer mammoth-bot {
-          display: flex;
-          position: unset;
-        }
-
-        md-menu {
-          background: #ffffff14;
-          backdrop-filter: blur(48px);
-          color: white;
-          z-index: 99;
-        }
-
-        md-menu-item {
-          color: white;
-        }
-
-        @media (prefers-color-scheme: light) {
-          md-menu-item {
-            color: black;
-          }
-
-          md-menu {
-            background: rgb(235 235 235);
-            backdrop-filter: none;
-          }
-        }
-
-        #settings-profile-inner {
-          background: rgba(128, 128, 128, 0.14);
-          border-radius: 6px;
-          padding: 10px;
-          margin-top: 12px;
-
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-
-        #settings-profile-inner img {
-          width: 4em;
-          border-radius: 50%;
-        }
-
-        #settings-profile-inner md-skeleton {
-          display: block;
-        }
-
-        #settings-profile-inner h3 {
-          margin-top: 0;
-          margin-bottom: 0;
-        }
-
-        #no-replies {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        #reply-drawer md-skeleton {
-          height: 8em;
-          width: 8em;
-        }
-
-        .img-preview {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          width: 8em;
-          margin-top: 10px;
-          background: #00000040;
-          padding: 6px;
-          gap: 6px;
-
-          border-radius: 6px;
-        }
-
-        .img-preview img {
-          width: 8em;
-          min-height: 6em;
-          border-radius: 6px;
-
-          margin-top: 6px;
-        }
-
-        #context-menu {
-          z-index: 10000;
-          width: 150px;
-          background: #1b1a1a;
-          border-radius: 5px;
-          position: fixed;
-          transform: scale(0.9);
-          opacity: 0;
-          transform-origin: top left;
-          transition: transform, opacity;
-          transition-duration: 0.12s;
-          pointer-events: none;
-        }
-
-        right-click sl-menu-item::part(checked-icon) {
-          width: 8px;
-        }
-
-        #context-menu sl-menu-item::part(checked-icon) {
-          width: 8px;
-        }
-
-        #context-menu.visible {
-          display: block;
-          transform: scale(1);
-          opacity: 1;
-          pointer-events: auto;
-        }
-
-        .setting div {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .setting p {
-          margin-top: 4px;
-        }
-
-        @media (prefers-color-scheme: light) {
-          md-menu-item {
-            --neutral-fill-stealth-hover: white;
-          }
-        }
-
-        md-badge {
-          cursor: pointer;
-        }
-
-        #reply-drawer {
-          --size: 100vh;
-        }
-
-        #reply-drawer::part(footer) {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        #instanceInfo {
-          border-radius: 6px;
-          background: #0000001a;
-          padding-left: 12px;
-          padding-top: 1px;
-          padding-right: 12px;
-          margin-top: 2em;
-        }
-
-        #instanceInfo img {
-          width: 160px;
-        }
-
-        md-toolbar {
-          width: 100%;
-          margin-top: 0;
-          padding-top: 8px;
-          background: transparent;
-          margin-bottom: 6px;
-          top: 0;
-          padding-right: 10px;
-          position: sticky;
-          z-index: 10;
-        }
-
-        @media (prefers-color-scheme: dark) {
-          md-toolbar {
-            background: transparent;
-          }
-        }
-
-        main {
-          padding-top: 54px;
-          display: grid;
-          grid-template-columns: 80px 1fr 320px;
-          gap: 32px;
-          margin: 0 auto;
-        }
-
-        #right-sidebar {
-          position: sticky;
-          top: 20px;
-          height: calc(100vh - 40px);
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          padding-right: 16px;
-        }
-
-        .sidebar-card {
-          background: transparent;
-          border: 1px solid var(--md-sys-color-outline-variant);
-          border-radius: 16px;
-          padding: 16px;
-
-          animation: fadeIn 0.3s ease-in-out;
-
-          background: var(--md-sys-color-surface-container, #1e1e24);
-          border: none;
-        }
-
-        .sidebar-card h3 {
-          margin-top: 0;
-          margin-bottom: 12px;
-          font-size: 1.1rem;
-        }
-
-        .trending-item {
-          display: flex;
-          flex-direction: column;
-          padding: 8px 0;
-          cursor: pointer;
-        }
-
-        .trending-item .tag {
-          font-weight: bold;
-          font-size: 1rem;
-        }
-
-        .trending-item .count {
-          font-size: 0.85rem;
-          color: var(--md-sys-color-on-surface-variant);
-        }
-
-        main.focus {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding-left: 10vw;
-          padding-right: 10vw;
-        }
-
-        #settings-drawer label {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-weight: bold;
-        }
-
-        #profile-card-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          gap: 8px;
-
-          width: 100%;
-        }
-
-        #profile-card-content img,
-        #profile-card-content md-skeleton#profile-avatar {
-          height: 80px;
-          width: 80px;
-          border-radius: 50%;
-          border: 2px solid var(--md-sys-color-primary);
-        }
-
-        #profile-card-content h3 {
-          margin: 0;
-          font-size: 1.1rem;
-        }
-
-        #profile-card-content p {
-          margin: 0;
-          color: var(--md-sys-color-on-surface-variant);
-          font-size: 0.9rem;
-        }
-
-        .profile-stats {
-          display: flex;
-          gap: 12px;
-          margin-top: 8px;
-          justify-content: center;
-          width: -webkit-fill-available;
-        }
-
-        .profile-stats md-badge {
-          cursor: pointer;
-          width: -webkit-fill-available;
-        }
-
-        #username-block {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          width: -webkit-fill-available;
-        }
-
-        sl-radio {
-          padding: 8px;
-          margin-top: 4px;
-          background: #00000024;
-          border-radius: 4px;
-        }
-
-        sl-radio::part(control) {
-          --toggle-size: 20px;
-          height: 20px;
-        }
-
-        #replies-drawer ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        #replies-drawer #reply-post-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 11px;
-        }
-
-        #replies-drawer #reply-post-actions sl-input {
-          flex: 2;
-        }
-
-        #profile-card-actions {
-          margin-top: 22px;
-
-          position: fixed;
-          bottom: 24px;
-          width: 20%;
-        }
-
-        #profile-card-actions md-button {
-          width: 80%;
-        }
-
-        #profile img,
-        #profile-avatar {
-          height: var(--md-sys-size-avatar-large, 88px);
-          width: var(--md-sys-size-avatar-large, 88px);
-          border-radius: 50%;
-
-          border: solid var(--sl-color-primary-600)
-            var(--md-sys-size-avatar-border-width, 4px);
-        }
-
-        #profile md-skeleton {
-          display: block;
-        }
-
-        #profile md-skeleton#profile-avatar {
-          height: var(--md-sys-size-avatar-large, 88px);
-          width: var(--md-sys-size-avatar-large, 88px);
-          border-radius: 50%;
-
-          border: solid var(--sl-color-primary-600)
-            var(--md-sys-size-avatar-border-width, 4px);
-        }
-
-        #profile-top {
-          margin-bottom: 2em;
-        }
-
-        #profile-top h3 {
-          margin-bottom: 0;
-          margin-top: 0;
-        }
-
-        #profile-top p {
-          color: grey;
-          font-size: var(--md-sys-typescale-body-medium-font-size);
-        }
-
-        md-dialog img {
-          height: 160px;
-          margin-top: 16px;
-          background: #0e0e0e45;
-          padding: 5px;
-          border-radius: 6px;
-        }
-
-        #user-url {
-          margin-top: 4px;
-          font-size: var(--md-sys-typescale-body-small-font-size);
-        }
-
-        #welcomeCard,
-        #infoCard {
-          padding: 18px;
-          padding-top: 0px;
-        }
-
-        sl-color-picker::part(base) {
-          right: 91px;
-          position: fixed;
-        }
-
-        otter-drawer::part(base) {
-          z-index: 99999;
-        }
-
-        otter-drawer::part(body) {
-          overflow-x: hidden;
-
-          backdrop-filter: blur(40px);
-
-          content-visibility: auto;
-          contain: strict;
-        }
-
-        sl-card::part(footer) {
-          display: flex;
-          justify-content: flex-end;
-        }
-
-        sl-tab-panel {
-          content-visibility: auto;
-          contain: content;
-        }
-
-        #mobile-actions {
-          position: fixed;
-          bottom: 90px;
-          right: 16px;
-          display: none;
-        }
-
-        @media (min-width: 821px) and (max-width: 1030px) {
-          #profile-card-actions md-button {
-            width: 100%;
-          }
-
-          main {
-            grid-template-columns: 1fr;
-          }
-
-          md-tabs {
-            grid-column: 1;
-          }
-
-          #mobile-actions {
-            display: none;
-          }
-        }
-
-        @media (max-width: 820px) {
-          #profile,
-          #left-sidebar,
-          #right-sidebar {
-            display: none;
-          }
-
-          md-tab-panel {
-            max-width: unset;
-          }
-
-          md-tab {
-            flex: 1;
-            width: auto;
-          }
-
-          /* .tab-label {
-            display: none;
-          } */
-
-          .new-post-container {
-            display: none;
-          }
-
-          app-timeline,
-          app-bookmarks,
-          app-notifications,
-          app-favorites,
-          app-bookmarks,
-          search-page {
-            margin-left: initial;
-            margin-right: initial;
-            width: 100%;
-          }
-
-          mammoth-bot {
-            display: none;
-          }
-
-          md-toolbar {
-            display: none;
-          }
-
-          #mobile-actions {
-            display: flex;
-          }
-
-          #mobile-actions md-button md-icon {
-            height: 24px;
-            width: 24px;
-          }
-
-          main {
-            display: block;
-            padding-top: 0;
-            margin-top: initial;
-            margin-left: 0;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            overflow: hidden;
-          }
-
-          md-tabs {
-            position: static;
-            height: 100%;
-            width: 100%;
-            gap: 0;
-          }
-
-          md-tab-panel {
-            height: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-top: 50px;
-            scrollbar-color: var(--md-sys-scrollbar-thumb-color)
-              var(--md-sys-color-background);
-          }
-
-          md-tab-panel::-webkit-scrollbar-track {
-            background: var(--md-sys-color-background);
-          }
-        }
-
-        #focusModeButton {
-          position: fixed;
-          bottom: 18px;
-          left: 12px;
-        }
-
-        @media (horizontal-viewport-segments: 2) {
-          #welcomeBar {
-            flex-direction: row;
-            align-items: flex-start;
-            justify-content: space-between;
-          }
-
-          #welcomeCard {
-            margin-right: 64px;
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-      `,
-    ];
+    return [styles, homeStyles];
   }
 
   async firstUpdated() {
@@ -787,6 +144,12 @@ export class AppHome extends LitElement {
     const { isGuestMode: checkGuestMode } =
       await import('../services/auth-state');
     this.isGuestMode = checkGuestMode();
+
+    // Listen for keyboard shortcut tab switches
+    window.addEventListener('switch-tab', this._handleSwitchTab);
+
+    // Listen for keyboard shortcut to open new post dialog
+    window.addEventListener('open-post-dialog', this._handleOpenPostDialog);
 
     // Use the current URL params, but fall back to the initial launch URL if
     // something in boot dropped our query string (e.g. PWA manifest shortcut
@@ -966,19 +329,26 @@ export class AppHome extends LitElement {
    * Set up listener for global toast events from optimistic updates
    */
   private setupGlobalToastListener() {
-    window.addEventListener('app-toast', ((
-      event: CustomEvent<{ message: string; variant: string }>
-    ) => {
-      if (this.errorToast && event.detail) {
-        this.errorToast.message = event.detail.message;
-        this.errorToast.variant = event.detail.variant as
-          | 'error'
-          | 'warning'
-          | 'info'
-          | 'success';
-        this.errorToast.show();
+    window.addEventListener('app-toast', async (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        message: string;
+        variant: string;
+      }>;
+      if (customEvent.detail) {
+        // Add toast to DOM first
+        await this.overlays.show('error-toast');
+        // Then configure and show it
+        if (this.errorToast) {
+          this.errorToast.message = customEvent.detail.message;
+          this.errorToast.variant = customEvent.detail.variant as
+            | 'error'
+            | 'warning'
+            | 'info'
+            | 'success';
+          this.errorToast.show();
+        }
       }
-    }) as EventListener);
+    });
   }
 
   async shareTarget(name: string) {
@@ -999,9 +369,18 @@ export class AppHome extends LitElement {
 
     if (response) {
       console.log('[Share Target] Found cached file, opening dialog');
-      await this.openNewDialog();
+      await this.openNewDialog(decodedName);
     } else {
       console.log('[Share Target] No cached file found');
+      // Show error toast to user
+      await this.overlays.show('error-toast');
+      if (this.errorToast) {
+        this.errorToast.message = msg(
+          'Failed to load shared image. Please try sharing again.'
+        );
+        this.errorToast.variant = 'error';
+        this.errorToast.show();
+      }
     }
   }
 
@@ -1024,7 +403,7 @@ export class AppHome extends LitElement {
     }
   }
 
-  async openNewDialog() {
+  async openNewDialog(shareName?: string) {
     // if on desktop, open the dialog
     // if (window.innerWidth > 600) {
     await import('../components/post-dialog');
@@ -1038,7 +417,7 @@ export class AppHome extends LitElement {
     // Wait for the post-dialog's own shadow DOM to render
     if (this.postDialog) {
       await this.postDialog.updateComplete;
-      this.postDialog.openNewDialog();
+      this.postDialog.openNewDialog(shareName);
     }
     // }
     // else {
@@ -1062,18 +441,11 @@ export class AppHome extends LitElement {
     // dialog.hide();
   }
 
-  async goToFollowers() {
-    if (!this.user) return;
-    router.navigate(`/followers?id=${this.user.id}`);
-  }
-
-  async goToFollowing() {
-    if (!this.user) return;
-    router.navigate(`/following?id=${this.user.id}`);
-  }
-
   async openSettingsDrawer() {
     await this.loadUserTerms();
+    // Add drawer to DOM first
+    await this.overlays.show('settings-drawer');
+    // Then show it (triggers animation)
     await this.settingsDrawer?.show();
 
     const { getInstanceInfo } = await import('../services/account');
@@ -1087,6 +459,9 @@ export class AppHome extends LitElement {
 
     this.replyID = id;
 
+    // Add drawer to DOM first
+    await this.overlays.show('replies-drawer');
+    // Then show it (triggers animation)
     await this.repliesDrawer?.show();
   }
 
@@ -1104,6 +479,9 @@ export class AppHome extends LitElement {
 
   async openThemingDrawer() {
     await this.loadAppTheme();
+    // Add drawer to DOM first
+    await this.overlays.show('theming-drawer');
+    // Then show it (triggers animation)
     await this.themingDrawer?.show();
   }
 
@@ -1174,30 +552,6 @@ export class AppHome extends LitElement {
     }
   }
 
-  async shareMyProfile() {
-    if (!this.user) return;
-    // share my profile
-    if (navigator.share) {
-      await navigator.share({
-        title: 'My Mastodon Profile',
-        text: 'Check out my Mastodon profile!',
-        url: this.user.url,
-      });
-    } else {
-      // fall back to the clipboard api
-      await navigator.clipboard.writeText(this.user.url);
-    }
-  }
-
-  viewMyProfile() {
-    if (!this.user) return;
-    router.navigate(`/account?id=${this.user.id}`);
-  }
-
-  editMyProfile() {
-    router.navigate(`/editaccount`);
-  }
-
   async handleReload() {
     const { clearTimelineCache } = await import('../services/timeline-cache');
     // Clear cache to ensure fresh timeline after posting
@@ -1210,16 +564,23 @@ export class AppHome extends LitElement {
     this.botDrawer?.show();
   }
 
-  showSummary($event: HandleSummaryEvent) {
+  async showSummary($event: HandleSummaryEvent) {
     console.log('show summary', $event.detail.data);
     const summary = $event.detail.data;
     this.summary = summary;
 
     // Hide translation toast if it's open
-    if (this.translationToast?.open) {
+    if (
+      this.overlays.isVisible('translation-toast') &&
+      this.translationToast?.open
+    ) {
       this.translationToast.hide();
+      this.overlays.hide('translation-toast');
     }
 
+    // Add dialog to DOM first
+    await this.overlays.show('summary-dialog');
+    // Then show it (triggers animation)
     this.summaryDialog?.show();
   }
 
@@ -1237,12 +598,21 @@ export class AppHome extends LitElement {
   }
 
   async handleOpenTweet(tweet: Post) {
-    // Always use full-page navigation for better UX + supports back/forward/history
-    router.navigate(`/home/post?${encodeURIComponent(JSON.stringify(tweet))}`);
+    // Pass post via Navigation API state so post-detail can render it immediately
+    // This avoids showing a skeleton when we already have the post data
+    router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
   }
 
   async disconnectedCallback() {
+    super.disconnectedCallback();
     console.log('home disconnected');
+
+    // Remove keyboard shortcut tab switch listener
+    window.removeEventListener('switch-tab', this._handleSwitchTab);
+
+    // Remove keyboard shortcut new post dialog listener
+    window.removeEventListener('open-post-dialog', this._handleOpenPostDialog);
+
     const lastPageID = sessionStorage.getItem('latest-read');
     console.log('lastPageID', lastPageID);
     if (lastPageID) {
@@ -1251,64 +621,89 @@ export class AppHome extends LitElement {
     }
   }
 
+  private _handleSwitchTab = async (event: Event) => {
+    const customEvent = event as CustomEvent<{ tab: string }>;
+    const tabName = customEvent.detail?.tab;
+    if (!tabName) return;
+
+    // Preload the component for the requested tab
+    switch (tabName) {
+      case 'bookmarks':
+        await this.loadBookmarks();
+        break;
+      case 'faves':
+        await this.loadFavorites();
+        break;
+      case 'notifications':
+        await this.loadNotifications();
+        break;
+      case 'search':
+        await this.loadSearch();
+        break;
+      case 'messages':
+        await this.loadMessages();
+        break;
+    }
+
+    // Wait for the component to be ready before switching tabs
+    await this.updateComplete;
+    this.openATab(tabName);
+  };
+
+  private _handleOpenPostDialog = () => {
+    this.openNewDialog();
+  };
+
   reloadHome() {
     this.homeTimeline?.refreshTimeline();
   }
 
-  // Lazy loading methods for tab components
+  // Lazy loading methods for tab components - using centralized loader utility
   async loadBookmarks() {
-    if (!this.bookmarksLoaded) {
-      await import('../components/bookmarks');
+    if (await lazyLoad('bookmarks', componentLoaders.bookmarks)) {
       this.bookmarksLoaded = true;
     }
   }
 
   async loadFavorites() {
-    if (!this.favoritesLoaded) {
-      await import('../components/favorites');
+    if (await lazyLoad('favorites', componentLoaders.favorites)) {
       this.favoritesLoaded = true;
     }
   }
 
   async loadNotifications() {
-    if (!this.notificationsLoaded) {
-      await import('../components/notifications');
+    if (await lazyLoad('notifications', componentLoaders.notifications)) {
       this.notificationsLoaded = true;
     }
   }
 
   async loadSearch() {
-    if (!this.searchLoaded) {
-      await import('./search-page');
+    if (await lazyLoad('search', componentLoaders.search)) {
       this.searchLoaded = true;
     }
   }
 
   async loadMessages() {
-    if (!this.messagesLoaded) {
-      await import('./app-messages');
+    if (await lazyLoad('messages', componentLoaders.messages)) {
       this.messagesLoaded = true;
     }
   }
 
   // Lazy loading methods for drawer components
   async loadAppTheme() {
-    if (!this.appThemeLoaded) {
-      await import('../components/app-theme');
+    if (await lazyLoad('appTheme', componentLoaders.appTheme)) {
       this.appThemeLoaded = true;
     }
   }
 
   async loadUserTerms() {
-    if (!this.userTermsLoaded) {
-      await import('../components/user-terms');
+    if (await lazyLoad('userTerms', componentLoaders.userTerms)) {
       this.userTermsLoaded = true;
     }
   }
 
   async loadRightClick() {
-    if (!this.rightClickLoaded) {
-      await import('../components/right-click');
+    if (await lazyLoad('rightClick', componentLoaders.rightClick)) {
       this.rightClickLoaded = true;
     }
   }
@@ -1343,18 +738,25 @@ export class AppHome extends LitElement {
     }
   }
 
-  openInstallDialog() {
+  async openInstallDialog() {
+    // Add dialog to DOM first
+    await this.overlays.show('install-dialog');
+    // Then show it (triggers animation)
     this.installDialog?.show();
   }
 
-  handleInstallDismiss() {
+  async handleInstallDismiss() {
     this.showInstallPrompt = false;
-    this.installDialog?.hide();
+    await this.installDialog?.hide();
+    // Remove from DOM after close animation
+    this.overlays.hide('install-dialog');
   }
 
-  handleInstallSuccess() {
+  async handleInstallSuccess() {
     this.showInstallPrompt = false;
-    this.installDialog?.hide();
+    await this.installDialog?.hide();
+    // Remove from DOM after close animation
+    this.overlays.hide('install-dialog');
   }
 
   async handleTabChange(event: TabChangeEvent) {
@@ -1395,6 +797,8 @@ export class AppHome extends LitElement {
 
   async handleTranslating(_event: HandleTranslatingEvent) {
     console.log('handle translating event received');
+    // Add toast to DOM first
+    await this.overlays.show('translation-toast');
     // Show translation toast
     console.log(
       'Toast element:',
@@ -1420,28 +824,28 @@ export class AppHome extends LitElement {
                   @menu-item-click=${() => router.navigate('/new-post')}
                 >
                   <md-icon slot="prefix" name="add"></md-icon>
-                  New Post
+                  ${msg('New Post')}
                 </md-menu-item>
 
                 <md-menu-item @click="${() => this.openATab('search')}">
                   <md-icon slot="prefix" name="search"></md-icon>
-                  Explore
+                  ${msg('Explore')}
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('notifications')}">
                   <md-icon slot="prefix" name="notifications"></md-icon>
-                  Notifications
+                  ${msg('Notifications')}
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('messages')}">
                   <md-icon slot="prefix" name="chatbox"></md-icon>
-                  Messages
+                  ${msg('Messages')}
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('bookmarks')}">
                   <md-icon slot="prefix" name="bookmark"></md-icon>
-                  Saved
+                  ${msg('Saved')}
                 </md-menu-item>
                 <md-menu-item @click="${() => this.openATab('faves')}">
                   <md-icon slot="prefix" name="heart"></md-icon>
-                  Favorites
+                  ${msg('Favorites')}
                 </md-menu-item>
               </md-menu>
             </right-click>
@@ -1461,187 +865,121 @@ export class AppHome extends LitElement {
       <!-- Offline status notifications -->
       <offline-notify></offline-notify>
 
-      <!-- PWA Install Dialog -->
-      <md-dialog id="install-dialog" label="Install Coho">
-        <pwa-install
-          @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
-          @pwa-install-success="${() => this.handleInstallSuccess()}"
-          @pwa-installed="${() => this.handleInstallSuccess()}"
-        ></pwa-install>
-      </md-dialog>
+      <!-- PWA Install - component always in DOM for install detection, dialog is lazy -->
+      ${this.overlays.isVisible('install-dialog')
+        ? html`
+            <md-dialog
+              id="install-dialog"
+              .label="${msg('Install Coho')}"
+              @md-dialog-hide="${() => this.overlays.hide('install-dialog')}"
+            >
+              <pwa-install
+                @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
+                @pwa-install-success="${() => this.handleInstallSuccess()}"
+                @pwa-installed="${() => this.handleInstallSuccess()}"
+              ></pwa-install>
+            </md-dialog>
+          `
+        : html`
+            <pwa-install
+              style="display: none;"
+              @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
+              @pwa-install-success="${() => this.handleInstallSuccess()}"
+              @pwa-installed="${() => this.handleInstallSuccess()}"
+            ></pwa-install>
+          `}
 
-      <otter-drawer label="Theming" id="theming-drawer">
-        ${this.appThemeLoaded
-          ? html`
-              <app-theme
-                @color-chosen="${($event: ColorChosenEvent) =>
-                  this.handlePrimaryColor($event.detail.color)}"
-              ></app-theme>
-            `
-          : nothing}
-      </otter-drawer>
+      <!-- Theming Drawer - only in DOM when needed -->
+      ${this.overlays.render(
+        'theming-drawer',
+        () => html`
+          <otter-drawer
+            .label="${msg('Theming')}"
+            id="theming-drawer"
+            @otter-hide="${() => this.overlays.hide('theming-drawer')}"
+          >
+            ${this.appThemeLoaded
+              ? html`
+                  <app-theme
+                    @color-chosen="${($event: ColorChosenEvent) =>
+                      this.handlePrimaryColor($event.detail.color)}"
+                  ></app-theme>
+                `
+              : nothing}
+          </otter-drawer>
+        `
+      )}
 
-      <md-dialog id="summary-dialog" label=""> ${this.summary} </md-dialog>
+      <!-- Summary Dialog - only in DOM when needed -->
+      ${this.overlays.render(
+        'summary-dialog',
+        () => html`
+          <md-dialog
+            id="summary-dialog"
+            label=""
+            @md-dialog-hide="${() => this.overlays.hide('summary-dialog')}"
+          >
+            ${this.summary}
+          </md-dialog>
+        `
+      )}
 
       <post-dialog @published="${() => this.handleReload()}"></post-dialog>
 
-      <otter-drawer id="settings-drawer" placement="end" label="Settings">
-        <div>
-          <div id="settings-profile-inner">
-            ${this.user && this.user.avatar
-              ? html`<img src="${this.user.avatar}" />`
-              : html`<md-skeleton
-                  id="profile-avatar"
-                  shape="circle"
-                  width="4em"
-                  height="4em"
-                ></md-skeleton>`}
-            <div id="username-block">
-              <h3>${this.user ? this.user.display_name : 'Loading...'}</h3>
+      <!-- Settings Drawer - only in DOM when needed -->
+      ${this.overlays.render(
+        'settings-drawer',
+        () => html`
+          <otter-drawer
+            id="settings-drawer"
+            placement="end"
+            .label="${msg('Settings')}"
+            @otter-hide="${() => this.overlays.hide('settings-drawer')}"
+          >
+            <settings-drawer-content
+              .user="${this.user}"
+              .instanceInfo="${this.instanceInfo}"
+              .wellnessMode="${this.wellnessMode}"
+              .dataSaverMode="${this.dataSaverMode}"
+              .userTermsLoaded="${this.userTermsLoaded}"
+              @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleWellnessMode(e.detail.checked)}"
+              @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleDataSaverMode(e.detail.checked)}"
+            ></settings-drawer-content>
+          </otter-drawer>
+        `
+      )}
 
-              <div id="user-actions">
-                <md-dropdown>
-                  <md-icon-button
-                    slot="trigger"
-                    src="/assets/settings-outline.svg"
-                  ></md-icon-button>
-                  <md-menu>
-                    <md-menu-item @click="${() => this.viewMyProfile()}">
-                      <md-icon
-                        slot="prefix"
-                        src="/assets/eye-outline.svg"
-                      ></md-icon>
-                      View My Profile
-                    </md-menu-item>
-                    <md-menu-item @click="${() => this.shareMyProfile()}">
-                      <md-icon
-                        slot="prefix"
-                        src="/assets/share-social-outline.svg"
-                      ></md-icon>
-                      Share My Profile
-                    </md-menu-item>
-                    <md-menu-item @click="${() => this.editMyProfile()}">
-                      Edit My Profile
-                    </md-menu-item>
-                    <!-- <md-menu-item>
-                      Add an existing Account
-                    </md-menu-item> -->
-                  </md-menu>
-                </md-dropdown>
-              </div>
-            </div>
-
-            <p id="user-url">${this.user ? this.user.url : 'Loading...'}</p>
-
-            <div>
-              <md-badge
-                variant="filled"
-                clickable
-                @click="${() => this.goToFollowers()}"
-                >${this.user ? this.user.followers_count : '0'} followers
-              </md-badge>
-              <md-badge
-                variant="filled"
-                clickable
-                @click="${() => this.goToFollowing()}"
-                >${this.user ? this.user.following_count : '0'} following
-              </md-badge>
-            </div>
-          </div>
-        </div>
-
-        <div class="setting">
-          ${this.userTermsLoaded ? html`<user-terms></user-terms>` : nothing}
-        </div>
-
-        <div class="setting">
-          <div>
-            <h4>Wellness Mode</h4>
-
-            <md-switch
-              @sl-change="${(e: Event) =>
-                this.handleWellnessMode(
-                  (e.target as HTMLInputElement).checked
-                )}"
-              ?checked="${this.wellnessMode}"
-            ></md-switch>
-          </div>
-
-          <p>Wellness Mode hides likes and boosts.</p>
-        </div>
-
-        <div class="setting">
-          <div>
-            <h4>Data Saver Mode</h4>
-
-            <md-switch
-              @sl-change="${(e: Event) =>
-                this.handleDataSaverMode(
-                  (e.target as HTMLInputElement).checked
-                )}"
-              ?checked="${this.dataSaverMode}"
-            ></md-switch>
-          </div>
-
-          <p>Data Saver Mode reduces the amount of data used by Coho.</p>
-        </div>
-
-        <div class="setting">
-          <h4>Key Shortcuts</h4>
-
-          <ul>
-            <li><kbd>g</kbd> + <kbd>h</kbd> - Open Home</li>
-
-            <li><kbd>g</kbd> + <kbd>n</kbd> - Open Notifications</li>
-
-            <li><kbd>g</kbd> + <kbd>s</kbd> - Open Search</li>
-
-            <li><kbd>g</kbd> + <kbd>b</kbd> - Open Bookmarks</li>
-
-            <li><kbd>g</kbd> + <kbd>f</kbd> - Open Favorites</li>
-          </ul>
-        </div>
-
-        ${this.instanceInfo
-          ? html`
-              <div id="instanceInfo">
-                <h4>Instance Info</h4>
-
-                ${this.instanceInfo.thumbnail
-                  ? html`<img src="${this.instanceInfo.thumbnail}" />`
-                  : nothing}
-                <p>${this.instanceInfo.title}</p>
-
-                <div .innerHTML="${this.instanceInfo.description}"></div>
-              </div>
-            `
-          : null}
-
-        <div
-          style="margin-top: 24px; padding-bottom: 24px; text-align: center; opacity: 0.7; font-size: 12px;"
-        >
-          <p>Build: ${new Date(__APP_VERSION__).toLocaleString()}</p>
-        </div>
-      </otter-drawer>
-
-      <otter-drawer id="replies-drawer" placement="end" label="Comments">
-        ${this.replies.length > 0
-          ? html`<ul>
-              ${this.replies.map((reply) => {
-                return html`
-                  <timeline-item
-                    ?show="${false}"
-                    .tweet="${reply}"
-                  ></timeline-item>
-                `;
-              })}
-            </ul>`
-          : html`
-              <div id="no-replies">
-                <p>No comments yet.</p>
-              </div>
-            `}
-      </otter-drawer>
+      <!-- Replies Drawer - only in DOM when needed -->
+      ${this.overlays.render(
+        'replies-drawer',
+        () => html`
+          <otter-drawer
+            id="replies-drawer"
+            placement="end"
+            .label="${msg('Comments')}"
+            @otter-hide="${() => this.overlays.hide('replies-drawer')}"
+          >
+            ${this.replies.length > 0
+              ? html`<ul>
+                  ${this.replies.map((reply) => {
+                    return html`
+                      <timeline-item
+                        ?show="${false}"
+                        .tweet="${reply}"
+                      ></timeline-item>
+                    `;
+                  })}
+                </ul>`
+              : html`
+                  <div id="no-replies">
+                    <p>${msg('No comments yet.')}</p>
+                  </div>
+                `}
+          </otter-drawer>
+        `
+      )}
 
       <main>
         <md-tabs
@@ -1656,11 +994,11 @@ export class AppHome extends LitElement {
             @click="${() => this.reloadHome()}"
           >
             <md-icon slot="icon" src="/assets/home-outline.svg"></md-icon>
-            <span class="tab-label">Home</span>
+            <span class="tab-label">${msg('Home')}</span>
           </md-tab>
           <md-tab slot="nav" panel="search">
             <md-icon slot="icon" src="/assets/search-outline.svg"></md-icon>
-            <span class="tab-label">Explore</span>
+            <span class="tab-label">${msg('Explore')}</span>
           </md-tab>
           <md-tab
             slot="nav"
@@ -1671,7 +1009,7 @@ export class AppHome extends LitElement {
               slot="icon"
               src="/assets/notifications-outline.svg"
             ></md-icon>
-            <span class="tab-label">Notifications</span>
+            <span class="tab-label">${msg('Notifications')}</span>
             ${this.hasNewNotifications
               ? html`<span class="notification-dot"></span>`
               : nothing}
@@ -1685,7 +1023,7 @@ export class AppHome extends LitElement {
           </md-tab>
           <md-tab slot="nav" panel="bookmarks" ?disabled="${this.isGuestMode}">
             <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
-            <span class="tab-label">Saved</span>
+            <span class="tab-label">${msg('Saved')}</span>
             ${this.isGuestMode
               ? html`<md-icon
                   slot="suffix"
@@ -1696,7 +1034,7 @@ export class AppHome extends LitElement {
           </md-tab>
           <md-tab slot="nav" panel="faves" ?disabled="${this.isGuestMode}">
             <md-icon slot="icon" src="/assets/heart-outline.svg"></md-icon>
-            <span class="tab-label">Favorites</span>
+            <span class="tab-label">${msg('Favorites')}</span>
             ${this.isGuestMode
               ? html`<md-icon
                   slot="suffix"
@@ -1774,135 +1112,11 @@ export class AppHome extends LitElement {
           </md-tab-panel>
         </md-tabs>
 
-        <div id="right-sidebar">
-          ${this.isGuestMode
-            ? html`
-                <div class="sidebar-card">
-                  <div id="profile-card-content">
-                    <md-icon
-                      name="person-circle"
-                      style="font-size: 64px; color: var(--md-sys-color-on-surface-variant);"
-                    ></md-icon>
-                    <h3>Welcome to Coho</h3>
-                    <p style="margin-bottom: 16px;">
-                      You're browsing as a guest. Sign in to interact with posts
-                      and access all features.
-                    </p>
-                    <md-button
-                      variant="filled"
-                      @click="${() => router.navigate('/')}"
-                      >Sign In</md-button
-                    >
-                  </div>
-                </div>
-              `
-            : html`
-                <div class="sidebar-card">
-                  <div id="profile-card-content">
-                    ${this.user && this.user.avatar
-                      ? html`<img src="${this.user.avatar}" />`
-                      : html`<md-skeleton
-                          id="profile-avatar"
-                          shape="circle"
-                          width="80px"
-                          height="80px"
-                        ></md-skeleton>`}
-
-                    <div id="username-block">
-                      <h3>
-                        ${this.user
-                          ? this.user.display_name
-                          : html`<md-skeleton
-                              width="100px"
-                              height="25px"
-                            ></md-skeleton>`}
-                      </h3>
-
-                      <div id="user-actions">
-                        <md-dropdown>
-                          <md-icon-button
-                            slot="trigger"
-                            src="/assets/settings-outline.svg"
-                          ></md-icon-button>
-                          <md-menu>
-                            <md-menu-item
-                              @click="${() => this.viewMyProfile()}"
-                            >
-                              <md-icon
-                                slot="prefix"
-                                src="/assets/eye-outline.svg"
-                              ></md-icon>
-                              View My Profile
-                            </md-menu-item>
-                            <md-menu-item
-                              @click="${() => this.shareMyProfile()}"
-                            >
-                              <md-icon
-                                slot="prefix"
-                                src="/assets/share-social-outline.svg"
-                              ></md-icon>
-                              Share My Profile
-                            </md-menu-item>
-                            <md-menu-item
-                              @click="${() => this.editMyProfile()}"
-                            >
-                              Edit My Profile
-                            </md-menu-item>
-                          </md-menu>
-                        </md-dropdown>
-                      </div>
-                    </div>
-
-                    <p id="user-url">
-                      ${this.user
-                        ? this.user.url
-                        : html`<md-skeleton
-                            width="100px"
-                            height="19px"
-                          ></md-skeleton>`}
-                    </p>
-
-                    <div class="profile-stats">
-                      <md-badge
-                        variant="outlined"
-                        clickable
-                        @click="${() => this.goToFollowers()}"
-                        >${this.user ? this.user.followers_count : '0'}
-                        followers
-                      </md-badge>
-                      <md-badge
-                        variant="outlined"
-                        clickable
-                        @click="${() => this.goToFollowing()}"
-                        >${this.user ? this.user.following_count : '0'}
-                        following
-                      </md-badge>
-                    </div>
-                  </div>
-                </div>
-              `}
-          ${this.trendingTags && this.trendingTags.length > 0
-            ? html`
-                <div class="sidebar-card">
-                  <h3>Trending Tags</h3>
-                  ${this.trendingTags.slice(0, 5).map(
-                    (tag) => html`
-                      <div
-                        class="trending-item"
-                        @click="${() =>
-                          router.navigate(`/hashtag?tag=${tag.name}`)}"
-                      >
-                        <span class="tag">#${tag.name}</span>
-                        <span class="count"
-                          >${tag.history?.[0]?.uses || 0} posts today</span
-                        >
-                      </div>
-                    `
-                  )}
-                </div>
-              `
-            : nothing}
-        </div>
+        <home-sidebar
+          .user="${this.user}"
+          .trendingTags="${this.trendingTags}"
+          .isGuestMode="${this.isGuestMode}"
+        ></home-sidebar>
 
         ${this.isGuestMode
           ? nothing
@@ -1919,24 +1133,38 @@ export class AppHome extends LitElement {
         ? html`<guest-login-banner></guest-login-banner>`
         : nothing}
 
-      <md-toast
-        id="translation-toast"
-        variant="info"
-        position="bottom"
-        duration="0"
-        message="Translating post..."
-      >
-      </md-toast>
+      <!-- Translation Toast - only in DOM when needed -->
+      ${this.overlays.render(
+        'translation-toast',
+        () => html`
+          <md-toast
+            id="translation-toast"
+            variant="info"
+            position="bottom"
+            duration="0"
+            .message="${msg('Translating post...')}"
+            @hide="${() => this.overlays.hide('translation-toast')}"
+          >
+          </md-toast>
+        `
+      )}
 
-      <md-toast
-        id="error-toast"
-        variant="error"
-        position="bottom"
-        duration="4000"
-        closable
-        message=""
-      >
-      </md-toast>
+      <!-- Error Toast - only in DOM when needed -->
+      ${this.overlays.render(
+        'error-toast',
+        () => html`
+          <md-toast
+            id="error-toast"
+            variant="error"
+            position="bottom"
+            duration="4000"
+            closable
+            message=""
+            @hide="${() => this.overlays.hide('error-toast')}"
+          >
+          </md-toast>
+        `
+      )}
     `;
   }
 }

@@ -1,5 +1,6 @@
 import { LitElement } from 'lit';
 import { type ProfilePostsFilter } from '../services/account';
+import '@lit-labs/virtualizer';
 import '../components/timeline-item';
 import '../components/md/md-dialog';
 import '../components/md/md-text-area';
@@ -30,6 +31,8 @@ export declare class AppProfile extends LitElement {
   showReportDialog: boolean;
   activeSegment: ProfilePostsFilter;
   loadingPosts: boolean;
+  loadingMorePosts: boolean;
+  hasMorePosts: boolean;
   loadingProfile: boolean;
   profileLoadFailed: boolean;
   bannerReady: boolean;
@@ -49,6 +52,10 @@ export declare class AppProfile extends LitElement {
   firstUpdated(): Promise<void>;
   follow(): Promise<void>;
   reloadPosts(): Promise<void>;
+  /** Handle visibility changes from lit-virtualizer to trigger load more */
+  private _handleVisibilityChanged;
+  /** Load more posts for infinite scroll */
+  private loadMorePosts;
   handleSegmentChange(
     e: CustomEvent<{
       value: string;
@@ -63,6 +70,7 @@ export declare class AppProfile extends LitElement {
   handleReportSubmit(e: CustomEvent<ReportSubmitDetail>): Promise<void>;
   handleReportCancel(): void;
   editPost(tweet: Post): void;
+  handleOpenPost(tweet: Post): void;
   confirmEdit(): Promise<void>;
   private goToFollowers;
   private goToFollowing;

@@ -457,7 +457,7 @@ export class MdAutocomplete extends LitElement {
           autocomplete="off"
           role="combobox"
           aria-autocomplete="list"
-          aria-expanded="${showDropdown}"
+          aria-expanded="${showDropdown ? 'true' : 'false'}"
           aria-haspopup="listbox"
         />
         <div class="dropdown ${showDropdown ? 'open' : ''}" role="listbox">
@@ -472,7 +472,9 @@ export class MdAutocomplete extends LitElement {
                         ? 'highlighted'
                         : ''}"
                       role="option"
-                      aria-selected="${index === this._highlightedIndex}"
+                      aria-selected="${index === this._highlightedIndex
+                        ? 'true'
+                        : 'false'}"
                       @click="${() => this._selectOption(option)}"
                       @mouseenter="${() => (this._highlightedIndex = index)}"
                     >

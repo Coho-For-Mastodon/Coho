@@ -20,7 +20,9 @@ src/
 ├── services/        # Stateless API modules (no global state)
 ├── mastodon/        # Mastodon API client (types, api/, config/)
 ├── sw.ts            # Service worker (built separately by Vite)
-└── utils/router.ts  # @thepassle/app-tools router config
+└── utils/
+    ├── router.ts         # Route definitions and router instance
+    └── nav-router.ts     # Custom Navigation API router (with polyfills)
 functions/src/       # Firebase Functions (AI features via OpenAI)
 ```
 
@@ -100,13 +102,34 @@ color: var(
 
 ## Routing
 
-Routes in `src/utils/router.ts` use lazy loading:
+Custom router built on the Navigation API (`src/utils/nav-router.ts`) with automatic polyfills for unsupported browsers.
+
+**Key files:**
+
+- `src/utils/router.ts` - Route definitions and router instance
+- `src/utils/nav-router.ts` - Router class implementation
+- `src/utils/router-polyfills.ts` - Conditional polyfill loader
+
+Routes use lazy loading via plugins:
 
 ```typescript
 { path: '/home', plugins: [lazy(() => import('../pages/app-home.js'))], render: () => html`<app-home></app-home>` }
 ```
 
 Navigate: `router.navigate('/path')` or use `<a href="/path">`
+
+**Router features:**
+
+- View Transitions API integration for smooth page animations
+- URLPattern for route matching with parameters (e.g., `/post/:id`)
+- Plugin system with `beforeNavigation`/`afterNavigation` hooks
+- Automatic polyfills loaded only when needed (`@virtualstate/navigation`, `urlpattern-polyfill`)
+
+**Initialization:** Router must be initialized before first render:
+
+```typescript
+await router.init(); // Loads polyfills if needed, sets up listeners
+```
 
 ## Testing
 

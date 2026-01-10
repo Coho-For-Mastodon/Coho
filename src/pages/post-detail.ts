@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
+import { localized, msg, str } from '@lit/localize';
 
 import '../components/header';
 import '../components/timeline-item';
@@ -15,12 +16,15 @@ import type { MdTextArea } from '../components/md/md-text-area';
 import { router } from '../utils/router';
 import { getNotificationById } from '../mastodon/api/notifications';
 
+@localized()
 @customElement('post-detail')
 export class PostDetail extends LitElement {
   @state() tweet: Post | null = null;
   @state() replies: Post[] = [];
+  @state() ancestors: Post[] = [];
   @state() replyingTo: Post | null = null;
   @state() loading = false;
+  @state() loadingThread = false;
   @state() error: string | null = null;
   @state() isGuestMode = false;
 
@@ -91,6 +95,10 @@ export class PostDetail extends LitElement {
       #main {
         min-height: 230px;
         view-transition-name: card;
+      }
+
+      .ancestors-section {
+        margin-bottom: 10px;
       }
 
       .replies-section {
@@ -223,8 +231,16 @@ export class PostDetail extends LitElement {
       return;
     }
 
-    // Check for ID-based route (/post/:id or /post/notification?notification_id=xxx)
-    const pathMatch = window.location.pathname.match(/\/post\/(.+)/);
+    // First, check if we have a post passed from navigation (instant render path)
+    const navState = router.getNavigationState();
+    if (navState?.post) {
+      this.tweet = navState.post;
+      // No skeleton shown - post renders immediately
+      return;
+    }
+
+    // Check for ID-based route (/post/:id, /home/post/:id, or /post/notification?notification_id=xxx)
+    const pathMatch = window.location.pathname.match(/(?:\/home)?\/post\/(.+)/);
     if (pathMatch) {
       const pathId = pathMatch[1];
       const urlParams = new URLSearchParams(window.location.search);
@@ -304,6 +320,8 @@ export class PostDetail extends LitElement {
       this.toggleAttribute('embedded', this.passed_tweet !== null);
       if (this.passed_tweet) {
         this.tweet = this.passed_tweet;
+        this.replies = [];
+        this.ancestors = [];
         // Ensure replies load even if passed_tweet is set after firstUpdated.
         void this.loadReplies();
       }
@@ -321,11 +339,51 @@ export class PostDetail extends LitElement {
 
   private async loadReplies() {
     if (this.tweet && this.tweet.id) {
-      // get post replies
-      const replies = await getReplies(this.tweet.id);
-      console.log('replies', replies);
+      this.loadingThread = true;
+      try {
+        // get post replies
+        const replies = await getReplies(this.tweet.id);
+        console.log('replies', replies);
 
-      this.replies = replies.descendants;
+        this.replies = replies.descendants;
+
+        // If there are ancestors, we need to adjust scroll position
+        // to keep the main post visually stable when ancestors render above it
+        if (replies.ancestors.length > 0) {
+          // Get current scroll position and main post position
+          const scroller = this.shadowRoot?.querySelector('.scroller');
+          const mainPost = this.shadowRoot?.querySelector('#main');
+
+          if (scroller && mainPost) {
+            const mainPostRect = mainPost.getBoundingClientRect();
+            const scrollerRect = scroller.getBoundingClientRect();
+            const mainPostOffsetFromTop = mainPostRect.top - scrollerRect.top;
+
+            // Set ancestors (this will cause a re-render)
+            this.ancestors = replies.ancestors;
+
+            // After the update, adjust scroll to keep main post at same visual position
+            await this.updateComplete;
+            requestAnimationFrame(() => {
+              const newMainPostRect = mainPost.getBoundingClientRect();
+              const newMainPostOffsetFromTop =
+                newMainPostRect.top - scrollerRect.top;
+              const scrollAdjustment =
+                newMainPostOffsetFromTop - mainPostOffsetFromTop;
+
+              if (scrollAdjustment > 0) {
+                scroller.scrollTop += scrollAdjustment;
+              }
+            });
+          } else {
+            this.ancestors = replies.ancestors;
+          }
+        } else {
+          this.ancestors = replies.ancestors;
+        }
+      } finally {
+        this.loadingThread = false;
+      }
     }
   }
 
@@ -376,6 +434,8 @@ export class PostDetail extends LitElement {
     if (this.passed_tweet) {
       this.tweet = tweet;
       this.replyingTo = null;
+      this.replies = [];
+      this.ancestors = [];
       await this.loadReplies();
 
       const scroller = this.renderRoot?.querySelector(
@@ -385,8 +445,8 @@ export class PostDetail extends LitElement {
       return;
     }
 
-    // Full-page mode: navigate to the new post route.
-    router.navigate(`/home/post?${encodeURIComponent(JSON.stringify(tweet))}`);
+    // Full-page mode: pass post via Navigation API state for instant render.
+    router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
   }
 
   render() {
@@ -434,7 +494,7 @@ export class PostDetail extends LitElement {
         <main>
           <div class="scroller">
             <section class="post-section">
-              <p>Post not found</p>
+              <p>${msg('Post not found')}</p>
             </section>
           </div>
         </main>
@@ -448,6 +508,23 @@ export class PostDetail extends LitElement {
 
       <main>
         <div class="scroller">
+          <section class="ancestors-section">
+            <ul class="replies-list">
+              ${this.ancestors.map(
+                (ancestor) => html`
+                  <timeline-item
+                    .tweet="${ancestor}"
+                    ?guestMode="${this.isGuestMode}"
+                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                      this.handleOpenPost(e)}"
+                    @reply-clicked="${(e: CustomEvent) =>
+                      this.handleReplyClick(e)}"
+                  ></timeline-item>
+                `
+              )}
+            </ul>
+          </section>
+
           <section class="post-section">
             <timeline-item
               id="main"
@@ -459,8 +536,11 @@ export class PostDetail extends LitElement {
           </section>
 
           <section class="replies-section">
+            ${this.loadingThread
+              ? html`<md-skeleton-card count="3"></md-skeleton-card>`
+              : nothing}
             ${this.replies.length > 0
-              ? html`<h2 class="replies-title">Replies</h2>`
+              ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
               : nothing}
 
             <ul class="replies-list">
@@ -491,8 +571,9 @@ export class PostDetail extends LitElement {
                       ? html`
                           <div class="replying-to-indicator">
                             <span
-                              >Replying to
-                              @${this.replyingTo.account.acct}</span
+                              >${msg(
+                                str`Replying to @${this.replyingTo.account.acct}`
+                              )}</span
                             >
                             <md-icon-button
                               name="close"
@@ -506,7 +587,7 @@ export class PostDetail extends LitElement {
                       class="reply-input"
                       variant="outlined"
                       rows="2"
-                      placeholder="Reply to this post..."
+                      .placeholder="${msg('Reply to this post...')}"
                     ></md-text-area>
 
                     <div class="composer-actions">
@@ -517,7 +598,7 @@ export class PostDetail extends LitElement {
                         pill
                         size="small"
                       >
-                        Reply
+                        ${msg('Reply')}
                         <md-icon
                           slot="suffix"
                           src="/assets/add-outline.svg"

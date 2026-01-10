@@ -10,6 +10,9 @@ build
 /playwright-report/
 /playwright/.cache/
 
+# Vitest browser mode screenshots
+**/__screenshots__/
+
 # Environment variables
 .env
 .env.local
@@ -21,3 +24,6 @@ firebase-debug.log
 
 # Bundle analyzer
 stats.html
+
+# Service worker build artifact (generated from src/sw.ts)
+public/sw.js

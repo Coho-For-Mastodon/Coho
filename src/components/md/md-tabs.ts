@@ -5,6 +5,9 @@ import type { TabChangeDetail } from '../../types/events';
 import type { MdTab } from './md-tab';
 import type { MdTabPanel } from './md-tab-panel';
 
+// Counter for generating unique IDs across all md-tabs instances
+let tabsIdCounter = 0;
+
 /**
  * MD3 Tabs Container
  *
@@ -53,6 +56,9 @@ export class MdTabs extends LitElement {
   @property({ type: String }) active?: string;
 
   @state() private _activePanel: string = '';
+
+  /** Unique ID for this tabs instance (used for aria-controls/aria-labelledby) */
+  private _tabsId = `md-tabs-${++tabsIdCounter}`;
 
   @query('slot[name="nav"]') private navSlot!: HTMLSlotElement;
   @query('slot:not([name])') private panelSlot!: HTMLSlotElement;
@@ -291,20 +297,36 @@ export class MdTabs extends LitElement {
     const panels = this._getPanels();
 
     // Update tabs active state and data attributes for Firefox
-    tabs.forEach((tab) => {
+    tabs.forEach((tab, index) => {
       // Set orientation and placement data attributes for Firefox compatibility
       tab.setAttribute('data-orientation', this.orientation);
       tab.setAttribute('data-placement', this.placement);
 
-      if (tab.panel === this._activePanel) {
+      // Set unique IDs for accessibility linking
+      const tabId = `${this._tabsId}-tab-${index}`;
+      const panelId = `${this._tabsId}-panel-${index}`;
+      tab.setAttribute('id', tabId);
+      tab.setAttribute('aria-controls', panelId);
+
+      const isActive = tab.panel === this._activePanel;
+      if (isActive) {
         tab.setAttribute('active', '');
+        // Only the active tab should be in the tab order (roving tabindex)
+        tab.setAttribute('tabindex', '0');
       } else {
         tab.removeAttribute('active');
+        // Inactive tabs are not in the tab order
+        tab.setAttribute('tabindex', '-1');
       }
     });
 
-    // Update panels visibility
-    panels.forEach((panel) => {
+    // Update panels visibility and accessibility attributes
+    panels.forEach((panel, index) => {
+      const tabId = `${this._tabsId}-tab-${index}`;
+      const panelId = `${this._tabsId}-panel-${index}`;
+      panel.setAttribute('id', panelId);
+      panel.setAttribute('aria-labelledby', tabId);
+
       if (panel.name === this._activePanel) {
         panel.setAttribute('active', '');
       } else {
@@ -313,9 +335,74 @@ export class MdTabs extends LitElement {
     });
   }
 
+  /**
+   * Handle keyboard navigation within the tablist
+   * Implements WAI-ARIA tab pattern: Arrow keys, Home, End
+   */
+  private _handleTablistKeyDown(e: KeyboardEvent) {
+    const tabs = this._getTabs().filter((tab) => !tab.disabled);
+    if (tabs.length === 0) return;
+
+    const isHorizontal = this.orientation === 'horizontal';
+    const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
+    const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
+
+    let handled = false;
+    let targetTab: MdTab | undefined;
+
+    const currentIndex = tabs.findIndex(
+      (tab) => tab.panel === this._activePanel
+    );
+
+    switch (e.key) {
+      case prevKey:
+        // Move to previous tab (wrap around)
+        targetTab = tabs[(currentIndex - 1 + tabs.length) % tabs.length];
+        handled = true;
+        break;
+      case nextKey:
+        // Move to next tab (wrap around)
+        targetTab = tabs[(currentIndex + 1) % tabs.length];
+        handled = true;
+        break;
+      case 'Home':
+        // Move to first tab
+        targetTab = tabs[0];
+        handled = true;
+        break;
+      case 'End':
+        // Move to last tab
+        targetTab = tabs[tabs.length - 1];
+        handled = true;
+        break;
+    }
+
+    if (handled && targetTab) {
+      e.preventDefault();
+      // Activate the tab (automatic activation pattern)
+      this._activePanel = targetTab.panel;
+      this._updatePanels();
+      // Focus the tab button
+      targetTab.focus();
+      // Emit tab-change event
+      this.dispatchEvent(
+        new CustomEvent<TabChangeDetail>('tab-change', {
+          detail: { panel: targetTab.panel },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
+  }
+
   render() {
     return html`
-      <div class="tab-bar">
+      <div
+        class="tab-bar"
+        role="tablist"
+        aria-orientation="${this.orientation}"
+        @keydown="${this._handleTablistKeyDown}"
+      >
         <slot name="nav"></slot>
       </div>
       <div class="panel-container">

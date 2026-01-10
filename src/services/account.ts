@@ -310,10 +310,12 @@ const USER_POSTS_CACHE_PREFIX = 'user_posts_';
 
 export const getUsersPosts = async (
   id: string,
-  filter: ProfilePostsFilter = 'posts'
+  filter: ProfilePostsFilter = 'posts',
+  maxId?: string
 ) => {
   const accessToken = getAccessToken();
   const server = getServer();
+  // Only use cache for initial load (no maxId)
   const cacheKey = `${USER_POSTS_CACHE_PREFIX}${id}_${filter}`;
 
   let url = `${FIREBASE_FUNCTIONS_BASE_URL}/getUserPosts?id=${id}&code=${accessToken}&server=${server}`;
@@ -325,6 +327,11 @@ export const getUsersPosts = async (
     url += '&only_media=true';
   }
   // 'posts_replies' doesn't need any extra params - returns all statuses
+
+  // Add pagination parameter
+  if (maxId) {
+    url += `&max_id=${maxId}`;
+  }
 
   try {
     const response = await fetch(url);

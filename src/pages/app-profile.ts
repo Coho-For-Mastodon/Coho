@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
+import { localized, msg, str } from '@lit/localize';
 import {
-  checkFollowing,
   followUser,
   getAccount,
   getUsersPosts,
@@ -15,6 +15,9 @@ import {
   type ProfilePostsFilter,
 } from '../services/account';
 import { withOptimisticUpdate } from '../utils/optimistic-updates';
+import { shouldLoadMore } from '../utils/infinite-scroll';
+import '@lit-labs/virtualizer';
+import type { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 
 import '../components/timeline-item';
 import '../components/md/md-dialog';
@@ -38,7 +41,9 @@ import '../components/md/md-divider';
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 import { editPost } from '../services/posts';
+import { router } from '../utils/router';
 
+@localized()
 @customElement('app-profile')
 export class AppProfile extends LitElement {
   @state() user: Account | undefined;
@@ -53,6 +58,8 @@ export class AppProfile extends LitElement {
   @state() showReportDialog: boolean = false;
   @state() activeSegment: ProfilePostsFilter = 'posts';
   @state() loadingPosts: boolean = false;
+  @state() loadingMorePosts: boolean = false;
+  @state() hasMorePosts: boolean = true;
   @state() loadingProfile: boolean = true;
   @state() profileLoadFailed: boolean = false;
   @state() bannerReady: boolean = false;
@@ -475,6 +482,16 @@ export class AppProfile extends LitElement {
         padding: 0 16px;
       }
 
+      lit-virtualizer {
+        display: block;
+        contain: none;
+      }
+
+      .post-item {
+        padding-bottom: 16px;
+        width: 100%;
+      }
+
       ul {
         display: flex;
         flex-direction: column;
@@ -487,6 +504,12 @@ export class AppProfile extends LitElement {
       .posts-loading {
         opacity: 0.5;
         pointer-events: none;
+      }
+
+      .load-more-indicator {
+        display: flex;
+        justify-content: center;
+        padding: 20px;
       }
 
       /* Responsive */
@@ -733,7 +756,27 @@ export class AppProfile extends LitElement {
       this.loadingPosts = true;
       this._resetImageStates();
 
-      const accountData = await getAccount(id);
+      // Check if account was passed via Navigation API state (instant render path)
+      const navState = router.getNavigationState();
+      if (navState?.account && navState.account.id === id) {
+        this.user = navState.account;
+        this.loadingProfile = false;
+      }
+
+      // Determine if we need to fetch relationship data
+      const shouldFetchRelationship = !this.isOwnProfile && !this.isGuestMode;
+
+      // Fetch account (if not already from nav state), posts, and relationship data in parallel
+      const [accountData, postsData, relationshipData] = await Promise.all([
+        // Skip account fetch if we already have it from navigation state
+        this.user ? Promise.resolve(this.user) : getAccount(id),
+        getUsersPosts(id),
+        // isFollowingMe returns the full relationship object with following, followed_by, muting, blocking
+        shouldFetchRelationship
+          ? isFollowingMe(id).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
       console.log(accountData);
 
       if (accountData) {
@@ -746,34 +789,21 @@ export class AppProfile extends LitElement {
         return;
       }
 
-      const postsData = await getUsersPosts(id);
       console.log(postsData);
-
       this.posts = Array.isArray(postsData) ? postsData : [];
       this.loadingProfile = false;
       this.loadingPosts = false;
 
-      // Only check follow status if not viewing own profile and not a guest
-      if (!this.isOwnProfile && !this.isGuestMode) {
-        try {
-          const followCheck = await checkFollowing(id);
-          console.log('followCheck', followCheck);
-          if (Array.isArray(followCheck) && followCheck[0]) {
-            this.followed = followCheck[0].following;
-          }
-
-          const followedCheck = await isFollowingMe(id);
-          console.log('followedCheck', followedCheck);
-          if (Array.isArray(followedCheck) && followCheck[0]) {
-            this.following = followedCheck[0].followed_by;
-            this.muted = followedCheck[0].muting;
-            this.blocked = followedCheck[0].blocking;
-          }
-          this.followStatusLoaded = true;
-        } catch (error) {
-          console.log('Error checking follow status:', error);
-          this.followStatusLoaded = true;
+      // Process relationship data if we fetched it
+      if (shouldFetchRelationship && relationshipData) {
+        console.log('relationshipData', relationshipData);
+        if (Array.isArray(relationshipData) && relationshipData[0]) {
+          this.followed = relationshipData[0].following;
+          this.following = relationshipData[0].followed_by;
+          this.muted = relationshipData[0].muting;
+          this.blocked = relationshipData[0].blocking;
         }
+        this.followStatusLoaded = true;
       }
     }
   }
@@ -816,11 +846,71 @@ export class AppProfile extends LitElement {
   async reloadPosts() {
     if (!this.user) return;
     this.loadingPosts = true;
+    this.hasMorePosts = true; // Reset pagination state
     const postsData = await getUsersPosts(this.user.id, this.activeSegment);
     console.log(postsData);
 
     this.posts = postsData;
     this.loadingPosts = false;
+  }
+
+  /** Handle visibility changes from lit-virtualizer to trigger load more */
+  private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
+    if (shouldLoadMore(e, this.posts.length, this.loadingMorePosts)) {
+      await this.loadMorePosts();
+    }
+  }
+
+  /** Load more posts for infinite scroll */
+  private async loadMorePosts() {
+    if (!this.user || this.loadingMorePosts || !this.hasMorePosts) return;
+
+    this.loadingMorePosts = true;
+
+    try {
+      // Get the last post ID to use for pagination
+      const lastPostId =
+        this.posts.length > 0
+          ? this.posts[this.posts.length - 1].id
+          : undefined;
+
+      if (!lastPostId) {
+        this.loadingMorePosts = false;
+        return;
+      }
+
+      const newPosts = await getUsersPosts(
+        this.user.id,
+        this.activeSegment,
+        lastPostId
+      );
+
+      if (!Array.isArray(newPosts) || newPosts.length === 0) {
+        // No more posts to load
+        this.hasMorePosts = false;
+        this.loadingMorePosts = false;
+        return;
+      }
+
+      // Deduplicate posts by ID to prevent showing duplicates
+      const existingIds = new Set(this.posts.map((post) => post.id));
+      const uniqueNewPosts = newPosts.filter(
+        (post) => !existingIds.has(post.id)
+      );
+
+      if (uniqueNewPosts.length === 0) {
+        this.hasMorePosts = false;
+        this.loadingMorePosts = false;
+        return;
+      }
+
+      // Append new posts to existing list
+      this.posts = [...this.posts, ...uniqueNewPosts];
+    } catch (err) {
+      console.error('[loadMorePosts] Failed to load more posts:', err);
+    } finally {
+      this.loadingMorePosts = false;
+    }
   }
 
   async handleSegmentChange(e: CustomEvent<{ value: string }>) {
@@ -951,6 +1041,10 @@ export class AppProfile extends LitElement {
     this.editDialog?.show();
   }
 
+  handleOpenPost(tweet: Post) {
+    router.navigate(`/account/post/${tweet.id}`, { state: { post: tweet } });
+  }
+
   async confirmEdit() {
     const newContent = this.contentTextArea?.value;
 
@@ -980,13 +1074,14 @@ export class AppProfile extends LitElement {
         <app-header ?enableBack="${true}"></app-header>
         <div id="offline-message">
           <md-icon name="cloud-offline"></md-icon>
-          <h2>Profile unavailable</h2>
+          <h2>${msg('Profile unavailable')}</h2>
           <p>
-            This profile hasn't been viewed before and can't be loaded while
-            offline.
+            ${msg(
+              "This profile hasn't been viewed before and can't be loaded while offline."
+            )}
           </p>
           <md-button variant="filled" @click="${() => window.location.reload()}"
-            >Try again</md-button
+            >${msg('Try again')}</md-button
           >
         </div>
       `;
@@ -995,13 +1090,15 @@ export class AppProfile extends LitElement {
     return html`
       <app-header ?enableBack="${true}"></app-header>
 
-      <md-dialog id="edit" label="Edit Post">
+      <md-dialog id="edit" .label="${msg('Edit Post')}">
         <span id="preview-content"></span>
 
         <div id="edit-input-block">
           <md-text-area id="content"></md-text-area>
 
-          <md-button @click=${() => this.confirmEdit()}>Save</md-button>
+          <md-button @click=${() => this.confirmEdit()}
+            >${msg('Save')}</md-button
+          >
         </div>
       </md-dialog>
 
@@ -1063,18 +1160,18 @@ export class AppProfile extends LitElement {
                         ? html`<md-button
                             variant="outlined"
                             @click="${() => this.unfollow()}"
-                            >Following</md-button
+                            >${msg('Following')}</md-button
                           >`
                         : html`<md-button
                             variant="filled"
                             @click="${() => this.follow()}"
-                            >Follow</md-button
+                            >${msg('Follow')}</md-button
                           >`}
                       <md-dropdown placement="bottom-end">
                         <md-icon-button
                           slot="trigger"
                           name="ellipsis-vertical"
-                          label="More options"
+                          .label="${msg('More options')}"
                         ></md-icon-button>
                         <md-menu>
                           ${this.muted
@@ -1085,31 +1182,31 @@ export class AppProfile extends LitElement {
                                   slot="prefix"
                                   name="volume-mute"
                                 ></md-icon>
-                                Unmute @${this.user?.acct}
+                                ${msg(str`Unmute @${this.user?.acct}`)}
                               </md-menu-item>`
                             : html`<md-menu-item @click="${() => this.mute()}">
                                 <md-icon
                                   slot="prefix"
                                   name="volume-mute"
                                 ></md-icon>
-                                Mute @${this.user?.acct}
+                                ${msg(str`Mute @${this.user?.acct}`)}
                               </md-menu-item>`}
                           ${this.blocked
                             ? html`<md-menu-item
                                 @click="${() => this.unblock()}"
                               >
                                 <md-icon slot="prefix" name="ban"></md-icon>
-                                Unblock @${this.user?.acct}
+                                ${msg(str`Unblock @${this.user?.acct}`)}
                               </md-menu-item>`
                             : html`<md-menu-item @click="${() => this.block()}">
                                 <md-icon slot="prefix" name="ban"></md-icon>
-                                Block @${this.user?.acct}
+                                ${msg(str`Block @${this.user?.acct}`)}
                               </md-menu-item>`}
                           <md-menu-item
                             @click="${() => this.openReportDialog()}"
                           >
                             <md-icon slot="prefix" name="flag"></md-icon>
-                            Report @${this.user?.acct}
+                            ${msg(str`Report @${this.user?.acct}`)}
                           </md-menu-item>
                         </md-menu>
                       </md-dropdown>
@@ -1137,7 +1234,7 @@ export class AppProfile extends LitElement {
                 ${this.followed && this.following
                   ? html`<span id="mutuals-badge">
                       <md-icon name="people" style="font-size: 14px;"></md-icon>
-                      Mutuals
+                      ${msg('Mutuals')}
                     </span>`
                   : null}
                 ${this.user.note
@@ -1151,7 +1248,7 @@ export class AppProfile extends LitElement {
                         this.user.following_count ?? 0
                       ).toLocaleString()}</span
                     >
-                    <span class="stat-label">Following</span>
+                    <span class="stat-label">${msg('Following')}</span>
                   </span>
                   <span class="stat" @click="${() => this.goToFollowers()}">
                     <span class="stat-count"
@@ -1159,7 +1256,7 @@ export class AppProfile extends LitElement {
                         this.user.followers_count ?? 0
                       ).toLocaleString()}</span
                     >
-                    <span class="stat-label">Followers</span>
+                    <span class="stat-label">${msg('Followers')}</span>
                   </span>
                 </div>
 
@@ -1226,9 +1323,9 @@ export class AppProfile extends LitElement {
                 @segment-change="${(e: CustomEvent) =>
                   this.handleSegmentChange(e)}"
               >
-                <md-segment value="posts">Posts</md-segment>
-                <md-segment value="posts_replies">Replies</md-segment>
-                <md-segment value="media">Media</md-segment>
+                <md-segment value="posts">${msg('Posts')}</md-segment>
+                <md-segment value="posts_replies">${msg('Replies')}</md-segment>
+                <md-segment value="media">${msg('Media')}</md-segment>
               </md-segmented-button>
             `}
       </div>
@@ -1238,21 +1335,29 @@ export class AppProfile extends LitElement {
         ${this.loadingPosts && this.posts.length === 0
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : html`
-              <ul class="${this.loadingPosts ? 'posts-loading' : ''}">
-                ${this.posts.map(
-                  (post) => html`
-                    <li>
-                      <timeline-item
-                        @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.editPost(e.detail.tweet)}"
-                        @delete="${() => this.reloadPosts()}"
-                        .tweet=${post}
-                        ?guestMode="${this.isGuestMode}"
-                      ></timeline-item>
-                    </li>
-                  `
-                )}
-              </ul>
+              <lit-virtualizer
+                class="${this.loadingPosts ? 'posts-loading' : ''}"
+                .items=${this.posts}
+                .renderItem=${(post: Post) => html`
+                  <div class="post-item">
+                    <timeline-item
+                      @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                        this.handleOpenPost(e.detail.tweet)}"
+                      @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                        this.editPost(e.detail.tweet)}"
+                      @delete="${() => this.reloadPosts()}"
+                      .tweet=${post}
+                      ?guestMode="${this.isGuestMode}"
+                    ></timeline-item>
+                  </div>
+                `}
+                @visibilityChanged=${this._handleVisibilityChanged}
+              ></lit-virtualizer>
+              ${this.loadingMorePosts
+                ? html`<div class="load-more-indicator">
+                    <md-skeleton width="100%" height="120px"></md-skeleton>
+                  </div>`
+                : null}
             `}
       </div>
 

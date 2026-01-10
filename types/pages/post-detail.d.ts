@@ -9,8 +9,10 @@ import { Post } from '../interfaces/Post';
 export declare class PostDetail extends LitElement {
   tweet: Post | null;
   replies: Post[];
+  ancestors: Post[];
   replyingTo: Post | null;
   loading: boolean;
+  loadingThread: boolean;
   error: string | null;
   isGuestMode: boolean;
   passed_tweet: Post | null;

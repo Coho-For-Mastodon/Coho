@@ -1,5 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { msg, str, localized } from '@lit/localize';
 
 import type { Post } from '../interfaces/Post';
 import { votePoll } from '../services/timeline';
@@ -37,6 +38,7 @@ function formatRelativeShort(target: Date, now: Date): string {
   return `${days}d`;
 }
 
+@localized()
 @customElement('timeline-poll')
 export class TimelinePoll extends LitElement {
   @property({ type: Object }) post: Post | undefined;
@@ -296,11 +298,11 @@ export class TimelinePoll extends LitElement {
     } catch (err) {
       console.error('Failed to vote in poll', err);
       const message =
-        (err as Error | undefined)?.message || 'Could not submit vote.';
+        (err as Error | undefined)?.message || msg('Could not submit vote.');
 
       // If the server forbids voting (common for "own poll" or lack of permission),
       // show results instead of leaving the UI stuck in "vote" mode.
-      const status = (err as any)?.status;
+      const status = (err as Error & { status?: number })?.status;
       if (status === 403 || /own poll|forbidden|not allowed/i.test(message)) {
         this.forceShowResults = true;
       }
@@ -319,11 +321,11 @@ export class TimelinePoll extends LitElement {
     const expired = this._isExpired(poll);
 
     if (expired) {
-      return html`<span class="meta">Ended</span>`;
+      return html`<span class="meta">${msg('Ended')}</span>`;
     }
 
     return html`<span class="meta"
-      >Ends in ${formatRelativeShort(expiresAt, now)}</span
+      >${msg(str`Ends in ${formatRelativeShort(expiresAt, now)}`)}</span
     >`;
   }
 
@@ -384,16 +386,17 @@ export class TimelinePoll extends LitElement {
 
   private _renderFooterHint(poll: Poll, showResults: boolean) {
     const voteCount = poll.votes_count ?? 0;
-    const votesLabel = voteCount === 1 ? '1 vote' : `${voteCount} votes`;
+    const votesLabel =
+      voteCount === 1 ? msg('1 vote') : msg(str`${voteCount} votes`);
 
     if (showResults) {
       if (this._isOwnPoll()) {
-        return html`Your poll · ${votesLabel}`;
+        return html`${msg('Your poll')} · ${votesLabel}`;
       }
       return html`${votesLabel}`;
     }
 
-    return poll.multiple ? 'Select one or more' : 'Select one';
+    return poll.multiple ? msg('Select one or more') : msg('Select one');
   }
 
   render() {
@@ -406,7 +409,7 @@ export class TimelinePoll extends LitElement {
     return html`
       <div class="container" @click=${(e: Event) => e.stopPropagation()}>
         <div class="header">
-          <p class="title">Poll</p>
+          <p class="title">${msg('Poll')}</p>
           ${this._renderMeta(poll)}
         </div>
 
@@ -427,7 +430,7 @@ export class TimelinePoll extends LitElement {
                   isExpired}
                   @click=${this._submitVote}
                 >
-                  ${this.submitting ? 'Voting…' : 'Vote'}
+                  ${this.submitting ? msg('Voting…') : msg('Vote')}
                 </md-button>
               `}
         </div>

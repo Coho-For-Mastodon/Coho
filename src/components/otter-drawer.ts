@@ -1,5 +1,6 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 /**
  * Custom drawer component to replace sl-drawer
@@ -9,6 +10,7 @@ import { customElement, property, state } from 'lit/decorators.js';
  * - show() and hide() methods
  * - default slot and footer slot
  */
+@localized()
 @customElement('otter-drawer')
 export class OtterDrawer extends LitElement {
   @property() label: string = '';
@@ -286,7 +288,7 @@ export class OtterDrawer extends LitElement {
           <button
             class="close-button"
             @click="${this.hide}"
-            aria-label="Close drawer"
+            aria-label=${msg('Close drawer')}
             part="close-button"
           >
             <svg

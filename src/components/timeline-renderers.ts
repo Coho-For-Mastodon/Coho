@@ -1,6 +1,7 @@
 import { html } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import { msg, str } from '@lit/localize';
 import { Post } from '../interfaces/Post';
 import { parseEmojis } from '../utils/emoji-parser';
 import type { Settings } from '../services/settings';
@@ -64,15 +65,15 @@ export function renderSensitive(
 ) {
   return html`
     <div class="sensitive">
-      <span>Sensitive Content</span>
+      <span>${msg('Sensitive Content')}</span>
       <p>
         ${state.tweet?.reblog
           ? state.tweet.reblog.spoiler_text
-          : state.tweet?.spoiler_text || 'No spoiler text provided'}
+          : state.tweet?.spoiler_text || msg('No spoiler text provided')}
       </p>
 
       <md-button variant="text" pill @click="${() => handlers.viewSensitive()}">
-        View
+        ${msg('View')}
         <md-icon slot="suffix" name="eye"></md-icon>
       </md-button>
     </div>
@@ -92,7 +93,7 @@ export function renderReplyContext(
       style="cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; color: var(--md-sys-color-primary);"
     >
       <md-icon name="chatbox"></md-icon>
-      Thread
+      ${msg('Thread')}
     </div>
 
     <md-card
@@ -104,10 +105,10 @@ export function renderReplyContext(
       ${state.tweet?.reply_to?.sensitive
         ? html`
             <div class="sensitive">
-              <span>Sensitive Content</span>
+              <span>${msg('Sensitive Content')}</span>
               <p>
                 ${state.tweet?.reply_to?.spoiler_text ||
-                'No spoiler text provided'}
+                msg('No spoiler text provided')}
               </p>
 
               <md-button
@@ -118,7 +119,7 @@ export function renderReplyContext(
                   handlers.viewReplySensitive();
                 }}"
               >
-                View
+                ${msg('View')}
                 <md-icon slot="suffix" name="eye"></md-icon>
               </md-button>
             </div>
@@ -219,11 +220,11 @@ export function renderRegularTweet(
             <md-menu>
               <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null)}" title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}>
                 <md-icon slot="prefix" name="language"></md-icon>
-                Translate
+                ${msg('Translate')}
               </md-menu-item>
               <md-menu-item @click="${() => handlers.shareStatus(state.tweet || null)}">
                 <md-icon slot="prefix" name="share"></md-icon>
-                Share
+                ${msg('Share')}
               </md-menu-item>
               ${
                 state.tweet?.account.id !== state.currentUser?.id
@@ -233,14 +234,14 @@ export function renderRegularTweet(
                           handlers.muteUser(state.tweet?.account.id || '')}"
                       >
                         <md-icon slot="prefix" name="volume-mute"></md-icon>
-                        Mute @${state.tweet?.account.acct}
+                        ${msg(str`Mute @${state.tweet?.account.acct}`)}
                       </md-menu-item>
                       <md-menu-item
                         @click="${() =>
                           handlers.blockUser(state.tweet?.account.id || '')}"
                       >
                         <md-icon slot="prefix" name="ban"></md-icon>
-                        Block @${state.tweet?.account.acct}
+                        ${msg(str`Block @${state.tweet?.account.acct}`)}
                       </md-menu-item>
                       <md-menu-item
                         @click="${() =>
@@ -251,7 +252,7 @@ export function renderRegularTweet(
                           )}"
                       >
                         <md-icon slot="prefix" name="flag"></md-icon>
-                        Report @${state.tweet?.account.acct}
+                        ${msg(str`Report @${state.tweet?.account.acct}`)}
                       </md-menu-item>
                     `
                   : null
@@ -407,7 +408,9 @@ export function renderReblog(
         class="boost-indicator"
         @click="${(e: Event) => {
           e.stopPropagation();
-          router.navigate(`/account?id=${state.tweet?.account.id}`);
+          router.navigate(`/account?id=${state.tweet?.account.id}`, {
+            state: { account: state.tweet?.account },
+          });
         }}"
       >
         <md-icon name="repeat"></md-icon>
@@ -424,7 +427,7 @@ export function renderReblog(
             true
           )}"
         ></span>
-        <span>boosted</span>
+        <span>${msg('boosted')}</span>
       </div>
       <div class="header-block" slot="header">
         <user-profile
@@ -447,13 +450,13 @@ export function renderReblog(
               )}
             >
               <md-icon slot="prefix" name="language"></md-icon>
-              Translate
+              ${msg('Translate')}
             </md-menu-item>
             <md-menu-item
               @click="${() => handlers.shareStatus(state.tweet || null)}"
             >
               <md-icon slot="prefix" name="share"></md-icon>
-              Share
+              ${msg('Share')}
             </md-menu-item>
             ${state.tweet?.reblog?.account.id !== state.currentUser?.id
               ? html`
@@ -462,7 +465,7 @@ export function renderReblog(
                       handlers.muteUser(state.tweet?.reblog?.account.id || '')}"
                   >
                     <md-icon slot="prefix" name="volume-mute"></md-icon>
-                    Mute @${state.tweet?.reblog?.account.acct}
+                    ${msg(str`Mute @${state.tweet?.reblog?.account.acct}`)}
                   </md-menu-item>
                   <md-menu-item
                     @click="${() =>
@@ -471,7 +474,7 @@ export function renderReblog(
                       )}"
                   >
                     <md-icon slot="prefix" name="ban"></md-icon>
-                    Block @${state.tweet?.reblog?.account.acct}
+                    ${msg(str`Block @${state.tweet?.reblog?.account.acct}`)}
                   </md-menu-item>
                   <md-menu-item
                     @click="${() =>
@@ -482,7 +485,7 @@ export function renderReblog(
                       )}"
                   >
                     <md-icon slot="prefix" name="flag"></md-icon>
-                    Report @${state.tweet?.reblog?.account.acct}
+                    ${msg(str`Report @${state.tweet?.reblog?.account.acct}`)}
                   </md-menu-item>
                 `
               : null}
@@ -605,9 +608,10 @@ export function renderThread(
             ${threadPost.sensitive
               ? html`
                   <div class="sensitive">
-                    <span>Sensitive Content</span>
+                    <span>${msg('Sensitive Content')}</span>
                     <p>
-                      ${threadPost.spoiler_text || 'No spoiler text provided'}
+                      ${threadPost.spoiler_text ||
+                      msg('No spoiler text provided')}
                     </p>
 
                     <md-button
@@ -616,7 +620,7 @@ export function renderThread(
                       @click="${() =>
                         handlers.viewThreadSensitive(threadPost.id)}"
                     >
-                      View
+                      ${msg('View')}
                       <md-icon slot="suffix" name="eye"></md-icon>
                     </md-button>
                   </div>

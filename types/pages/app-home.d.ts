@@ -4,13 +4,9 @@ import '../components/timeline-item';
 import '../components/md/md-skeleton';
 import '../components/otter-drawer';
 import '../components/md/md-button';
-import '../components/md/md-badge';
-import '../components/md/md-toolbar';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
 import '../components/md/md-dialog';
-import '../components/md/md-switch';
-import '../components/md/md-dropdown';
 import '../components/md/md-tabs';
 import '../components/md/md-tab';
 import '../components/md/md-tab-panel';
@@ -20,6 +16,8 @@ import '../components/md/md-toast';
 import '../components/offline-notify';
 import '../components/pwa-install';
 import '../components/guest-login-banner';
+import '../components/home-sidebar';
+import '../components/settings-drawer-content';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
@@ -56,6 +54,7 @@ export declare class AppHome extends LitElement {
   showInstallPrompt: boolean;
   pwaInstallLoaded: boolean;
   isGuestMode: boolean;
+  private overlays;
   activeTab: string;
   tabsOrientation: 'horizontal' | 'vertical';
   tabsPlacement: 'top' | 'bottom' | 'start' | 'end';
@@ -79,10 +78,8 @@ export declare class AppHome extends LitElement {
   shareTarget(name: string): Promise<void>;
   handlePrimaryColor(color: string): void;
   share(): void;
-  openNewDialog(): Promise<void>;
+  openNewDialog(shareName?: string): Promise<void>;
   publish(): Promise<void>;
-  goToFollowers(): Promise<void>;
-  goToFollowing(): Promise<void>;
   openSettingsDrawer(): Promise<void>;
   handleReplies(replies: Post[], id: string): Promise<void>;
   replyToAStatus(): Promise<void>;
@@ -93,12 +90,9 @@ export declare class AppHome extends LitElement {
   handleDataSaverMode(mode: boolean): Promise<void>;
   removeImage(): void;
   openATab(name: string): void;
-  shareMyProfile(): Promise<void>;
-  viewMyProfile(): void;
-  editMyProfile(): void;
   handleReload(): Promise<void>;
   openBotDrawer(): void;
-  showSummary($event: HandleSummaryEvent): void;
+  showSummary($event: HandleSummaryEvent): Promise<void>;
   onMoveHandler(
     ev: {
       deltaX: number;
@@ -109,6 +103,8 @@ export declare class AppHome extends LitElement {
   ): void;
   handleOpenTweet(tweet: Post): Promise<void>;
   disconnectedCallback(): Promise<void>;
+  private _handleSwitchTab;
+  private _handleOpenPostDialog;
   reloadHome(): void;
   loadBookmarks(): Promise<void>;
   loadFavorites(): Promise<void>;
@@ -119,9 +115,9 @@ export declare class AppHome extends LitElement {
   loadUserTerms(): Promise<void>;
   loadRightClick(): Promise<void>;
   checkInstallPrompt(): Promise<void>;
-  openInstallDialog(): void;
-  handleInstallDismiss(): void;
-  handleInstallSuccess(): void;
+  openInstallDialog(): Promise<void>;
+  handleInstallDismiss(): Promise<void>;
+  handleInstallSuccess(): Promise<void>;
   handleTabChange(event: TabChangeEvent): Promise<void>;
   handleTranslating(_event: HandleTranslatingEvent): Promise<void>;
   render(): import('lit-html').TemplateResult<1>;

@@ -22,36 +22,43 @@ import { LitElement } from 'lit';
  * ```
  */
 export declare class MdTabs extends LitElement {
-    /**
-     * Orientation of tabs: horizontal (top/bottom) or vertical (side)
-     */
-    orientation: 'horizontal' | 'vertical';
-    /**
-     * Placement of tab bar
-     * - top/bottom for horizontal orientation
-     * - start/end for vertical orientation (side navigation)
-     */
-    placement: 'top' | 'bottom' | 'start' | 'end';
-    /**
-     * Active panel name
-     */
-    active?: string;
-    private _activePanel;
-    private navSlot;
-    private panelSlot;
-    static styles: import("lit").CSSResult;
-    connectedCallback(): void;
-    disconnectedCallback(): void;
-    firstUpdated(): void;
-    updated(changedProperties: Map<string, unknown>): void;
-    private _handleTabSelected;
-    private _getTabs;
-    private _getPanels;
-    private _updatePanels;
-    render(): import("lit-html").TemplateResult<1>;
+  /**
+   * Orientation of tabs: horizontal (top/bottom) or vertical (side)
+   */
+  orientation: 'horizontal' | 'vertical';
+  /**
+   * Placement of tab bar
+   * - top/bottom for horizontal orientation
+   * - start/end for vertical orientation (side navigation)
+   */
+  placement: 'top' | 'bottom' | 'start' | 'end';
+  /**
+   * Active panel name
+   */
+  active?: string;
+  private _activePanel;
+  /** Unique ID for this tabs instance (used for aria-controls/aria-labelledby) */
+  private _tabsId;
+  private navSlot;
+  private panelSlot;
+  static styles: import('lit').CSSResult;
+  connectedCallback(): void;
+  disconnectedCallback(): void;
+  firstUpdated(): void;
+  updated(changedProperties: Map<string, unknown>): void;
+  private _handleTabSelected;
+  private _getTabs;
+  private _getPanels;
+  private _updatePanels;
+  /**
+   * Handle keyboard navigation within the tablist
+   * Implements WAI-ARIA tab pattern: Arrow keys, Home, End
+   */
+  private _handleTablistKeyDown;
+  render(): import('lit-html').TemplateResult<1>;
 }
 declare global {
-    interface HTMLElementTagNameMap {
-        'md-tabs': MdTabs;
-    }
+  interface HTMLElementTagNameMap {
+    'md-tabs': MdTabs;
+  }
 }

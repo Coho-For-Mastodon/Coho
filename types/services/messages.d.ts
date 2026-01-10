@@ -1,1 +1,1 @@
-export { getMessages } from '../mastodon';
+export { getMessages } from '../mastodon/api/messages';

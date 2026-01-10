@@ -1,0 +1,73 @@
+import { beforeAll, afterEach, afterAll, vi } from 'vitest';
+import { setupWorker } from 'msw/browser';
+import { handlers } from './mocks/handlers';
+
+// Set up MSW worker for browser
+const worker = setupWorker(...handlers);
+
+beforeAll(async () => {
+  await worker.start({ onUnhandledRequest: 'warn' });
+});
+
+afterEach(() => {
+  worker.resetHandlers();
+  localStorage.clear();
+  sessionStorage.clear();
+});
+
+afterAll(() => {
+  worker.stop();
+});
+
+// In browser mode, we have real localStorage/sessionStorage - no mocking needed
+
+// Mock navigator.storage for File System Access API (used by media.ts)
+// Only mock if not available (some browsers don't have full OPFS support)
+if (!navigator.storage?.getDirectory) {
+  const mockDirectoryHandle = {
+    getFileHandle: vi.fn().mockResolvedValue({
+      createWritable: vi.fn().mockResolvedValue({
+        write: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+      }),
+      getFile: vi.fn().mockResolvedValue(new File([], 'mock-file')),
+    }),
+    getDirectoryHandle: vi.fn().mockResolvedValue({
+      getFileHandle: vi.fn().mockResolvedValue({
+        createWritable: vi.fn().mockResolvedValue({
+          write: vi.fn().mockResolvedValue(undefined),
+          close: vi.fn().mockResolvedValue(undefined),
+        }),
+        getFile: vi.fn().mockResolvedValue(new File([], 'mock-file')),
+      }),
+      values: vi.fn().mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          // Empty iterator
+        },
+      }),
+    }),
+    values: vi.fn().mockReturnValue({
+      [Symbol.asyncIterator]: async function* () {
+        // Empty iterator
+      },
+    }),
+  };
+
+  vi.stubGlobal('navigator', {
+    ...navigator,
+    storage: {
+      ...navigator.storage,
+      getDirectory: vi.fn().mockResolvedValue(mockDirectoryHandle),
+    },
+  });
+}
+
+// Helper to set up auth for tests
+export function setupAuth(
+  server = 'tech.lgbt',
+  accessToken = 'mock-access-token'
+) {
+  localStorage.setItem('server', server);
+  localStorage.setItem('accessToken', accessToken);
+  localStorage.setItem('token', accessToken);
+}

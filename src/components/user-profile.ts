@@ -5,7 +5,7 @@ import { classMap } from 'lit/directives/class-map.js';
 // import { enableVibrate } from '../utils/handle-vibrate';
 import { router } from '../utils/router';
 import { parseEmojis } from '../utils/emoji-parser';
-import { Account } from '../mastodon';
+import { Account } from '../mastodon/types';
 
 @customElement('user-profile')
 export class UserProfile extends LitElement {
@@ -133,32 +133,26 @@ export class UserProfile extends LitElement {
   }
 
   async openUser() {
+    // Set viewTransitionName for cross-document view transition
     // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
     this.shadowRoot!.querySelector('.headerBlock')!.viewTransitionName =
       'profile-image';
 
-    if ('startViewTransition' in document) {
-      // startViewTransition returns a ViewTransition object (not a Promise)
-      const transition = document.startViewTransition(() => {
-        router.navigate(`/account?id=${this.account?.id}`);
-      });
+    // Navigate - the router handles view transitions internally
+    // Pass account via Navigation API state for instant render
+    await router.navigate(`/account?id=${this.account?.id}`, {
+      state: { account: this.account },
+    });
 
-      try {
-        await transition.finished;
-      } finally {
-        // Best-effort cleanup (component may be disconnected after navigation)
-        try {
-          const headerBlock = this.shadowRoot?.querySelector('.headerBlock');
-          if (headerBlock) {
-            // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
-            headerBlock.viewTransitionName = '';
-          }
-        } catch {
-          // ignore
-        }
+    // Best-effort cleanup (component may be disconnected after navigation)
+    try {
+      const headerBlock = this.shadowRoot?.querySelector('.headerBlock');
+      if (headerBlock) {
+        // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
+        headerBlock.viewTransitionName = '';
       }
-    } else {
-      router.navigate(`/account?id=${this.account?.id}`);
+    } catch {
+      // ignore
     }
   }
 
@@ -178,6 +172,7 @@ export class UserProfile extends LitElement {
           src="/assets/icons/new-icons/icon-72x72.png"
           data-src="${this.account?.avatar_static ||
           '/assets/icons/new-icons/icon-72x72.png'}"
+          alt="${this.account?.display_name || ''}"
         />
         <div>
           <h4

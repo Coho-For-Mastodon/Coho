@@ -3,8 +3,12 @@ import { customElement } from 'lit/decorators.js';
 
 import { router } from './utils/router';
 
+// Initialize localization (must be imported early)
+import './config/localization.js';
+
 import './pages/app-login';
 import './components/header';
+import './components/pwa-update';
 import { getSettings } from './services/settings';
 
 // Log build version for debugging
@@ -82,6 +86,10 @@ export class AppIndex extends LitElement {
     const potentialColor = settings.primary_color;
 
     if (potentialColor) {
+      // Sync to localStorage for instant theme on next load (migration for existing users)
+      if (!localStorage.getItem('coho-theme-color')) {
+        localStorage.setItem('coho-theme-color', potentialColor);
+      }
       this.applyThemeColor(potentialColor);
     } else {
       // get css variable color
@@ -97,6 +105,41 @@ export class AppIndex extends LitElement {
 
     // Lazy-load image preview dialog on first preview-image event
     this.initLazyImagePreview();
+
+    // Lazy-load shortcuts help dialog on first show-shortcuts-help event
+    this.initLazyShortcutsHelp();
+  }
+
+  /**
+   * Lazy-load and initialize the shortcuts help dialog
+   * Only loads when user first presses ? key
+   */
+  private shortcutsHelpInitialized = false;
+  private initLazyShortcutsHelp() {
+    const handler = async () => {
+      if (this.shortcutsHelpInitialized) return;
+      this.shortcutsHelpInitialized = true;
+
+      // Import the component (registers the custom element)
+      await import('./components/shortcuts-help-dialog');
+
+      // Wait for the custom element to be defined
+      await customElements.whenDefined('shortcuts-help-dialog');
+
+      // Create and append the dialog to the body
+      const dialog = document.createElement('shortcuts-help-dialog');
+      document.body.appendChild(dialog);
+
+      // Wait a frame then show the dialog
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      // Show the dialog
+      (
+        dialog as import('./components/shortcuts-help-dialog').ShortcutsHelpDialog
+      ).show();
+    };
+
+    window.addEventListener('show-shortcuts-help', handler);
   }
 
   /**
@@ -105,16 +148,43 @@ export class AppIndex extends LitElement {
    */
   private imagePreviewInitialized = false;
   private initLazyImagePreview() {
-    const handler = async () => {
-      if (this.imagePreviewInitialized) return;
+    console.log('[App] Setting up lazy image preview listener');
+    const handler = async (e: Event) => {
+      console.log(
+        '[App] preview-image event received',
+        (e as CustomEvent).detail
+      );
+      if (this.imagePreviewInitialized) {
+        console.log('[App] Already initialized, skipping');
+        return;
+      }
       this.imagePreviewInitialized = true;
 
       // Import the component (registers the custom element)
       await import('./components/image-preview-dialog');
+      console.log('[App] image-preview-dialog imported');
+
+      // Wait for the custom element to be defined
+      await customElements.whenDefined('image-preview-dialog');
+      console.log('[App] Custom element defined');
 
       // Create and append the dialog to the shadow root
       const dialog = document.createElement('image-preview-dialog');
-      this.shadowRoot?.appendChild(dialog);
+      document.body?.appendChild(dialog);
+      console.log('[App] Dialog appended to shadow root');
+
+      // Wait a frame to ensure connectedCallback has run and listener is registered
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      console.log('[App] Re-dispatching event');
+
+      // Re-dispatch the original event so the dialog can handle it
+      window.dispatchEvent(
+        new CustomEvent('preview-image', {
+          detail: (e as CustomEvent).detail,
+          bubbles: true,
+          composed: true,
+        })
+      );
     };
 
     window.addEventListener('preview-image', handler, { once: true });
@@ -288,6 +358,16 @@ export class AppIndex extends LitElement {
   }
 
   render() {
-    return html` ${router.render()} `;
+    return html`
+      ${router.render()}
+      <pwa-update></pwa-update>
+    `;
+  }
+
+  /**
+   * Render to light DOM so View Transitions can see the content
+   */
+  createRenderRoot() {
+    return this;
   }
 }

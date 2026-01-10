@@ -4,13 +4,16 @@ import {
   clearNotifications as mastodonClearNotifications,
   checkNewNotifications as mastodonCheckNewNotifications,
   markNotificationsRead as mastodonMarkNotificationsRead,
-} from '../mastodon';
+} from '../mastodon/api/notifications';
 
 import { getClientConfig } from '../mastodon/config/client';
 
 // Core notification functions with proper type casting
-export const getNotifications = async (): Promise<MastodonNotification[]> => {
-  const data = await mastodonGetNotifications();
+export const getNotifications = async (
+  maxId?: string,
+  limit: number = 20
+): Promise<MastodonNotification[]> => {
+  const data = await mastodonGetNotifications(maxId, limit);
   return data as unknown as MastodonNotification[];
 };
 

@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query, property } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import './md/md-dialog.js';
 import './md/md-button.js';
@@ -25,6 +26,7 @@ type TesseractWorker = {
  * Provides a canvas for users to write text by hand, which is then
  * recognized using Chrome's on-device Prompt API
  */
+@localized()
 @customElement('handwriting-dialog')
 export class HandwritingDialog extends LitElement {
   @property({ type: Boolean }) open = false;
@@ -416,7 +418,7 @@ export class HandwritingDialog extends LitElement {
     return html`
       <md-dialog
         id="handwriting-dialog"
-        label="Write your post"
+        label=${msg('Write your post')}
         ?fullscreen=${this.isMobile}
         no-backdrop-close
         @md-dialog-hide=${() => this.closeDialog()}
@@ -434,7 +436,7 @@ export class HandwritingDialog extends LitElement {
             @touchcancel=${this.stopPaint}
           ></canvas>
           <span class="canvas-hint ${this.hasContent ? 'hidden' : ''}"
-            >Write something here...</span
+            >${msg('Write something here...')}</span
           >
         </div>
 
@@ -446,7 +448,7 @@ export class HandwritingDialog extends LitElement {
               ?disabled=${this.isRecognizing}
             >
               <md-icon src="/assets/trash-outline.svg"></md-icon>
-              Clear
+              ${msg('Clear')}
             </md-button>
           </div>
 
@@ -456,7 +458,7 @@ export class HandwritingDialog extends LitElement {
               @click=${() => this.handleCancel()}
               ?disabled=${this.isRecognizing}
             >
-              Cancel
+              ${msg('Cancel')}
             </md-button>
             <md-button
               variant="filled"
@@ -466,8 +468,10 @@ export class HandwritingDialog extends LitElement {
               ?disabled=${!this.hasContent || this.isRecognizing}
             >
               ${this.isRecognizing
-                ? html`<span class="recognizing-spinner"></span> Recognizing...`
-                : 'Done'}
+                ? html`<span class="recognizing-spinner"></span> ${msg(
+                      'Recognizing...'
+                    )}`
+                : msg('Done')}
             </md-button>
           </div>
         </div>

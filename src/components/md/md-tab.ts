@@ -391,13 +391,19 @@ export class MdTab extends LitElement {
     }
   }
 
+  /**
+   * Focus the tab button (used for keyboard navigation)
+   */
+  focus() {
+    this.shadowRoot?.querySelector('button')?.focus();
+  }
+
   render() {
     return html`
       <button
         role="tab"
-        aria-selected="${this.active}"
-        aria-disabled="${this.disabled}"
-        tabindex="${this.disabled ? '-1' : '0'}"
+        aria-selected="${this.active ? 'true' : 'false'}"
+        aria-disabled="${this.disabled ? 'true' : 'false'}"
         @click="${this._handleClick}"
         @keydown="${this._handleKeyDown}"
       >

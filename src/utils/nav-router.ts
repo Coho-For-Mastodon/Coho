@@ -1,12 +1,23 @@
 import type { TemplateResult } from 'lit';
+import { ensurePolyfills, isBrowser } from './router-polyfills.js';
+import type { Post } from '../interfaces/Post.js';
+import type { Account } from '../mastodon/types/index.js';
 
 /**
- * Route plugin interface - called during navigation lifecycle
+ * Navigation state that can be passed during navigation.
+ * Use this to pass data (like a Post or Account) to the destination page.
+ */
+export interface NavigationState {
+  post?: Post;
+  account?: Account;
+}
+
+/**
+ * Route plugin interface - called before navigation completes
  */
 export interface RouterPlugin {
   name?: string;
   beforeNavigation?: () => void | Promise<void>;
-  afterNavigation?: () => void | Promise<void>;
 }
 
 /**
@@ -24,7 +35,6 @@ export interface Route {
  */
 export interface RouterOptions {
   routes: Route[];
-  plugins?: RouterPlugin[];
 }
 
 /**
@@ -45,7 +55,6 @@ export function lazy(importFn: () => Promise<unknown>): RouterPlugin {
  */
 export class Router extends EventTarget {
   private routes: Route[];
-  private globalPlugins: RouterPlugin[];
   private patterns: Map<URLPattern, Route> = new Map();
   private currentRoute: Route | null = null;
   private initialized = false;
@@ -53,27 +62,36 @@ export class Router extends EventTarget {
   constructor(options: RouterOptions) {
     super();
     this.routes = options.routes;
-    this.globalPlugins = options.plugins || [];
 
-    // Build URLPattern matchers for each route
-    for (const route of this.routes) {
-      const pattern = new URLPattern({ pathname: route.path });
-      this.patterns.set(pattern, route);
+    // Skip initialization if not in browser (SSR)
+    if (!isBrowser()) {
+      return;
     }
 
-    // Set initial route (plugins run lazily on first render)
-    this.currentRoute = this.matchRoute(window.location.pathname);
+    // Patterns will be built after polyfills are loaded in init()
+  }
 
+  /**
+   * Set up Navigation API event listeners
+   * Called after polyfills are loaded
+   */
+  private setupNavigationListeners(): void {
     // Listen for Navigation API navigate events (handles anchor clicks, back/forward, etc.)
     window.navigation.addEventListener('navigate', (event) => {
       // Only handle same-origin navigations
       const url = new URL(event.destination.url);
+
       if (url.origin !== window.location.origin) {
         return;
       }
 
       // Don't intercept downloads or form submissions
       if (event.downloadRequest || event.formData) {
+        return;
+      }
+
+      // Can't intercept this navigation (e.g., cross-origin)
+      if (!event.canIntercept) {
         return;
       }
 
@@ -94,7 +112,7 @@ export class Router extends EventTarget {
     // Handle popstate for back/forward that might not trigger navigate event
     window.addEventListener('popstate', () => {
       const route = this.matchRoute(window.location.pathname);
-      if (route && route !== this.currentRoute) {
+      if (route && route.path !== this.currentRoute?.path) {
         this.handleNavigation(route);
       }
     });
@@ -116,14 +134,7 @@ export class Router extends EventTarget {
    * Run plugins and update current route
    */
   private async handleNavigation(route: Route): Promise<void> {
-    // Run global beforeNavigation plugins
-    for (const plugin of this.globalPlugins) {
-      if (plugin.beforeNavigation) {
-        await plugin.beforeNavigation();
-      }
-    }
-
-    // Run route-specific beforeNavigation plugins
+    // Run route-specific beforeNavigation plugins (e.g., lazy loading)
     if (route.plugins) {
       for (const plugin of route.plugins) {
         if (plugin.beforeNavigation) {
@@ -145,69 +156,96 @@ export class Router extends EventTarget {
       );
     };
 
-    // Skip view transition for /home (has fixed elements that flash)
-    const skipTransition = route.path === '/home';
+    if ('startViewTransition' in document) {
+      try {
+        const transition = (
+          document as Document & {
+            startViewTransition: (cb: () => void) => {
+              ready: Promise<void>;
+              finished: Promise<void>;
+              updateCallbackDone: Promise<void>;
+            };
+          }
+        ).startViewTransition(updateDOM);
 
-    if ('startViewTransition' in document && !skipTransition) {
-      const transition = (
-        document as Document & {
-          startViewTransition: (cb: () => void) => {
-            finished: Promise<void>;
-          };
-        }
-      ).startViewTransition(updateDOM);
-
-      await transition.finished;
+        // Wait for animations to finish
+        await transition.finished;
+      } catch (e) {
+        // If transition fails, just update DOM normally
+        console.warn('View transition failed:', e);
+        updateDOM();
+      }
     } else {
       updateDOM();
-    }
-
-    // Run global afterNavigation plugins
-    for (const plugin of this.globalPlugins) {
-      if (plugin.afterNavigation) {
-        await plugin.afterNavigation();
-      }
-    }
-
-    // Run route-specific afterNavigation plugins
-    if (route.plugins) {
-      for (const plugin of route.plugins) {
-        if (plugin.afterNavigation) {
-          await plugin.afterNavigation();
-        }
-      }
     }
   }
 
   /**
    * Programmatically navigate to a path
+   * @param path - The path or URL to navigate to
+   * @param options - Optional navigation options including state to pass to the destination
    */
-  async navigate(path: string | URL): Promise<void> {
-    // Handle array passed by mistake (fixes existing bug in codebase)
-    if (Array.isArray(path)) {
-      path = path[0];
-    }
-
+  async navigate(
+    path: string | URL,
+    options?: { state?: NavigationState }
+  ): Promise<void> {
     const url =
       typeof path === 'string' ? new URL(path, window.location.origin) : path;
 
     // Use Navigation API with View Transitions
+    // Pass state to the history entry so it's available via navigation.currentEntry.getState()
     await window.navigation.navigate(url.href, {
       history: 'push',
       info: { viewTransition: true },
+      state: options?.state,
     }).finished;
   }
 
   /**
+   * Get the current navigation state from the current history entry.
+   * Returns undefined if no state was passed during navigation.
+   */
+  getNavigationState(): NavigationState | undefined {
+    return window.navigation?.currentEntry?.getState() as
+      | NavigationState
+      | undefined;
+  }
+
+  /**
    * Initialize the router - must be called before first render
-   * Loads plugins for the initial route
+   * Loads polyfills if needed, builds patterns, and runs plugins for initial route
    */
   async init(): Promise<void> {
-    if (this.initialized || !this.currentRoute) {
+    if (this.initialized) {
       return;
     }
+
+    // Skip initialization if not in browser (SSR)
+    if (!isBrowser()) {
+      return;
+    }
+
+    // Load polyfills if needed (URLPattern, Navigation API)
+    await ensurePolyfills();
+
+    // Build URLPattern matchers for each route (after polyfill is loaded)
+    for (const route of this.routes) {
+      const pattern = new URLPattern({ pathname: route.path });
+      this.patterns.set(pattern, route);
+    }
+
+    // Set initial route
+    this.currentRoute = this.matchRoute(window.location.pathname);
+
+    // Set up Navigation API listeners
+    this.setupNavigationListeners();
+
     this.initialized = true;
-    await this.handleNavigation(this.currentRoute);
+
+    // Run plugins for initial route
+    if (this.currentRoute) {
+      await this.handleNavigation(this.currentRoute);
+    }
   }
 
   /**

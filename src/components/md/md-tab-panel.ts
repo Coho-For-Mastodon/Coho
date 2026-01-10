@@ -109,7 +109,7 @@ export class MdTabPanel extends LitElement {
         class="panel-content"
         part="panel-content"
         role="tabpanel"
-        aria-hidden="${!this.active}"
+        aria-hidden="${this.active ? 'false' : 'true'}"
       >
         <slot></slot>
       </div>

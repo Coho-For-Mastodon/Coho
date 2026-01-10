@@ -1,5 +1,6 @@
 import { LitElement, css, html, PropertyValueMap, nothing } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 
 import './md/md-icon.js';
 import './md/md-icon-button.js';
@@ -13,6 +14,7 @@ import type {
   OpenInstallEvent,
 } from '../types/events';
 
+@localized()
 @customElement('app-header')
 export class AppHeader extends LitElement {
   @property({ type: String }) title = 'Otter';
@@ -29,19 +31,15 @@ export class AppHeader extends LitElement {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: transparent;
         color: white;
         padding-right: 5px;
         position: fixed;
         left: env(titlebar-area-x, 0);
         top: env(titlebar-area-y, 0);
         right: 0;
-        height: env(titlebar-area-height, 33px);
         app-region: drag;
 
-        backdrop-filter: blur(46px);
-
-        width: calc(env(titlebar-area-width, intitial) + -23px);
+        width: env(titlebar-area-width, intitial);
         padding-top: 4px;
         padding-left: 12px;
 
@@ -49,6 +47,10 @@ export class AppHeader extends LitElement {
         contain: layout;
 
         z-index: 99999;
+
+        backdrop-filter: unset;
+        background: var(--md-sys-color-background);
+        height: calc(env(titlebar-area-height, 33px) - 4px);
       }
 
       #actions {
@@ -176,11 +178,14 @@ export class AppHeader extends LitElement {
   }
 
   async goBack() {
-    if ('navigation' in window && window.navigation.canGoBack) {
-      const result = window.navigation.back();
-      await result.finished;
-    } else {
-      window.history.back();
+    // if ('navigation' in window && window.navigation.canGoBack) {
+    //   const result = window.navigation.back();
+    //   await result.finished;
+    // } else {
+    //   window.history.back();
+    // }
+    if (window.navigation.canGoBack) {
+      window.navigation.back();
     }
   }
 
@@ -191,9 +196,8 @@ export class AppHeader extends LitElement {
           ${this.enableBack
             ? html`<md-icon-button
                 @click="${() => this.goBack()}"
-                title="back"
+                title=${msg('back')}
                 size="small"
-                href="/home"
                 pill
               >
                 <svg
@@ -223,44 +227,50 @@ export class AppHeader extends LitElement {
         </div>
 
         <div id="actions">
-          ${this.showInstall
-            ? html`<md-icon-button
-                title="Install App"
-                id="install-button"
-                @click="${() => this.openInstall()}"
-              >
-                <md-icon src="/assets/download-outline.svg"></md-icon>
-              </md-icon-button>`
+          ${!this.enableBack
+            ? html`
+                ${this.showInstall
+                  ? html`<md-icon-button
+                      title=${msg('Install App')}
+                      id="install-button"
+                      @click="${() => this.openInstall()}"
+                    >
+                      <md-icon src="/assets/download-outline.svg"></md-icon>
+                    </md-icon-button>`
+                  : nothing}
+
+                <md-icon-button
+                  title=${msg('Open Theme Settings')}
+                  id="open-button"
+                  @click="${() => this.handleTheming()}"
+                >
+                  <md-icon
+                    src="/assets/color-palette-outline.svg"
+                    alt="Theme"
+                  ></md-icon>
+                </md-icon-button>
+
+                ${this.guestMode
+                  ? html`<md-icon-button
+                      id="login-button"
+                      title=${msg('Sign In')}
+                      @click="${() => {
+                        import('../utils/router').then((m) =>
+                          m.router.navigate('/')
+                        );
+                      }}"
+                    >
+                      <md-icon name="log-in"></md-icon>
+                    </md-icon-button>`
+                  : html`<md-icon-button
+                      id="settings-button"
+                      title=${msg('Open Settings')}
+                      @click="${() => this.openSettings()}"
+                    >
+                      <md-icon src="/assets/settings-outline.svg"></md-icon>
+                    </md-icon-button>`}
+              `
             : nothing}
-
-          <md-icon-button
-            title="Open Theme Settings"
-            id="open-button"
-            @click="${() => this.handleTheming()}"
-          >
-            <md-icon
-              src="/assets/color-palette-outline.svg"
-              alt="Theme"
-            ></md-icon>
-          </md-icon-button>
-
-          ${this.guestMode
-            ? html`<md-icon-button
-                id="login-button"
-                title="Sign In"
-                @click="${() => {
-                  import('../utils/router').then((m) => m.router.navigate('/'));
-                }}"
-              >
-                <md-icon name="log-in"></md-icon>
-              </md-icon-button>`
-            : html`<md-icon-button
-                id="settings-button"
-                title="Open Settings"
-                @click="${() => this.openSettings()}"
-              >
-                <md-icon src="/assets/settings-outline.svg"></md-icon>
-              </md-icon-button>`}
         </div>
       </header>
     `;

@@ -165,6 +165,8 @@ export class ImagePreviewDialog extends LitElement {
       'preview-image',
       this.handlePreviewImage as unknown as EventListener
     );
+    // Add keyboard event listener for Escape key
+    window.addEventListener('keydown', this._handleKeydown);
   }
 
   disconnectedCallback() {
@@ -173,7 +175,22 @@ export class ImagePreviewDialog extends LitElement {
       'preview-image',
       this.handlePreviewImage as unknown as EventListener
     );
+    window.removeEventListener('keydown', this._handleKeydown);
   }
+
+  private _handleKeydown = (event: KeyboardEvent) => {
+    if (!this.open) return;
+
+    switch (event.key) {
+      case 'Escape':
+        event.preventDefault();
+        event.stopPropagation();
+        this.close();
+        break;
+      default:
+        break;
+    }
+  };
 
   updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('open')) {

@@ -1,7 +1,12 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { msg, localized } from '@lit/localize';
 import { router } from '../utils/router';
 import { parseEmojis } from '../utils/emoji-parser';
+
+import '@lit-labs/virtualizer';
+import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
+import type { RenderItemFunction } from '@lit-labs/virtualizer/virtualize.js';
 
 import './user-profile';
 import './timeline-item';
@@ -14,6 +19,7 @@ import { Post } from '../interfaces/Post';
 import { Notification } from '../interfaces/Notification';
 import type { Account } from '../mastodon/types';
 
+@localized()
 @customElement('app-notifications')
 export class Notifications extends LitElement {
   @state() notifications: Notification[] = [];
@@ -21,6 +27,8 @@ export class Notifications extends LitElement {
   @state() activeSegment: string = 'all';
   @state() followingMap: Map<string, boolean> = new Map();
   @state() loadingFollowMap: Map<string, boolean> = new Map();
+  @state() loadingMore: boolean = false;
+  @state() hasMoreNotifications: boolean = true;
 
   static styles = [
     css`
@@ -83,6 +91,51 @@ export class Notifications extends LitElement {
 
       ul::-webkit-scrollbar {
         display: none;
+      }
+
+      lit-virtualizer {
+        display: block;
+        padding: 0;
+        list-style: none;
+        margin-top: 0px;
+
+        height: 87.5vh;
+        overflow-y: scroll;
+        overflow-x: hidden;
+      }
+
+      lit-virtualizer::-webkit-scrollbar {
+        display: none;
+      }
+
+      .notification-wrapper {
+        margin-bottom: 12px;
+        width: 100%;
+      }
+
+      #load-more-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 16px;
+        color: var(--md-sys-color-on-surface-variant, #888);
+        font-size: 0.9em;
+      }
+
+      #load-more-indicator md-icon {
+        animation: spin 1s linear infinite;
+        width: 20px;
+        height: 20px;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       #notify-actions {
@@ -242,6 +295,72 @@ export class Notifications extends LitElement {
         object-fit: cover;
       }
 
+      /* Link card styles */
+      .link-card {
+        display: flex;
+        align-items: stretch;
+        background: #ffffff0d;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 10px;
+        cursor: pointer;
+
+        flex-direction: column;
+        height: auto;
+        gap: 10px;
+      }
+
+      .link-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .link-card h4 {
+        margin-bottom: 8px;
+        margin-top: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9em;
+      }
+
+      .link-card img {
+        height: 100%;
+        min-height: 280px;
+        width: 100%;
+        min-width: 80px;
+        border-radius: 0;
+        object-fit: cover;
+      }
+
+      .link-card-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 8px 10px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .link-card p {
+        margin: 0;
+        font-size: 11px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: var(--md-sys-color-on-surface-variant);
+      }
+
+      @media (prefers-color-scheme: light) {
+        .link-card {
+          background: rgba(0, 0, 0, 0.05);
+        }
+
+        .link-card:hover {
+          background: rgba(0, 0, 0, 0.08);
+        }
+      }
+
       /* Follow notification expanded view */
       .follow-card {
         display: flex;
@@ -385,6 +504,8 @@ export class Notifications extends LitElement {
             await import('../services/preload');
           const preloaded = getPreloadedNotifications();
 
+          console.log('preloaded notifications', preloaded);
+
           if (preloaded && preloaded.length > 0) {
             console.log('[Notifications] Using preloaded data');
             this.notifications = preloaded;
@@ -453,6 +574,67 @@ export class Notifications extends LitElement {
     this.followingMap = newMap;
   }
 
+  private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
+    const { last } = e;
+    const notifications = this.getFilteredNotifications();
+
+    // Load more when close to end (5 items)
+    if (
+      last >= notifications.length - 5 &&
+      !this.loadingMore &&
+      notifications.length > 0 &&
+      this.hasMoreNotifications
+    ) {
+      await this.loadMore();
+    }
+  }
+
+  private getFilteredNotifications(): Notification[] {
+    const allNotifications = this.notifications || [];
+    switch (this.activeSegment) {
+      case 'mentions':
+        return allNotifications.filter((n) => n.type === 'mention');
+      case 'follows':
+        return allNotifications.filter((n) => n.type === 'follow');
+      default:
+        return allNotifications;
+    }
+  }
+
+  private async loadMore() {
+    if (this.loadingMore || !this.hasMoreNotifications) return;
+
+    this.loadingMore = true;
+
+    try {
+      const lastId =
+        this.notifications.length > 0
+          ? this.notifications[this.notifications.length - 1]?.id
+          : undefined;
+
+      const { getNotifications } = await import('../services/notifications');
+      const moreNotifications = await getNotifications(lastId, 20);
+
+      // Deduplicate
+      const existingIds = new Set(this.notifications.map((n) => n.id));
+      const newNotifications = moreNotifications.filter(
+        (n) => !existingIds.has(n.id)
+      );
+
+      if (newNotifications.length === 0) {
+        this.hasMoreNotifications = false;
+      } else {
+        this.notifications = [...this.notifications, ...newNotifications];
+        // Check follow statuses for new follow notifications
+        await this.checkFollowStatuses();
+      }
+    } catch (err) {
+      console.error('Failed to load more notifications:', err);
+    } finally {
+      this.loadingMore = false;
+    }
+  }
+
   async clear() {
     const { getNotifications, clearNotifications } =
       await import('../services/notifications');
@@ -484,13 +666,20 @@ export class Notifications extends LitElement {
 
   async openPost(tweet: Post | undefined) {
     if (!tweet) return;
-    const serialized = encodeURIComponent(JSON.stringify(tweet));
-    await router.navigate(`/home/post?${serialized}`);
+    // Pass post via Navigation API state for instant render
+    await router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
   }
 
   async openProfile(account: Account) {
     if (!account) return;
-    await router.navigate(`/account?id=${account.id}`);
+    await router.navigate(`/account?id=${account.id}`, { state: { account } });
+  }
+
+  openLinkCard(url: string, e: Event) {
+    e.stopPropagation();
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   }
 
   async followBack(accountId: string, e: Event) {
@@ -527,7 +716,7 @@ export class Notifications extends LitElement {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'just now';
+    if (diffMins < 1) return msg('just now');
     if (diffMins < 60) return `${diffMins}m`;
     if (diffHours < 24) return `${diffHours}h`;
     if (diffDays < 7) return `${diffDays}d`;
@@ -602,17 +791,17 @@ export class Notifications extends LitElement {
   getNotificationActionText(type: string): string {
     switch (type) {
       case 'favourite':
-        return 'liked your post';
+        return msg('liked your post');
       case 'reblog':
-        return 'boosted your post';
+        return msg('boosted your post');
       case 'mention':
-        return 'mentioned you';
+        return msg('mentioned you');
       case 'follow':
-        return 'followed you';
+        return msg('followed you');
       case 'update':
-        return 'edited a post';
+        return msg('edited a post');
       default:
-        return 'interacted with you';
+        return msg('interacted with you');
     }
   }
 
@@ -621,6 +810,7 @@ export class Notifications extends LitElement {
 
     const content = status.content || '';
     const mediaAttachments = status.media_attachments || [];
+    const card = status.card;
 
     return html`
       <div class="post-preview">
@@ -641,6 +831,23 @@ export class Notifications extends LitElement {
                       />
                     `
                   )}
+              </div>
+            `
+          : nothing}
+        ${card
+          ? html`
+              <div
+                class="link-card"
+                @click="${(e: Event) => this.openLinkCard(card.url || '', e)}"
+              >
+                <img
+                  src="${card.image || '/assets/bookmark-outline.svg'}"
+                  alt="${card.title}"
+                />
+                <div class="link-card-content">
+                  <h4>${card.title}</h4>
+                  <p>${card.description}</p>
+                </div>
               </div>
             `
           : nothing}
@@ -707,13 +914,13 @@ export class Notifications extends LitElement {
                   <strong
                     >${account.followers_count?.toLocaleString() || 0}</strong
                   >
-                  followers
+                  ${msg('followers')}
                 </span>
                 <span class="follow-stat">
                   <strong
                     >${account.following_count?.toLocaleString() || 0}</strong
                   >
-                  following
+                  ${msg('following')}
                 </span>
               </div>
             </div>
@@ -723,7 +930,7 @@ export class Notifications extends LitElement {
             ${isFollowing
               ? html`
                   <md-button variant="outlined" pill size="small" disabled>
-                    Following
+                    ${msg('Following')}
                   </md-button>
                 `
               : html`
@@ -735,7 +942,7 @@ export class Notifications extends LitElement {
                     ?disabled="${isLoading}"
                     @click="${(e: Event) => this.followBack(account.id, e)}"
                   >
-                    ${isLoading ? 'Following...' : 'Follow Back'}
+                    ${isLoading ? msg('Following...') : msg('Follow Back')}
                   </md-button>
                 `}
           </div>
@@ -800,6 +1007,28 @@ export class Notifications extends LitElement {
     return this.renderStatusNotification(notification);
   }
 
+  private _renderNotificationItem: RenderItemFunction<Notification> = (
+    notification: Notification,
+    index: number
+  ) => {
+    const filteredNotifications = this.getFilteredNotifications();
+    const isLastItem = index === filteredNotifications.length - 1;
+
+    return html`
+      <div class="notification-wrapper">
+        ${this.renderNotification(notification)}
+        ${isLastItem && this.loadingMore
+          ? html`
+              <div id="load-more-indicator">
+                <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
+                <span>${msg('Loading more...')}</span>
+              </div>
+            `
+          : nothing}
+      </div>
+    `;
+  };
+
   render() {
     const allNotifications = this.notifications || [];
     const mentionNotifications = allNotifications.filter(
@@ -816,7 +1045,7 @@ export class Notifications extends LitElement {
             ?checked="${this.subbed}"
             @change="${(e: CustomEvent<{ checked: boolean }>) =>
               this.sub(e.detail.checked)}"
-            >Push Notifications</md-switch
+            >${msg('Push Notifications')}</md-switch
           >
         </div>
         <md-button
@@ -824,7 +1053,7 @@ export class Notifications extends LitElement {
           pill
           size="small"
           @click="${() => this.clear()}"
-          >Clear All</md-button
+          >${msg('Clear All')}</md-button
         >
       </div>
 
@@ -833,54 +1062,63 @@ export class Notifications extends LitElement {
         @segment-change="${(e: CustomEvent) =>
           (this.activeSegment = e.detail.value)}"
       >
-        <md-segment value="all">All</md-segment>
-        <md-segment value="mentions">Mentions</md-segment>
-        <md-segment value="follows">Follows</md-segment>
+        <md-segment value="all">${msg('All')}</md-segment>
+        <md-segment value="mentions">${msg('Mentions')}</md-segment>
+        <md-segment value="follows">${msg('Follows')}</md-segment>
       </md-segmented-button>
 
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
-        <ul>
-          ${allNotifications.length > 0
-            ? allNotifications.map((notification) =>
-                this.renderNotification(notification)
-              )
-            : html`
-                <div id="no">
-                  <img src="/assets/notify-done.svg" alt="no notifications" />
-                  <p>No notifications yet</p>
-                </div>
-              `}
-        </ul>
+        ${allNotifications.length > 0
+          ? html`
+              <lit-virtualizer
+                scroller
+                .items=${allNotifications}
+                .renderItem=${this._renderNotificationItem}
+                @visibilityChanged=${this._handleVisibilityChanged}
+              ></lit-virtualizer>
+            `
+          : html`
+              <div id="no">
+                <img src="/assets/notify-done.svg" alt="no notifications" />
+                <p>${msg('No notifications yet')}</p>
+              </div>
+            `}
       </div>
 
       <div class="panel ${this.activeSegment === 'mentions' ? 'active' : ''}">
-        <ul>
-          ${mentionNotifications.length > 0
-            ? mentionNotifications.map((notification) =>
-                this.renderNotification(notification)
-              )
-            : html`
-                <div id="no">
-                  <img src="/assets/notify-done.svg" alt="no mentions" />
-                  <p>No mentions yet</p>
-                </div>
-              `}
-        </ul>
+        ${mentionNotifications.length > 0
+          ? html`
+              <lit-virtualizer
+                scroller
+                .items=${mentionNotifications}
+                .renderItem=${this._renderNotificationItem}
+                @visibilityChanged=${this._handleVisibilityChanged}
+              ></lit-virtualizer>
+            `
+          : html`
+              <div id="no">
+                <img src="/assets/notify-done.svg" alt="no mentions" />
+                <p>${msg('No mentions yet')}</p>
+              </div>
+            `}
       </div>
 
       <div class="panel ${this.activeSegment === 'follows' ? 'active' : ''}">
-        <ul>
-          ${followNotifications.length > 0
-            ? followNotifications.map((notification) =>
-                this.renderNotification(notification)
-              )
-            : html`
-                <div id="no">
-                  <img src="/assets/notify-done.svg" alt="no followers" />
-                  <p>No new followers yet</p>
-                </div>
-              `}
-        </ul>
+        ${followNotifications.length > 0
+          ? html`
+              <lit-virtualizer
+                scroller
+                .items=${followNotifications}
+                .renderItem=${this._renderNotificationItem}
+                @visibilityChanged=${this._handleVisibilityChanged}
+              ></lit-virtualizer>
+            `
+          : html`
+              <div id="no">
+                <img src="/assets/notify-done.svg" alt="no followers" />
+                <p>${msg('No new followers yet')}</p>
+              </div>
+            `}
       </div>
     `;
   }

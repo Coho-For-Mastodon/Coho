@@ -1,47 +1,75 @@
-import type { Page } from '@playwright/test';
-import { registerMockApis } from './mocks/register-api';
+import { LitElement } from 'lit';
+import { render } from 'lit';
 
-export const APP_URL = 'http://localhost:3000';
-export const MOCK_AUTH = {
-    server: 'tech.lgbt',
-    token: 'mock-access-token',
-};
+/**
+ * Simple fixture utility for Vitest browser mode
+ * Replaces @open-wc/testing fixture for browser mode compatibility
+ */
 
-export async function bootstrapApp(page: Page, options?: { seed?: boolean }) {
-    const seed = options?.seed ?? true;
+let fixtureContainer: HTMLDivElement | null = null;
+let fixtureCount = 0;
 
-    await registerMockApis(page);
-    await page.goto(APP_URL);
+function getFixtureContainer(): HTMLDivElement {
+  // Create a fresh container for each fixture to avoid Lit render conflicts
+  fixtureCount++;
+  const container = document.createElement('div');
+  container.id = `fixture-container-${fixtureCount}`;
+  document.body.appendChild(container);
 
-    if (seed) {
-        await seedAuth(page);
-    }
-}
+  // Track for cleanup
+  if (!fixtureContainer) {
+    fixtureContainer = container;
+  }
 
-export async function seedAuth(page: Page) {
-    await page.evaluate(({ server, token }) => {
-        localStorage.setItem('server', server);
-        localStorage.setItem('accessToken', token);
-        localStorage.setItem('token', token);
-    }, MOCK_AUTH);
-
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-    await page.waitForURL('**/home', { timeout: 15000 });
+  return container;
 }
 
 /**
- * Navigate to a path using client-side navigation (router.navigate)
- * instead of full page reload (page.goto) to preserve mock API routes
+ * Creates a DOM fixture from a TemplateResult or HTML string
+ * Similar to @open-wc/testing fixture but works with Vitest browser mode
  */
-export async function navigateTo(page: Page, path: string) {
-    await page.evaluate((targetPath) => {
-        // Use the app's router for client-side navigation
-        window.history.pushState({}, '', targetPath);
-        window.dispatchEvent(new PopStateEvent('popstate'));
-    }, path);
+export async function fixture<T extends HTMLElement>(
+  template: ReturnType<typeof import('lit').html> | string
+): Promise<T> {
+  const container = getFixtureContainer();
 
-    // Wait for the route to be rendered
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(100); // Small wait for router to process
+  if (typeof template === 'string') {
+    container.innerHTML = template;
+  } else {
+    // For Lit templates, render them
+    render(template, container);
+  }
+
+  const element = container.firstElementChild as T;
+
+  // Wait for Lit element to update
+  if (element instanceof LitElement) {
+    await element.updateComplete;
+  }
+
+  return element;
+}
+
+/**
+ * Waits for a LitElement to complete its update cycle
+ */
+export async function elementUpdated(element: LitElement): Promise<void> {
+  await element.updateComplete;
+}
+
+/**
+ * Re-export html from lit for convenience
+ */
+export { html } from 'lit';
+
+/**
+ * Cleanup fixtures after tests - removes all fixture containers from the DOM
+ */
+export function cleanupFixtures(): void {
+  // Remove all fixture containers
+  document
+    .querySelectorAll('[id^="fixture-container-"]')
+    .forEach((el) => el.remove());
+  fixtureContainer = null;
+  fixtureCount = 0;
 }

@@ -1,21 +1,43 @@
 /// <reference lib="webworker" />
+/**
+ * Service Worker - Single Source of Truth
+ *
+ * This is the main service worker for Coho. It is built by custom Vite plugins:
+ * - Dev: outputs to public/sw.js (unminified)
+ * - Prod: outputs to dist/sw.js (minified with inlined imports)
+ *
+ * See vite.config.ts for build configuration (build-sw-dev and build-sw plugins).
+ */
 
-import { NetworkOnly, CacheFirst, NetworkFirst } from 'workbox-strategies';
-import { ExpirationPlugin } from 'workbox-expiration';
-import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { get, set } from 'idb-keyval';
-import { RouteHandlerCallback } from 'workbox-core';
 
 declare const __APP_VERSION__: string;
+const VERSION = __APP_VERSION__;
+
+const CACHE_NAMES = {
+  pages: `pages-${VERSION}`,
+  assets: `assets-${VERSION}`,
+  images: `images-${VERSION}`,
+  share: 'shareTarget',
+};
+
+// Background Sync queue name
+const SYNC_TAG = 'mastodon-api-sync';
+const SYNC_QUEUE_KEY = 'background-sync-queue';
 
 // Log build version for debugging
-console.log('[SW] Build version:', __APP_VERSION__);
+console.log('[SW] Build version:', VERSION);
 
-// Type augmentation for Badging API (not yet in all TypeScript libs)
+// Type augmentation for Badging API
 interface NavigatorBadge {
   setAppBadge(contents?: number): Promise<void>;
   clearAppBadge(): Promise<void>;
+}
+
+// Type augmentation for Background Sync API
+interface SyncManager {
+  register(tag: string): Promise<void>;
+  getTags(): Promise<string[]>;
 }
 
 // Type augmentation for Service Worker
@@ -30,56 +52,393 @@ declare const self: ServiceWorkerGlobalScope & {
       payload: { template: string; data: string }
     ) => Promise<void>;
   };
+  registration: ServiceWorkerRegistration & {
+    sync: SyncManager;
+  };
 };
 
-// Navigator with Badging API support
 const badgingNavigator = navigator as Navigator & Partial<NavigatorBadge>;
-
-// Make idb-keyval available on self for backwards compatibility
 self.idbKeyval = { get, set };
 
-// Detect development mode - Vite dev server serves from localhost with HMR
-const IS_DEV =
-  location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+// ============================================================================
+// LIFECYCLE
+// ============================================================================
+
+self.addEventListener('install', (event) => {
+  console.log('[SW] Installing new version:', VERSION);
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_NAMES.pages);
+      await cache.addAll(['/', '/index.html', '/manifest.json']);
+      console.log('[SW] Precached critical assets');
+    })()
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating new version:', VERSION);
+  event.waitUntil(
+    (async () => {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map((cacheName) => {
+          // Delete old caches that don't match current version
+          // But keep shareTarget
+          if (
+            !Object.values(CACHE_NAMES).includes(cacheName) &&
+            cacheName !== 'shareTarget'
+          ) {
+            console.log('[SW] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+          return Promise.resolve();
+        })
+      );
+      await self.clients.claim();
+
+      // Notify clients
+      const clients = await self.clients.matchAll({ type: 'window' });
+      for (const client of clients) {
+        client.postMessage({ type: 'SW_ACTIVATED' });
+      }
+    })()
+  );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 // ============================================================================
-// NAVIGATION - RUNTIME CACHING (No Precaching)
+// FETCH STRATEGIES
 // ============================================================================
-// Use NetworkFirst for navigation requests - fetches from network when available,
-// falls back to cache for offline support. The HTML/JS/CSS gets cached at runtime
-// on first visit, enabling offline access without precaching.
-if (!IS_DEV) {
-  const navigationRoute = new NavigationRoute(
-    new NetworkFirst({
-      cacheName: 'navigation-cache',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 10,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        }),
-      ],
-    }),
-    {
-      denylist: [
-        // Exclude specific paths if needed (e.g. backend API routes)
-        /^\/api\//,
-      ],
+
+async function networkFirst(
+  request: Request,
+  cacheName: string
+): Promise<Response> {
+  const cache = await caches.open(cacheName);
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
     }
-  );
-  registerRoute(navigationRoute);
-} else {
-  console.log('[SW] Development mode: caching disabled');
-  // In dev, just pass through to the network
-  const navigationRoute = new NavigationRoute(new NetworkOnly());
-  registerRoute(navigationRoute);
+    return response;
+  } catch (error) {
+    // Important: search only in the specific versioned cache
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
+}
+
+async function cacheFirst(
+  request: Request,
+  cacheName: string
+): Promise<Response> {
+  // Important: search only in the specific versioned cache, not all caches
+  // This prevents serving stale assets from old cache versions
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  const response = await fetch(request);
+  if (response.ok) {
+    cache.put(request, response.clone());
+  }
+  return response;
 }
 
 // ============================================================================
-// SERVICE WORKER LIFECYCLE
+// BACKGROUND SYNC FOR OFFLINE MUTATIONS
 // ============================================================================
-// We do NOT auto-skipWaiting here because old clients don't have coordinated
-// reload logic. Instead, we wait for the client to send SKIP_WAITING message
-// (handled in the message listener below).
+
+interface QueuedRequest {
+  id: string;
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string | null;
+  timestamp: number;
+}
+
+/**
+ * Mastodon API paths that should be queued for background sync when offline.
+ * These are mutation endpoints (POST/PUT/DELETE) that modify user data.
+ */
+const SYNCABLE_PATTERNS = [
+  /\/api\/v1\/statuses$/, // Create post
+  /\/api\/v1\/statuses\/\d+$/, // Edit/delete post
+  /\/api\/v1\/statuses\/\d+\/favourite$/, // Favorite
+  /\/api\/v1\/statuses\/\d+\/unfavourite$/, // Unfavorite
+  /\/api\/v1\/statuses\/\d+\/reblog$/, // Reblog/boost
+  /\/api\/v1\/statuses\/\d+\/unreblog$/, // Unreblog
+  /\/api\/v1\/statuses\/\d+\/bookmark$/, // Bookmark
+  /\/api\/v1\/statuses\/\d+\/unbookmark$/, // Unbookmark
+  /\/api\/v1\/statuses\/\d+\/pin$/, // Pin
+  /\/api\/v1\/statuses\/\d+\/unpin$/, // Unpin
+  /\/api\/v1\/statuses\/\d+\/mute$/, // Mute conversation
+  /\/api\/v1\/statuses\/\d+\/unmute$/, // Unmute conversation
+  /\/api\/v1\/accounts\/\d+\/follow$/, // Follow
+  /\/api\/v1\/accounts\/\d+\/unfollow$/, // Unfollow
+  /\/api\/v1\/accounts\/\d+\/block$/, // Block
+  /\/api\/v1\/accounts\/\d+\/unblock$/, // Unblock
+  /\/api\/v1\/accounts\/\d+\/mute$/, // Mute account
+  /\/api\/v1\/accounts\/\d+\/unmute$/, // Unmute account
+  /\/api\/v1\/polls\/\d+\/votes$/, // Vote in poll
+  /\/api\/v1\/notifications\/clear$/, // Clear notifications
+  /\/api\/v1\/notifications\/\d+\/dismiss$/, // Dismiss notification
+];
+
+/**
+ * Check if a request URL matches a syncable Mastodon API pattern
+ */
+function isSyncableRequest(url: URL, method: string): boolean {
+  if (method === 'GET') return false;
+  return SYNCABLE_PATTERNS.some((pattern) => pattern.test(url.pathname));
+}
+
+/**
+ * Get the current sync queue from IndexedDB
+ */
+async function getSyncQueue(): Promise<QueuedRequest[]> {
+  const queue = await get(SYNC_QUEUE_KEY);
+  return (queue as QueuedRequest[]) || [];
+}
+
+/**
+ * Save the sync queue to IndexedDB
+ */
+async function saveSyncQueue(queue: QueuedRequest[]): Promise<void> {
+  await set(SYNC_QUEUE_KEY, queue);
+}
+
+/**
+ * Add a failed request to the sync queue
+ */
+async function queueRequest(request: Request): Promise<void> {
+  const queue = await getSyncQueue();
+
+  // Serialize the request
+  const headers: Record<string, string> = {};
+  request.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  let body: string | null = null;
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    try {
+      body = await request.clone().text();
+    } catch {
+      // Body may already be consumed
+    }
+  }
+
+  const queuedRequest: QueuedRequest = {
+    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    url: request.url,
+    method: request.method,
+    headers,
+    body,
+    timestamp: Date.now(),
+  };
+
+  queue.push(queuedRequest);
+  await saveSyncQueue(queue);
+
+  console.log('[SW] Queued request for background sync:', request.url);
+
+  // Register for background sync
+  try {
+    await self.registration.sync.register(SYNC_TAG);
+    console.log('[SW] Background sync registered');
+  } catch (err) {
+    console.warn('[SW] Background sync registration failed:', err);
+  }
+}
+
+/**
+ * Replay all queued requests
+ */
+async function replayQueuedRequests(): Promise<void> {
+  const queue = await getSyncQueue();
+  if (queue.length === 0) {
+    console.log('[SW] No queued requests to replay');
+    return;
+  }
+
+  console.log('[SW] Replaying', queue.length, 'queued requests');
+
+  const failedRequests: QueuedRequest[] = [];
+
+  for (const queuedRequest of queue) {
+    try {
+      const init: RequestInit = {
+        method: queuedRequest.method,
+        headers: queuedRequest.headers,
+      };
+
+      if (queuedRequest.body && queuedRequest.method !== 'GET') {
+        init.body = queuedRequest.body;
+      }
+
+      const response = await fetch(queuedRequest.url, init);
+
+      if (response.ok) {
+        console.log('[SW] Successfully replayed:', queuedRequest.url);
+      } else {
+        console.warn(
+          '[SW] Replay failed with status:',
+          response.status,
+          queuedRequest.url
+        );
+        // Don't re-queue 4xx errors (client errors)
+        if (response.status >= 500) {
+          failedRequests.push(queuedRequest);
+        }
+      }
+    } catch (err) {
+      console.error('[SW] Replay network error:', queuedRequest.url, err);
+      failedRequests.push(queuedRequest);
+    }
+  }
+
+  // Save any requests that still failed
+  await saveSyncQueue(failedRequests);
+
+  if (failedRequests.length > 0) {
+    console.log('[SW] Re-queued', failedRequests.length, 'failed requests');
+  }
+}
+
+/**
+ * Handle Mastodon API mutations with background sync fallback
+ */
+async function networkWithBackgroundSync(request: Request): Promise<Response> {
+  try {
+    const response = await fetch(request.clone());
+    return response;
+  } catch {
+    // Network error - queue for background sync
+    console.log(
+      '[SW] Network error, queuing for background sync:',
+      request.url
+    );
+    await queueRequest(request);
+
+    // Return a synthetic response so the UI can update optimistically
+    return new Response(
+      JSON.stringify({
+        queued: true,
+        message: 'Request queued for when you are back online',
+      }),
+      {
+        status: 202,
+        statusText: 'Accepted',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+}
+
+// Listen for background sync events
+self.addEventListener('sync', (event: Event) => {
+  const syncEvent = event as ExtendableEvent & { tag: string };
+  console.log('[SW] Sync event received:', syncEvent.tag);
+
+  if (syncEvent.tag === SYNC_TAG) {
+    syncEvent.waitUntil(replayQueuedRequests());
+  }
+});
+
+// Special handler for navigation to support SPA
+async function navigationHandler(request: Request): Promise<Response> {
+  const cache = await caches.open(CACHE_NAMES.pages);
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+      return response;
+    }
+  } catch {
+    // ignore
+  }
+
+  // Try matching the request in the versioned cache
+  const cachedResponse = await cache.match(request);
+  if (cachedResponse) return cachedResponse;
+
+  // Fallback to index.html from versioned cache
+  const index = await cache.match('/index.html');
+  if (index) return index;
+
+  // If everything fails
+  return new Response('Offline', { status: 503, statusText: 'Offline' });
+}
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  const url = new URL(request.url);
+
+  // Share target - MUST be checked before navigation handler
+  // POST form submissions have request.mode === 'navigate', so if we check
+  // navigation first, share target requests would be incorrectly handled
+  if (url.pathname === '/share' && request.method === 'POST') {
+    console.log('[SW] Share target POST intercepted');
+    event.respondWith(shareTargetHandler({ event }));
+    return;
+  }
+
+  // Navigation
+  if (request.mode === 'navigate') {
+    event.respondWith(navigationHandler(request));
+    return;
+  }
+
+  // Assets (JS/CSS)
+  if (request.destination === 'script' || request.destination === 'style') {
+    event.respondWith(cacheFirst(request, CACHE_NAMES.assets));
+    return;
+  }
+
+  // Images
+  if (request.destination === 'image') {
+    event.respondWith(cacheFirst(request, CACHE_NAMES.images));
+    return;
+  }
+
+  // Mastodon API mutations with background sync support
+  if (isSyncableRequest(url, request.method)) {
+    event.respondWith(networkWithBackgroundSync(request));
+    return;
+  }
+
+  // API / Dynamic content
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.hostname.includes('cloudfunctions')
+  ) {
+    if (request.method === 'GET') {
+      event.respondWith(networkFirst(request, CACHE_NAMES.pages));
+    } else {
+      // Non-Mastodon mutations (e.g., Firebase functions) - use network with background sync
+      event.respondWith(networkWithBackgroundSync(request));
+    }
+    return;
+  }
+
+  // Default
+  event.respondWith(networkFirst(request, CACHE_NAMES.pages));
+});
+
+// ============================================================================
+// CUSTOM LOGIC (Widgets, Notifications, Share Target)
+// ============================================================================
 
 interface WidgetDefinition {
   msAcTemplate: string;
@@ -115,7 +474,6 @@ interface NotificationData {
   };
 }
 
-// Mastodon push notification payload format (what the server actually sends)
 interface MastodonPushPayload {
   access_token: string;
   preferred_locale: string;
@@ -134,97 +492,34 @@ interface MastodonPushPayload {
   body: string;
 }
 
-// Notification action interface
 interface NotificationAction {
   action: string;
   title: string;
 }
 
-// PeriodicSyncEvent interface (not yet in TypeScript lib)
 interface PeriodicSyncEvent extends ExtendableEvent {
   tag: string;
 }
 
-// Navigation route logic moved to the main PRECACHING block above to keep
-// the App Shell strategy consolidated.
-// The following block is removed to avoid duplication.
-
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-// Clean up old caches when a new service worker activates
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    (async () => {
-      // Clean up caches BEFORE claiming clients
-      // This ensures fresh content is served immediately after takeover
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames.map((cacheName) => {
-          // Delete navigation cache to force fresh index.html
-          if (cacheName === 'navigation-cache') {
-            console.log('[SW] Deleting navigation cache for fresh content');
-            return caches.delete(cacheName);
-          }
-          // Delete old workbox-precache caches (no longer used)
-          if (cacheName.includes('workbox-precache')) {
-            console.log('[SW] Deleting old precache:', cacheName);
-            return caches.delete(cacheName);
-          }
-          return Promise.resolve();
-        })
-      );
-
-      // Now claim clients after cache cleanup
-      await self.clients.claim();
-      console.log('[SW] Claimed all clients');
-
-      console.log('[SW] Activated');
-
-      // Notify all clients that the update is ready
-      // This allows clients to do a coordinated reload AFTER the SW is fully ready
-      const clients = await self.clients.matchAll({ type: 'window' });
-      for (const client of clients) {
-        client.postMessage({ type: 'SW_ACTIVATED' });
-      }
-      console.log('[SW] Notified clients of activation');
-    })()
-  );
-});
-
 // Listen to the widgetinstall event.
 self.addEventListener('widgetinstall', (event: Event) => {
   const widgetEvent = event as WidgetInstallEvent;
-  // The widget just got installed, render it using renderWidget.
-  // Pass the event.widget object to the function.
   widgetEvent.waitUntil(renderWidget(widgetEvent.widget));
 });
 
 const renderWidget = async (widget: Widget): Promise<void> => {
-  // Get the template and data URLs from the widget definition.
   const templateUrl = widget.definition.msAcTemplate;
   const dataUrl = widget.definition.data;
 
-  // Fetch the template text and data.
   const template = await (await fetch(templateUrl)).text();
   const data = await (await fetch(dataUrl)).text();
 
-  // Render the widget with the template and data.
   if (self.widgets) {
     await self.widgets.updateByTag(widget.definition.tag, { template, data });
   }
 };
 
-// Background sync for offline actions
-const bgSyncPlugin = new BackgroundSyncPlugin('retryqueue', {
-  maxRetentionTime: 48 * 60,
-});
-
 const followAUser = async (id: string): Promise<void> => {
-  // follow a user with the mastodon api
   const accessToken = (await get('accessToken')) as string;
   const server = (await get('server')) as string;
 
@@ -251,13 +546,10 @@ const timelineSync = async (): Promise<void> => {
   );
 
   const data = await timelineResponse.json();
-
-  // store timeline in idb
   await set('timeline-cache', data);
 };
 
 const getNotifications = async (): Promise<void> => {
-  // get access token from idb
   const accessToken = (await get('accessToken')) as string;
   const server = (await get('server')) as string;
 
@@ -269,21 +561,17 @@ const getNotifications = async (): Promise<void> => {
   });
 
   const data = (await notifyResponse.json()) as NotificationData[];
-
   const notifyCheck = data.length > 0;
 
   if (notifyCheck) {
-    // show badge
     if ('setAppBadge' in navigator) {
       badgingNavigator.setAppBadge?.(data.length);
     }
 
-    // build message for notification
     let message = '';
     let actions: NotificationAction[] = [];
     let title = 'Coho';
 
-    // if data[0].type === 'mention' || 'reblog' || 'favourite'
     switch (data[0].type) {
       case 'mention':
         message = `${data[0].status?.content || ''}`;
@@ -326,10 +614,8 @@ const getNotifications = async (): Promise<void> => {
         break;
     }
 
-    // remove any HTML tags from message
     message = message.replace(/<\/?[^>]+(>|$)/g, '');
 
-    // show notification
     await self.registration.showNotification(title, {
       body: message,
       icon: '/assets/icons/new-icons/icon-256x256.png',
@@ -353,7 +639,6 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
 
   const notificationData = event.notification.data;
 
-  // Determine the target URL based on notification type
   const getTargetUrl = (): string => {
     if (
       !notificationData?.notification_type ||
@@ -365,29 +650,18 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
     const { notification_type, notification_id } = notificationData;
 
     switch (notification_type) {
-      // Status-related notifications - deep link to the post
       case 'mention':
       case 'reblog':
       case 'favourite':
       case 'poll':
       case 'status':
       case 'update':
-        // Navigate to post detail with notification_id so the page can fetch the full notification
-        // and extract the status from it
         return `/post/notification?notification_id=${notification_id}`;
-
-      // Follow notifications - go to notifications tab to see who followed
       case 'follow':
       case 'follow_request':
-        // Could deep link to profile, but we need account_id which requires fetching
-        // For now, go to notifications where user can see and act on it
-        return '/home?tab=notifications';
-
-      // Admin notifications
       case 'admin.sign_up':
       case 'admin.report':
         return '/home?tab=notifications';
-
       default:
         return '/home?tab=notifications';
     }
@@ -395,20 +669,15 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
 
   const targetUrl = getTargetUrl();
 
-  // Helper to focus existing window or open new one
   const focusOrOpenWindow = async (url: string) => {
     const urlObj = new URL(url, self.location.origin);
-
-    // Get all window clients
     const clientList = await self.clients.matchAll({
       type: 'window',
       includeUncontrolled: true,
     });
 
-    // Check if there's already a tab open
     for (const client of clientList) {
       const clientUrl = new URL(client.url, self.location.origin);
-      // If we have a matching root path, focus it and navigate
       if (
         clientUrl.hostname === urlObj.hostname &&
         'focus' in client &&
@@ -419,7 +688,6 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
       }
     }
 
-    // If no window found, open a new one
     if (self.clients.openWindow) {
       return self.clients.openWindow(url);
     }
@@ -427,7 +695,6 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
     return undefined;
   };
 
-  // Handle follow action - need to fetch notification to get account ID
   if (
     event.action === 'follow' &&
     notificationData?.notification_id &&
@@ -465,7 +732,6 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
 });
 
 self.addEventListener('push', async (event: PushEvent) => {
-  // Mastodon sends a single notification payload, not an array
   let payload: MastodonPushPayload;
   try {
     payload = event.data?.json() as MastodonPushPayload;
@@ -474,12 +740,10 @@ self.addEventListener('push', async (event: PushEvent) => {
     return;
   }
 
-  // show badge
   if ('setAppBadge' in navigator) {
     badgingNavigator.setAppBadge?.(1);
   }
 
-  // Build actions based on notification type
   let actions: NotificationAction[] = [];
   if (payload.notification_type === 'follow') {
     actions = [
@@ -490,10 +754,8 @@ self.addEventListener('push', async (event: PushEvent) => {
     ];
   }
 
-  // remove any HTML tags from message
   payload.body = payload.body?.replace(/<\/?[^>]+(>|$)/g, '');
 
-  // show notification using the data Mastodon provides
   event.waitUntil(
     self.registration.showNotification(payload.title || 'Coho', {
       body: payload.body || 'You have a new notification',
@@ -512,7 +774,6 @@ self.addEventListener('push', async (event: PushEvent) => {
   );
 });
 
-// periodic background sync
 self.addEventListener('periodicsync', async (event: Event) => {
   const periodicSyncEvent = event as PeriodicSyncEvent;
 
@@ -535,484 +796,46 @@ interface ShareTargetHandlerEvent {
 async function shareTargetHandler({
   event,
 }: ShareTargetHandlerEvent): Promise<Response> {
-  const formData = await event.request.formData();
-  const mediaFiles = formData.getAll('image') as File[];
-  const cache = await caches.open('shareTarget');
+  console.log('[SW] shareTargetHandler invoked');
 
-  console.log('[SW] Share target received', mediaFiles.length, 'files');
+  try {
+    const formData = await event.request.formData();
+    const mediaFiles = formData.getAll('image') as File[];
+    const cache = await caches.open('shareTarget');
 
-  for (const mediaFile of mediaFiles) {
-    // Use a proper URL path as the cache key for reliable matching
-    const cacheKey = `/_share/${encodeURIComponent(mediaFile.name)}`;
-    console.log('[SW] Caching file with key:', cacheKey);
-    await cache.put(
-      cacheKey,
-      new Response(mediaFile, {
-        headers: {
-          'content-length': mediaFile.size.toString(),
-          'content-type': mediaFile.type,
-        },
-      })
-    );
+    console.log('[SW] Share target received', mediaFiles.length, 'files');
+
+    if (mediaFiles.length === 0) {
+      console.warn('[SW] Share target: No files received in form data');
+      return Response.redirect('/home', 303);
+    }
+
+    for (const mediaFile of mediaFiles) {
+      const cacheKey = `/_share/${encodeURIComponent(mediaFile.name)}`;
+      console.log(
+        '[SW] Caching file with key:',
+        cacheKey,
+        'size:',
+        mediaFile.size,
+        'type:',
+        mediaFile.type
+      );
+      await cache.put(
+        cacheKey,
+        new Response(mediaFile, {
+          headers: {
+            'content-length': mediaFile.size.toString(),
+            'content-type': mediaFile.type,
+          },
+        })
+      );
+    }
+
+    const redirectUrl = `/home?name=${encodeURIComponent(mediaFiles[0].name)}`;
+    console.log('[SW] Redirecting to:', redirectUrl);
+    return Response.redirect(redirectUrl, 303);
+  } catch (error) {
+    console.error('[SW] shareTargetHandler error:', error);
+    return Response.redirect('/home', 303);
   }
-
-  const redirectUrl = `/home?name=${encodeURIComponent(mediaFiles[0].name)}`;
-  console.log('[SW] Redirecting to:', redirectUrl);
-  return Response.redirect(redirectUrl, 303);
-}
-
-const shareRouteHandler: RouteHandlerCallback = async ({ event }) => {
-  return shareTargetHandler({ event: event as FetchEvent });
-};
-
-registerRoute('/share', shareRouteHandler, 'POST');
-
-// Only register caching routes in production
-if (!IS_DEV) {
-  // ============================================================================
-  // BACKGROUND SYNC FOR OFFLINE ACTIONS
-  // ============================================================================
-  // These routes queue failed requests and replay them when back online
-
-  // Firebase function routes (boost/favorite, reblog, bookmark)
-  registerRoute(
-    ({ request }) => request.url.includes('/boost?id'),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  registerRoute(
-    ({ request }) => request.url.includes('/reblog?id'),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  registerRoute(
-    ({ request }) => request.url.includes('/bookmark?id'),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Firebase function for posting statuses
-  registerRoute(
-    ({ request }) => request.url.includes('/postStatus'),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Firebase function for following users
-  registerRoute(
-    ({ request }) => request.url.includes('/follow?id'),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Direct Mastodon API routes - for creating new posts and replies
-  // Matches: https://{server}/api/v1/statuses (POST for new status/reply)
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' && url.pathname === '/api/v1/statuses',
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Direct Mastodon API - favorite/unfavorite a post
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/statuses\/\d+\/favou?rite$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/statuses\/\d+\/unfavou?rite$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Direct Mastodon API - reblog/unreblog a post
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/statuses\/\d+\/reblog$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/statuses\/\d+\/unreblog$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Direct Mastodon API - bookmark/unbookmark a post
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/statuses\/\d+\/bookmark$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/statuses\/\d+\/unbookmark$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Direct Mastodon API - follow/unfollow a user
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/accounts\/\d+\/follow$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/accounts\/\d+\/unfollow$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Direct Mastodon API - mute/unmute a user
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/accounts\/\d+\/mute$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/accounts\/\d+\/unmute$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Direct Mastodon API - block/unblock a user
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/accounts\/\d+\/block$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' &&
-      /\/api\/v1\/accounts\/\d+\/unblock$/.test(url.pathname),
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Direct Mastodon API - report a user
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'POST' && url.pathname === '/api/v1/reports',
-    new NetworkOnly({
-      plugins: [bgSyncPlugin],
-    }),
-    'POST'
-  );
-
-  // Runtime caching for JavaScript files - CacheFirst since they're hashed/versioned
-  registerRoute(
-    ({ request, url }) =>
-      request.destination === 'script' && url.origin === self.location.origin,
-    new CacheFirst({
-      cacheName: 'js-cache',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        }),
-      ],
-    })
-  );
-
-  // Runtime caching for CSS files - CacheFirst since they're hashed/versioned
-  registerRoute(
-    ({ request, url }) =>
-      request.destination === 'style' && url.origin === self.location.origin,
-    new CacheFirst({
-      cacheName: 'css-cache',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        }),
-      ],
-    })
-  );
-
-  // User profile credentials - NetworkFirst to work offline while keeping data fresh
-  // This caches /api/v1/accounts/verify_credentials so the app can load user info offline
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'GET' &&
-      url.pathname === '/api/v1/accounts/verify_credentials',
-    new NetworkFirst({
-      cacheName: 'user-credentials',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 5, // One per logged-in account
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        }),
-      ],
-    }),
-    'GET'
-  );
-
-  // avatar photos - explicitly exclude documents to prevent HTML caching
-  registerRoute(
-    ({ request }) =>
-      request.destination !== 'document' &&
-      request.url.includes('/accounts/avatars'),
-    new CacheFirst({
-      cacheName: 'avatar',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        }),
-      ],
-    })
-  );
-
-  // header/banner photos for profiles
-  registerRoute(
-    ({ request }) =>
-      request.destination !== 'document' &&
-      request.url.includes('/accounts/headers'),
-    new CacheFirst({
-      cacheName: 'header-images',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        }),
-      ],
-    })
-  );
-
-  // Cache profile images from Mastodon CDNs (files.*, media.*, cdn.*)
-  // These URLs may not follow the /accounts/avatars pattern on all instances
-  registerRoute(
-    ({ request, url }) =>
-      request.destination === 'image' &&
-      (url.hostname.startsWith('files.') ||
-        url.hostname.startsWith('media.') ||
-        url.hostname.startsWith('cdn.')),
-    new CacheFirst({
-      cacheName: 'mastodon-media',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 200,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        }),
-      ],
-    })
-  );
-
-  // Cache post media attachments from /media_attachments/ path
-  // This allows viewing previously loaded posts with images while offline
-  registerRoute(
-    ({ request }) =>
-      request.destination === 'image' &&
-      request.url.includes('/media_attachments/'),
-    new CacheFirst({
-      cacheName: 'post-media',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 100,
-          maxAgeSeconds: 60 * 60 * 24 * 3, // 3 days (media can be large)
-        }),
-      ],
-    })
-  );
-
-  registerRoute(
-    ({ request }) =>
-      request.destination !== 'document' && request.url.includes('/user?code'),
-    new CacheFirst({
-      cacheName: 'user',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        }),
-      ],
-    })
-  );
-
-  // Network first for timeline
-  registerRoute(
-    ({ request }) => request.url.includes('timelines/home'),
-    new NetworkFirst({
-      cacheName: 'timeline',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          // max age is 5 minutes
-          maxAgeSeconds: 60 * 5,
-        }),
-      ],
-    }),
-    'GET'
-  );
-
-  // Network first for hashtag timelines - enables offline viewing of previously visited hashtags
-  registerRoute(
-    ({ request, url }) =>
-      request.method === 'GET' &&
-      /\/api\/v1\/timelines\/tag\//.test(url.pathname),
-    new NetworkFirst({
-      cacheName: 'hashtag-timelines',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 20, // Cache up to 20 different hashtag feeds
-          maxAgeSeconds: 60 * 60 * 24, // 24 hours - hashtags change less frequently
-        }),
-      ],
-    }),
-    'GET'
-  );
-
-  // Network first for notifications
-  registerRoute(
-    ({ request }) => request.url.includes('/api/v1/notifications'),
-    new NetworkFirst({
-      cacheName: 'notifications',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          // max age is 5 minutes
-          maxAgeSeconds: 60 * 5,
-        }),
-      ],
-    }),
-    'GET'
-  );
-
-  registerRoute(
-    ({ request }) =>
-      request.url.includes(
-        'https://us-central1-coho-mastodon.cloudfunctions.net/search'
-      ),
-    new NetworkFirst({
-      cacheName: 'search',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          // max age is 5 minutes
-          maxAgeSeconds: 60 * 5,
-        }),
-      ],
-    }),
-    'GET'
-  );
-
-  // for bookmarks https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks
-  registerRoute(
-    ({ request }) =>
-      request.url.includes(
-        'https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks'
-      ),
-    new NetworkFirst({
-      cacheName: 'bookmarks',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          // max age is 5 minutes
-          maxAgeSeconds: 60 * 5,
-        }),
-      ],
-    }),
-    'GET'
-  );
-
-  // for https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites
-  registerRoute(
-    ({ request }) =>
-      request.url.includes(
-        'https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites'
-      ),
-    new NetworkFirst({
-      cacheName: 'favorites',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          // max age is 5 minutes
-          maxAgeSeconds: 60 * 5,
-        }),
-      ],
-    }),
-    'GET'
-  );
-
-  // cache first for local assets
-  registerRoute(
-    ({ request }) =>
-      request.destination === 'image' && request.url.includes('/assets/icons/'),
-    new CacheFirst({
-      cacheName: 'images',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 50,
-          // max age is 5 days
-          maxAgeSeconds: 60 * 60 * 24 * 5,
-        }),
-      ],
-    }),
-    'GET'
-  );
 }

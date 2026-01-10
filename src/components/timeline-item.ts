@@ -23,6 +23,7 @@ export class TimelineItem extends LitElement {
   @property({ type: Boolean }) show: boolean = false;
   @property({ type: Boolean }) showreply: boolean = false;
   @property({ type: Boolean }) guestMode: boolean = false;
+  @property({ type: Boolean, reflect: true }) focused: boolean = false;
 
   @state() isBoosted: boolean = false;
   @state() isReblogged: boolean = false;
@@ -55,6 +56,17 @@ export class TimelineItem extends LitElement {
 
         margin-bottom: 0;
         -webkit-tap-highlight-color: transparent;
+        outline: none;
+      }
+
+      :host([focused]) md-card {
+        outline: 2px solid var(--md-sys-color-primary, #6750a4);
+        outline-offset: 2px;
+      }
+
+      :host(:focus-visible) md-card {
+        outline: 2px solid var(--md-sys-color-primary, #6750a4);
+        outline-offset: 2px;
       }
 
       * {
@@ -177,29 +189,35 @@ export class TimelineItem extends LitElement {
 
       .link-card {
         display: flex;
-        flex-direction: row;
         align-items: stretch;
-        gap: 0;
-
         background: #ffffff0d;
-        border-radius: 12px;
-
+        border-radius: 8px;
         overflow: hidden;
-        height: 100px;
+        margin-top: 10px;
+        cursor: pointer;
+        flex-direction: column;
+        height: auto;
+        gap: 10px;
+      }
+
+      .link-card:hover {
+        background: rgba(255, 255, 255, 0.08);
       }
 
       .link-card h4 {
-        margin-bottom: 4px;
+        margin-bottom: 8px;
         margin-top: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-size: 0.9em;
       }
 
       .link-card img {
         height: 100%;
-        width: 100px;
-        min-width: 100px;
+        min-height: 280px;
+        width: 100%;
+        min-width: 80px;
         border-radius: 0;
         object-fit: cover;
       }
@@ -208,14 +226,14 @@ export class TimelineItem extends LitElement {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding: 10px;
+        padding: 8px 10px;
         flex: 1;
         min-width: 0;
       }
 
       .link-card p {
         margin: 0;
-        font-size: 12px;
+        font-size: 11px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -224,6 +242,14 @@ export class TimelineItem extends LitElement {
       }
 
       @media (prefers-color-scheme: light) {
+        .link-card {
+          background: rgba(0, 0, 0, 0.05);
+        }
+
+        .link-card:hover {
+          background: rgba(0, 0, 0, 0.08);
+        }
+
         .sensitive {
           background: white;
         }
@@ -477,7 +503,72 @@ export class TimelineItem extends LitElement {
     this.settings = await getSettings();
     const { isOnDeviceTranslationAvailable } = await import('../services/ai');
     this.isOnDeviceTranslateAvailable = isOnDeviceTranslationAvailable();
+
+    // Add keyboard event listener for when this item is focused
+    this.addEventListener('keydown', this._handleKeydown);
   }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener('keydown', this._handleKeydown);
+  }
+
+  private _handleKeydown = (event: KeyboardEvent) => {
+    // Only handle if this item is focused
+    if (!this.focused || !this.tweet) return;
+
+    // Ignore if user is in an input field
+    const target = event.target as HTMLElement;
+    if (
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable
+    ) {
+      return;
+    }
+
+    const postId = this.tweet.reblog?.id || this.tweet.id;
+
+    switch (event.key) {
+      case 'Enter':
+        // Open the post
+        event.preventDefault();
+        this.openPost();
+        break;
+      case 'r':
+        // Reply
+        event.preventDefault();
+        this.replies();
+        break;
+      case 'b':
+        // Boost/reblog
+        event.preventDefault();
+        this.reblog(postId);
+        break;
+      case 'f':
+        // Favorite
+        event.preventDefault();
+        this.favorite(postId);
+        break;
+      case 'd':
+        // Bookmark
+        event.preventDefault();
+        this.bookmark(postId);
+        break;
+      case 'o':
+        // Open in new tab
+        event.preventDefault();
+        this.openPost();
+        break;
+      case 'x':
+        // Expand thread
+        event.preventDefault();
+        this.showThread();
+        break;
+      default:
+        break;
+    }
+  };
 
   /**
    * Show login prompt for guests trying to use auth-required features
@@ -544,6 +635,10 @@ export class TimelineItem extends LitElement {
       },
       { errorMessage: 'Failed to favorite post.' }
     );
+
+    // Invalidate favorites preload cache so the favorites tab shows fresh data
+    const { invalidatePreloadCache } = await import('../services/preload');
+    invalidatePreloadCache('favorites');
 
     // fire custom event
     this.dispatchEvent(
