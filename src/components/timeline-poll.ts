@@ -302,7 +302,7 @@ export class TimelinePoll extends LitElement {
 
       // If the server forbids voting (common for "own poll" or lack of permission),
       // show results instead of leaving the UI stuck in "vote" mode.
-      const status = (err as any)?.status;
+      const status = (err as Error & { status?: number })?.status;
       if (status === 403 || /own poll|forbidden|not allowed/i.test(message)) {
         this.forceShowResults = true;
       }

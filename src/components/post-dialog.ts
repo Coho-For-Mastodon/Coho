@@ -734,10 +734,9 @@ export class PostDialog extends LitElement {
     if (typeof detailValue === 'string') return detailValue;
 
     const target = e.target as HTMLInputElement | null;
-    if (target && typeof (target as any).value === 'string')
-      return (target as any).value;
+    if (target && typeof target.value === 'string') return target.value;
 
-    const first = e.composedPath?.()[0] as any;
+    const first = e.composedPath?.()[0] as HTMLInputElement | undefined;
     if (first && typeof first.value === 'string') return first.value;
 
     return '';

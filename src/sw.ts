@@ -323,7 +323,7 @@ async function networkWithBackgroundSync(request: Request): Promise<Response> {
   try {
     const response = await fetch(request.clone());
     return response;
-  } catch (err) {
+  } catch {
     // Network error - queue for background sync
     console.log(
       '[SW] Network error, queuing for background sync:',
@@ -365,7 +365,7 @@ async function navigationHandler(request: Request): Promise<Response> {
       cache.put(request, response.clone());
       return response;
     }
-  } catch (_e) {
+  } catch {
     // ignore
   }
 
