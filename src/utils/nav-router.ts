@@ -100,11 +100,16 @@ export class Router extends EventTarget {
         return; // Let the browser handle unknown routes
       }
 
+      // Check if this is actually a route change or just history state change (e.g., dialog closing)
+      const isSameRoute = route.path === this.currentRoute?.path;
+
       event.intercept({
         focusReset: 'manual',
         scroll: 'manual',
         handler: async () => {
-          await this.handleNavigation(route);
+          await this.handleNavigation(route, {
+            skipViewTransition: isSameRoute,
+          });
         },
       });
     });
@@ -133,7 +138,10 @@ export class Router extends EventTarget {
   /**
    * Run plugins and update current route
    */
-  private async handleNavigation(route: Route): Promise<void> {
+  private async handleNavigation(
+    route: Route,
+    options?: { skipViewTransition?: boolean }
+  ): Promise<void> {
     // Run route-specific beforeNavigation plugins (e.g., lazy loading)
     if (route.plugins) {
       for (const plugin of route.plugins) {
@@ -155,6 +163,12 @@ export class Router extends EventTarget {
         new CustomEvent('route-changed', { detail: { route } })
       );
     };
+
+    // Skip view transition if requested (e.g., when closing a dialog that pushed history state)
+    if (options?.skipViewTransition) {
+      updateDOM();
+      return;
+    }
 
     if ('startViewTransition' in document) {
       try {

@@ -10,6 +10,7 @@ import '../components/md/md-menu-item';
 import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/report-dialog';
+import '../components/post-detail-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
 import type { Account } from '../mastodon/types';
 import '../components/md/md-skeleton';
@@ -43,6 +44,7 @@ export declare class AppProfile extends LitElement {
   private previewContent;
   private editDialog;
   private contentTextArea;
+  private postDetailDialog;
   static styles: import('lit').CSSResult[];
   private _resetImageStates;
   private _handleBannerLoad;
