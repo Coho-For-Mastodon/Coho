@@ -1010,6 +1010,117 @@
 <trans-unit id="s216407f266691656">
   <source>Failed to load shared image. Please try sharing again.</source>
 </trans-unit>
+<trans-unit id="s122b4afa84dc1548">
+  <source>Open Home</source>
+</trans-unit>
+<trans-unit id="s9c1fe7b413b74ce5">
+  <source>Open Notifications</source>
+</trans-unit>
+<trans-unit id="sb72a4b091e8795b3">
+  <source>Open Search</source>
+</trans-unit>
+<trans-unit id="sac9c63f1a48305fc">
+  <source>Open Bookmarks</source>
+</trans-unit>
+<trans-unit id="sa266c07fa7d7d2c0">
+  <source>Open Favorites</source>
+</trans-unit>
+<trans-unit id="s8d589358a247dba5">
+  <source>Navigate posts</source>
+</trans-unit>
+<trans-unit id="s1e1dda0b28d5e4a5">
+  <source>New post</source>
+</trans-unit>
+<trans-unit id="s4b9709186a5c22c8">
+  <source>Show all shortcuts</source>
+</trans-unit>
+<trans-unit id="s727145e9f25108db">
+  <source>View all keyboard shortcuts</source>
+</trans-unit>
+<trans-unit id="s49213f6563f37637">
+  <source>Keyboard Shortcuts</source>
+</trans-unit>
+<trans-unit id="s07e6118e838b2e23">
+  <source>Navigation</source>
+</trans-unit>
+<trans-unit id="sa72130488c1d7c67">
+  <source>Go to Home</source>
+</trans-unit>
+<trans-unit id="se400760fe3543794">
+  <source>Go to Notifications</source>
+</trans-unit>
+<trans-unit id="s44a97ed7b3015c2c">
+  <source>Go to Search</source>
+</trans-unit>
+<trans-unit id="sd599ae9632c5e9f9">
+  <source>Go to Bookmarks</source>
+</trans-unit>
+<trans-unit id="scb1527abc5fc1cfd">
+  <source>Go to Favorites</source>
+</trans-unit>
+<trans-unit id="s939b9daaa2c6b475">
+  <source>Go to Profile</source>
+</trans-unit>
+<trans-unit id="sc7e5b0355146889c">
+  <source>Go to Messages</source>
+</trans-unit>
+<trans-unit id="s680fc90489553ed6">
+  <source>Timeline</source>
+</trans-unit>
+<trans-unit id="s41cca0f54dbeabb2">
+  <source>Next post</source>
+</trans-unit>
+<trans-unit id="s4907b24078947052">
+  <source>Previous post</source>
+</trans-unit>
+<trans-unit id="sc685d7705585c76f">
+  <source>Refresh timeline</source>
+</trans-unit>
+<trans-unit id="s4ea77c4018cb88bc">
+  <source>Post Actions (when focused)</source>
+</trans-unit>
+<trans-unit id="s9dce1fb8226d0cdd">
+  <source>Open post</source>
+</trans-unit>
+<trans-unit id="s181de3190f4abb2c">
+  <source>Boost</source>
+</trans-unit>
+<trans-unit id="s51ba5321a04109cd">
+  <source>Favorite</source>
+</trans-unit>
+<trans-unit id="sdbacf34fc010d6d9">
+  <source>Bookmark</source>
+</trans-unit>
+<trans-unit id="s26c4bbcf4df6673b">
+  <source>Expand thread</source>
+</trans-unit>
+<trans-unit id="s8af61807443f32a4">
+  <source>Actions</source>
+</trans-unit>
+<trans-unit id="s0f772460e8ce9675">
+  <source>Focus search</source>
+</trans-unit>
+<trans-unit id="s3dfb8b70507666e2">
+  <source>Show shortcuts help</source>
+</trans-unit>
+<trans-unit id="sbba6a0f5864827d4">
+  <source>Composing</source>
+</trans-unit>
+<trans-unit id="sf4f71bf91b9e75f2">
+  <source>Publish post</source>
+</trans-unit>
+<trans-unit id="sfcae9f83f7f25e25">
+  <source>Previous image</source>
+</trans-unit>
+<trans-unit id="se645d473fbdc4705">
+  <source>Next image</source>
+</trans-unit>
+<trans-unit id="sdec709236764aa73">
+  <source>Close preview</source>
+</trans-unit>
+<trans-unit id="s5e8250fb85d64c23">
+  <source>Close</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
