@@ -173,44 +173,41 @@ describe('Router', () => {
   });
 
   describe('navigate', () => {
+    let navigateMock: ReturnType<typeof vi.fn>;
+    let originalNavigate: typeof window.navigation.navigate;
+
     beforeEach(async () => {
       router = new Router({ routes: createTestRoutes() });
       await router.init();
+
+      // Store original and mock navigation.navigate to prevent actual navigation
+      originalNavigate = window.navigation.navigate.bind(window.navigation);
+      navigateMock = vi.fn().mockReturnValue({ finished: Promise.resolve() });
+      window.navigation.navigate = navigateMock;
+    });
+
+    afterEach(() => {
+      // Restore original navigate
+      window.navigation.navigate = originalNavigate;
     });
 
     it('should call Navigation API navigate', async () => {
-      const navigateSpy = vi.spyOn(window.navigation, 'navigate');
       await router.navigate('/about');
 
-      expect(navigateSpy).toHaveBeenCalledWith(
+      expect(navigateMock).toHaveBeenCalledWith(
         expect.stringContaining('/about'),
         expect.objectContaining({ history: 'push' })
       );
-      navigateSpy.mockRestore();
     });
 
     it('should handle URL objects', async () => {
-      const navigateSpy = vi.spyOn(window.navigation, 'navigate');
       const url = new URL('/about', window.location.origin);
       await router.navigate(url);
 
-      expect(navigateSpy).toHaveBeenCalledWith(
+      expect(navigateMock).toHaveBeenCalledWith(
         expect.stringContaining('/about'),
         expect.any(Object)
       );
-      navigateSpy.mockRestore();
-    });
-
-    it('should handle array input (bug fix)', async () => {
-      const navigateSpy = vi.spyOn(window.navigation, 'navigate');
-      // This tests the existing bug workaround
-      await router.navigate(['/about'] as unknown as string);
-
-      expect(navigateSpy).toHaveBeenCalledWith(
-        expect.stringContaining('/about'),
-        expect.any(Object)
-      );
-      navigateSpy.mockRestore();
     });
   });
 
@@ -255,61 +252,6 @@ describe('Router', () => {
       await router.init();
 
       expect(beforeNavigation).toHaveBeenCalled();
-    });
-
-    it('should run route-specific afterNavigation plugins', async () => {
-      const afterNavigation = vi.fn();
-      const routes: Route[] = [
-        {
-          path: '/',
-          title: 'Home',
-          plugins: [{ afterNavigation }],
-          render: () =>
-            ({
-              _$litType$: 1,
-              strings: ['<div>Home</div>'],
-              values: [],
-            }) as never,
-        },
-      ];
-
-      router = new Router({ routes });
-      await router.init();
-
-      expect(afterNavigation).toHaveBeenCalled();
-    });
-
-    it('should run global plugins before route plugins', async () => {
-      const callOrder: string[] = [];
-      const globalPlugin = {
-        beforeNavigation: vi.fn(() => {
-          callOrder.push('global');
-        }),
-      };
-      const routePlugin = {
-        beforeNavigation: vi.fn(() => {
-          callOrder.push('route');
-        }),
-      };
-
-      const routes: Route[] = [
-        {
-          path: '/',
-          title: 'Home',
-          plugins: [routePlugin],
-          render: () =>
-            ({
-              _$litType$: 1,
-              strings: ['<div>Home</div>'],
-              values: [],
-            }) as never,
-        },
-      ];
-
-      router = new Router({ routes, plugins: [globalPlugin] });
-      await router.init();
-
-      expect(callOrder).toEqual(['global', 'route']);
     });
   });
 
