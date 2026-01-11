@@ -540,7 +540,7 @@ export class AppHome extends LitElement {
     this.attachmentPreview = null;
   }
 
-  openATab(name: string) {
+  async openATab(name: string) {
     console.log('tab name', name);
     this.activeTab = name;
 
@@ -549,6 +549,30 @@ export class AppHome extends LitElement {
       sessionStorage.setItem('coho:activeTab', name);
     } catch {
       // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
+
+    // Lazy load components based on which tab is shown
+    switch (name) {
+      case 'bookmarks':
+        await this.loadBookmarks();
+        break;
+      case 'faves':
+        await this.loadFavorites();
+        break;
+      case 'notifications':
+        await this.loadNotifications();
+        this.hasNewNotifications = false;
+        await markNotificationsRead();
+        if (navigator.clearAppBadge) {
+          navigator.clearAppBadge();
+        }
+        break;
+      case 'search':
+        await this.loadSearch();
+        break;
+      case 'messages':
+        await this.loadMessages();
+        break;
     }
   }
 
