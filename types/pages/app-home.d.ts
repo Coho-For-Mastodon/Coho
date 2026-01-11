@@ -107,6 +107,7 @@ export declare class AppHome extends LitElement {
   disconnectedCallback(): Promise<void>;
   private _handleSwitchTab;
   private _handleOpenPostDialog;
+  private _wasOnHomeTab;
   reloadHome(): void;
   loadBookmarks(): Promise<void>;
   loadFavorites(): Promise<void>;
