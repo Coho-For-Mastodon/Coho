@@ -23,6 +23,7 @@ import '../components/pwa-install';
 import '../components/guest-login-banner';
 import '../components/home-sidebar';
 import '../components/settings-drawer-content';
+import '../components/post-detail-dialog';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -30,6 +31,7 @@ import type { MdToast } from '../components/md/md-toast';
 import type { Timeline } from '../components/timeline';
 import type { PostDialog } from '../components/post-dialog';
 import type { PwaInstall } from '../components/pwa-install';
+import type { PostDetailDialog } from '../components/post-detail-dialog';
 
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
@@ -134,6 +136,7 @@ export class AppHome extends LitElement {
   @query('post-dialog') private postDialog!: PostDialog;
   @query('#install-dialog') private installDialog!: MdDialog;
   @query('pwa-install') private pwaInstall!: PwaInstall;
+  @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
 
   static get styles() {
     return [styles, homeStyles];
@@ -598,9 +601,9 @@ export class AppHome extends LitElement {
   }
 
   async handleOpenTweet(tweet: Post) {
-    // Pass post via Navigation API state so post-detail can render it immediately
-    // This avoids showing a skeleton when we already have the post data
-    router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
+    // Open post in a fullscreen dialog instead of navigating to a new page
+    // The dialog handles history state so back button closes it
+    this.postDetailDialog?.open(tweet);
   }
 
   async disconnectedCallback() {
@@ -654,8 +657,17 @@ export class AppHome extends LitElement {
     this.openNewDialog();
   };
 
+  // Track previous tab to detect double-tap on home
+  private _wasOnHomeTab = false;
+
   reloadHome() {
-    this.homeTimeline?.refreshTimeline();
+    // Only refresh if we were already on the home tab (double-tap to refresh behavior)
+    // The _wasOnHomeTab flag is set before tab-change fires, so it reflects the previous state
+    if (this._wasOnHomeTab) {
+      this.homeTimeline?.refreshTimeline();
+    }
+    // Always update the flag for next click
+    this._wasOnHomeTab = true;
   }
 
   // Lazy loading methods for tab components - using centralized loader utility
@@ -762,6 +774,11 @@ export class AppHome extends LitElement {
   async handleTabChange(event: TabChangeEvent) {
     const panel = event.detail.panel;
     this.activeTab = panel;
+
+    // Reset home tab tracking when switching away from home
+    if (panel !== 'general') {
+      this._wasOnHomeTab = false;
+    }
 
     // Persist active tab to sessionStorage for navigation restoration
     try {
@@ -1091,12 +1108,18 @@ export class AppHome extends LitElement {
           </md-tab-panel>
           <md-tab-panel name="bookmarks">
             ${this.bookmarksLoaded
-              ? html`<app-bookmarks></app-bookmarks>`
+              ? html`<app-bookmarks
+                  @open="${($event: CustomEvent) =>
+                    this.handleOpenTweet($event.detail.tweet)}"
+                ></app-bookmarks>`
               : nothing}
           </md-tab-panel>
           <md-tab-panel name="faves">
             ${this.favoritesLoaded
-              ? html`<app-favorites></app-favorites>`
+              ? html`<app-favorites
+                  @open="${($event: CustomEvent) =>
+                    this.handleOpenTweet($event.detail.tweet)}"
+                ></app-favorites>`
               : nothing}
           </md-tab-panel>
           <md-tab-panel name="notifications">
@@ -1165,6 +1188,9 @@ export class AppHome extends LitElement {
           </md-toast>
         `
       )}
+
+      <!-- Post Detail Dialog - fullscreen dialog for viewing posts -->
+      <post-detail-dialog></post-detail-dialog>
     `;
   }
 }

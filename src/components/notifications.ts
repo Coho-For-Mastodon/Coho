@@ -666,8 +666,14 @@ export class Notifications extends LitElement {
 
   async openPost(tweet: Post | undefined) {
     if (!tweet) return;
-    // Pass post via Navigation API state for instant render
-    await router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
+    // Dispatch event so parent can handle opening in dialog
+    this.dispatchEvent(
+      new CustomEvent('open', {
+        detail: { tweet },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   async openProfile(account: Account) {

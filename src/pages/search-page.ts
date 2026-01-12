@@ -1,9 +1,10 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 
 import '../components/search';
 import '../components/media-timeline';
+import '../components/post-detail-dialog';
 import { router } from '../utils/router';
 
 import '../components/md/md-skeleton';
@@ -12,6 +13,7 @@ import '../components/md/md-segmented-button';
 import type { Account } from '../mastodon/types';
 import type { TrendingTag, TrendingLink } from '../mastodon/types/instance';
 import type { Post } from '../interfaces/Post';
+import type { PostDetailDialog } from '../components/post-detail-dialog';
 
 interface SearchData {
   query?: string;
@@ -27,6 +29,8 @@ export class SearchPage extends LitElement {
   @state() trending: Post[] | undefined;
   @state() trendingLinks: TrendingLink[] | undefined;
   @state() activeSegment: string = 'accounts';
+
+  @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
 
   static styles = [
     css`
@@ -569,6 +573,10 @@ export class SearchPage extends LitElement {
     router.navigate(`/hashtag?tag=${hashtag}`);
   }
 
+  private handleOpenPost(tweet: Post) {
+    this.postDetailDialog?.open(tweet);
+  }
+
   /**
    * Strip HTML tags from a string (for bio/note display)
    */
@@ -724,6 +732,8 @@ export class SearchPage extends LitElement {
               ? this.trending.map((status) => {
                   return html`<timeline-item
                     .tweet="${status}"
+                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                      this.handleOpenPost(e.detail.tweet)}"
                   ></timeline-item>`;
                 })
               : null}
@@ -766,6 +776,9 @@ export class SearchPage extends LitElement {
             : null}
         </div>
       </main>
+
+      <!-- Post Detail Dialog -->
+      <post-detail-dialog></post-detail-dialog>
     `;
   }
 }

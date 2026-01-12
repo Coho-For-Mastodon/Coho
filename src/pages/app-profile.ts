@@ -28,9 +28,11 @@ import '../components/md/md-menu-item';
 import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/report-dialog';
+import '../components/post-detail-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
 import type { MdDialog } from '../components/md/md-dialog';
 import type { MdTextArea } from '../components/md/md-text-area';
+import type { PostDetailDialog } from '../components/post-detail-dialog';
 import type { Account } from '../mastodon/types';
 
 import '../components/md/md-skeleton';
@@ -71,6 +73,7 @@ export class AppProfile extends LitElement {
   @query('#preview-content') private previewContent!: HTMLElement;
   @query('#edit') private editDialog!: MdDialog;
   @query('#content') private contentTextArea!: MdTextArea;
+  @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
 
   static styles = [
     css`
@@ -1042,7 +1045,8 @@ export class AppProfile extends LitElement {
   }
 
   handleOpenPost(tweet: Post) {
-    router.navigate(`/account/post/${tweet.id}`, { state: { post: tweet } });
+    // Open post in a fullscreen dialog instead of navigating to a new page
+    this.postDetailDialog?.open(tweet);
   }
 
   async confirmEdit() {
@@ -1368,6 +1372,9 @@ export class AppProfile extends LitElement {
         @report-submit=${this.handleReportSubmit}
         @report-cancel=${this.handleReportCancel}
       ></report-dialog>
+
+      <!-- Post Detail Dialog -->
+      <post-detail-dialog></post-detail-dialog>
     `;
   }
 }
