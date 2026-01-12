@@ -68,6 +68,7 @@ export class ImageCarousel extends LitElement {
 
       video {
         width: 100%;
+        border-radius: 12px;
       }
 
       #list {

@@ -692,6 +692,19 @@ export class AppHome extends LitElement {
     }
     // Always update the flag for next click
     this._wasOnHomeTab = true;
+
+    // Reset tab query param if present (uses replaceState to avoid adding history entry)
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('tab')) {
+      url.searchParams.delete('tab');
+      history.replaceState(null, '', url.pathname + url.search);
+    }
+
+    // Clear persisted tab so next visit defaults to 'general'
+    sessionStorage.removeItem('coho:activeTab');
+
+    // Sync component state
+    this.activeTab = 'general';
   }
 
   // Lazy loading methods for tab components - using centralized loader utility
