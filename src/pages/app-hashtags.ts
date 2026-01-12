@@ -1,12 +1,16 @@
 import { LitElement, html, css, PropertyValueMap } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 import { getHashtagTimeline } from '../services/timeline';
 import type { Post } from '../interfaces/Post';
+import '../components/post-detail-dialog';
+import type { PostDetailDialog } from '../components/post-detail-dialog';
 
 @customElement('app-hashtags')
 export class AppHashtags extends LitElement {
   @state() data: Post[] | undefined;
   @state() tag: string | null | undefined;
+
+  @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
 
   static styles = [
     css`
@@ -64,6 +68,10 @@ export class AppHashtags extends LitElement {
     }
   }
 
+  private handleOpenPost(tweet: Post) {
+    this.postDetailDialog?.open(tweet);
+  }
+
   render() {
     return html`
       <app-header ?enableBack=${true}></app-header>
@@ -75,8 +83,13 @@ export class AppHashtags extends LitElement {
           .data=${this.data}
           .header=${false}
           .autoLoad=${false}
+          @open="${(e: CustomEvent<{ tweet: Post }>) =>
+            this.handleOpenPost(e.detail.tweet)}"
         ></app-timeline>
       </main>
+
+      <!-- Post Detail Dialog -->
+      <post-detail-dialog></post-detail-dialog>
     `;
   }
 }

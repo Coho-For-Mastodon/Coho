@@ -233,10 +233,11 @@ export class PostDialog extends LitElement {
       }
 
       .dialog-footer-actions {
-        gap: 5px;
+        gap: 8px;
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
 
         margin-bottom: env(keyboard-inset-height, 0px);
 
@@ -248,6 +249,14 @@ export class PostDialog extends LitElement {
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-wrap: wrap;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .dialog-footer-actions .desktop-button {
+        flex-shrink: 1;
+        min-width: fit-content;
       }
 
       #post-copilot {
@@ -391,7 +400,9 @@ export class PostDialog extends LitElement {
         }
       }
 
-      @media (max-width: 1200px) {
+      /* Switch to icon buttons when viewport is narrower than 1400px,
+         since the dialog is 60vw wide, buttons would overflow earlier */
+      @media (max-width: 1400px) {
         .mobile-icon-button {
           display: inline-flex;
         }

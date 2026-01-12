@@ -18,6 +18,7 @@ import '../components/pwa-install';
 import '../components/guest-login-banner';
 import '../components/home-sidebar';
 import '../components/settings-drawer-content';
+import '../components/post-detail-dialog';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
@@ -69,6 +70,7 @@ export declare class AppHome extends LitElement {
   private postDialog;
   private installDialog;
   private pwaInstall;
+  private postDetailDialog;
   static get styles(): import('lit').CSSResult[];
   firstUpdated(): Promise<void>;
   /**
@@ -105,6 +107,7 @@ export declare class AppHome extends LitElement {
   disconnectedCallback(): Promise<void>;
   private _handleSwitchTab;
   private _handleOpenPostDialog;
+  private _wasOnHomeTab;
   reloadHome(): void;
   loadBookmarks(): Promise<void>;
   loadFavorites(): Promise<void>;

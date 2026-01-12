@@ -85,10 +85,7 @@ export class TimelineItem extends LitElement {
         border-radius: 12px;
         overflow: hidden;
 
-        background: var(--md-sys-color-surface-container, #1e1e24);
-        padding: 10px;
         width: auto;
-        padding-top: 0;
 
         overflow-x: hidden;
       }
