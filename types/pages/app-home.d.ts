@@ -91,7 +91,7 @@ export declare class AppHome extends LitElement {
   handleSensitiveContent(check: boolean): Promise<void>;
   handleDataSaverMode(mode: boolean): Promise<void>;
   removeImage(): void;
-  openATab(name: string): void;
+  openATab(name: string): Promise<void>;
   handleReload(): Promise<void>;
   openBotDrawer(): void;
   showSummary($event: HandleSummaryEvent): Promise<void>;
