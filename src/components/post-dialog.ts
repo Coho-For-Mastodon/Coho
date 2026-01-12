@@ -226,6 +226,12 @@ export class PostDialog extends LitElement {
         min-height: 70vh;
       }
 
+      #expanded-actions {
+        display: flex;
+        justify-content: flex-start;
+        gap: 8px;
+      }
+
       .dialog-footer-actions {
         gap: 5px;
         display: flex;
@@ -234,7 +240,7 @@ export class PostDialog extends LitElement {
 
         margin-bottom: env(keyboard-inset-height, 0px);
 
-        justify-content: space-between;
+        justify-content: flex-end;
         width: 100%;
       }
 
@@ -1375,6 +1381,75 @@ export class PostDialog extends LitElement {
             maxlength="${this.maxChars}"
           ></md-text-area>
 
+          <div id="expanded-actions">
+            <!-- Desktop buttons with text -->
+            <md-select
+              .value=${this.visibility}
+              @change=${(e: CustomEvent<{ value: string }>) =>
+                (this.visibility = e.detail.value)}
+              style="width: 140px; min-width: 140px;"
+              pill
+            >
+              <md-option value="public">${msg('Public')}</md-option>
+              <md-option value="unlisted">${msg('Unlisted')}</md-option>
+              <md-option value="private">${msg('Followers Only')}</md-option>
+              <md-option value="direct">${msg('Direct')}</md-option>
+            </md-select>
+
+            <md-button
+              class="desktop-button"
+              variant="outlined"
+              ?disabled=${this.attachments.length > 0}
+              @click="${() => this._togglePoll()}"
+            >
+              ${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
+            </md-button>
+
+            <md-button
+              class="desktop-button"
+              variant="outlined"
+              @click="${() => this.markAsSensitive()}"
+            >
+              ${msg('Content Warning')}
+              <md-icon src="/assets/eye-outline.svg"></md-icon>
+            </md-button>
+
+            <md-button
+              class="desktop-button"
+              pill
+              variant="outlined"
+              @click="${() => this.attachFile()}"
+              ?disabled=${this.pollEnabled}
+            >
+              ${msg('Attach Media')}
+              <md-icon src="/assets/attach-outline.svg"></md-icon>
+            </md-button>
+
+            <!-- Mobile icon buttons -->
+            <md-icon-button
+              class="mobile-icon-button"
+              label="${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}"
+              src="/assets/chatbox-outline.svg"
+              ?disabled=${this.attachments.length > 0}
+              @click="${() => this._togglePoll()}"
+            ></md-icon-button>
+
+            <md-icon-button
+              class="mobile-icon-button"
+              label=${msg('Content Warning')}
+              src="/assets/eye-outline.svg"
+              @click="${() => this.markAsSensitive()}"
+            ></md-icon-button>
+
+            <md-icon-button
+              class="mobile-icon-button"
+              label=${msg('Attach Media')}
+              src="/assets/attach-outline.svg"
+              @click="${() => this.attachFile()}"
+              ?disabled=${this.pollEnabled}
+            ></md-icon-button>
+          </div>
+
           <div class="textarea-inner-buttons">
             ${this.proofreaderAvailable
               ? html`
@@ -1597,75 +1672,6 @@ export class PostDialog extends LitElement {
                       </div>`}
               </div>`
             : null}
-
-          <div>
-            <!-- Desktop buttons with text -->
-            <md-select
-              .value=${this.visibility}
-              @change=${(e: CustomEvent<{ value: string }>) =>
-                (this.visibility = e.detail.value)}
-              style="width: 140px; min-width: 140px;"
-              pill
-            >
-              <md-option value="public">${msg('Public')}</md-option>
-              <md-option value="unlisted">${msg('Unlisted')}</md-option>
-              <md-option value="private">${msg('Followers Only')}</md-option>
-              <md-option value="direct">${msg('Direct')}</md-option>
-            </md-select>
-
-            <md-button
-              class="desktop-button"
-              variant="outlined"
-              ?disabled=${this.attachments.length > 0}
-              @click="${() => this._togglePoll()}"
-            >
-              ${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
-            </md-button>
-
-            <md-button
-              class="desktop-button"
-              variant="outlined"
-              @click="${() => this.markAsSensitive()}"
-            >
-              ${msg('Content Warning')}
-              <md-icon src="/assets/eye-outline.svg"></md-icon>
-            </md-button>
-
-            <md-button
-              class="desktop-button"
-              pill
-              variant="outlined"
-              @click="${() => this.attachFile()}"
-              ?disabled=${this.pollEnabled}
-            >
-              ${msg('Attach Media')}
-              <md-icon src="/assets/attach-outline.svg"></md-icon>
-            </md-button>
-
-            <!-- Mobile icon buttons -->
-            <md-icon-button
-              class="mobile-icon-button"
-              label="${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}"
-              src="/assets/chatbox-outline.svg"
-              ?disabled=${this.attachments.length > 0}
-              @click="${() => this._togglePoll()}"
-            ></md-icon-button>
-
-            <md-icon-button
-              class="mobile-icon-button"
-              label=${msg('Content Warning')}
-              src="/assets/eye-outline.svg"
-              @click="${() => this.markAsSensitive()}"
-            ></md-icon-button>
-
-            <md-icon-button
-              class="mobile-icon-button"
-              label=${msg('Attach Media')}
-              src="/assets/attach-outline.svg"
-              @click="${() => this.attachFile()}"
-              ?disabled=${this.pollEnabled}
-            ></md-icon-button>
-          </div>
 
           <!-- Publish button (same for both) -->
           <md-button
