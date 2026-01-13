@@ -555,28 +555,7 @@ export class AppHome extends LitElement {
     }
 
     // Lazy load components based on which tab is shown
-    switch (name) {
-      case 'bookmarks':
-        await this.loadBookmarks();
-        break;
-      case 'faves':
-        await this.loadFavorites();
-        break;
-      case 'notifications':
-        await this.loadNotifications();
-        this.hasNewNotifications = false;
-        await markNotificationsRead();
-        if (navigator.clearAppBadge) {
-          navigator.clearAppBadge();
-        }
-        break;
-      case 'search':
-        await this.loadSearch();
-        break;
-      case 'messages':
-        await this.loadMessages();
-        break;
-    }
+    await this.lazyLoadTabComponent(name);
   }
 
   async handleReload() {
@@ -808,24 +787,13 @@ export class AppHome extends LitElement {
     this.overlays.hide('install-dialog');
   }
 
-  async handleTabChange(event: TabChangeEvent) {
-    const panel = event.detail.panel;
-    this.activeTab = panel;
-
-    // Reset home tab tracking when switching away from home
-    if (panel !== 'general') {
-      this._wasOnHomeTab = false;
-    }
-
-    // Persist active tab to sessionStorage for navigation restoration
-    try {
-      sessionStorage.setItem('coho:activeTab', panel);
-    } catch {
-      // sessionStorage may be unavailable in some privacy contexts; ignore.
-    }
-
-    // Lazy load components based on which tab is shown
-    switch (panel) {
+  /**
+   * Lazy loads components based on the active tab name.
+   * Centralizes the tab-to-component loading logic used by both
+   * openATab and handleTabChange methods.
+   */
+  private async lazyLoadTabComponent(tabName: string) {
+    switch (tabName) {
       case 'bookmarks':
         await this.loadBookmarks();
         break;
@@ -847,6 +815,26 @@ export class AppHome extends LitElement {
         await this.loadMessages();
         break;
     }
+  }
+
+  async handleTabChange(event: TabChangeEvent) {
+    const panel = event.detail.panel;
+    this.activeTab = panel;
+
+    // Reset home tab tracking when switching away from home
+    if (panel !== 'general') {
+      this._wasOnHomeTab = false;
+    }
+
+    // Persist active tab to sessionStorage for navigation restoration
+    try {
+      sessionStorage.setItem('coho:activeTab', panel);
+    } catch {
+      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
+
+    // Lazy load components based on which tab is shown
+    await this.lazyLoadTabComponent(panel);
   }
 
   async handleTranslating(_event: HandleTranslatingEvent) {
