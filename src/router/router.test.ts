@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Router, lazy, type Route } from '../../src/utils/nav-router';
+import { Router, lazy, type Route } from './nav-router';
 
 // Mock polyfills module
-vi.mock('../../src/utils/router-polyfills.js', () => ({
+vi.mock('./polyfills.js', () => ({
   ensurePolyfills: vi.fn().mockResolvedValue(undefined),
   isBrowser: vi.fn().mockReturnValue(true),
 }));

@@ -1,7 +1,7 @@
 import { LitElement, css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 
-import { router } from './utils/router';
+import { router } from './router/routes';
 
 // Initialize localization (must be imported early)
 import './config/localization.js';

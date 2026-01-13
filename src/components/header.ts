@@ -255,7 +255,7 @@ export class AppHeader extends LitElement {
                       id="login-button"
                       title=${msg('Sign In')}
                       @click="${() => {
-                        import('../utils/router').then((m) =>
+                        import('../router/routes').then((m) =>
                           m.router.navigate('/')
                         );
                       }}"

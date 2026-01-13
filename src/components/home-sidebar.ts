@@ -14,7 +14,7 @@ import './md/md-menu-item';
 
 import type { Account } from '../mastodon/types/account';
 import type { TrendingTag } from '../mastodon/types/instance';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 
 /**
  * Right sidebar component for the home page.

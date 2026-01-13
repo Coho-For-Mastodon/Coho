@@ -35,7 +35,7 @@ import type { PostDetailDialog } from '../components/post-detail-dialog';
 
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 import { lazyLoad, componentLoaders } from '../utils/lazy-component-loader';
 import { LazyOverlayManager } from '../utils/lazy-overlay';
 // import { resetLastPageID } from '../services/timeline';
@@ -543,7 +543,7 @@ export class AppHome extends LitElement {
     this.attachmentPreview = null;
   }
 
-  openATab(name: string) {
+  async openATab(name: string) {
     console.log('tab name', name);
     this.activeTab = name;
 
@@ -552,6 +552,30 @@ export class AppHome extends LitElement {
       sessionStorage.setItem('coho:activeTab', name);
     } catch {
       // sessionStorage may be unavailable in some privacy contexts; ignore.
+    }
+
+    // Lazy load components based on which tab is shown
+    switch (name) {
+      case 'bookmarks':
+        await this.loadBookmarks();
+        break;
+      case 'faves':
+        await this.loadFavorites();
+        break;
+      case 'notifications':
+        await this.loadNotifications();
+        this.hasNewNotifications = false;
+        await markNotificationsRead();
+        if (navigator.clearAppBadge) {
+          navigator.clearAppBadge();
+        }
+        break;
+      case 'search':
+        await this.loadSearch();
+        break;
+      case 'messages':
+        await this.loadMessages();
+        break;
     }
   }
 
@@ -668,6 +692,19 @@ export class AppHome extends LitElement {
     }
     // Always update the flag for next click
     this._wasOnHomeTab = true;
+
+    // Reset tab query param if present (uses replaceState to avoid adding history entry)
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('tab')) {
+      url.searchParams.delete('tab');
+      history.replaceState(null, '', url.pathname + url.search);
+    }
+
+    // Clear persisted tab so next visit defaults to 'general'
+    sessionStorage.removeItem('coho:activeTab');
+
+    // Sync component state
+    this.activeTab = 'general';
   }
 
   // Lazy loading methods for tab components - using centralized loader utility

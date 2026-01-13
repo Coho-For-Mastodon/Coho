@@ -17,7 +17,7 @@ import './md/md-toast';
 
 import { editAccount, getCredentials } from '../services/account';
 import { fileOpen } from 'browser-fs-access';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 
 // Character limits per Mastodon API
 const LIMITS = {

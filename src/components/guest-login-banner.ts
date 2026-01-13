@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 
 import './md/md-button';
 

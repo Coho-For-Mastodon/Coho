@@ -6,7 +6,7 @@ import { Post } from '../interfaces/Post';
 import { parseEmojis } from '../utils/emoji-parser';
 import type { Settings } from '../services/settings';
 import type { Account } from '../mastodon/types';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 
 import '../components/user-profile';
 import '../components/md/md-card';

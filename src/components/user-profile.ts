@@ -3,7 +3,7 @@ import { customElement, property } from 'lit/decorators.js';
 
 import { classMap } from 'lit/directives/class-map.js';
 // import { enableVibrate } from '../utils/handle-vibrate';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 import { parseEmojis } from '../utils/emoji-parser';
 import { Account } from '../mastodon/types';
 

@@ -1,7 +1,7 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { msg, localized } from '@lit/localize';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 import { parseEmojis } from '../utils/emoji-parser';
 
 import '@lit-labs/virtualizer';

@@ -8,7 +8,7 @@ import type { AutocompleteOption } from '../components/md/md-autocomplete';
 import { POPULAR_INSTANCES } from '../services/instance-search';
 
 // Dynamic import to avoid loading router during SSR
-const getRouter = () => import('../utils/router').then((m) => m.router);
+const getRouter = () => import('../router/routes').then((m) => m.router);
 
 @localized()
 @customElement('app-login')
