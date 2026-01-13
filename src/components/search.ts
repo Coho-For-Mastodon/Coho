@@ -2,7 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state, property, query } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 
 interface SearchData {
   query?: string;

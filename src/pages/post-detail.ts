@@ -13,7 +13,7 @@ import { getReplies } from '../services/timeline';
 
 import { replyToPost, getPostDetail } from '../services/posts';
 import type { MdTextArea } from '../components/md/md-text-area';
-import { router } from '../utils/router';
+import { router, type AppNavigationState } from '../router/routes';
 import { getNotificationById } from '../mastodon/api/notifications';
 
 @localized()
@@ -232,7 +232,7 @@ export class PostDetail extends LitElement {
     }
 
     // First, check if we have a post passed from navigation (instant render path)
-    const navState = router.getNavigationState();
+    const navState = router.getNavigationState<AppNavigationState>();
     if (navState?.post) {
       this.tweet = navState.post;
       // No skeleton shown - post renders immediately

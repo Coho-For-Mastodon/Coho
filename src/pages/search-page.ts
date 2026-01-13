@@ -5,7 +5,7 @@ import { localized, msg } from '@lit/localize';
 import '../components/search';
 import '../components/media-timeline';
 import '../components/post-detail-dialog';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 
 import '../components/md/md-skeleton';
 

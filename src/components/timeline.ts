@@ -69,7 +69,7 @@ import '../components/md/md-dropdown';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
 
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 
 @customElement('app-timeline')
 export class Timeline extends LitElement {

@@ -15,7 +15,7 @@ import './md/md-button';
 
 import type { Account } from '../mastodon/types/account';
 import type { Instance } from '../mastodon/types/instance';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 
 declare const __APP_VERSION__: string;
 

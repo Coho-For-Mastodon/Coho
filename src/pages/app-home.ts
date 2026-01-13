@@ -35,7 +35,7 @@ import type { PostDetailDialog } from '../components/post-detail-dialog';
 
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
-import { router } from '../utils/router';
+import { router } from '../router/routes';
 import { lazyLoad, componentLoaders } from '../utils/lazy-component-loader';
 import { LazyOverlayManager } from '../utils/lazy-overlay';
 // import { resetLastPageID } from '../services/timeline';

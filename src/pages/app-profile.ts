@@ -43,7 +43,7 @@ import '../components/md/md-divider';
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 import { editPost } from '../services/posts';
-import { router } from '../utils/router';
+import { router, type AppNavigationState } from '../router/routes';
 
 @localized()
 @customElement('app-profile')
@@ -760,7 +760,7 @@ export class AppProfile extends LitElement {
       this._resetImageStates();
 
       // Check if account was passed via Navigation API state (instant render path)
-      const navState = router.getNavigationState();
+      const navState = router.getNavigationState<AppNavigationState>();
       if (navState?.account && navState.account.id === id) {
         this.user = navState.account;
         this.loadingProfile = false;

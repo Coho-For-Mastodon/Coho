@@ -8,7 +8,7 @@
  * - Retry logic for transient failures
  */
 
-import { router } from './router.js';
+import { router } from '../router/routes.js';
 
 // Mastodon API error format
 export interface MastodonApiError {

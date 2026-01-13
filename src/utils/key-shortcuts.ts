@@ -1,5 +1,5 @@
 import hotkeys from 'hotkeys-js';
-import { router } from './router';
+import { router } from '../router/routes';
 
 // Filter to disable shortcuts when typing in input fields
 // Returns true if shortcuts should be processed
