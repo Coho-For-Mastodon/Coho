@@ -1,11 +1,10 @@
 import { LitElement, html, nothing } from 'lit';
-import { property, customElement, state, query } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 import { msg } from '@lit/localize';
 import { localized } from '@lit/localize';
 
 import '../components/timeline';
 import '../components/timeline-item';
-import '../components/md/md-skeleton';
 
 import '../components/otter-drawer';
 import '../components/md/md-button';
@@ -16,7 +15,6 @@ import '../components/md/md-tabs';
 import '../components/md/md-tab';
 import '../components/md/md-tab-panel';
 import '../components/md/md-icon';
-import '../components/md/md-icon-button';
 import '../components/md/md-toast';
 import '../components/offline-notify';
 import '../components/pwa-install';
@@ -38,7 +36,6 @@ import { homeStyles } from '../styles/home-styles';
 import { router } from '../router/routes';
 import { lazyLoad, componentLoaders } from '../utils/lazy-component-loader';
 import { LazyOverlayManager } from '../utils/lazy-overlay';
-// import { resetLastPageID } from '../services/timeline';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
@@ -57,27 +54,14 @@ import type {
 @localized()
 @customElement('app-home')
 export class AppHome extends LitElement {
-  // For more information on using properties and state in lit
-  // check out this link https://lit.dev/docs/components/properties/
-  @property() message = 'Welcome!';
-
   @state() user: Account | null = null;
-  @state() attachmentID: string | null = null;
-  @state() attachmentPreview: string | null = null;
   @state() replies: Post[] = [];
-  @state() replyID: string | null = null;
-  @state() primary_color: string = '#000000';
   @state() instanceInfo: Instance | null = null;
 
   @state() wellnessMode: boolean = false;
   @state() dataSaverMode: boolean = false;
-  @state() sensitiveMode: boolean = false;
-
-  @state() attaching: boolean = false;
 
   @state() summary: string = '';
-
-  @state() homeLoad: boolean = false;
 
   @state() hasNewNotifications: boolean = false;
 
@@ -272,23 +256,7 @@ export class AppHome extends LitElement {
       }
 
       // Preload the component for the requested tab
-      switch (tabToOpen) {
-        case 'bookmarks':
-          await this.loadBookmarks();
-          break;
-        case 'faves':
-          await this.loadFavorites();
-          break;
-        case 'notifications':
-          await this.loadNotifications();
-          break;
-        case 'search':
-          await this.loadSearch();
-          break;
-        case 'messages':
-          await this.loadMessages();
-          break;
-      }
+      await this.loadTabComponent(tabToOpen);
 
       // Wait for the component to be ready before switching tabs
       await this.updateComplete;
@@ -388,22 +356,8 @@ export class AppHome extends LitElement {
   }
 
   handlePrimaryColor(color: string) {
-    this.primary_color = color;
-
-    // set css variable color
     document.documentElement.style.setProperty('--sl-color-primary-600', color);
-
     localStorage.setItem('primary_color', color);
-  }
-
-  share() {
-    if (navigator.share) {
-      navigator.share({
-        title: 'PWABuilder pwa-starter',
-        text: 'Check out the PWABuilder pwa-starter!',
-        url: 'https://github.com/pwa-builder/pwa-starter',
-      });
-    }
   }
 
   async openNewDialog(shareName?: string) {
@@ -422,26 +376,6 @@ export class AppHome extends LitElement {
       await this.postDialog.updateComplete;
       this.postDialog.openNewDialog(shareName);
     }
-    // }
-    // else {
-    //   const drawer = this.shadowRoot?.getElementById('reply-drawer') as any;
-    //   drawer.show();
-    // }
-  }
-
-  async publish() {
-    // const status = (this.shadowRoot?.querySelector('sl-textarea') as any).value;
-    // console.log(status);
-    // if (this.attachmentID) {
-    //   const { publishPost } = await import("../services/posts");
-    //   await publishPost(status, this.attachmentIDs);
-    // }
-    // else {
-    //   const { publishPost } = await import("../services/posts");
-    //   await publishPost(status);
-    // }
-    // const dialog = this.shadowRoot?.getElementById('notify-dialog') as any;
-    // dialog.hide();
   }
 
   async openSettingsDrawer() {
@@ -457,27 +391,13 @@ export class AppHome extends LitElement {
     console.log('instanceInfo', this.instanceInfo);
   }
 
-  async handleReplies(replies: Post[], id: string) {
+  async handleReplies(replies: Post[], _id: string) {
     this.replies = replies;
-
-    this.replyID = id;
 
     // Add drawer to DOM first
     await this.overlays.show('replies-drawer');
     // Then show it (triggers animation)
     await this.repliesDrawer?.show();
-  }
-
-  async replyToAStatus() {
-    const replyInput = this.shadowRoot?.querySelector(
-      '#reply-post-actions sl-input'
-    ) as HTMLInputElement | null;
-    const replyValue = replyInput?.value;
-
-    if (this.replyID && replyValue) {
-      const { reply } = await import('../services/timeline');
-      await reply(this.replyID, replyValue);
-    }
   }
 
   async openThemingDrawer() {
@@ -488,64 +408,33 @@ export class AppHome extends LitElement {
     await this.themingDrawer?.show();
   }
 
-  doFocusMode() {
-    const main = this.shadowRoot?.querySelector('main');
-    if (!main) return;
-
-    main.classList.toggle('focus');
-
-    const profile = this.shadowRoot?.querySelector(
-      '#profile'
-    ) as HTMLElement | null;
-    if (profile) {
-      profile.style.display =
-        profile.style.display === 'none' ? 'flex' : 'none';
-    }
-
-    const appTimeline = this.shadowRoot?.querySelector(
-      'app-timeline'
-    ) as HTMLElement | null;
-    if (appTimeline) {
-      appTimeline.style.position =
-        appTimeline.style.position === 'fixed' ? 'relative' : 'fixed';
-      appTimeline.style.left = appTimeline.style.left === '11vw' ? '0' : '11vw';
-      appTimeline.style.right =
-        appTimeline.style.right === '11vw' ? '0' : '11vw';
-    }
-  }
-
   async handleWellnessMode(check: boolean) {
-    console.log('check', check);
     this.wellnessMode = check;
 
     const { setSettings } = await import('../services/settings');
     setSettings({ wellness: check });
   }
 
-  async handleSensitiveContent(check: boolean) {
-    console.log('check', check);
-    this.sensitiveMode = check;
-
-    const { setSettings } = await import('../services/settings');
-    setSettings({ sensitive: check });
-  }
-
   async handleDataSaverMode(mode: boolean) {
-    console.log('mode', mode);
     this.dataSaverMode = mode;
 
     const { setSettings } = await import('../services/settings');
     setSettings({ data_saver: mode });
   }
 
-  removeImage() {
-    this.attachmentID = null;
-    this.attachmentPreview = null;
-  }
-
-  async openATab(name: string) {
-    console.log('tab name', name);
+  /**
+   * Switch to a tab by name - shared logic for programmatic and user-initiated tab changes
+   */
+  private async switchToTab(
+    name: string,
+    resetHomeTracking = false
+  ): Promise<void> {
     this.activeTab = name;
+
+    // Reset home tab tracking when switching away from home
+    if (resetHomeTracking && name !== 'general') {
+      this._wasOnHomeTab = false;
+    }
 
     // Persist active tab to sessionStorage for navigation restoration
     try {
@@ -555,28 +444,22 @@ export class AppHome extends LitElement {
     }
 
     // Lazy load components based on which tab is shown
-    switch (name) {
-      case 'bookmarks':
-        await this.loadBookmarks();
-        break;
-      case 'faves':
-        await this.loadFavorites();
-        break;
-      case 'notifications':
-        await this.loadNotifications();
-        this.hasNewNotifications = false;
-        await markNotificationsRead();
-        if (navigator.clearAppBadge) {
-          navigator.clearAppBadge();
-        }
-        break;
-      case 'search':
-        await this.loadSearch();
-        break;
-      case 'messages':
-        await this.loadMessages();
-        break;
+    await this.loadTabComponent(name);
+
+    // Handle notification-specific side effects
+    if (name === 'notifications') {
+      await this.handleNotificationsSideEffects();
     }
+  }
+
+  async openATab(name: string) {
+    console.log('tab name', name);
+    await this.switchToTab(name);
+  }
+
+  async handleTabChange(event: TabChangeEvent) {
+    const panel = event.detail.panel;
+    await this.switchToTab(panel, true);
   }
 
   async handleReload() {
@@ -611,19 +494,6 @@ export class AppHome extends LitElement {
     this.summaryDialog?.show();
   }
 
-  onMoveHandler(
-    ev: { deltaX: number },
-    dialog: HTMLElement & { hide(): void }
-  ) {
-    console.log('ev', ev);
-
-    dialog.style.transform = `translateX(${ev.deltaX}px)`;
-
-    if (ev.deltaX > 100) {
-      dialog.hide();
-    }
-  }
-
   async handleOpenTweet(tweet: Post) {
     // Open post in a fullscreen dialog instead of navigating to a new page
     // The dialog handles history state so back button closes it
@@ -654,23 +524,7 @@ export class AppHome extends LitElement {
     if (!tabName) return;
 
     // Preload the component for the requested tab
-    switch (tabName) {
-      case 'bookmarks':
-        await this.loadBookmarks();
-        break;
-      case 'faves':
-        await this.loadFavorites();
-        break;
-      case 'notifications':
-        await this.loadNotifications();
-        break;
-      case 'search':
-        await this.loadSearch();
-        break;
-      case 'messages':
-        await this.loadMessages();
-        break;
-    }
+    await this.loadTabComponent(tabName);
 
     // Wait for the component to be ready before switching tabs
     await this.updateComplete;
@@ -683,6 +537,53 @@ export class AppHome extends LitElement {
 
   // Track previous tab to detect double-tap on home
   private _wasOnHomeTab = false;
+
+  // Tab name to loader key and state property mapping
+  private static readonly tabConfig: Record<
+    string,
+    {
+      loaderKey: keyof typeof componentLoaders;
+      stateKey:
+        | 'bookmarksLoaded'
+        | 'favoritesLoaded'
+        | 'notificationsLoaded'
+        | 'searchLoaded'
+        | 'messagesLoaded';
+    }
+  > = {
+    bookmarks: { loaderKey: 'bookmarks', stateKey: 'bookmarksLoaded' },
+    faves: { loaderKey: 'favorites', stateKey: 'favoritesLoaded' },
+    notifications: {
+      loaderKey: 'notifications',
+      stateKey: 'notificationsLoaded',
+    },
+    search: { loaderKey: 'search', stateKey: 'searchLoaded' },
+    messages: { loaderKey: 'messages', stateKey: 'messagesLoaded' },
+  };
+
+  /**
+   * Unified method to lazy-load a tab's component
+   */
+  private async loadTabComponent(tabName: string): Promise<void> {
+    const config = AppHome.tabConfig[tabName];
+    if (!config) return;
+
+    const loader = componentLoaders[config.loaderKey];
+    if (await lazyLoad(config.loaderKey, loader)) {
+      this[config.stateKey] = true;
+    }
+  }
+
+  /**
+   * Handle notification-specific side effects when switching to notifications tab
+   */
+  private async handleNotificationsSideEffects(): Promise<void> {
+    this.hasNewNotifications = false;
+    await markNotificationsRead();
+    if (navigator.clearAppBadge) {
+      navigator.clearAppBadge();
+    }
+  }
 
   reloadHome() {
     // Only refresh if we were already on the home tab (double-tap to refresh behavior)
@@ -705,37 +606,6 @@ export class AppHome extends LitElement {
 
     // Sync component state
     this.activeTab = 'general';
-  }
-
-  // Lazy loading methods for tab components - using centralized loader utility
-  async loadBookmarks() {
-    if (await lazyLoad('bookmarks', componentLoaders.bookmarks)) {
-      this.bookmarksLoaded = true;
-    }
-  }
-
-  async loadFavorites() {
-    if (await lazyLoad('favorites', componentLoaders.favorites)) {
-      this.favoritesLoaded = true;
-    }
-  }
-
-  async loadNotifications() {
-    if (await lazyLoad('notifications', componentLoaders.notifications)) {
-      this.notificationsLoaded = true;
-    }
-  }
-
-  async loadSearch() {
-    if (await lazyLoad('search', componentLoaders.search)) {
-      this.searchLoaded = true;
-    }
-  }
-
-  async loadMessages() {
-    if (await lazyLoad('messages', componentLoaders.messages)) {
-      this.messagesLoaded = true;
-    }
   }
 
   // Lazy loading methods for drawer components
@@ -806,47 +676,6 @@ export class AppHome extends LitElement {
     await this.installDialog?.hide();
     // Remove from DOM after close animation
     this.overlays.hide('install-dialog');
-  }
-
-  async handleTabChange(event: TabChangeEvent) {
-    const panel = event.detail.panel;
-    this.activeTab = panel;
-
-    // Reset home tab tracking when switching away from home
-    if (panel !== 'general') {
-      this._wasOnHomeTab = false;
-    }
-
-    // Persist active tab to sessionStorage for navigation restoration
-    try {
-      sessionStorage.setItem('coho:activeTab', panel);
-    } catch {
-      // sessionStorage may be unavailable in some privacy contexts; ignore.
-    }
-
-    // Lazy load components based on which tab is shown
-    switch (panel) {
-      case 'bookmarks':
-        await this.loadBookmarks();
-        break;
-      case 'faves':
-        await this.loadFavorites();
-        break;
-      case 'notifications':
-        await this.loadNotifications();
-        this.hasNewNotifications = false;
-        await markNotificationsRead();
-        if (navigator.clearAppBadge) {
-          navigator.clearAppBadge();
-        }
-        break;
-      case 'search':
-        await this.loadSearch();
-        break;
-      case 'messages':
-        await this.loadMessages();
-        break;
-    }
   }
 
   async handleTranslating(_event: HandleTranslatingEvent) {

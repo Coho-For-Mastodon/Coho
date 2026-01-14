@@ -514,24 +514,20 @@ export class TimelineItem extends LitElement {
     // Only handle if this item is focused
     if (!this.focused || !this.tweet) return;
 
-    // Ignore if user is in an input field
-    const target = event.target as HTMLElement;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.isContentEditable
-    ) {
+    // All shortcuts require alt modifier (except Enter) to avoid conflicts with typing
+    const postId = this.tweet.reblog?.id || this.tweet.id;
+
+    // Enter doesn't need alt modifier as it doesn't conflict with typing
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.openPost();
       return;
     }
 
-    const postId = this.tweet.reblog?.id || this.tweet.id;
+    // All other shortcuts require alt key
+    if (!event.altKey) return;
 
     switch (event.key) {
-      case 'Enter':
-        // Open the post
-        event.preventDefault();
-        this.openPost();
-        break;
       case 'r':
         // Reply
         event.preventDefault();
@@ -553,7 +549,7 @@ export class TimelineItem extends LitElement {
         this.bookmark(postId);
         break;
       case 'o':
-        // Open in new tab
+        // Open post
         event.preventDefault();
         this.openPost();
         break;

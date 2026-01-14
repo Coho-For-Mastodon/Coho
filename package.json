@@ -36,15 +36,15 @@
   "dependencies": {
     "@fluentui/web-components": "^2.5.16",
     "@huggingface/transformers": "^3.8.1",
-    "@lit-labs/virtualizer": "^2.0.11",
+    "@lit-labs/virtualizer": "^2.1.1",
     "@lit/localize": "^0.12.2",
     "@virtualstate/navigation": "^1.0.1-alpha.212",
     "browser-fs-access": "^0.38.0",
-    "fast-blurhash": "^1.1.2",
-    "hotkeys-js": "^3.10.1",
+    "fast-blurhash": "^1.1.4",
+    "hotkeys-js": "^4.0.0",
     "idb-keyval": "^6.2.0",
-    "lit": "^3.3.1",
-    "marked": "^17.0.0",
+    "lit": "^3.3.2",
+    "marked": "^17.0.1",
     "urlpattern-polyfill": "^10.1.0"
   },
   "devDependencies": {
@@ -73,7 +73,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.1",
-    "vite": "^7.2.6",
+    "vite": "^7.3.1",
     "vite-plugin-wasm": "^3.2.1",
     "vitest": "^4.0.16"
   }

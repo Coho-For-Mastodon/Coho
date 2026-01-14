@@ -1,82 +1,59 @@
 import hotkeys from 'hotkeys-js';
 import { router } from '../router/routes';
 
-// Filter to disable shortcuts when typing in input fields
-// Returns true if shortcuts should be processed
-hotkeys.filter = function (event) {
-  const target = event.target as HTMLElement;
-  const tagName = target.tagName.toLowerCase();
-
-  // Check for native form elements
-  if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
-    return false;
-  }
-
-  // Check for contenteditable
-  if (target.isContentEditable) {
-    return false;
-  }
-
-  // Check for web components with text input (md-text-field, md-text-area, etc.)
-  const shadowHost = target.getRootNode() as ShadowRoot;
-  if (shadowHost?.host) {
-    const hostTagName = (shadowHost.host as HTMLElement).tagName.toLowerCase();
-    if (
-      hostTagName.includes('text-field') ||
-      hostTagName.includes('text-area') ||
-      hostTagName.includes('input')
-    ) {
-      return false;
-    }
-  }
-
+// With modifier keys required, we allow shortcuts everywhere
+// The alt key prevents conflicts with normal typing
+hotkeys.filter = function () {
   return true;
 };
 
 export function init() {
-  // Navigation shortcuts (g+key combinations)
-  hotkeys('g+h,g+n,g+s,g+b,g+f,g+p,g+m', (event, handler) => {
-    event.preventDefault();
+  // Navigation shortcuts (alt+g followed by key)
+  hotkeys(
+    'alt+g+h,alt+g+n,alt+g+s,alt+g+b,alt+g+f,alt+g+p,alt+g+m',
+    (event, handler) => {
+      event.preventDefault();
 
-    switch (handler.key) {
-      case 'g+h':
-        handleGoToHome();
-        break;
-      case 'g+n':
-        handleGoToNotifications();
-        break;
-      case 'g+s':
-        handleGoToSearch();
-        break;
-      case 'g+b':
-        handleGoToBookmarks();
-        break;
-      case 'g+f':
-        handleGoToFavorites();
-        break;
-      case 'g+p':
-        handleGoToProfile();
-        break;
-      case 'g+m':
-        handleGoToMessages();
-        break;
-      default:
-        break;
+      switch (handler.key) {
+        case 'alt+g+h':
+          handleGoToHome();
+          break;
+        case 'alt+g+n':
+          handleGoToNotifications();
+          break;
+        case 'alt+g+s':
+          handleGoToSearch();
+          break;
+        case 'alt+g+b':
+          handleGoToBookmarks();
+          break;
+        case 'alt+g+f':
+          handleGoToFavorites();
+          break;
+        case 'alt+g+p':
+          handleGoToProfile();
+          break;
+        case 'alt+g+m':
+          handleGoToMessages();
+          break;
+        default:
+          break;
+      }
     }
-  });
+  );
 
-  // Action shortcuts
-  hotkeys('n', (event) => {
+  // Action shortcuts (all require alt modifier to avoid conflicts with typing)
+  hotkeys('alt+n', (event) => {
     event.preventDefault();
     handleNewPost();
   });
 
-  hotkeys('/', (event) => {
+  hotkeys('alt+/', (event) => {
     event.preventDefault();
     handleFocusSearch();
   });
 
-  hotkeys('shift+/', (event) => {
+  hotkeys('alt+shift+/', (event) => {
     event.preventDefault();
     handleShowShortcutsHelp();
   });
@@ -85,8 +62,8 @@ export function init() {
     handleEscape();
   });
 
-  // Period to refresh timeline (Mastodon standard)
-  hotkeys('.', (event) => {
+  // Period to refresh timeline
+  hotkeys('alt+.', (event) => {
     event.preventDefault();
     handleRefreshTimeline();
   });
