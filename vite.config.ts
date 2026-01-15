@@ -1,4 +1,5 @@
 import { defineConfig, build } from 'vite';
+import checker from 'vite-plugin-checker';
 import copy from 'rollup-plugin-copy';
 import wasm from 'vite-plugin-wasm';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -258,6 +259,9 @@ export default defineConfig({
   plugins: [
     ...customPlugins,
     wasm(),
+    checker({
+      typescript: true,
+    }),
     copy({
       targets: [
         { src: 'dark.css', dest: 'dist/' },

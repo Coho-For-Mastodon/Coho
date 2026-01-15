@@ -1,2 +1,0 @@
-import { Post } from '../interfaces/Post';
-export declare const getFavorites: () => Promise<Post[]>;
