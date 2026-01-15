@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
 import { localized, msg, str } from '@lit/localize';
 import {
@@ -290,6 +290,82 @@ export class AppProfile extends LitElement {
       #handle-skeleton {
         height: 18px;
         width: 140px;
+      }
+
+      /* Media Grid Styles */
+      .media-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2px;
+        padding-bottom: 20px;
+      }
+
+      /* New CSS Grid Masonry (Grid Lanes) */
+      @supports (display: grid-lanes) {
+        .media-grid {
+          display: grid-lanes;
+          /* Reuse existing grid-template-columns */
+        }
+      }
+
+      /* Chromium Grid Masonry */
+      @supports (display: masonry) {
+        .media-grid {
+          display: masonry;
+          /* Reuse existing grid-template-columns */
+        }
+      }
+
+      .media-item {
+        position: relative;
+        cursor: pointer;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      .media-item img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        transition: transform 0.2s;
+        object-fit: cover;
+
+        /* Fallback: Square tiles for standard grid */
+        aspect-ratio: 1;
+      }
+
+      /* Allow natural height in masonry (grid-lanes) mode */
+      @supports (display: grid-lanes) {
+        .media-item img {
+          aspect-ratio: auto;
+          height: auto;
+        }
+      }
+
+      /* Allow natural height in masonry (Chromium) mode */
+      @supports (display: masonry) {
+        .media-item img {
+          aspect-ratio: auto;
+          height: auto;
+        }
+      }
+
+      .media-item:hover img {
+        transform: scale(1.05);
+        filter: brightness(0.9);
+      }
+
+      .media-indicator {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border-radius: 4px;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       #bio {
@@ -740,6 +816,53 @@ export class AppProfile extends LitElement {
     this.avatarFailed = true;
   }
 
+  private _observer: IntersectionObserver | undefined;
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._observer?.disconnect();
+  }
+
+  updated(changedProperties: PropertyValues) {
+    super.updated(changedProperties);
+
+    if (
+      changedProperties.has('activeSegment') ||
+      changedProperties.has('posts')
+    ) {
+      if (this.activeSegment === 'media') {
+        this.setupMediaObserver();
+      } else {
+        this._observer?.disconnect();
+      }
+    }
+  }
+
+  setupMediaObserver() {
+    // Wait for render
+    setTimeout(() => {
+      const sentinel = this.renderRoot.querySelector('#media-sentinel');
+      if (!sentinel) return;
+
+      if (this._observer) this._observer.disconnect();
+
+      this._observer = new IntersectionObserver(
+        (entries) => {
+          if (
+            entries[0].isIntersecting &&
+            !this.loadingMorePosts &&
+            this.hasMorePosts
+          ) {
+            this.loadMorePosts();
+          }
+        },
+        { rootMargin: '400px' }
+      );
+
+      this._observer.observe(sentinel);
+    }, 0);
+  }
+
   async firstUpdated() {
     // Check guest mode
     const { isGuestMode } = await import('../services/auth-state');
@@ -1071,6 +1194,59 @@ export class AppProfile extends LitElement {
     }
   }
 
+  renderMediaGrid() {
+    return html`
+      <div class="media-grid">
+        ${this.posts.map((post) => {
+          const attachment = post.media_attachments?.[0];
+          if (!attachment) return null;
+
+          const isVideo =
+            attachment.type === 'video' || attachment.type === 'gifv';
+
+          return html`
+            <div class="media-item" @click=${() => this.handleOpenPost(post)}>
+              <img
+                src="${attachment.preview_url || attachment.url}"
+                alt="${attachment.description || ''}"
+                loading="lazy"
+              />
+              ${isVideo
+                ? html`
+                    <div class="media-indicator">
+                      <md-icon name="play" style="font-size: 16px;"></md-icon>
+                    </div>
+                  `
+                : null}
+              ${post.media_attachments && post.media_attachments.length > 1
+                ? html`
+                    <div
+                      class="media-indicator"
+                      style="right: auto; left: 6px;"
+                    >
+                      <md-icon name="albums" style="font-size: 16px;"></md-icon>
+                    </div>
+                  `
+                : null}
+            </div>
+          `;
+        })}
+      </div>
+
+      <!-- Sentinel for infinite scroll -->
+      <div id="media-sentinel" style="height: 20px; width: 100%;"></div>
+
+      ${this.loadingMorePosts
+        ? html`<div
+            class="load-more-indicator"
+            style="text-align: center; padding: 20px;"
+          >
+            <md-skeleton width="100px" height="20px"></md-skeleton>
+          </div>`
+        : null}
+    `;
+  }
+
   render() {
     // Show offline fallback if profile couldn't be loaded
     if (this.profileLoadFailed) {
@@ -1338,31 +1514,33 @@ export class AppProfile extends LitElement {
       <div id="posts-container">
         ${this.loadingPosts && this.posts.length === 0
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
-          : html`
-              <lit-virtualizer
-                class="${this.loadingPosts ? 'posts-loading' : ''}"
-                .items=${this.posts}
-                .renderItem=${(post: Post) => html`
-                  <div class="post-item">
-                    <timeline-item
-                      @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                        this.handleOpenPost(e.detail.tweet)}"
-                      @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                        this.editPost(e.detail.tweet)}"
-                      @delete="${() => this.reloadPosts()}"
-                      .tweet=${post}
-                      ?guestMode="${this.isGuestMode}"
-                    ></timeline-item>
-                  </div>
-                `}
-                @visibilityChanged=${this._handleVisibilityChanged}
-              ></lit-virtualizer>
-              ${this.loadingMorePosts
-                ? html`<div class="load-more-indicator">
-                    <md-skeleton width="100%" height="120px"></md-skeleton>
-                  </div>`
-                : null}
-            `}
+          : this.activeSegment === 'media'
+            ? this.renderMediaGrid()
+            : html`
+                <lit-virtualizer
+                  class="${this.loadingPosts ? 'posts-loading' : ''}"
+                  .items=${this.posts}
+                  .renderItem=${(post: Post) => html`
+                    <div class="post-item">
+                      <timeline-item
+                        @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.handleOpenPost(e.detail.tweet)}"
+                        @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.editPost(e.detail.tweet)}"
+                        @delete="${() => this.reloadPosts()}"
+                        .tweet=${post}
+                        ?guestMode="${this.isGuestMode}"
+                      ></timeline-item>
+                    </div>
+                  `}
+                  @visibilityChanged=${this._handleVisibilityChanged}
+                ></lit-virtualizer>
+                ${this.loadingMorePosts
+                  ? html`<div class="load-more-indicator">
+                      <md-skeleton width="100%" height="120px"></md-skeleton>
+                    </div>`
+                  : null}
+              `}
       </div>
 
       <report-dialog
