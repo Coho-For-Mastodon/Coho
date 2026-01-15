@@ -19,6 +19,8 @@ import { Post } from '../interfaces/Post';
 import { Notification } from '../interfaces/Notification';
 import type { Account } from '../mastodon/types';
 
+import { shouldDisableVirtualScroll } from '../utils/browser';
+
 @localized()
 @customElement('app-notifications')
 export class Notifications extends LitElement {
@@ -29,6 +31,9 @@ export class Notifications extends LitElement {
   @state() loadingFollowMap: Map<string, boolean> = new Map();
   @state() loadingMore: boolean = false;
   @state() hasMoreNotifications: boolean = true;
+
+  private _observer: IntersectionObserver | null = null;
+  private _activeRoot: Element | null = null;
 
   static styles = [
     css`
@@ -93,7 +98,8 @@ export class Notifications extends LitElement {
         display: none;
       }
 
-      lit-virtualizer {
+      lit-virtualizer,
+      .scroller-fallback {
         display: block;
         padding: 0;
         list-style: none;
@@ -104,7 +110,8 @@ export class Notifications extends LitElement {
         overflow-x: hidden;
       }
 
-      lit-virtualizer::-webkit-scrollbar {
+      lit-virtualizer::-webkit-scrollbar,
+      .scroller-fallback::-webkit-scrollbar {
         display: none;
       }
 
@@ -540,6 +547,54 @@ export class Notifications extends LitElement {
     }, options);
 
     observer.observe(this);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._observer?.disconnect();
+  }
+
+  updated(changedProperties: any) {
+    super.updated(changedProperties);
+
+    if (shouldDisableVirtualScroll()) {
+      this._setupInfiniteScroll();
+    }
+  }
+
+  private _setupInfiniteScroll() {
+    const trigger = this.shadowRoot?.querySelector(
+      '.panel.active .infinite-scroll-trigger'
+    );
+    const root = this.shadowRoot?.querySelector(
+      '.panel.active .scroller-fallback'
+    );
+
+    if (!trigger || !root) return;
+
+    if (this._activeRoot !== root) {
+      this._observer?.disconnect();
+      this._observer = new IntersectionObserver(
+        (entries) => {
+          if (
+            entries[0].isIntersecting &&
+            !this.loadingMore &&
+            this.hasMoreNotifications
+          ) {
+            this.loadMore();
+          }
+        },
+        {
+          root: root,
+          rootMargin: '500px',
+          threshold: 0,
+        }
+      );
+      this._activeRoot = root;
+    }
+
+    this._observer?.disconnect();
+    this._observer?.observe(trigger);
   }
 
   async checkFollowStatuses() {
@@ -1075,14 +1130,21 @@ export class Notifications extends LitElement {
 
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
         ${allNotifications.length > 0
-          ? html`
-              <lit-virtualizer
-                scroller
-                .items=${allNotifications}
-                .renderItem=${this._renderNotificationItem}
-                @visibilityChanged=${this._handleVisibilityChanged}
-              ></lit-virtualizer>
-            `
+          ? shouldDisableVirtualScroll()
+            ? html`<div class="scroller-fallback">
+                ${allNotifications.map((n, i) =>
+                  this._renderNotificationItem(n, i)
+                )}
+                <div class="infinite-scroll-trigger" style="height: 1px;"></div>
+              </div>`
+            : html`
+                <lit-virtualizer
+                  scroller
+                  .items=${allNotifications}
+                  .renderItem=${this._renderNotificationItem}
+                  @visibilityChanged=${this._handleVisibilityChanged}
+                ></lit-virtualizer>
+              `
           : html`
               <div id="no">
                 <img src="/assets/notify-done.svg" alt="no notifications" />
@@ -1093,14 +1155,21 @@ export class Notifications extends LitElement {
 
       <div class="panel ${this.activeSegment === 'mentions' ? 'active' : ''}">
         ${mentionNotifications.length > 0
-          ? html`
-              <lit-virtualizer
-                scroller
-                .items=${mentionNotifications}
-                .renderItem=${this._renderNotificationItem}
-                @visibilityChanged=${this._handleVisibilityChanged}
-              ></lit-virtualizer>
-            `
+          ? shouldDisableVirtualScroll()
+            ? html`<div class="scroller-fallback">
+                ${mentionNotifications.map((n, i) =>
+                  this._renderNotificationItem(n, i)
+                )}
+                <div class="infinite-scroll-trigger" style="height: 1px;"></div>
+              </div>`
+            : html`
+                <lit-virtualizer
+                  scroller
+                  .items=${mentionNotifications}
+                  .renderItem=${this._renderNotificationItem}
+                  @visibilityChanged=${this._handleVisibilityChanged}
+                ></lit-virtualizer>
+              `
           : html`
               <div id="no">
                 <img src="/assets/notify-done.svg" alt="no mentions" />
@@ -1111,14 +1180,21 @@ export class Notifications extends LitElement {
 
       <div class="panel ${this.activeSegment === 'follows' ? 'active' : ''}">
         ${followNotifications.length > 0
-          ? html`
-              <lit-virtualizer
-                scroller
-                .items=${followNotifications}
-                .renderItem=${this._renderNotificationItem}
-                @visibilityChanged=${this._handleVisibilityChanged}
-              ></lit-virtualizer>
-            `
+          ? shouldDisableVirtualScroll()
+            ? html`<div class="scroller-fallback">
+                ${followNotifications.map((n, i) =>
+                  this._renderNotificationItem(n, i)
+                )}
+                <div class="infinite-scroll-trigger" style="height: 1px;"></div>
+              </div>`
+            : html`
+                <lit-virtualizer
+                  scroller
+                  .items=${followNotifications}
+                  .renderItem=${this._renderNotificationItem}
+                  @visibilityChanged=${this._handleVisibilityChanged}
+                ></lit-virtualizer>
+              `
           : html`
               <div id="no">
                 <img src="/assets/notify-done.svg" alt="no followers" />

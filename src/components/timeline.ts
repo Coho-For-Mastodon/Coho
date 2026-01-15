@@ -26,6 +26,8 @@ import type {
   OpenImageDetail,
 } from '../types/events';
 
+import { shouldDisableVirtualScroll } from '../utils/browser';
+
 // Keyboard navigation handler bound reference
 import hotkeys from 'hotkeys-js';
 
@@ -141,6 +143,7 @@ export class Timeline extends LitElement {
   private _refreshIndicator: HTMLElement | null = null;
   private _refreshIcon: HTMLElement | null = null;
   private _scrollContainer: HTMLElement | null = null;
+  private _observer: IntersectionObserver | null = null;
   private _rafId: number | null = null;
   private _pullToRefreshSetup: boolean = false;
 
@@ -256,7 +259,8 @@ export class Timeline extends LitElement {
         border-radius: 6px;
       }
 
-      lit-virtualizer {
+      lit-virtualizer,
+      .scroller-fallback {
         display: block;
         border-radius: 6px;
         margin: 0;
@@ -533,6 +537,7 @@ export class Timeline extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this._observer?.disconnect();
     this._cleanupKeyboardNavigation();
 
     if (!this.autoLoad) {
@@ -660,6 +665,10 @@ export class Timeline extends LitElement {
   updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
 
+    if (shouldDisableVirtualScroll()) {
+      this._setupInfiniteScroll();
+    }
+
     // Setup pull-to-refresh when virtualizer becomes available
     if (
       !this._pullToRefreshSetup &&
@@ -668,6 +677,36 @@ export class Timeline extends LitElement {
     ) {
       this._setupPullToRefresh();
     }
+  }
+
+  private _setupInfiniteScroll() {
+    const trigger = this.shadowRoot?.querySelector('#infinite-scroll-trigger');
+    const root = this.shadowRoot?.querySelector('.scroller-fallback');
+
+    if (!trigger || !root) return;
+
+    if (!this._observer) {
+      this._observer = new IntersectionObserver(
+        (entries) => {
+          if (
+            entries[0].isIntersecting &&
+            !this.loadingData &&
+            this.timeline.length > 0
+          ) {
+            this.loadMore();
+          }
+        },
+        {
+          root: root,
+          rootMargin: '500px',
+          threshold: 0,
+        }
+      );
+    }
+
+    // Always re-observe to ensure we're tracking the correct element
+    this._observer.disconnect();
+    this._observer.observe(trigger);
   }
 
   private async _setupPullToRefresh() {
@@ -682,7 +721,7 @@ export class Timeline extends LitElement {
 
     // lit-virtualizer with scroller attribute is itself the scroll container
     const scrollContainer = this.shadowRoot?.querySelector(
-      'lit-virtualizer'
+      shouldDisableVirtualScroll() ? '.scroller-fallback' : 'lit-virtualizer'
     ) as HTMLElement;
 
     if (scrollContainer) {
@@ -712,7 +751,7 @@ export class Timeline extends LitElement {
   private _getScrollContainer(): HTMLElement | null {
     if (!this._scrollContainer) {
       this._scrollContainer = this.shadowRoot?.querySelector(
-        'lit-virtualizer'
+        shouldDisableVirtualScroll() ? '.scroller-fallback' : 'lit-virtualizer'
       ) as HTMLElement;
     }
     return this._scrollContainer;
@@ -1547,18 +1586,37 @@ export class Timeline extends LitElement {
         : null}
       ${this.loadingData && this.timeline.length === 0
         ? html`<md-skeleton-card count="5"></md-skeleton-card>`
-        : html`
-            <lit-virtualizer
-              id="mainList"
-              part="list"
-              class="scrollbar-hidden"
-              scroller
-              .items=${this.timeline}
-              .renderItem=${this._renderTimelineItem}
-              @visibilityChanged=${this._handleVisibilityChanged}
-            >
-            </lit-virtualizer>
-          `}
+        : shouldDisableVirtualScroll()
+          ? html`
+              <div
+                id="mainList"
+                part="list"
+                class="scroller-fallback scrollbar-hidden"
+              >
+                ${this.timeline.map((item, index) =>
+                  this._renderTimelineItem(item, index)
+                )}
+                <div id="infinite-scroll-trigger" style="height: 1px;"></div>
+                ${this.loadingData
+                  ? html`<div id="load-more-indicator">
+                      <md-icon src="/assets/loading-indicator.svg"></md-icon>
+                      Loading more...
+                    </div>`
+                  : null}
+              </div>
+            `
+          : html`
+              <lit-virtualizer
+                id="mainList"
+                part="list"
+                class="scrollbar-hidden"
+                scroller
+                .items=${this.timeline}
+                .renderItem=${this._renderTimelineItem}
+                @visibilityChanged=${this._handleVisibilityChanged}
+              >
+              </lit-virtualizer>
+            `}
     `;
   }
 }
