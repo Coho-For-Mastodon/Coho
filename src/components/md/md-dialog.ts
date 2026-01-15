@@ -78,7 +78,7 @@ export class MdDialog extends LitElement {
     .dialog-body {
       padding: 0 24px 24px 24px;
       overflow-y: auto;
-      flex: 1;
+      flex: 1 1 auto;
       min-height: 0;
     }
 

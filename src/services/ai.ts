@@ -310,7 +310,17 @@ export const generateAltText = async (
       // We likely need to send the image data.
 
       let imageUrl = '';
-      if (typeof imageSource === 'string') {
+
+      // Handle Blob or blob: URL (convert to base64)
+      if (typeof imageSource === 'string' && imageSource.startsWith('blob:')) {
+        const response = await fetch(imageSource);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        imageUrl = await new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } else if (typeof imageSource === 'string') {
         imageUrl = imageSource;
       } else {
         // If it's a blob, we might need to upload it or convert to base64
@@ -320,11 +330,10 @@ export const generateAltText = async (
         // Let's see how requestMammothBot or others work. They just send JSON.
         // If imageSource is a Blob, we need to convert to base64 data URL.
         const reader = new FileReader();
-        imageSource = await new Promise<string>((resolve) => {
+        imageUrl = await new Promise<string>((resolve) => {
           reader.onloadend = () => resolve(reader.result as string);
           reader.readAsDataURL(imageSource as Blob);
         });
-        imageUrl = imageSource;
       }
 
       const response = await fetch(
@@ -341,7 +350,16 @@ export const generateAltText = async (
       );
 
       if (!response.ok) {
-        throw new Error('Cloud function failed');
+        const errorText = await response.text();
+        console.error(
+          'Cloud function failed:',
+          response.status,
+          response.statusText,
+          errorText
+        );
+        throw new Error(
+          `Cloud function failed: ${response.status} ${errorText}`
+        );
       }
 
       const data = await response.json();

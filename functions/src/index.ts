@@ -215,7 +215,10 @@ export const generateAltText = onRequest(
       response.json({ altText });
     } catch (error) {
       logger.error('Alt text generation failed', { error });
-      response.status(500).json({ error: 'Alt text generation failed' });
+      response.status(500).json({
+        error: 'Alt text generation failed',
+        details: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 );
