@@ -183,7 +183,8 @@ describe('Router', () => {
       // Store original and mock navigation.navigate to prevent actual navigation
       originalNavigate = window.navigation.navigate.bind(window.navigation);
       navigateMock = vi.fn().mockReturnValue({ finished: Promise.resolve() });
-      window.navigation.navigate = navigateMock;
+      window.navigation.navigate =
+        navigateMock as typeof window.navigation.navigate;
     });
 
     afterEach(() => {

@@ -162,6 +162,64 @@ export const translateStatus = onRequest(
   }
 );
 
+export const generateAltText = onRequest(
+  { secrets: [openaiApiKey] },
+  async (request: Request, response: Response) => {
+    if (request.method === 'OPTIONS') {
+      applyCors(request, response);
+      response.status(204).send('');
+      return;
+    }
+
+    applyCors(request, response);
+
+    const apiKey = openaiApiKey.value();
+    if (!apiKey) {
+      response.status(500).json({ error: 'OpenAI API key not configured' });
+      return;
+    }
+
+    const openai = new OpenAI({ apiKey });
+
+    const imageUrl = request.body.imageUrl || request.query.imageUrl;
+    if (!imageUrl) {
+      response.status(400).json({ error: 'Image URL is required' });
+      return;
+    }
+
+    try {
+      const result = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Give me alt text for the following image. Only return the alt text, no other text or markdown:',
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageUrl,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 300,
+      });
+
+      const altText = result.choices[0].message.content;
+      logger.info('Generated alt text');
+      response.json({ altText });
+    } catch (error) {
+      logger.error('Alt text generation failed', { error });
+      response.status(500).json({ error: 'Alt text generation failed' });
+    }
+  }
+);
+
 // Mastodon API Proxy Functions
 
 export const bookmark = onRequest(

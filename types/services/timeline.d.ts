@@ -31,7 +31,13 @@ export declare const getPaginatedHomeTimeline: (
 export declare const prefetchNextPage: (maxId: string, type?: string) => void;
 export declare const getPublicTimeline: () => Promise<Post[]>;
 export declare const boostPost: (id: string) => Promise<any>;
+export declare const unboostPost: (
+  id: string
+) => Promise<import('../mastodon').Status>;
 export declare const reblogPost: (id: string) => Promise<any>;
+export declare const unreblogPost: (
+  id: string
+) => Promise<import('../mastodon').Status>;
 export declare const getReplies: (id: string) => Promise<{
   ancestors: Post[];
   descendants: Post[];

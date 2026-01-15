@@ -354,23 +354,19 @@ export class MediaEditDialog extends LitElement {
             (this.description = (e.target as HTMLTextAreaElement).value)}"
         ></md-text-area>
 
-        ${this.promptAPIAvailable
-          ? html`
-              <div class="generate-alt-container">
-                <md-button
-                  variant="text"
-                  size="small"
-                  ?disabled="${this.generating || this.isUploading}"
-                  @click="${this.handleGenerateAlt}"
-                  title=${msg('On-device AI')}
-                >
-                  ${this.generating
-                    ? msg('Generating...')
-                    : msg('Generate Alt Text')}
-                </md-button>
-              </div>
-            `
-          : ''}
+        <div class="generate-alt-container">
+          <md-button
+            variant="text"
+            size="small"
+            ?disabled="${this.generating || this.isUploading}"
+            @click="${this.handleGenerateAlt}"
+            title=${this.promptAPIAvailable
+              ? msg('On-device AI')
+              : msg('Cloud AI')}
+          >
+            ${this.generating ? msg('Generating...') : msg('Generate Alt Text')}
+          </md-button>
+        </div>
 
         <div slot="footer" class="actions">
           <md-button

@@ -39,8 +39,10 @@ export declare class MdTabs extends LitElement {
   private _activePanel;
   /** Unique ID for this tabs instance (used for aria-controls/aria-labelledby) */
   private _tabsId;
+  private _observer;
   private navSlot;
   private panelSlot;
+  constructor();
   static styles: import('lit').CSSResult;
   connectedCallback(): void;
   disconnectedCallback(): void;
