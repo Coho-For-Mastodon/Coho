@@ -588,6 +588,10 @@ export class TimelineItem extends LitElement {
 
     if (!this.tweet) return;
 
+    // Check current state (optimistic or actual)
+    // Note: isBoosted here refers to the "favorited" state (legacy naming issue)
+    const currentlyFavorited = this.isBoosted || this.tweet.favourited;
+
     // Store original state for rollback
     const originalFavorited = this.isBoosted;
     const originalTweetFavorited = this.tweet.favourited;
@@ -595,39 +599,84 @@ export class TimelineItem extends LitElement {
       ? this.tweet.reblog.favourites_count
       : this.tweet.favourites_count;
 
-    const { boostPost } = await import('../services/timeline');
+    if (currentlyFavorited) {
+      // HANDLE UN-FAVORITE
+      const { unboostPost } = await import('../services/timeline');
 
-    await withOptimisticUpdate(
-      // Apply optimistic update
-      () => {
-        this.isBoosted = true;
-        if (this.tweet) {
-          this.tweet.favourited = true;
-          if (this.tweet.reblog) {
-            this.tweet.reblog.favourites_count++;
-          } else {
-            this.tweet.favourites_count++;
+      await withOptimisticUpdate(
+        // Apply optimistic update
+        () => {
+          this.isBoosted = false;
+          if (this.tweet) {
+            this.tweet.favourited = false;
+            // Guard against negative counts
+            if (this.tweet.reblog) {
+              this.tweet.reblog.favourites_count = Math.max(
+                0,
+                this.tweet.reblog.favourites_count - 1
+              );
+            } else {
+              this.tweet.favourites_count = Math.max(
+                0,
+                this.tweet.favourites_count - 1
+              );
+            }
           }
-        }
-        this.requestUpdate();
-      },
-      // Execute actual API call
-      () => boostPost(id),
-      // Rollback on failure
-      () => {
-        this.isBoosted = originalFavorited;
-        if (this.tweet) {
-          this.tweet.favourited = originalTweetFavorited;
-          if (this.tweet.reblog) {
-            this.tweet.reblog.favourites_count = originalCount;
-          } else {
-            this.tweet.favourites_count = originalCount;
+          this.requestUpdate();
+        },
+        // Execute actual API call
+        () => unboostPost(id),
+        // Rollback on failure
+        () => {
+          this.isBoosted = originalFavorited;
+          if (this.tweet) {
+            this.tweet.favourited = originalTweetFavorited;
+            if (this.tweet.reblog) {
+              this.tweet.reblog.favourites_count = originalCount;
+            } else {
+              this.tweet.favourites_count = originalCount;
+            }
           }
-        }
-        this.requestUpdate();
-      },
-      { errorMessage: 'Failed to favorite post.' }
-    );
+          this.requestUpdate();
+        },
+        { errorMessage: 'Failed to un-favorite post.' }
+      );
+    } else {
+      // HANDLE FAVORITE
+      const { boostPost } = await import('../services/timeline');
+
+      await withOptimisticUpdate(
+        // Apply optimistic update
+        () => {
+          this.isBoosted = true;
+          if (this.tweet) {
+            this.tweet.favourited = true;
+            if (this.tweet.reblog) {
+              this.tweet.reblog.favourites_count++;
+            } else {
+              this.tweet.favourites_count++;
+            }
+          }
+          this.requestUpdate();
+        },
+        // Execute actual API call
+        () => boostPost(id),
+        // Rollback on failure
+        () => {
+          this.isBoosted = originalFavorited;
+          if (this.tweet) {
+            this.tweet.favourited = originalTweetFavorited;
+            if (this.tweet.reblog) {
+              this.tweet.reblog.favourites_count = originalCount;
+            } else {
+              this.tweet.favourites_count = originalCount;
+            }
+          }
+          this.requestUpdate();
+        },
+        { errorMessage: 'Failed to favorite post.' }
+      );
+    }
 
     // Invalidate favorites preload cache so the favorites tab shows fresh data
     const { invalidatePreloadCache } = await import('../services/preload');
@@ -653,6 +702,9 @@ export class TimelineItem extends LitElement {
 
     if (!this.tweet) return;
 
+    // Check current state (optimistic or actual)
+    const currentlyReblogged = this.isReblogged || this.tweet.reblogged;
+
     // Store original state for rollback
     const originalReblogged = this.isReblogged;
     const originalTweetReblogged = this.tweet.reblogged;
@@ -660,39 +712,84 @@ export class TimelineItem extends LitElement {
       ? this.tweet.reblog.reblogs_count
       : this.tweet.reblogs_count;
 
-    const { reblogPost } = await import('../services/timeline');
+    if (currentlyReblogged) {
+      // HANDLE UN-REBLOG
+      const { unreblogPost } = await import('../services/timeline');
 
-    await withOptimisticUpdate(
-      // Apply optimistic update
-      () => {
-        this.isReblogged = true;
-        if (this.tweet) {
-          this.tweet.reblogged = true;
-          if (this.tweet.reblog) {
-            this.tweet.reblog.reblogs_count++;
-          } else {
-            this.tweet.reblogs_count++;
+      await withOptimisticUpdate(
+        // Apply optimistic update
+        () => {
+          this.isReblogged = false;
+          if (this.tweet) {
+            this.tweet.reblogged = false;
+            // Guard against negative counts
+            if (this.tweet.reblog) {
+              this.tweet.reblog.reblogs_count = Math.max(
+                0,
+                this.tweet.reblog.reblogs_count - 1
+              );
+            } else {
+              this.tweet.reblogs_count = Math.max(
+                0,
+                this.tweet.reblogs_count - 1
+              );
+            }
           }
-        }
-        this.requestUpdate();
-      },
-      // Execute actual API call
-      () => reblogPost(id),
-      // Rollback on failure
-      () => {
-        this.isReblogged = originalReblogged;
-        if (this.tweet) {
-          this.tweet.reblogged = originalTweetReblogged;
-          if (this.tweet.reblog) {
-            this.tweet.reblog.reblogs_count = originalCount;
-          } else {
-            this.tweet.reblogs_count = originalCount;
+          this.requestUpdate();
+        },
+        // Execute actual API call
+        () => unreblogPost(id),
+        // Rollback on failure
+        () => {
+          this.isReblogged = originalReblogged;
+          if (this.tweet) {
+            this.tweet.reblogged = originalTweetReblogged;
+            if (this.tweet.reblog) {
+              this.tweet.reblog.reblogs_count = originalCount;
+            } else {
+              this.tweet.reblogs_count = originalCount;
+            }
           }
-        }
-        this.requestUpdate();
-      },
-      { errorMessage: 'Failed to boost post.' }
-    );
+          this.requestUpdate();
+        },
+        { errorMessage: 'Failed to un-boost post.' }
+      );
+    } else {
+      // HANDLE REBLOG
+      const { reblogPost } = await import('../services/timeline');
+
+      await withOptimisticUpdate(
+        // Apply optimistic update
+        () => {
+          this.isReblogged = true;
+          if (this.tweet) {
+            this.tweet.reblogged = true;
+            if (this.tweet.reblog) {
+              this.tweet.reblog.reblogs_count++;
+            } else {
+              this.tweet.reblogs_count++;
+            }
+          }
+          this.requestUpdate();
+        },
+        // Execute actual API call
+        () => reblogPost(id),
+        // Rollback on failure
+        () => {
+          this.isReblogged = originalReblogged;
+          if (this.tweet) {
+            this.tweet.reblogged = originalTweetReblogged;
+            if (this.tweet.reblog) {
+              this.tweet.reblog.reblogs_count = originalCount;
+            } else {
+              this.tweet.reblogs_count = originalCount;
+            }
+          }
+          this.requestUpdate();
+        },
+        { errorMessage: 'Failed to boost post.' }
+      );
+    }
 
     // fire custom event
     this.dispatchEvent(

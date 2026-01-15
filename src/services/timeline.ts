@@ -16,6 +16,8 @@ import {
   getMediaTimeline as mastodonGetMediaTimeline,
   saveMarker as mastodonSaveMarker,
   enrichPostsWithReplyContext as mastodonEnrichPostsWithReplyContext,
+  unfavoritePost as mastodonUnfavoritePost,
+  unreblogPost as mastodonUnreblogPost,
 } from '../mastodon/api/timelines';
 
 // Type for marker response
@@ -312,6 +314,10 @@ export const boostPost = async (id: string) => {
   return data;
 };
 
+export const unboostPost = async (id: string) => {
+  return mastodonUnfavoritePost(id);
+};
+
 // Use mastodon library's reblogPost but with Firebase fallback
 export const reblogPost = async (id: string) => {
   const accessToken = getAccessToken();
@@ -327,6 +333,10 @@ export const reblogPost = async (id: string) => {
   );
   const data = await response.json();
   return data;
+};
+
+export const unreblogPost = async (id: string) => {
+  return mastodonUnreblogPost(id);
 };
 
 // Use Firebase function for getReplies

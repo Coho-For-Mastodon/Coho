@@ -60,8 +60,18 @@ export class MdTabs extends LitElement {
   /** Unique ID for this tabs instance (used for aria-controls/aria-labelledby) */
   private _tabsId = `md-tabs-${++tabsIdCounter}`;
 
+  private _observer: MutationObserver;
+
   @query('slot[name="nav"]') private navSlot!: HTMLSlotElement;
   @query('slot:not([name])') private panelSlot!: HTMLSlotElement;
+
+  constructor() {
+    super();
+    this._observer = new MutationObserver(() => {
+      // Debounce updates if needed, but for now simple call is fine
+      this._updatePanels();
+    });
+  }
 
   static styles = css`
     :host {
@@ -219,6 +229,13 @@ export class MdTabs extends LitElement {
       'tab-selected',
       this._handleTabSelected as EventListener
     );
+    // Observe light DOM for changes (including nested tabs in wrappers like home-tabs-nav)
+    this._observer.observe(this, {
+      childList: true,
+      subtree: true,
+      attributes: false, // We handle attributes in updatePanels, looking for structural changes here
+      characterData: false,
+    });
   }
 
   disconnectedCallback() {
@@ -227,6 +244,7 @@ export class MdTabs extends LitElement {
       'tab-selected',
       this._handleTabSelected as EventListener
     );
+    this._observer.disconnect();
   }
 
   firstUpdated() {
@@ -278,9 +296,23 @@ export class MdTabs extends LitElement {
 
   private _getTabs(): MdTab[] {
     if (!this.navSlot) return [];
-    return this.navSlot
-      .assignedElements()
-      .filter((el): el is MdTab => el.tagName.toLowerCase() === 'md-tab');
+
+    const assigned = this.navSlot.assignedElements();
+    const tabs: MdTab[] = [];
+
+    for (const el of assigned) {
+      if (el.tagName.toLowerCase() === 'md-tab') {
+        tabs.push(el as MdTab);
+      } else {
+        // Also look for nested tabs (e.g. from Light DOM wrappers like home-tabs-nav)
+        const nested = el.querySelectorAll('md-tab');
+        if (nested.length > 0) {
+          tabs.push(...(Array.from(nested) as MdTab[]));
+        }
+      }
+    }
+
+    return tabs;
   }
 
   private _getPanels(): MdTabPanel[] {
@@ -403,10 +435,10 @@ export class MdTabs extends LitElement {
         aria-orientation="${this.orientation}"
         @keydown="${this._handleTablistKeyDown}"
       >
-        <slot name="nav"></slot>
+        <slot name="nav" @slotchange="${() => this._updatePanels()}"></slot>
       </div>
       <div class="panel-container">
-        <slot></slot>
+        <slot @slotchange="${() => this._updatePanels()}"></slot>
       </div>
     `;
   }

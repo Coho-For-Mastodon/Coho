@@ -7,7 +7,6 @@ import '../components/timeline';
 import '../components/timeline-item';
 
 import '../components/otter-drawer';
-import '../components/md/md-button';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
 import '../components/md/md-dialog';
@@ -15,6 +14,7 @@ import '../components/md/md-tabs';
 import '../components/md/md-tab';
 import '../components/md/md-tab-panel';
 import '../components/md/md-icon';
+import '../components/md/md-button';
 import '../components/md/md-toast';
 import '../components/offline-notify';
 import '../components/pwa-install';
@@ -22,6 +22,11 @@ import '../components/guest-login-banner';
 import '../components/home-sidebar';
 import '../components/settings-drawer-content';
 import '../components/post-detail-dialog';
+import '../components/home-tabs-nav';
+
+import { getEffectiveParams } from '../utils/launch-params';
+import { TabController } from '../controllers/tab-controller';
+import { shareTarget } from '../services/share-target';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -67,12 +72,8 @@ export class AppHome extends LitElement {
 
   @state() trendingTags: TrendingTag[] = [];
 
-  // Lazy loading states for tabs
-  @state() bookmarksLoaded: boolean = false;
-  @state() favoritesLoaded: boolean = false;
-  @state() notificationsLoaded: boolean = false;
-  @state() searchLoaded: boolean = false;
-  @state() messagesLoaded: boolean = false;
+  private tabController = new TabController(this);
+  @state() loadedTabs = new Set<string>();
 
   // Lazy loading states for drawer components
   @state() appThemeLoaded: boolean = false;
@@ -97,16 +98,6 @@ export class AppHome extends LitElement {
     'translation-toast',
     'error-toast',
   ]);
-
-  @state() activeTab: string = 'general';
-
-  @state() tabsOrientation: 'horizontal' | 'vertical' = window.matchMedia(
-    '(max-width: 820px)'
-  ).matches
-    ? 'horizontal'
-    : 'vertical';
-  @state() tabsPlacement: 'top' | 'bottom' | 'start' | 'end' =
-    window.matchMedia('(max-width: 820px)').matches ? 'bottom' : 'start';
 
   // DOM element references using @query for type safety
   @query('#settings-drawer') private settingsDrawer!: OtterDrawer;
@@ -138,40 +129,7 @@ export class AppHome extends LitElement {
     // Listen for keyboard shortcut to open new post dialog
     window.addEventListener('open-post-dialog', this._handleOpenPostDialog);
 
-    // Use the current URL params, but fall back to the initial launch URL if
-    // something in boot dropped our query string (e.g. PWA manifest shortcut
-    // /home?tab=notifications getting normalized to /home).
-    const urlParams = new URLSearchParams(window.location.search);
-    const effectiveParams = new URLSearchParams(urlParams);
-
-    try {
-      const launchUrl = sessionStorage.getItem('coho:launchUrl');
-      if (launchUrl) {
-        const launch = new URL(launchUrl, window.location.origin);
-
-        // Only “fill in” missing intent params from the launch URL.
-        for (const key of ['tab', 'newPost', 'name'] as const) {
-          if (!effectiveParams.has(key) && launch.searchParams.has(key)) {
-            const value = launch.searchParams.get(key);
-            if (value != null) effectiveParams.set(key, value);
-          }
-        }
-
-        // We’re now on /home; don’t let launch intent leak into later navigations.
-        sessionStorage.removeItem('coho:launchUrl');
-      }
-    } catch {
-      // sessionStorage may be unavailable in some privacy contexts; ignore.
-    }
-
-    // Initialize tabs state based on screen size
-    if (window.matchMedia('(max-width: 820px)').matches) {
-      this.tabsOrientation = 'horizontal';
-      this.tabsPlacement = 'bottom';
-    } else {
-      this.tabsOrientation = 'vertical';
-      this.tabsPlacement = 'start';
-    }
+    const effectiveParams = getEffectiveParams(window.location);
 
     // Set up global toast listener for error notifications
     this.setupGlobalToastListener();
@@ -187,6 +145,7 @@ export class AppHome extends LitElement {
     }, 1000);
 
     window.requestIdleCallback(async () => {
+      // Import and init key shortcuts
       const { init } = await import('../utils/key-shortcuts');
       init();
     });
@@ -220,16 +179,6 @@ export class AppHome extends LitElement {
       { timeout: 3000 }
     );
 
-    window.matchMedia('(max-width: 820px)').addEventListener('change', (e) => {
-      if (e.matches) {
-        this.tabsOrientation = 'horizontal';
-        this.tabsPlacement = 'bottom';
-      } else {
-        this.tabsOrientation = 'vertical';
-        this.tabsPlacement = 'start';
-      }
-    });
-
     const tabData = effectiveParams.get('tab');
     console.log('tabData', tabData);
 
@@ -260,7 +209,7 @@ export class AppHome extends LitElement {
 
       // Wait for the component to be ready before switching tabs
       await this.updateComplete;
-      this.openATab(tabToOpen);
+      this.tabController.openATab(tabToOpen);
     }
 
     window.requestIdleCallback(async () => {
@@ -293,7 +242,6 @@ export class AppHome extends LitElement {
         this.user = user ?? null;
       });
     }
-    // }, 1200);
   }
 
   /**
@@ -323,32 +271,17 @@ export class AppHome extends LitElement {
   }
 
   async shareTarget(name: string) {
-    // Decode the URL-encoded filename from the query param
-    const decodedName = decodeURIComponent(name);
-    const cache = await caches.open('shareTarget');
+    const result = await shareTarget(name);
 
-    // Build the expected cache key (must match SW's format)
-    const expectedKey = `/_share/${encodeURIComponent(decodedName)}`;
-
-    console.log('[Share Target] Looking for cache key:', expectedKey);
-    console.log(
-      '[Share Target] Available cache keys:',
-      (await cache.keys()).map((r) => r.url)
-    );
-
-    const response = await cache.match(expectedKey);
-
-    if (response) {
+    if (result.success) {
       console.log('[Share Target] Found cached file, opening dialog');
-      await this.openNewDialog(decodedName);
+      await this.openNewDialog(result.decodedName);
     } else {
       console.log('[Share Target] No cached file found');
       // Show error toast to user
       await this.overlays.show('error-toast');
       if (this.errorToast) {
-        this.errorToast.message = msg(
-          'Failed to load shared image. Please try sharing again.'
-        );
+        this.errorToast.message = result.errorMessage || msg('Error');
         this.errorToast.variant = 'error';
         this.errorToast.show();
       }
@@ -422,44 +355,12 @@ export class AppHome extends LitElement {
     setSettings({ data_saver: mode });
   }
 
-  /**
-   * Switch to a tab by name - shared logic for programmatic and user-initiated tab changes
-   */
-  private async switchToTab(
-    name: string,
-    resetHomeTracking = false
-  ): Promise<void> {
-    this.activeTab = name;
-
-    // Reset home tab tracking when switching away from home
-    if (resetHomeTracking && name !== 'general') {
-      this._wasOnHomeTab = false;
-    }
-
-    // Persist active tab to sessionStorage for navigation restoration
-    try {
-      sessionStorage.setItem('coho:activeTab', name);
-    } catch {
-      // sessionStorage may be unavailable in some privacy contexts; ignore.
-    }
-
-    // Lazy load components based on which tab is shown
-    await this.loadTabComponent(name);
-
-    // Handle notification-specific side effects
-    if (name === 'notifications') {
-      await this.handleNotificationsSideEffects();
-    }
-  }
-
-  async openATab(name: string) {
-    console.log('tab name', name);
-    await this.switchToTab(name);
-  }
-
   async handleTabChange(event: TabChangeEvent) {
-    const panel = event.detail.panel;
-    await this.switchToTab(panel, true);
+    // Determine the load callback:
+    // If we were passed a panel, we might need simple loading
+    await this.tabController.handleTabChange(event, (name) =>
+      this.loadTabComponent(name)
+    );
   }
 
   async handleReload() {
@@ -528,49 +429,48 @@ export class AppHome extends LitElement {
 
     // Wait for the component to be ready before switching tabs
     await this.updateComplete;
-    this.openATab(tabName);
+    this.tabController.openATab(tabName, (n) => this.loadTabComponent(n));
   };
 
   private _handleOpenPostDialog = () => {
     this.openNewDialog();
   };
 
-  // Track previous tab to detect double-tap on home
-  private _wasOnHomeTab = false;
-
-  // Tab name to loader key and state property mapping
+  // Tab name to loader key
   private static readonly tabConfig: Record<
     string,
     {
       loaderKey: keyof typeof componentLoaders;
-      stateKey:
-        | 'bookmarksLoaded'
-        | 'favoritesLoaded'
-        | 'notificationsLoaded'
-        | 'searchLoaded'
-        | 'messagesLoaded';
     }
   > = {
-    bookmarks: { loaderKey: 'bookmarks', stateKey: 'bookmarksLoaded' },
-    faves: { loaderKey: 'favorites', stateKey: 'favoritesLoaded' },
+    bookmarks: { loaderKey: 'bookmarks' },
+    faves: { loaderKey: 'favorites' },
     notifications: {
       loaderKey: 'notifications',
-      stateKey: 'notificationsLoaded',
     },
-    search: { loaderKey: 'search', stateKey: 'searchLoaded' },
-    messages: { loaderKey: 'messages', stateKey: 'messagesLoaded' },
+    search: { loaderKey: 'search' },
+    messages: { loaderKey: 'messages' },
   };
 
   /**
    * Unified method to lazy-load a tab's component
    */
   private async loadTabComponent(tabName: string): Promise<void> {
+    // Handle specific side effects (like notifications) here or in controller callback
+    if (tabName === 'notifications') {
+      await this.handleNotificationsSideEffects();
+    }
+
     const config = AppHome.tabConfig[tabName];
     if (!config) return;
 
+    // Avoid reloading if already handled (though lazyLoad handles this too, the Set is for UI rendering)
+    if (this.loadedTabs.has(tabName)) return;
+
     const loader = componentLoaders[config.loaderKey];
     if (await lazyLoad(config.loaderKey, loader)) {
-      this[config.stateKey] = true;
+      this.loadedTabs.add(tabName);
+      this.requestUpdate();
     }
   }
 
@@ -586,26 +486,9 @@ export class AppHome extends LitElement {
   }
 
   reloadHome() {
-    // Only refresh if we were already on the home tab (double-tap to refresh behavior)
-    // The _wasOnHomeTab flag is set before tab-change fires, so it reflects the previous state
-    if (this._wasOnHomeTab) {
+    this.tabController.reloadHome(() => {
       this.homeTimeline?.refreshTimeline();
-    }
-    // Always update the flag for next click
-    this._wasOnHomeTab = true;
-
-    // Reset tab query param if present (uses replaceState to avoid adding history entry)
-    const url = new URL(window.location.href);
-    if (url.searchParams.has('tab')) {
-      url.searchParams.delete('tab');
-      history.replaceState(null, '', url.pathname + url.search);
-    }
-
-    // Clear persisted tab so next visit defaults to 'general'
-    sessionStorage.removeItem('coho:activeTab');
-
-    // Sync component state
-    this.activeTab = 'general';
+    });
   }
 
   // Lazy loading methods for drawer components
@@ -710,23 +593,48 @@ export class AppHome extends LitElement {
                   ${msg('New Post')}
                 </md-menu-item>
 
-                <md-menu-item @click="${() => this.openATab('search')}">
+                <md-menu-item
+                  @click="${() =>
+                    this.tabController.openATab('search', (n) =>
+                      this.loadTabComponent(n)
+                    )}"
+                >
                   <md-icon slot="prefix" name="search"></md-icon>
                   ${msg('Explore')}
                 </md-menu-item>
-                <md-menu-item @click="${() => this.openATab('notifications')}">
+                <md-menu-item
+                  @click="${() =>
+                    this.tabController.openATab('notifications', (n) =>
+                      this.loadTabComponent(n)
+                    )}"
+                >
                   <md-icon slot="prefix" name="notifications"></md-icon>
                   ${msg('Notifications')}
                 </md-menu-item>
-                <md-menu-item @click="${() => this.openATab('messages')}">
+                <md-menu-item
+                  @click="${() =>
+                    this.tabController.openATab('messages', (n) =>
+                      this.loadTabComponent(n)
+                    )}"
+                >
                   <md-icon slot="prefix" name="chatbox"></md-icon>
                   ${msg('Messages')}
                 </md-menu-item>
-                <md-menu-item @click="${() => this.openATab('bookmarks')}">
+                <md-menu-item
+                  @click="${() =>
+                    this.tabController.openATab('bookmarks', (n) =>
+                      this.loadTabComponent(n)
+                    )}"
+                >
                   <md-icon slot="prefix" name="bookmark"></md-icon>
                   ${msg('Saved')}
                 </md-menu-item>
-                <md-menu-item @click="${() => this.openATab('faves')}">
+                <md-menu-item
+                  @click="${() =>
+                    this.tabController.openATab('faves', (n) =>
+                      this.loadTabComponent(n)
+                    )}"
+                >
                   <md-icon slot="prefix" name="heart"></md-icon>
                   ${msg('Favorites')}
                 </md-menu-item>
@@ -867,84 +775,17 @@ export class AppHome extends LitElement {
       <main>
         <md-tabs
           @tab-change="${(e: CustomEvent) => this.handleTabChange(e)}"
-          .active="${this.activeTab}"
-          orientation="${this.tabsOrientation}"
-          placement="${this.tabsPlacement}"
+          .active="${this.tabController.activeTab}"
+          orientation="${this.tabController.tabsOrientation}"
+          placement="${this.tabController.tabsPlacement}"
         >
-          <md-tab
+          <home-tabs-nav
             slot="nav"
-            panel="general"
-            @click="${() => this.reloadHome()}"
-          >
-            <md-icon slot="icon" src="/assets/home-outline.svg"></md-icon>
-            <span class="tab-label">${msg('Home')}</span>
-          </md-tab>
-          <md-tab slot="nav" panel="search">
-            <md-icon slot="icon" src="/assets/search-outline.svg"></md-icon>
-            <span class="tab-label">${msg('Explore')}</span>
-          </md-tab>
-          <md-tab
-            slot="nav"
-            panel="notifications"
-            ?disabled="${this.isGuestMode}"
-          >
-            <md-icon
-              slot="icon"
-              src="/assets/notifications-outline.svg"
-            ></md-icon>
-            <span class="tab-label">${msg('Notifications')}</span>
-            ${this.hasNewNotifications
-              ? html`<span class="notification-dot"></span>`
-              : nothing}
-            ${this.isGuestMode
-              ? html`<md-icon
-                  slot="suffix"
-                  name="lock-closed"
-                  style="font-size: 12px; opacity: 0.5;"
-                ></md-icon>`
-              : nothing}
-          </md-tab>
-          <md-tab slot="nav" panel="bookmarks" ?disabled="${this.isGuestMode}">
-            <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
-            <span class="tab-label">${msg('Saved')}</span>
-            ${this.isGuestMode
-              ? html`<md-icon
-                  slot="suffix"
-                  name="lock-closed"
-                  style="font-size: 12px; opacity: 0.5;"
-                ></md-icon>`
-              : nothing}
-          </md-tab>
-          <md-tab slot="nav" panel="faves" ?disabled="${this.isGuestMode}">
-            <md-icon slot="icon" src="/assets/heart-outline.svg"></md-icon>
-            <span class="tab-label">${msg('Favorites')}</span>
-            ${this.isGuestMode
-              ? html`<md-icon
-                  slot="suffix"
-                  name="lock-closed"
-                  style="font-size: 12px; opacity: 0.5;"
-                ></md-icon>`
-              : nothing}
-          </md-tab>
-
-          ${this.isGuestMode
-            ? nothing
-            : html`
-                <div slot="nav" class="new-post-container">
-                  <md-button
-                    variant="fab"
-                    class="new-post-btn"
-                    @click="${() => this.openNewDialog()}"
-                    title="New Post"
-                  >
-                    <md-icon src="/assets/add-outline.svg"></md-icon>
-                  </md-button>
-                </div>
-              `}
-
-          <md-tab slot="nav" panel="media" style="display: none;"></md-tab>
-          <md-tab slot="nav" panel="messages" style="display: none;"></md-tab>
-          <md-tab slot="nav" panel="custom" style="display: none;"></md-tab>
+            .isGuestMode="${this.isGuestMode}"
+            .hasNewNotifications="${this.hasNewNotifications}"
+            @reload-home="${() => this.reloadHome()}"
+            @open-new-post="${() => this.openNewDialog()}"
+          ></home-tabs-nav>
 
           <md-tab-panel name="general">
             <app-timeline
@@ -965,7 +806,7 @@ export class AppHome extends LitElement {
             <app-timeline timelineType="media"></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="messages">
-            ${this.messagesLoaded
+            ${this.loadedTabs.has('messages')
               ? html`<app-messages></app-messages>`
               : nothing}
           </md-tab-panel>
@@ -973,7 +814,7 @@ export class AppHome extends LitElement {
             <app-timeline timelineType="public"></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="bookmarks">
-            ${this.bookmarksLoaded
+            ${this.loadedTabs.has('bookmarks')
               ? html`<app-bookmarks
                   @open="${($event: CustomEvent) =>
                     this.handleOpenTweet($event.detail.tweet)}"
@@ -981,7 +822,7 @@ export class AppHome extends LitElement {
               : nothing}
           </md-tab-panel>
           <md-tab-panel name="faves">
-            ${this.favoritesLoaded
+            ${this.loadedTabs.has('faves')
               ? html`<app-favorites
                   @open="${($event: CustomEvent) =>
                     this.handleOpenTweet($event.detail.tweet)}"
@@ -989,7 +830,7 @@ export class AppHome extends LitElement {
               : nothing}
           </md-tab-panel>
           <md-tab-panel name="notifications">
-            ${this.notificationsLoaded
+            ${this.loadedTabs.has('notifications')
               ? html`<app-notifications
                   @open="${($event: CustomEvent) =>
                     this.handleOpenTweet($event.detail.tweet)}"
@@ -997,7 +838,9 @@ export class AppHome extends LitElement {
               : nothing}
           </md-tab-panel>
           <md-tab-panel name="search">
-            ${this.searchLoaded ? html`<search-page></search-page>` : nothing}
+            ${this.loadedTabs.has('search')
+              ? html`<search-page></search-page>`
+              : nothing}
           </md-tab-panel>
         </md-tabs>
 
