@@ -19,6 +19,8 @@
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141314" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
 
+    <link rel="preload" href="/assets/icons/new-icons/icon-144x144.png" as="image" />
+
     <!-- Early theme color application - synchronous to prevent flash -->
     <script>
       (function () {
@@ -41,12 +43,6 @@
 
     <meta
       http-equiv="origin-trial"
-      content="Aj8FlZb9SyzcLEGzrcsBX0FE0lCSGS+CK2K58/+AGGJoKVOPBANpPtLJmf42ZpC2HJImUJhpfj3bv3Yh1d6E/vsAAACNeyJvcmlnaW4iOiJodHRwczovL3dvbmRlcmZ1bC1nbGFjaWVyLTA3YjAyMmQxZS4yLmF6dXJlc3RhdGljYXBwcy5uZXQ6NDQzIiwiaXNTdWJkb21haW4iOnRydWUsImZlYXR1cmUiOiJtc1dlYkFwcFdpZGdldHMiLCJleHBpcnkiOjE2ODU1Nzc2MDB9"
-    />
-
-    <meta
-      http-equiv="origin-trial"
-      ,
       content="AvBOKpImuHaojzQSmhi68lv47g5wpzaIzA21QAf/ThtE1QgNkI+QiT49v3DUkef0N6Qzs80OusaOtwClNY2WQQcAAABUeyJvcmlnaW4iOiJodHRwczovL2NvaG8ucGxhY2U6NDQzIiwiZmVhdHVyZSI6IkFJUHJvb2ZyZWFkZXJBUEkiLCJleHBpcnkiOjE3NzkxNDg4MDB9"
     />
 
@@ -233,7 +229,7 @@
       document.body.classList.add(`sl-theme-${theme}`);
 
       themeSetting.addEventListener('change', (e) => {
-        document.body.classList.remove(`sl-theme-${theme}`);
+        document.body.classList.remove('sl-theme-light', 'sl-theme-dark');
         document.body.classList.add(`sl-theme-${e.matches ? 'dark' : 'light'}`);
       });
     </script>
@@ -318,7 +314,7 @@
               );
             }
           }
-        }, 5000);
+        }, 15000);
       };
     </script>
   </body>

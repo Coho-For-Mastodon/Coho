@@ -9,6 +9,7 @@
  */
 
 import { router } from '../router/routes.js';
+import { setAuthRedirect } from './auth-redirect.js';
 
 // Mastodon API error format
 export interface MastodonApiError {
@@ -93,6 +94,11 @@ export function handleUnauthorized(): void {
     del('server').catch(console.error);
     del('account').catch(console.error);
   });
+
+  // Store current URL so user returns here after re-authenticating
+  setAuthRedirect(
+    `${window.location.pathname}${window.location.search}${window.location.hash}`
+  );
 
   // Navigate to login page
   router.navigate('/');

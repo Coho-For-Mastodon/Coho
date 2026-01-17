@@ -6,19 +6,17 @@ import './md/md-icon.js';
 import './md/md-icon-button.js';
 
 import { enableVibrate } from '../utils/handle-vibrate';
+import { setAuthRedirect } from '../utils/auth-redirect';
 
 import type {
   OpenSettingsEvent,
   OpenThemingEvent,
-  OpenBotDrawerEvent,
   OpenInstallEvent,
 } from '../types/events';
 
 @localized()
 @customElement('app-header')
 export class AppHeader extends LitElement {
-  @property({ type: String }) title = 'Otter';
-
   @property({ type: Boolean }) enableBack: boolean = false;
 
   @property({ type: Boolean }) showInstall: boolean = false;
@@ -58,13 +56,6 @@ export class AppHeader extends LitElement {
         gap: 0px;
       }
 
-      header h1 {
-        margin-top: 0;
-        margin-bottom: 0;
-        font-size: var(--md-sys-typescale-title-large-font-size);
-        font-weight: bold;
-      }
-
       header img {
         view-transition-name: main-header-icon;
         contain: layout;
@@ -94,10 +85,6 @@ export class AppHeader extends LitElement {
       }
 
       @media (min-width: 768px) {
-        #mammoth-bot {
-          display: none;
-        }
-
         header {
           padding-left: 38px;
         }
@@ -136,18 +123,6 @@ export class AppHeader extends LitElement {
   protected firstUpdated(
     _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
   ): void {
-    // Debug: Check display mode for window controls overlay
-    const isWCO = window.matchMedia(
-      '(display-mode: window-controls-overlay)'
-    ).matches;
-    console.log('[Header] Window Controls Overlay active:', isWCO);
-    console.log(
-      '[Header] titlebar-area-x:',
-      getComputedStyle(document.documentElement).getPropertyValue(
-        'env(titlebar-area-x, fallback)'
-      )
-    );
-
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
         enableVibrate(this.shadowRoot);
@@ -165,25 +140,12 @@ export class AppHeader extends LitElement {
     this.dispatchEvent(new CustomEvent('open-theming') as OpenThemingEvent);
   }
 
-  openBotDrawer() {
-    // fire custom event
-    this.dispatchEvent(
-      new CustomEvent('open-bot-drawer') as OpenBotDrawerEvent
-    );
-  }
-
   openInstall() {
     // fire custom event
     this.dispatchEvent(new CustomEvent('open-install') as OpenInstallEvent);
   }
 
   async goBack() {
-    // if ('navigation' in window && window.navigation.canGoBack) {
-    //   const result = window.navigation.back();
-    //   await result.finished;
-    // } else {
-    //   window.history.back();
-    // }
     if (window.navigation.canGoBack) {
       window.navigation.back();
     }
@@ -215,15 +177,12 @@ export class AppHeader extends LitElement {
                   />
                 </svg>
               </md-icon-button>`
-            : null}
-          ${!this.enableBack
-            ? html`<img
+            : html`<img
                 src="/assets/icons/new-icons/icon-48x48.png"
                 alt="App Icon"
                 width="28"
                 height="28"
-              />`
-            : nothing}
+              />`}
         </div>
 
         <div id="actions">
@@ -255,6 +214,9 @@ export class AppHeader extends LitElement {
                       id="login-button"
                       title=${msg('Sign In')}
                       @click="${() => {
+                        setAuthRedirect(
+                          `${window.location.pathname}${window.location.search}${window.location.hash}`
+                        );
                         import('../router/routes').then((m) =>
                           m.router.navigate('/')
                         );

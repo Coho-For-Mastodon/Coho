@@ -6,6 +6,7 @@ import '../components/md/md-autocomplete';
 import '../components/md/md-button';
 import type { AutocompleteOption } from '../components/md/md-autocomplete';
 import { POPULAR_INSTANCES } from '../services/instance-search';
+import { consumeAuthRedirect } from '../utils/auth-redirect';
 
 // Dynamic import to avoid loading router during SSR
 const getRouter = () => import('../router/routes').then((m) => m.router);
@@ -59,14 +60,6 @@ export class AppLogin extends LitElement {
         align-items: center;
         text-align: center;
         margin-bottom: 24px;
-      }
-
-      .logo {
-        width: 80px;
-        height: 80px;
-        margin-bottom: 16px;
-        border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
 
       h1 {
@@ -138,8 +131,31 @@ export class AppLogin extends LitElement {
     `,
   ];
 
-  async firstUpdated() {
-    // get code and state from url
+  firstUpdated() {
+    requestIdleCallback(
+      async () => {
+        // get code and state from url
+        await this.init();
+      },
+      {
+        timeout: 8000,
+      }
+    );
+
+    requestIdleCallback(
+      async () => {
+        if (this.shadowRoot) {
+          const { enableVibrate } = await import('../utils/handle-vibrate');
+          enableVibrate(this.shadowRoot);
+        }
+      },
+      {
+        timeout: 8000,
+      }
+    );
+  }
+
+  private async init() {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const state = urlParams.get('state');
@@ -156,13 +172,6 @@ export class AppLogin extends LitElement {
       const router = await getRouter();
       await router.navigate(this.getPostAuthRedirect());
     }
-
-    window.requestIdleCallback(async () => {
-      if (this.shadowRoot) {
-        const { enableVibrate } = await import('../utils/handle-vibrate');
-        enableVibrate(this.shadowRoot);
-      }
-    });
   }
 
   private getPostAuthRedirect(): string {
@@ -177,23 +186,10 @@ export class AppLogin extends LitElement {
       return `/home${window.location.search}${window.location.hash}`;
     }
 
-    // Otherwise, prefer the initial launch URL (manifest shortcut / deep link)
-    // if it points at /home with intent params.
-    try {
-      const launchUrl = sessionStorage.getItem('coho:launchUrl') || '';
-      if (launchUrl) {
-        const launch = new URL(launchUrl, window.location.origin);
-        const hasIntent =
-          launch.searchParams.has('tab') ||
-          launch.searchParams.has('newPost') ||
-          launch.searchParams.has('name');
-
-        if (launch.pathname === '/home' && hasIntent) {
-          return `${launch.pathname}${launch.search}${launch.hash}`;
-        }
-      }
-    } catch {
-      // sessionStorage may be unavailable in some privacy contexts; ignore.
+    // Check for stored redirect from before OAuth flow started
+    const storedRedirect = consumeAuthRedirect();
+    if (storedRedirect) {
+      return storedRedirect;
     }
 
     return '/home';
@@ -271,11 +267,6 @@ export class AppLogin extends LitElement {
       <main>
         <div class="login-card">
           <div class="login-header">
-            <img
-              src="/assets/icons/new-icons/icon-144x144.png"
-              alt="Coho Logo"
-              class="logo"
-            />
             <h1>${msg('Welcome to Coho')}</h1>
             <p class="subtitle">${msg('Your modern Mastodon client')}</p>
           </div>

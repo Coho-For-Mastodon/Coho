@@ -15,6 +15,7 @@ import './md/md-menu-item';
 import type { Account } from '../mastodon/types/account';
 import type { TrendingTag } from '../mastodon/types/instance';
 import { router } from '../router/routes';
+import { setAuthRedirect } from '../utils/auth-redirect';
 
 /**
  * Right sidebar component for the home page.
@@ -226,7 +227,14 @@ export class HomeSidebar extends LitElement {
               "You're browsing as a guest. Sign in to interact with posts and access all features."
             )}
           </p>
-          <md-button variant="filled" @click="${() => router.navigate('/')}"
+          <md-button
+            variant="filled"
+            @click="${() => {
+              setAuthRedirect(
+                `${window.location.pathname}${window.location.search}${window.location.hash}`
+              );
+              router.navigate('/');
+            }}"
             >${msg('Sign In')}</md-button
           >
         </div>

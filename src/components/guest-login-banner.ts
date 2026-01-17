@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 import { router } from '../router/routes';
+import { setAuthRedirect } from '../utils/auth-redirect';
 
 import './md/md-button';
 
@@ -72,6 +73,10 @@ export class GuestLoginBanner extends LitElement {
   `;
 
   private handleSignIn() {
+    // Store current location so we return here after OAuth
+    setAuthRedirect(
+      `${window.location.pathname}${window.location.search}${window.location.hash}`
+    );
     router.navigate('/');
   }
 

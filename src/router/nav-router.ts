@@ -1,5 +1,38 @@
 import type { TemplateResult } from 'lit';
-import { ensurePolyfills, isBrowser } from './polyfills.js';
+
+let polyfillsLoaded = false;
+
+function hasNavigationAPI(): boolean {
+  return typeof window !== 'undefined' && 'navigation' in window;
+}
+
+function hasURLPattern(): boolean {
+  return typeof URLPattern !== 'undefined';
+}
+
+function isBrowser(): boolean {
+  return typeof window !== 'undefined';
+}
+
+async function ensurePolyfills(): Promise<void> {
+  if (polyfillsLoaded) return;
+
+  const loadPromises: Promise<unknown>[] = [];
+
+  if (!hasURLPattern()) {
+    loadPromises.push(import('urlpattern-polyfill'));
+  }
+
+  if (!hasNavigationAPI()) {
+    loadPromises.push(import('@virtualstate/navigation/polyfill'));
+  }
+
+  if (loadPromises.length > 0) {
+    await Promise.all(loadPromises);
+  }
+
+  polyfillsLoaded = true;
+}
 
 /**
  * Base navigation state type - extend this for app-specific state.
@@ -111,13 +144,6 @@ export class Router extends EventTarget {
     super();
     this.routes = options.routes;
     this.globalPlugins = options.plugins || [];
-
-    // Skip initialization if not in browser (SSR)
-    if (!isBrowser()) {
-      return;
-    }
-
-    // Patterns will be built after polyfills are loaded in init()
   }
 
   /**
@@ -161,14 +187,6 @@ export class Router extends EventTarget {
           });
         },
       });
-    });
-
-    // Handle popstate for back/forward that might not trigger navigate event
-    window.addEventListener('popstate', () => {
-      const route = this.matchRoute(window.location.pathname);
-      if (route && route.path !== this.currentRoute?.path) {
-        this.handleNavigation(route);
-      }
     });
   }
 
@@ -394,14 +412,5 @@ export class Router extends EventTarget {
       return null;
     }
     return this.currentRoute.render();
-  }
-
-  /**
-   * Get the current matched route.
-   *
-   * @returns The current Route object or null if no route is matched
-   */
-  getCurrentRoute(): Route | null {
-    return this.currentRoute;
   }
 }

@@ -167,4 +167,4 @@ export const myFunction = onRequest(
 
 - **Import components before use** - Lit registers on import
 - **Service worker built separately** - see `vite.config.ts` build-sw plugin
-- **Launch URL capture** - `sessionStorage.getItem('coho:launchUrl')` preserves deep link intent
+- **Auth redirect preservation** - `src/utils/auth-redirect.ts` stores intended destination in localStorage before OAuth flow

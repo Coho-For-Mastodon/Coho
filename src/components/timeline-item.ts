@@ -2,7 +2,12 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
 import { getSettings, Settings } from '../services/settings';
-import { withOptimisticUpdate } from '../utils/optimistic-updates';
+import {
+  toggleStatusAction,
+  performOneWayAction,
+  shareStatus as shareStatusAction,
+  showGuestActionToast,
+} from '../utils/timeline-actions';
 
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types';
@@ -563,29 +568,7 @@ export class TimelineItem extends LitElement {
     }
   };
 
-  /**
-   * Show login prompt for guests trying to use auth-required features
-   */
-  private showLoginPrompt(action: string) {
-    // Dispatch a toast event to show the message
-    window.dispatchEvent(
-      new CustomEvent('app-toast', {
-        detail: {
-          message: `Sign in to ${action}`,
-          variant: 'info',
-        },
-      })
-    );
-  }
-
   async favorite(id: string) {
-    console.log('favorite', id);
-
-    if (this.guestMode) {
-      this.showLoginPrompt('like posts');
-      return;
-    }
-
     if (!this.tweet) return;
 
     // Check current state (optimistic or actual)
@@ -599,84 +582,47 @@ export class TimelineItem extends LitElement {
       ? this.tweet.reblog.favourites_count
       : this.tweet.favourites_count;
 
-    if (currentlyFavorited) {
-      // HANDLE UN-FAVORITE
-      const { unboostPost } = await import('../services/timeline');
+    await toggleStatusAction({
+      guestMode: this.guestMode,
+      actionName: 'like posts',
+      isActive: currentlyFavorited,
+      errorMessageDo: 'Failed to favorite post.',
+      errorMessageUndo: 'Failed to un-favorite post.',
 
-      await withOptimisticUpdate(
-        // Apply optimistic update
-        () => {
-          this.isBoosted = false;
-          if (this.tweet) {
-            this.tweet.favourited = false;
-            // Guard against negative counts
-            if (this.tweet.reblog) {
-              this.tweet.reblog.favourites_count = Math.max(
-                0,
-                this.tweet.reblog.favourites_count - 1
-              );
-            } else {
-              this.tweet.favourites_count = Math.max(
-                0,
-                this.tweet.favourites_count - 1
-              );
-            }
-          }
-          this.requestUpdate();
-        },
-        // Execute actual API call
-        () => unboostPost(id),
-        // Rollback on failure
-        () => {
-          this.isBoosted = originalFavorited;
-          if (this.tweet) {
-            this.tweet.favourited = originalTweetFavorited;
-            if (this.tweet.reblog) {
-              this.tweet.reblog.favourites_count = originalCount;
-            } else {
-              this.tweet.favourites_count = originalCount;
-            }
-          }
-          this.requestUpdate();
-        },
-        { errorMessage: 'Failed to un-favorite post.' }
-      );
-    } else {
-      // HANDLE FAVORITE
-      const { boostPost } = await import('../services/timeline');
+      onOptimisticUpdate: (active) => {
+        this.isBoosted = active;
+        if (this.tweet) {
+          this.tweet.favourited = active;
+          const delta = active ? 1 : -1;
+          const target = this.tweet.reblog || this.tweet;
+          target.favourites_count = Math.max(
+            0,
+            target.favourites_count + delta
+          );
+        }
+        this.requestUpdate();
+      },
 
-      await withOptimisticUpdate(
-        // Apply optimistic update
-        () => {
-          this.isBoosted = true;
-          if (this.tweet) {
-            this.tweet.favourited = true;
-            if (this.tweet.reblog) {
-              this.tweet.reblog.favourites_count++;
-            } else {
-              this.tweet.favourites_count++;
-            }
-          }
-          this.requestUpdate();
-        },
-        // Execute actual API call
-        () => boostPost(id),
-        // Rollback on failure
-        () => {
-          this.isBoosted = originalFavorited;
-          if (this.tweet) {
-            this.tweet.favourited = originalTweetFavorited;
-            if (this.tweet.reblog) {
-              this.tweet.reblog.favourites_count = originalCount;
-            } else {
-              this.tweet.favourites_count = originalCount;
-            }
-          }
-          this.requestUpdate();
-        },
-        { errorMessage: 'Failed to favorite post.' }
-      );
-    }
+      doApiCall: async () => {
+        const { boostPost } = await import('../services/timeline');
+        return boostPost(id);
+      },
+
+      undoApiCall: async () => {
+        const { unboostPost } = await import('../services/timeline');
+        return unboostPost(id);
+      },
+
+      onRollback: () => {
+        this.isBoosted = originalFavorited;
+        if (this.tweet) {
+          this.tweet.favourited = originalTweetFavorited;
+          const target = this.tweet.reblog || this.tweet;
+          target.favourites_count = originalCount;
+        }
+        this.requestUpdate();
+      },
+    });
 
     // Invalidate favorites preload cache so the favorites tab shows fresh data
     const { invalidatePreloadCache } = await import('../services/preload');
@@ -693,13 +639,6 @@ export class TimelineItem extends LitElement {
   }
 
   async reblog(id: string) {
-    console.log('reblog', id);
-
-    if (this.guestMode) {
-      this.showLoginPrompt('boost posts');
-      return;
-    }
-
     if (!this.tweet) return;
 
     // Check current state (optimistic or actual)
@@ -712,84 +651,44 @@ export class TimelineItem extends LitElement {
       ? this.tweet.reblog.reblogs_count
       : this.tweet.reblogs_count;
 
-    if (currentlyReblogged) {
-      // HANDLE UN-REBLOG
-      const { unreblogPost } = await import('../services/timeline');
+    await toggleStatusAction({
+      guestMode: this.guestMode,
+      actionName: 'boost posts',
+      isActive: currentlyReblogged,
+      errorMessageDo: 'Failed to boost post.',
+      errorMessageUndo: 'Failed to un-boost post.',
 
-      await withOptimisticUpdate(
-        // Apply optimistic update
-        () => {
-          this.isReblogged = false;
-          if (this.tweet) {
-            this.tweet.reblogged = false;
-            // Guard against negative counts
-            if (this.tweet.reblog) {
-              this.tweet.reblog.reblogs_count = Math.max(
-                0,
-                this.tweet.reblog.reblogs_count - 1
-              );
-            } else {
-              this.tweet.reblogs_count = Math.max(
-                0,
-                this.tweet.reblogs_count - 1
-              );
-            }
-          }
-          this.requestUpdate();
-        },
-        // Execute actual API call
-        () => unreblogPost(id),
-        // Rollback on failure
-        () => {
-          this.isReblogged = originalReblogged;
-          if (this.tweet) {
-            this.tweet.reblogged = originalTweetReblogged;
-            if (this.tweet.reblog) {
-              this.tweet.reblog.reblogs_count = originalCount;
-            } else {
-              this.tweet.reblogs_count = originalCount;
-            }
-          }
-          this.requestUpdate();
-        },
-        { errorMessage: 'Failed to un-boost post.' }
-      );
-    } else {
-      // HANDLE REBLOG
-      const { reblogPost } = await import('../services/timeline');
+      onOptimisticUpdate: (active) => {
+        this.isReblogged = active;
+        if (this.tweet) {
+          this.tweet.reblogged = active;
+          const delta = active ? 1 : -1;
+          const target = this.tweet.reblog || this.tweet;
+          target.reblogs_count = Math.max(0, target.reblogs_count + delta);
+        }
+        this.requestUpdate();
+      },
 
-      await withOptimisticUpdate(
-        // Apply optimistic update
-        () => {
-          this.isReblogged = true;
-          if (this.tweet) {
-            this.tweet.reblogged = true;
-            if (this.tweet.reblog) {
-              this.tweet.reblog.reblogs_count++;
-            } else {
-              this.tweet.reblogs_count++;
-            }
-          }
-          this.requestUpdate();
-        },
-        // Execute actual API call
-        () => reblogPost(id),
-        // Rollback on failure
-        () => {
-          this.isReblogged = originalReblogged;
-          if (this.tweet) {
-            this.tweet.reblogged = originalTweetReblogged;
-            if (this.tweet.reblog) {
-              this.tweet.reblog.reblogs_count = originalCount;
-            } else {
-              this.tweet.reblogs_count = originalCount;
-            }
-          }
-          this.requestUpdate();
-        },
-        { errorMessage: 'Failed to boost post.' }
-      );
-    }
+      doApiCall: async () => {
+        const { reblogPost } = await import('../services/timeline');
+        return reblogPost(id);
+      },
+
+      undoApiCall: async () => {
+        const { unreblogPost } = await import('../services/timeline');
+        return unreblogPost(id);
+      },
+
+      onRollback: () => {
+        this.isReblogged = originalReblogged;
+        if (this.tweet) {
+          this.tweet.reblogged = originalTweetReblogged;
+          const target = this.tweet.reblog || this.tweet;
+          target.reblogs_count = originalCount;
+        }
+        this.requestUpdate();
+      },
+    });
 
     // fire custom event
     this.dispatchEvent(
@@ -802,23 +701,16 @@ export class TimelineItem extends LitElement {
   }
 
   async bookmark(id: string) {
-    console.log('bookmark', id);
-
-    if (this.guestMode) {
-      this.showLoginPrompt('bookmark posts');
-      return;
-    }
-
     if (!this.tweet) return;
 
     // Store original state for rollback
     const originalBookmarked = this.isBookmarked;
     const originalTweetBookmarked = this.tweet.bookmarked;
 
-    const { addBookmark } = await import('../services/bookmarks');
-
-    await withOptimisticUpdate(
-      // Apply optimistic update
+    await performOneWayAction(
+      this.guestMode,
+      'bookmark posts',
+      // Optimistic update
       () => {
         this.isBookmarked = true;
         if (this.tweet) {
@@ -826,9 +718,12 @@ export class TimelineItem extends LitElement {
         }
         this.requestUpdate();
       },
-      // Execute actual API call
-      () => addBookmark(id),
-      // Rollback on failure
+      // API Call
+      async () => {
+        const { addBookmark } = await import('../services/bookmarks');
+        return addBookmark(id);
+      },
+      // Rollback
       () => {
         this.isBookmarked = originalBookmarked;
         if (this.tweet) {
@@ -836,13 +731,13 @@ export class TimelineItem extends LitElement {
         }
         this.requestUpdate();
       },
-      { errorMessage: 'Failed to bookmark post.' }
+      'Failed to bookmark post.'
     );
   }
 
   async replies() {
     if (this.guestMode) {
-      this.showLoginPrompt('reply to posts');
+      showGuestActionToast('reply to posts');
       return;
     }
 
@@ -889,20 +784,7 @@ export class TimelineItem extends LitElement {
   // }
 
   async shareStatus(tweet: Post | null) {
-    if (tweet) {
-      // share status with web share api
-      if (navigator.share) {
-        await navigator.share({
-          title: 'Coho',
-          text: tweet.reblog ? tweet.reblog.content : tweet.content,
-          url: `https://mastodon.social/web/statuses/${tweet.reblog ? tweet.reblog.id : tweet.id}`,
-        });
-      } else {
-        // fallback to clipboard api
-        const url = `https://mastodon.social/web/statuses/${tweet.reblog ? tweet.reblog.id : tweet.id}`;
-        await navigator.clipboard.writeText(url);
-      }
-    }
+    await shareStatusAction(tweet);
   }
 
   async openPost() {

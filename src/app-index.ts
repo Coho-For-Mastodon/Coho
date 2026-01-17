@@ -11,27 +11,6 @@ import './components/header';
 import './components/pwa-update';
 import { getSettings } from './services/settings';
 
-// Log build version for debugging
-console.log('[Coho] Build version:', __APP_VERSION__);
-
-// ============================================================================
-// LAUNCH INTENT CAPTURE (PWA manifest shortcuts / deep links)
-// ============================================================================
-// Some boot-time redirects or navigations can accidentally drop query params
-// from the initial URL (e.g. /home?tab=notifications). Capture the first URL
-// we were launched with so downstream pages can recover intent if needed.
-try {
-  const key = 'coho:launchUrl';
-  if (!sessionStorage.getItem(key)) {
-    sessionStorage.setItem(
-      key,
-      `${window.location.pathname}${window.location.search}${window.location.hash}`
-    );
-  }
-} catch {
-  // sessionStorage may be unavailable in some privacy contexts; ignore.
-}
-
 @customElement('app-index')
 export class AppIndex extends LitElement {
   static get styles() {
@@ -71,15 +50,14 @@ export class AppIndex extends LitElement {
     `;
   }
 
-  async connectedCallback() {
+  connectedCallback() {
     super.connectedCallback();
 
     // Initialize router (loads initial route's lazy imports)
-    await router.init();
+    router.init();
+  }
 
-    // Sync localStorage credentials to IndexedDB for service worker access
-    await this.syncCredentialsToIndexedDB();
-
+  async handleInitTheme() {
     const settings = await getSettings();
     console.log('settings', settings);
 
@@ -98,6 +76,13 @@ export class AppIndex extends LitElement {
       );
       this.applyThemeColor(color);
     }
+  }
+
+  firstUpdated() {
+    // Sync localStorage credentials to IndexedDB for service worker access
+    this.syncCredentialsToIndexedDB();
+
+    this.handleInitTheme();
 
     // Preload data during idle time if conditions are good
     // This is lazy-imported to avoid impacting first load bundle size
@@ -108,6 +93,10 @@ export class AppIndex extends LitElement {
 
     // Lazy-load shortcuts help dialog on first show-shortcuts-help event
     this.initLazyShortcutsHelp();
+
+    router.addEventListener('route-changed', () => {
+      this.requestUpdate();
+    });
   }
 
   /**
@@ -245,8 +234,13 @@ export class AppIndex extends LitElement {
     document.body.style.setProperty('--md-sys-color-primary', color);
     document.body.style.setProperty('--md-sys-color-outline', color);
 
-    // Update theme-color meta tags with tinted background
-    this.updateThemeMetaTags(color);
+    requestIdleCallback(
+      () => {
+        // Update theme-color meta tags with tinted background
+        this.updateThemeMetaTags(color);
+      },
+      { timeout: 8000 }
+    );
   }
 
   /**
@@ -349,12 +343,6 @@ export class AppIndex extends LitElement {
     else if (g < 0) g = 0;
 
     return (usePound ? '#' : '') + (g | (b << 8) | (r << 16)).toString(16);
-  }
-
-  firstUpdated() {
-    router.addEventListener('route-changed', () => {
-      this.requestUpdate();
-    });
   }
 
   render() {

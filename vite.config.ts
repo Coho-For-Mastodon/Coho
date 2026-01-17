@@ -156,11 +156,42 @@ customPlugins.push({
   },
 });
 
+// Plugin to inject modulepreload for critical chunks
+customPlugins.push({
+  name: 'inject-modulepreload',
+  enforce: 'post',
+  apply: 'build',
+  transformIndexHtml: {
+    order: 'post',
+    handler(html: string, { bundle }: { bundle?: Record<string, unknown> }) {
+      if (!bundle) return html;
+
+      const chunksToPreload = ['vendor-idb-keyval', 'preload-'];
+      const preloadLinks: string[] = [];
+
+      for (const chunkPattern of chunksToPreload) {
+        const chunk = Object.keys(bundle).find(
+          (name) => name.includes(chunkPattern) && name.endsWith('.js')
+        );
+        if (chunk) {
+          preloadLinks.push(`<link rel="modulepreload" href="/${chunk}" />`);
+        }
+      }
+
+      if (preloadLinks.length > 0) {
+        html = html.replace('<head>', `<head>${preloadLinks.join('')}`);
+      }
+
+      return html;
+    },
+  },
+});
+
 // Plugin to minify HTML
 customPlugins.push({
   name: 'html-minifier',
   enforce: 'post',
-  transformIndexHtml(html) {
+  transformIndexHtml(html: string) {
     // Minify CSS inside <style> tags
     html = html.replace(
       /<style>([\s\S]*?)<\/style>/g,
@@ -197,10 +228,12 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,
+    polyfillModulePreload: false,
     assetsDir: 'code',
     cssCodeSplit: true,
     minify: 'terser',
-    target: ['esnext', 'edge140', 'firefox120', 'chrome140', 'safari19'],
+    modulePreload: { polyfill: false },
+    target: ['esnext', 'edge140', 'firefox146', 'chrome140', 'safari24'],
     terserOptions: {
       module: true,
       compress: {
@@ -250,6 +283,10 @@ export default defineConfig({
               id.includes('/node_modules/@lit')
             ) {
               return 'vendor-lit';
+            }
+
+            if (id.includes('/node_modules/idb-keyval')) {
+              return 'vendor-idb-keyval';
             }
           }
         },

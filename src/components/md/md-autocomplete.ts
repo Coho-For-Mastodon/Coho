@@ -45,6 +45,31 @@ export class MdAutocomplete extends LitElement {
       display: block;
       width: 100%;
       position: relative;
+
+      /* Colors */
+      --_surface-container: var(--md-sys-color-surface-container, #f3edf7);
+      --_surface-container-highest: var(
+        --md-sys-color-surface-container-highest,
+        #e6e0e9
+      );
+      --_on-surface: var(--md-sys-color-on-surface, #1d1b20);
+      --_on-surface-variant: var(--md-sys-color-on-surface-variant, #49454f);
+      --_primary: var(--md-sys-color-primary, #6750a4);
+      --_outline: var(--md-sys-color-outline, #79747e);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :host {
+        --_surface-container: var(--md-sys-color-surface-container, #2b2930);
+        --_surface-container-highest: var(
+          --md-sys-color-surface-container-highest,
+          #49454f
+        );
+        --_on-surface: var(--md-sys-color-on-surface, #e6e0e9);
+        --_on-surface-variant: var(--md-sys-color-on-surface-variant, #cac4d0);
+        --_primary: var(--md-sys-color-primary, #d0bcff);
+        --_outline: var(--md-sys-color-outline, #938f99);
+      }
     }
 
     .autocomplete-container {
@@ -58,7 +83,7 @@ export class MdAutocomplete extends LitElement {
       padding: 12px 16px;
       border: none;
       border-radius: 52px;
-      background-color: var(--md-sys-color-surface-container-highest, #e6e0e9);
+      background-color: var(--_surface-container-highest);
       font-family:
         'Roboto',
         system-ui,
@@ -68,50 +93,50 @@ export class MdAutocomplete extends LitElement {
       font-weight: 400;
       line-height: 24px;
       letter-spacing: 0.5px;
-      color: var(--md-sys-color-on-surface, #1d1b20);
+      color: var(--_on-surface);
       transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
       box-sizing: border-box;
     }
 
     input::placeholder {
-      color: var(--md-sys-color-on-surface-variant, #49454f);
+      color: var(--_on-surface-variant);
       opacity: 1;
     }
 
     input:hover:not(:disabled) {
       background-color: color-mix(
         in srgb,
-        var(--md-sys-color-on-surface, #1d1b20) 8%,
-        var(--md-sys-color-surface-container-highest, #e6e0e9)
+        var(--_on-surface) 8%,
+        var(--_surface-container-highest)
       );
     }
 
     input:focus {
       outline: none;
-      border-bottom-color: var(--md-sys-color-primary, #6750a4);
+      border-bottom-color: var(--_primary);
       border-bottom-width: 2px;
       background-color: color-mix(
         in srgb,
-        var(--md-sys-color-on-surface, #1d1b20) 12%,
-        var(--md-sys-color-surface-container-highest, #e6e0e9)
+        var(--_on-surface) 12%,
+        var(--_surface-container-highest)
       );
     }
 
     input:disabled {
       opacity: 0.38;
       cursor: not-allowed;
-      background-color: var(--md-sys-color-surface-container-highest, #e6e0e9);
+      background-color: var(--_surface-container-highest);
     }
 
     /* Outlined variant */
     input.outlined {
       background-color: transparent;
-      border: 1px solid var(--md-sys-color-outline, #79747e);
+      border: 1px solid var(--_outline);
       border-radius: 4px;
     }
 
     input.outlined:hover:not(:disabled) {
-      border-color: var(--md-sys-color-on-surface, #1d1b20);
+      border-color: var(--_on-surface);
       background-color: transparent;
     }
 
@@ -125,7 +150,7 @@ export class MdAutocomplete extends LitElement {
     }
 
     input.outlined:focus {
-      border-color: var(--md-sys-color-primary, #6750a4);
+      border-color: var(--_primary);
       border-width: 2px;
       background-color: transparent;
       padding: 11px 15px;
@@ -139,7 +164,7 @@ export class MdAutocomplete extends LitElement {
       right: 0;
       max-height: 300px;
       overflow-y: auto;
-      background-color: var(--md-sys-color-surface-container, #f3edf7);
+      background-color: var(--_surface-container);
       border-radius: 0 0 12px 12px;
       box-shadow:
         0 2px 6px 2px rgba(0, 0, 0, 0.15),
@@ -165,16 +190,16 @@ export class MdAutocomplete extends LitElement {
     .dropdown-item.highlighted {
       background-color: color-mix(
         in srgb,
-        var(--md-sys-color-on-surface, #1d1b20) 8%,
-        var(--md-sys-color-surface-container, #f3edf7)
+        var(--_on-surface) 8%,
+        var(--_surface-container)
       );
     }
 
     .dropdown-item:active {
       background-color: color-mix(
         in srgb,
-        var(--md-sys-color-on-surface, #1d1b20) 12%,
-        var(--md-sys-color-surface-container, #f3edf7)
+        var(--_on-surface) 12%,
+        var(--_surface-container)
       );
     }
 
@@ -185,12 +210,12 @@ export class MdAutocomplete extends LitElement {
     .item-label {
       font-size: 14px;
       font-weight: 500;
-      color: var(--md-sys-color-on-surface, #1d1b20);
+      color: var(--_on-surface);
     }
 
     .item-description {
       font-size: 12px;
-      color: var(--md-sys-color-on-surface-variant, #49454f);
+      color: var(--_on-surface-variant);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -201,14 +226,14 @@ export class MdAutocomplete extends LitElement {
       align-items: center;
       justify-content: center;
       padding: 16px;
-      color: var(--md-sys-color-on-surface-variant, #49454f);
+      color: var(--_on-surface-variant);
       font-size: 14px;
     }
 
     .no-results {
       padding: 16px;
       text-align: center;
-      color: var(--md-sys-color-on-surface-variant, #49454f);
+      color: var(--_on-surface-variant);
       font-size: 14px;
     }
 
@@ -229,93 +254,6 @@ export class MdAutocomplete extends LitElement {
     .item-text {
       flex: 1;
       min-width: 0;
-    }
-
-    /* Dark mode support */
-    @media (prefers-color-scheme: dark) {
-      input {
-        background-color: var(
-          --md-sys-color-surface-container-highest,
-          #49454f
-        );
-        color: var(--md-sys-color-on-surface, #e6e0e9);
-        border-bottom-color: var(--md-sys-color-outline, #938f99);
-      }
-
-      input::placeholder {
-        color: var(--md-sys-color-on-surface-variant, #cac4d0);
-      }
-
-      input:hover:not(:disabled) {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #e6e0e9) 8%,
-          var(--md-sys-color-surface-container-highest, #49454f)
-        );
-      }
-
-      input:focus {
-        border-bottom-color: var(--md-sys-color-primary, #d0bcff);
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #e6e0e9) 12%,
-          var(--md-sys-color-surface-container-highest, #49454f)
-        );
-      }
-
-      input:disabled {
-        background-color: var(
-          --md-sys-color-surface-container-highest,
-          #49454f
-        );
-      }
-
-      input.outlined {
-        background-color: transparent;
-        border-color: var(--md-sys-color-outline, #938f99);
-      }
-
-      input.outlined:hover:not(:disabled) {
-        border-color: var(--md-sys-color-on-surface, #e6e0e9);
-      }
-
-      input.outlined:focus {
-        border-color: var(--md-sys-color-primary, #d0bcff);
-      }
-
-      .dropdown {
-        background-color: var(--md-sys-color-surface-container, #2b2930);
-      }
-
-      .dropdown-item:hover,
-      .dropdown-item.highlighted {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #e6e0e9) 8%,
-          var(--md-sys-color-surface-container, #2b2930)
-        );
-      }
-
-      .dropdown-item:active {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #e6e0e9) 12%,
-          var(--md-sys-color-surface-container, #2b2930)
-        );
-      }
-
-      .item-label {
-        color: var(--md-sys-color-on-surface, #e6e0e9);
-      }
-
-      .item-description {
-        color: var(--md-sys-color-on-surface-variant, #cac4d0);
-      }
-
-      .loading-indicator,
-      .no-results {
-        color: var(--md-sys-color-on-surface-variant, #cac4d0);
-      }
     }
   `;
 
