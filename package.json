@@ -36,6 +36,7 @@
   "license": "ISC",
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
+    "@lit-labs/compiler": "^1.1.2",
     "@lit-labs/virtualizer": "^2.1.1",
     "@lit/localize": "^0.12.2",
     "@virtualstate/navigation": "^1.0.1-alpha.212",
@@ -53,6 +54,7 @@
     "@lit/localize-tools": "^0.8.0",
     "@open-wc/testing": "^4.0.0",
     "@playwright/test": "^1.50.0",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@types/dom-navigation": "^1.0.6",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
@@ -71,6 +73,7 @@
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-visualizer": "^6.0.5",
     "terser": "^5.44.0",
+    "tslib": "^2.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.1",

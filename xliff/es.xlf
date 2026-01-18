@@ -1000,126 +1000,179 @@
 </trans-unit>
 <trans-unit id="s3687049d1af562c4">
   <source>Copy</source>
+  <target>Copiar</target>
 </trans-unit>
 <trans-unit id="s5eee3dd2675292f6">
   <source>Loading more...</source>
+  <target>Cargando más...</target>
 </trans-unit>
 <trans-unit id="s8d10c896a6f5e373">
   <source>AI generated image</source>
+  <target>Imagen generada por IA</target>
 </trans-unit>
 <trans-unit id="s216407f266691656">
   <source>Failed to load shared image. Please try sharing again.</source>
+  <target>No se pudo cargar la imagen compartida. Por favor, intenta compartir de nuevo.</target>
 </trans-unit>
 <trans-unit id="s122b4afa84dc1548">
   <source>Open Home</source>
+  <target>Abrir Inicio</target>
 </trans-unit>
 <trans-unit id="s9c1fe7b413b74ce5">
   <source>Open Notifications</source>
+  <target>Abrir Notificaciones</target>
 </trans-unit>
 <trans-unit id="sb72a4b091e8795b3">
   <source>Open Search</source>
+  <target>Abrir Búsqueda</target>
 </trans-unit>
 <trans-unit id="sac9c63f1a48305fc">
   <source>Open Bookmarks</source>
+  <target>Abrir Marcadores</target>
 </trans-unit>
 <trans-unit id="sa266c07fa7d7d2c0">
   <source>Open Favorites</source>
+  <target>Abrir Favoritos</target>
 </trans-unit>
 <trans-unit id="s8d589358a247dba5">
   <source>Navigate posts</source>
+  <target>Navegar publicaciones</target>
 </trans-unit>
 <trans-unit id="s1e1dda0b28d5e4a5">
   <source>New post</source>
+  <target>Nueva publicación</target>
 </trans-unit>
 <trans-unit id="s4b9709186a5c22c8">
   <source>Show all shortcuts</source>
+  <target>Mostrar todos los atajos</target>
 </trans-unit>
 <trans-unit id="s727145e9f25108db">
   <source>View all keyboard shortcuts</source>
+  <target>Ver todos los atajos de teclado</target>
 </trans-unit>
 <trans-unit id="s49213f6563f37637">
   <source>Keyboard Shortcuts</source>
+  <target>Atajos de Teclado</target>
 </trans-unit>
 <trans-unit id="s07e6118e838b2e23">
   <source>Navigation</source>
+  <target>Navegación</target>
 </trans-unit>
 <trans-unit id="sa72130488c1d7c67">
   <source>Go to Home</source>
+  <target>Ir a Inicio</target>
 </trans-unit>
 <trans-unit id="se400760fe3543794">
   <source>Go to Notifications</source>
+  <target>Ir a Notificaciones</target>
 </trans-unit>
 <trans-unit id="s44a97ed7b3015c2c">
   <source>Go to Search</source>
+  <target>Ir a Búsqueda</target>
 </trans-unit>
 <trans-unit id="sd599ae9632c5e9f9">
   <source>Go to Bookmarks</source>
+  <target>Ir a Marcadores</target>
 </trans-unit>
 <trans-unit id="scb1527abc5fc1cfd">
   <source>Go to Favorites</source>
+  <target>Ir a Favoritos</target>
 </trans-unit>
 <trans-unit id="s939b9daaa2c6b475">
   <source>Go to Profile</source>
+  <target>Ir a Perfil</target>
 </trans-unit>
 <trans-unit id="sc7e5b0355146889c">
   <source>Go to Messages</source>
+  <target>Ir a Mensajes</target>
 </trans-unit>
 <trans-unit id="s680fc90489553ed6">
   <source>Timeline</source>
+  <target>Línea de tiempo</target>
 </trans-unit>
 <trans-unit id="s41cca0f54dbeabb2">
   <source>Next post</source>
+  <target>Siguiente publicación</target>
 </trans-unit>
 <trans-unit id="s4907b24078947052">
   <source>Previous post</source>
+  <target>Publicación anterior</target>
 </trans-unit>
 <trans-unit id="sc685d7705585c76f">
   <source>Refresh timeline</source>
+  <target>Actualizar línea de tiempo</target>
 </trans-unit>
 <trans-unit id="s4ea77c4018cb88bc">
   <source>Post Actions (when focused)</source>
+  <target>Acciones de publicación (cuando está enfocada)</target>
 </trans-unit>
 <trans-unit id="s9dce1fb8226d0cdd">
   <source>Open post</source>
+  <target>Abrir publicación</target>
 </trans-unit>
 <trans-unit id="s181de3190f4abb2c">
   <source>Boost</source>
+  <target>Impulsar</target>
 </trans-unit>
 <trans-unit id="s51ba5321a04109cd">
   <source>Favorite</source>
+  <target>Favorito</target>
 </trans-unit>
 <trans-unit id="sdbacf34fc010d6d9">
   <source>Bookmark</source>
+  <target>Marcador</target>
 </trans-unit>
 <trans-unit id="s26c4bbcf4df6673b">
   <source>Expand thread</source>
+  <target>Expandir hilo</target>
 </trans-unit>
 <trans-unit id="s8af61807443f32a4">
   <source>Actions</source>
+  <target>Acciones</target>
 </trans-unit>
 <trans-unit id="s0f772460e8ce9675">
   <source>Focus search</source>
+  <target>Enfocar búsqueda</target>
 </trans-unit>
 <trans-unit id="s3dfb8b70507666e2">
   <source>Show shortcuts help</source>
+  <target>Mostrar ayuda de atajos</target>
 </trans-unit>
 <trans-unit id="sbba6a0f5864827d4">
   <source>Composing</source>
+  <target>Redacción</target>
 </trans-unit>
 <trans-unit id="sf4f71bf91b9e75f2">
   <source>Publish post</source>
+  <target>Publicar</target>
 </trans-unit>
 <trans-unit id="sfcae9f83f7f25e25">
   <source>Previous image</source>
+  <target>Imagen anterior</target>
 </trans-unit>
 <trans-unit id="se645d473fbdc4705">
   <source>Next image</source>
+  <target>Siguiente imagen</target>
 </trans-unit>
 <trans-unit id="sdec709236764aa73">
   <source>Close preview</source>
+  <target>Cerrar vista previa</target>
 </trans-unit>
 <trans-unit id="s5e8250fb85d64c23">
   <source>Close</source>
+  <target>Cerrar</target>
+</trans-unit>
+<trans-unit id="sce56d0a7ea079bcc">
+  <source>Error accessing shared file.</source>
+  <target>Error al acceder al archivo compartido.</target>
+</trans-unit>
+<trans-unit id="s1e2badea04bcdb38">
+  <source>Cloud AI</source>
+  <target>IA en la nube</target>
+</trans-unit>
+<trans-unit id="s5f343a43e7ea9f91">
+  <source>Error</source>
+  <target>Error</target>
 </trans-unit>
 </body>
 </file>

@@ -3,6 +3,8 @@ import checker from 'vite-plugin-checker';
 import copy from 'rollup-plugin-copy';
 import wasm from 'vite-plugin-wasm';
 import { visualizer } from 'rollup-plugin-visualizer';
+import typescript from '@rollup/plugin-typescript';
+import { compileLitTemplates } from '@lit-labs/compiler';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -68,6 +70,17 @@ customPlugins.push({
             // Inline all imports - critical for service workers
             inlineDynamicImports: true,
           },
+          plugins: [
+            typescript({
+              compilerOptions: {
+                declaration: false,
+                declarationMap: false,
+              },
+              transformers: {
+                before: [compileLitTemplates()],
+              },
+            }),
+          ],
         },
         minify: 'terser',
         terserOptions: {
@@ -271,6 +284,17 @@ export default defineConfig({
       input: {
         main: 'index.html',
       },
+      plugins: [
+        typescript({
+          compilerOptions: {
+            declaration: false,
+            declarationMap: false,
+          },
+          transformers: {
+            before: [compileLitTemplates()],
+          },
+        }),
+      ],
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
