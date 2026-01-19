@@ -70,6 +70,8 @@ export interface Route {
   title: string;
   render: () => TemplateResult;
   plugins?: RouterPlugin[];
+  /** Skip view transitions when navigating to/from this route */
+  skipViewTransition?: boolean;
 }
 
 /**
@@ -183,7 +185,10 @@ export class Router extends EventTarget {
         scroll: 'manual',
         handler: async () => {
           await this.handleNavigation(route, {
-            skipViewTransition: isSameRoute,
+            skipViewTransition:
+              isSameRoute ||
+              route.skipViewTransition ||
+              this.currentRoute?.skipViewTransition,
           });
         },
       });
@@ -383,9 +388,11 @@ export class Router extends EventTarget {
 
     this.initialized = true;
 
-    // Run plugins for initial route
+    // Run plugins for initial route (skip view transition on initial load)
     if (this.currentRoute) {
-      await this.handleNavigation(this.currentRoute);
+      await this.handleNavigation(this.currentRoute, {
+        skipViewTransition: true,
+      });
     }
   }
 

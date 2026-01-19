@@ -24,6 +24,7 @@ const routes: Route[] = [
   {
     path: '/',
     title: 'login',
+    skipViewTransition: true,
     render: () => html`<app-login></app-login>`,
   },
   {
