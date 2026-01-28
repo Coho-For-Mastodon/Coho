@@ -183,6 +183,13 @@
 
       /* MD3 Color Tokens */
       :root {
+        /* Layout constraints for wide screens (like Elk's contained layout) */
+        --layout-max-width: 1200px;
+        --layout-nav-width: 80px;
+        --layout-sidebar-width: 320px;
+        --layout-gap: 32px;
+        --layout-sidebar-padding: 16px;
+
         /* Light mode MD3 background colors */
         --md-sys-color-background: #ffffff;
         --md-sys-color-surface: color-mix(in srgb, var(--md-sys-color-primary) 10%, white);

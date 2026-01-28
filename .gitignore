@@ -7,7 +7,9 @@ build
 .idea
 .github/workflows/main.yml
 /test-results/
+/test-results-e2e/
 /playwright-report/
+/playwright-report-e2e/
 /playwright/.cache/
 
 # Vitest browser mode screenshots

@@ -1,6 +1,7 @@
 import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 import { setupWorker } from 'msw/browser';
 import { handlers } from './mocks/handlers';
+import { page } from '@vitest/browser/context';
 
 // Set up MSW worker for browser
 const worker = setupWorker(...handlers);
@@ -9,7 +10,15 @@ beforeAll(async () => {
   await worker.start({ onUnhandledRequest: 'warn' });
 });
 
-afterEach(() => {
+afterEach(async (ctx) => {
+  // Take a screenshot after every test
+  const testName = ctx.task.name.replace(/[^a-zA-Z0-9]/g, '-');
+  const suiteName =
+    ctx.task.suite?.name?.replace(/[^a-zA-Z0-9]/g, '-') || 'unknown';
+  await page.screenshot({
+    path: `./tests/e2e/__screenshots__/${suiteName}/${testName}.png`,
+  });
+
   worker.resetHandlers();
   localStorage.clear();
   sessionStorage.clear();

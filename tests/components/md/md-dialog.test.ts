@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { fixture, html, elementUpdated } from '../../test-utils';
 import '../../../src/components/md/md-dialog';
 import type { MdDialog } from '../../../src/components/md/md-dialog';

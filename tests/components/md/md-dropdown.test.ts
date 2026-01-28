@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { fixture, html, elementUpdated } from '../../test-utils';
 import '../../../src/components/md/md-dropdown';
 import '../../../src/components/md/md-menu';

@@ -16,7 +16,15 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const DEFAULT_DIRS = [path.join(ROOT, 'public'), path.join(ROOT, 'src')];
 const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg']);
-const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', '.github', '.vite', 'lib', 'functions']);
+const SKIP_DIRS = new Set([
+  'node_modules',
+  'dist',
+  '.git',
+  '.github',
+  '.vite',
+  'lib',
+  'functions',
+]);
 
 function parseArgs() {
   const args = new Set(process.argv.slice(2));
@@ -30,7 +38,7 @@ async function listFiles(dir, files = []) {
   let entries;
   try {
     entries = await fs.readdir(dir, { withFileTypes: true });
-  } catch (e) {
+  } catch (_e) {
     return files; // Ignore missing dirs
   }
   for (const entry of entries) {
@@ -96,7 +104,10 @@ async function optimizeSvg(filePath, dryRun, verbose) {
   const saved = before - after;
   if (saved > 0) {
     if (!dryRun) await fs.writeFile(filePath, out, 'utf8');
-    if (verbose) console.log(`svg  ${formatBytes(before)} -> ${formatBytes(after)}  ${path.relative(ROOT, filePath)}`);
+    if (verbose)
+      console.log(
+        `svg  ${formatBytes(before)} -> ${formatBytes(after)}  ${path.relative(ROOT, filePath)}`
+      );
     return { optimized: true, before, after, saved };
   }
   return { optimized: false, before, after, saved: 0 };
@@ -110,15 +121,15 @@ async function optimizeRaster(filePath, dryRun, verbose) {
 
   if (ext === '.jpg' || ext === '.jpeg') {
     outBuffer = await imagemin.buffer(input, {
-      plugins: [mozjpeg({ quality: 77, progressive: true })]
+      plugins: [mozjpeg({ quality: 77, progressive: true })],
     });
   } else if (ext === '.png') {
     outBuffer = await imagemin.buffer(input, {
-      plugins: [pngquant({ quality: [0.65, 0.8], strip: true, speed: 3 })]
+      plugins: [pngquant({ quality: [0.65, 0.8], strip: true, speed: 3 })],
     });
   } else if (ext === '.webp' && webpPlugin) {
     outBuffer = await imagemin.buffer(input, {
-      plugins: [webpPlugin({ quality: 77, method: 4 })]
+      plugins: [webpPlugin({ quality: 77, method: 4 })],
     });
   } else if (ext === '.avif') {
     // Skipping AVIF for now to avoid heavy deps; return unchanged
@@ -132,7 +143,10 @@ async function optimizeRaster(filePath, dryRun, verbose) {
 
   if (saved > 0) {
     if (!dryRun) await fs.writeFile(filePath, outBuffer);
-    if (verbose) console.log(`${ext.slice(1).padEnd(4)} ${formatBytes(before)} -> ${formatBytes(after)}  ${path.relative(ROOT, filePath)}`);
+    if (verbose)
+      console.log(
+        `${ext.slice(1).padEnd(4)} ${formatBytes(before)} -> ${formatBytes(after)}  ${path.relative(ROOT, filePath)}`
+      );
     return { optimized: true, before, after, saved };
   }
   return { optimized: false, before, after, saved: 0 };
@@ -158,10 +172,18 @@ async function main() {
     return;
   }
 
-  const rasterFiles = files.filter((f) => ['.png', '.jpg', '.jpeg', '.webp', '.avif'].includes(path.extname(f).toLowerCase()));
-  const svgFiles = files.filter((f) => path.extname(f).toLowerCase() === '.svg');
+  const rasterFiles = files.filter((f) =>
+    ['.png', '.jpg', '.jpeg', '.webp', '.avif'].includes(
+      path.extname(f).toLowerCase()
+    )
+  );
+  const svgFiles = files.filter(
+    (f) => path.extname(f).toLowerCase() === '.svg'
+  );
 
-  console.log(`Found ${files.length} image(s): ${svgFiles.length} SVG, ${rasterFiles.length} raster\n`);
+  console.log(
+    `Found ${files.length} image(s): ${svgFiles.length} SVG, ${rasterFiles.length} raster\n`
+  );
 
   let optimizedCount = 0;
   let totalBefore = 0;
@@ -188,17 +210,26 @@ async function main() {
   }
 
   const totalSaved = Math.max(0, totalBefore - totalAfter);
-  const percentSaved = totalBefore > 0 ? ((totalSaved / totalBefore) * 100).toFixed(1) : 0;
+  const percentSaved =
+    totalBefore > 0 ? ((totalSaved / totalBefore) * 100).toFixed(1) : 0;
 
   console.log('\n' + '='.repeat(50));
-  console.log(`✅ Checked ${files.length} image(s) in ${dirs.map((d) => path.relative(ROOT, d)).join(', ')}`);
+  console.log(
+    `✅ Checked ${files.length} image(s) in ${dirs.map((d) => path.relative(ROOT, d)).join(', ')}`
+  );
   console.log(`📊 Optimized ${optimizedCount} file(s)`);
-  console.log(`💾 Savings: ${formatBytes(totalSaved)} (${percentSaved}% reduction)`);
-  console.log(`📈 ${formatBytes(totalBefore)} → ${formatBytes(totalAfter)}${dryRun ? ' [dry-run]' : ''}`);
+  console.log(
+    `💾 Savings: ${formatBytes(totalSaved)} (${percentSaved}% reduction)`
+  );
+  console.log(
+    `📈 ${formatBytes(totalBefore)} → ${formatBytes(totalAfter)}${dryRun ? ' [dry-run]' : ''}`
+  );
 
   // Exit non-zero if in CI dry run and there are savings, to encourage running the fixer
   if (dryRun && totalSaved > 0 && process.env.CI) {
-    console.log('\n⚠️  Unoptimized images detected in CI. Run `npm run optimize-images` to fix.');
+    console.log(
+      '\n⚠️  Unoptimized images detected in CI. Run `npm run optimize-images` to fix.'
+    );
     process.exitCode = 2;
   }
 }

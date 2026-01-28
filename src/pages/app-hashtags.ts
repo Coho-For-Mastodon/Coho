@@ -30,6 +30,9 @@ export class AppHashtags extends LitElement {
         /* margin-left: 20vw; */
         align-items: center;
         /* margin-right: 20vw; */
+        max-width: var(--layout-max-width, 1200px);
+        margin-left: auto;
+        margin-right: auto;
       }
 
       app-timeline {
@@ -37,7 +40,7 @@ export class AppHashtags extends LitElement {
         overflow: hidden;
 
         width: 100%;
-        max-width: 56vw;
+        max-width: 600px;
       }
 
       @media (max-width: 820px) {

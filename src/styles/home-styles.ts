@@ -282,9 +282,13 @@ export const homeStyles = css`
   main {
     padding-top: 54px;
     display: grid;
-    grid-template-columns: 80px 1fr 320px;
-    gap: 32px;
+    grid-template-columns: var(--layout-nav-width, 80px) 1fr var(
+        --layout-sidebar-width,
+        320px
+      );
+    gap: var(--layout-gap, 32px);
     margin: 0 auto;
+    max-width: var(--layout-max-width, 1200px);
   }
 
   #right-sidebar {
@@ -295,7 +299,7 @@ export const homeStyles = css`
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding-right: 16px;
+    padding-right: var(--layout-sidebar-padding, 16px);
   }
 
   .sidebar-card {

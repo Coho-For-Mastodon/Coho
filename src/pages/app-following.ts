@@ -22,6 +22,8 @@ export class Appfollowing extends LitElement {
 
       main {
         padding-top: 50px;
+        max-width: var(--layout-max-width, 1200px);
+        margin: 0 auto;
       }
 
       ul {

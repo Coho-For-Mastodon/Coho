@@ -97,6 +97,9 @@ export class PostDialog extends LitElement {
   @state() handwritingAvailable: boolean = false;
   @state() handwritingDialogOpen: boolean = false;
 
+  // Drag and drop state
+  @state() isDraggingOver: boolean = false;
+
   aiBlob: Blob | undefined;
 
   // MediaRecorder for speech-to-text
@@ -608,6 +611,17 @@ export class PostDialog extends LitElement {
           transform: scale(1.05);
         }
       }
+
+      /* Drag and drop styles */
+      :host([dragging-over]) md-dialog::part(content) {
+        outline: 2px dashed var(--md-sys-color-primary, #d0bcff);
+        outline-offset: -4px;
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-primary, #d0bcff) 8%,
+          transparent
+        );
+      }
     `,
   ];
 
@@ -638,11 +652,23 @@ export class PostDialog extends LitElement {
 
     // Add keyboard shortcut for Ctrl/Cmd+Enter to publish
     this.addEventListener('keydown', this._handleKeydown);
+
+    // Add paste event listener for clipboard images
+    this.addEventListener('paste', this._handlePaste);
+
+    // Add drag and drop event listeners
+    this.addEventListener('dragover', this._handleDragOver);
+    this.addEventListener('dragleave', this._handleDragLeave);
+    this.addEventListener('drop', this._handleDrop);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeydown);
+    this.removeEventListener('paste', this._handlePaste);
+    this.removeEventListener('dragover', this._handleDragOver);
+    this.removeEventListener('dragleave', this._handleDragLeave);
+    this.removeEventListener('drop', this._handleDrop);
   }
 
   private _handleKeydown = (event: KeyboardEvent) => {
@@ -650,6 +676,108 @@ export class PostDialog extends LitElement {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
       this.publish();
+    }
+  };
+
+  private _handlePaste = (event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        event.preventDefault();
+
+        if (this.pollEnabled) {
+          showInfoToast(msg('Disable the poll to attach media.'));
+          return;
+        }
+
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
+        const previewUrl = URL.createObjectURL(file);
+
+        const newAttachment: LocalAttachment = {
+          id: tempId,
+          preview_url: previewUrl,
+          description: null,
+          pending: true,
+          file,
+        };
+
+        this.attachments = [...this.attachments, newAttachment];
+
+        // Start upload immediately for pasted images
+        this.uploadFile(file, tempId);
+
+        // Only handle the first image
+        return;
+      }
+    }
+  };
+
+  private _handleDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Check if dragging files that include images
+    if (event.dataTransfer?.types.includes('Files')) {
+      event.dataTransfer.dropEffect = 'copy';
+      if (!this.isDraggingOver) {
+        this.isDraggingOver = true;
+        this.setAttribute('dragging-over', '');
+      }
+    }
+  };
+
+  private _handleDragLeave = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Only reset if leaving the component entirely
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (!relatedTarget || !this.contains(relatedTarget)) {
+      this.isDraggingOver = false;
+      this.removeAttribute('dragging-over');
+    }
+  };
+
+  private _handleDrop = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.isDraggingOver = false;
+    this.removeAttribute('dragging-over');
+
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    if (this.pollEnabled) {
+      showInfoToast(msg('Disable the poll to attach media.'));
+      return;
+    }
+
+    // Process the first image file found
+    for (const file of files) {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
+        const previewUrl = URL.createObjectURL(file);
+
+        const newAttachment: LocalAttachment = {
+          id: tempId,
+          preview_url: previewUrl,
+          description: null,
+          pending: true,
+          file,
+        };
+
+        this.attachments = [...this.attachments, newAttachment];
+        this.uploadFile(file, tempId);
+
+        // Only handle the first file for now
+        return;
+      }
     }
   };
 

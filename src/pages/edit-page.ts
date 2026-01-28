@@ -29,6 +29,8 @@ export class EditPage extends LitElement {
         padding-top: 56px;
         padding-bottom: 80px;
         min-height: calc(100vh - 56px);
+        max-width: var(--layout-max-width, 1200px);
+        margin: 0 auto;
       }
 
       @media (max-width: 600px) {

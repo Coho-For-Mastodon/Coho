@@ -447,7 +447,6 @@ export class TimelineItem extends LitElement {
         }
 
         .boost-indicator {
-          background: var(--md-sys-color-surface-container-high, #e8e8ec);
           color: var(--md-sys-color-on-surface-variant, #5a5a5a);
         }
 

@@ -11,6 +11,8 @@ export default defineConfig({
       provider: playwright(),
       instances: [{ browser: 'chromium' }],
       headless: true,
+      screenshotFailures: true,
+      screenshotDirectory: './tests/e2e/__screenshots__',
     },
     coverage: {
       provider: 'v8',

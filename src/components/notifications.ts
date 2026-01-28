@@ -1,4 +1,4 @@
-import { LitElement, html, css, nothing } from 'lit';
+import { LitElement, html, css, nothing, PropertyValues } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { msg, localized } from '@lit/localize';
 import { router } from '../router/routes';
@@ -554,7 +554,7 @@ export class Notifications extends LitElement {
     this._observer?.disconnect();
   }
 
-  updated(changedProperties: any) {
+  updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
 
     if (shouldDisableVirtualScroll()) {

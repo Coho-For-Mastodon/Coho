@@ -47,6 +47,8 @@ export class CreateAccount extends LitElement {
 
         overflow-y: auto;
         height: 88vh;
+        max-width: var(--layout-max-width, 1200px);
+        margin: 0 auto;
       }
 
       main ul {
@@ -195,7 +197,10 @@ export class CreateAccount extends LitElement {
           ${this.servers.map((server) => {
             return html`
               <li>
-                <img src="${server.thumbnail}" alt="${server.name} thumbnail" />
+                <img
+                  src="${server.thumbnail || ''}"
+                  alt="${server.name} thumbnail"
+                />
                 <div class="info">
                   <div class="tags">
                     <md-badge apperance="accent"

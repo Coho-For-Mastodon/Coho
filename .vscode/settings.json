@@ -2,6 +2,17 @@
   "prettier.configPath": ".prettierrc.json",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
+  "css.lint.unknownProperties": "ignore",
+  "css.lint.validProperties": [
+    "content-visibility",
+    "view-transition-name",
+    "app-region",
+    "interpolate-size"
+  ],
+  "css.customData": [".vscode/css-custom-data.json"],
+  "lit-plugin.rules": {
+    "no-unknown-css-property": "off"
+  },
   "[typescript]": {
     "editor.defaultFormatter": "vscode.typescript-language-features",
     "editor.formatOnSave": true
