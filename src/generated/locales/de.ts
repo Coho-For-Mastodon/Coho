@@ -297,4 +297,5 @@ export const templates = {
   sfdfc05708c242107: `Wie du für andere erscheinst`,
   sfe2f8c98d9edbf7a: `Beitrag nicht gefunden`,
   sff9d51b6c5a73163: `Alt-Text`,
+  sd4d317f1fe40a847: `Disable the poll to attach media.`,
 };
