@@ -75,6 +75,7 @@ export class PostDialog extends LitElement {
   @state() isMobile: boolean = false;
 
   @state() maxChars: number = 500;
+  @state() maxMediaAttachments: number = 4;
   @state() charCount: number = 0;
 
   // Poll composer state (basic)
@@ -639,6 +640,10 @@ export class PostDialog extends LitElement {
     } else if (instance.max_toot_chars) {
       this.maxChars = instance.max_toot_chars;
     }
+    if (instance.configuration?.statuses?.max_media_attachments) {
+      this.maxMediaAttachments =
+        instance.configuration.statuses.max_media_attachments;
+    }
 
     // Check if proofreader is available
     this.proofreaderAvailable = await isProofreaderAvailable();
@@ -668,6 +673,13 @@ export class PostDialog extends LitElement {
     this.removeEventListener('dragover', this._handleDragOver);
     this.removeEventListener('dragleave', this._handleDragLeave);
     this.removeEventListener('drop', this._handleDrop);
+
+    // Clean up any blob URLs to prevent memory leaks
+    this.attachments.forEach((att) => {
+      if (att.preview_url.startsWith('blob:')) {
+        URL.revokeObjectURL(att.preview_url);
+      }
+    });
   }
 
   private _handleKeydown = (event: KeyboardEvent) => {
@@ -682,12 +694,27 @@ export class PostDialog extends LitElement {
     const items = event.clipboardData?.items;
     if (!items) return;
 
+    if (this.pollEnabled) {
+      // Check early if poll is enabled before processing any images
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          event.preventDefault();
+          showInfoToast(msg('Disable the poll to attach media.'));
+          return;
+        }
+      }
+      return;
+    }
+
     for (const item of items) {
       if (item.type.startsWith('image/')) {
         event.preventDefault();
 
-        if (this.pollEnabled) {
-          showInfoToast(msg('Disable the poll to attach media.'));
+        // Check attachment limit
+        if (this.attachments.length >= this.maxMediaAttachments) {
+          showInfoToast(
+            msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+          );
           return;
         }
 
@@ -709,9 +736,6 @@ export class PostDialog extends LitElement {
 
         // Start upload immediately for pasted images
         this.uploadFile(file, tempId);
-
-        // Only handle the first image
-        return;
       }
     }
   };
@@ -757,9 +781,17 @@ export class PostDialog extends LitElement {
       return;
     }
 
-    // Process the first image file found
+    // Process all image/video files, respecting the limit
     for (const file of files) {
       if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        // Check attachment limit
+        if (this.attachments.length >= this.maxMediaAttachments) {
+          showInfoToast(
+            msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+          );
+          return;
+        }
+
         const tempId = `temp-${Date.now()}-${Math.random()}`;
         const previewUrl = URL.createObjectURL(file);
 
@@ -773,9 +805,6 @@ export class PostDialog extends LitElement {
 
         this.attachments = [...this.attachments, newAttachment];
         this.uploadFile(file, tempId);
-
-        // Only handle the first file for now
-        return;
       }
     }
   };
@@ -942,10 +971,26 @@ export class PostDialog extends LitElement {
       return;
     }
 
+    // Check if we're already at the limit
+    if (this.attachments.length >= this.maxMediaAttachments) {
+      showInfoToast(
+        msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+      );
+      return;
+    }
+
     const files = await pickMedia();
     if (!files || files.length === 0) return;
 
     for (const file of files) {
+      // Check limit for each file in case multiple selected
+      if (this.attachments.length >= this.maxMediaAttachments) {
+        showInfoToast(
+          msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+        );
+        break;
+      }
+
       const tempId = `temp-${Date.now()}-${Math.random()}`;
       const previewUrl = URL.createObjectURL(file);
 
@@ -1038,10 +1083,21 @@ export class PostDialog extends LitElement {
   }
 
   removeImage(id: string) {
+    const attachment = this.attachments.find((a) => a.id === id);
+    if (attachment?.preview_url.startsWith('blob:')) {
+      URL.revokeObjectURL(attachment.preview_url);
+    }
     this.attachments = this.attachments.filter((a) => a.id !== id);
   }
 
   async publish() {
+    // Check if any attachments are still uploading
+    const pendingAttachments = this.attachments.filter((a) => a.pending);
+    if (pendingAttachments.length > 0) {
+      showInfoToast(msg('Please wait for media uploads to complete.'));
+      return;
+    }
+
     const status = this.postTextArea?.value;
     console.log(status);
 
@@ -1150,6 +1206,12 @@ export class PostDialog extends LitElement {
    * Reset the dialog state after publishing or closing
    */
   private resetDialogState() {
+    // Clean up blob URLs before clearing attachments
+    this.attachments.forEach((att) => {
+      if (att.preview_url.startsWith('blob:')) {
+        URL.revokeObjectURL(att.preview_url);
+      }
+    });
     this.attachments = [];
     this.generatedImage = undefined;
     this.aiBlob = undefined;
@@ -1557,7 +1619,8 @@ export class PostDialog extends LitElement {
               pill
               variant="outlined"
               @click="${() => this.attachFile()}"
-              ?disabled=${this.pollEnabled}
+              ?disabled=${this.pollEnabled ||
+              this.attachments.length >= this.maxMediaAttachments}
             >
               ${msg('Attach Media')}
               <md-icon src="/assets/attach-outline.svg"></md-icon>
@@ -1584,7 +1647,8 @@ export class PostDialog extends LitElement {
               label=${msg('Attach Media')}
               src="/assets/attach-outline.svg"
               @click="${() => this.attachFile()}"
-              ?disabled=${this.pollEnabled}
+              ?disabled=${this.pollEnabled ||
+              this.attachments.length >= this.maxMediaAttachments}
             ></md-icon-button>
 
             ${this.proofreaderAvailable
@@ -1811,7 +1875,9 @@ export class PostDialog extends LitElement {
 
           <!-- Publish button (same for both) -->
           <md-button
-            ?disabled="${this.hasStatus === false || this.attaching === true}"
+            ?disabled="${this.hasStatus === false ||
+            this.attaching === true ||
+            this.attachments.some((a) => a.pending)}"
             pill
             variant="filled"
             @click="${() => this.publish()}"

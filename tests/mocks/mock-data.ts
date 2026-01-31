@@ -156,6 +156,52 @@ export const mockInstanceInfo = {
   title: 'Tech.LGBT Mock Instance',
   thumbnail: '/assets/icons/icon-192-maskable.png',
   description: '<p>Mock description for the local test instance.</p>',
+  configuration: {
+    statuses: {
+      max_characters: 500,
+      max_media_attachments: 4,
+      characters_reserved_per_url: 23,
+    },
+    media_attachments: {
+      supported_mime_types: [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'video/mp4',
+        'video/webm',
+      ],
+      image_size_limit: 10485760,
+      image_matrix_limit: 16777216,
+      video_size_limit: 41943040,
+      video_frame_rate_limit: 60,
+      video_matrix_limit: 2304000,
+    },
+    polls: {
+      max_options: 4,
+      max_characters_per_option: 50,
+      min_expiration: 300,
+      max_expiration: 2629746,
+    },
+  },
+};
+
+export const mockMediaAttachment = {
+  id: 'media_mock_1',
+  type: 'image',
+  url: 'https://files.tech.lgbt/mock-image.png',
+  preview_url: 'https://files.tech.lgbt/mock-image-preview.png',
+  remote_url: null,
+  description: '',
+  blurhash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
+  meta: {
+    original: {
+      width: 1200,
+      height: 800,
+      size: '1200x800',
+      aspect: 1.5,
+    },
+  },
 };
 
 export const mockTrendingTags = [

@@ -298,4 +298,6 @@ export const templates = {
   sfe2f8c98d9edbf7a: `Beitrag nicht gefunden`,
   sff9d51b6c5a73163: `Alt-Text`,
   sd4d317f1fe40a847: `Disable the poll to attach media.`,
+  see68daede2d8aaa1: str`Maximum ${0} attachments allowed.`,
+  s0ba0b30c4cde4dd9: `Please wait for media uploads to complete.`,
 };

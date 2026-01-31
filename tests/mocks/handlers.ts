@@ -10,6 +10,7 @@ import {
   mockTrendingStatuses,
   mockInstanceInfo,
   mockTrendingTags,
+  mockMediaAttachment,
 } from './mock-data';
 
 // Helper to find a notification by ID
@@ -163,6 +164,25 @@ export const mastodonHandlers = [
       ...mockTimelinePosts[0],
       id: 'new_post_' + Date.now(),
     });
+  }),
+
+  // Media upload
+  http.post('https://*/api/v1/media', () => {
+    return HttpResponse.json({
+      ...mockMediaAttachment,
+      id: 'media_' + Date.now(),
+    });
+  }),
+
+  http.post('https://*/api/v2/media', () => {
+    return HttpResponse.json({
+      ...mockMediaAttachment,
+      id: 'media_' + Date.now(),
+    });
+  }),
+
+  http.put('https://*/api/v1/media/:id', () => {
+    return HttpResponse.json(mockMediaAttachment);
   }),
 
   // Instance info

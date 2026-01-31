@@ -1177,6 +1177,12 @@
 <trans-unit id="sd4d317f1fe40a847">
   <source>Disable the poll to attach media.</source>
 </trans-unit>
+<trans-unit id="see68daede2d8aaa1">
+  <source>Maximum <x id="0" equiv-text="${this.maxMediaAttachments}"/> attachments allowed.</source>
+</trans-unit>
+<trans-unit id="s0ba0b30c4cde4dd9">
+  <source>Please wait for media uploads to complete.</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
