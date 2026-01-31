@@ -1174,6 +1174,9 @@
   <source>Error</source>
   <target>Error</target>
 </trans-unit>
+<trans-unit id="sd4d317f1fe40a847">
+  <source>Disable the poll to attach media.</source>
+</trans-unit>
 </body>
 </file>
 </xliff>

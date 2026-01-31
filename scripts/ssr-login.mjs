@@ -94,7 +94,7 @@ function extractLightDomContent() {
         .login-card {
           max-width: 400px;
           width: 100%;
-          z-index: 1;
+          z-index: 2;
           padding: 32px;
         }
 

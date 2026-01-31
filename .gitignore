@@ -15,6 +15,8 @@ build
 # Vitest browser mode screenshots
 **/__screenshots__/
 
+coverage/
+
 # Environment variables
 .env
 .env.local

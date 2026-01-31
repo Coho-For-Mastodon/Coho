@@ -542,8 +542,8 @@ export class PostDialog extends LitElement {
 
       .mic-button,
       .proofread-button {
+        // eslint-diable-next-line lit-binding-positions
         --md-icon-button-icon-size: 18px;
-        opacity: 0.6;
         transition: opacity 0.2s ease;
       }
 
@@ -580,7 +580,6 @@ export class PostDialog extends LitElement {
 
       .pen-button {
         --md-icon-button-icon-size: 18px;
-        opacity: 0.6;
         transition: opacity 0.2s ease;
       }
 
@@ -1587,9 +1586,7 @@ export class PostDialog extends LitElement {
               @click="${() => this.attachFile()}"
               ?disabled=${this.pollEnabled}
             ></md-icon-button>
-          </div>
 
-          <div class="textarea-inner-buttons">
             ${this.proofreaderAvailable
               ? html`
                   <div class="proofread-container">
