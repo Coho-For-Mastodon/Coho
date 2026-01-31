@@ -5,8 +5,6 @@ import { msg, localized } from '@lit/localize';
 import '../components/md/md-autocomplete';
 import '../components/md/md-button';
 import type { AutocompleteOption } from '../components/md/md-autocomplete';
-import { POPULAR_INSTANCES } from '../services/instance-search';
-import { consumeAuthRedirect } from '../utils/auth-redirect';
 
 // Dynamic import to avoid loading router during SSR
 const getRouter = () => import('../router/routes').then((m) => m.router);
@@ -14,7 +12,7 @@ const getRouter = () => import('../router/routes').then((m) => m.router);
 @localized()
 @customElement('app-login')
 export class AppLogin extends LitElement {
-  @state() instances: AutocompleteOption[] = POPULAR_INSTANCES;
+  @state() instances: AutocompleteOption[] = [];
   @state() chosenServer: string = '';
   @state() loadingInstances: boolean = false;
 
@@ -167,14 +165,14 @@ export class AppLogin extends LitElement {
       const { authToClient } = await import('../services/account');
       await authToClient(code, state);
       const router = await getRouter();
-      await router.navigate(this.getPostAuthRedirect());
+      await router.navigate(await this.getPostAuthRedirect());
     } else if (accessToken && server) {
       const router = await getRouter();
-      await router.navigate(this.getPostAuthRedirect());
+      await router.navigate(await this.getPostAuthRedirect());
     }
   }
 
-  private getPostAuthRedirect(): string {
+  private async getPostAuthRedirect(): Promise<string> {
     // If the current URL already carries an intent (rare, but possible),
     // preserve it when we redirect to /home.
     const currentParams = new URLSearchParams(window.location.search);
@@ -185,6 +183,8 @@ export class AppLogin extends LitElement {
     ) {
       return `/home${window.location.search}${window.location.hash}`;
     }
+
+    const { consumeAuthRedirect } = await import('../utils/auth-redirect');
 
     // Check for stored redirect from before OAuth flow started
     const storedRedirect = consumeAuthRedirect();
@@ -210,7 +210,7 @@ export class AppLogin extends LitElement {
     }
   };
 
-  handleServerInput(event: Event | CustomEvent<{ value: string }>) {
+  async handleServerInput(event: Event | CustomEvent<{ value: string }>) {
     const value =
       (event as CustomEvent<{ value: string }>).detail?.value ||
       (event.target as HTMLInputElement)?.value ||
@@ -224,6 +224,7 @@ export class AppLogin extends LitElement {
 
     if (value.length < 2) {
       // Show popular instances when input is short
+      const { POPULAR_INSTANCES } = await import('../services/instance-search');
       this.instances = POPULAR_INSTANCES;
       return;
     }
@@ -236,10 +237,15 @@ export class AppLogin extends LitElement {
   private doSearchInstances = async (query: string) => {
     this.loadingInstances = true;
     try {
-      const { searchInstances } = await import('../services/instance-search');
-      this.instances = await searchInstances(query);
+      const { searchInstances, POPULAR_INSTANCES } =
+        await import('../services/instance-search');
+      this.instances = [
+        ...(await searchInstances(query)),
+        ...POPULAR_INSTANCES,
+      ];
     } catch (error) {
       console.error('Failed to search instances:', error);
+      const { POPULAR_INSTANCES } = await import('../services/instance-search');
       this.instances = POPULAR_INSTANCES;
     } finally {
       this.loadingInstances = false;

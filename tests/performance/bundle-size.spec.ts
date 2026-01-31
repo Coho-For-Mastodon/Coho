@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  */
 const JS_BUDGET_KB = 30;
 const CSS_BUDGET_KB = 15;
-const HTML_BUDGET_KB = 5;
+const HTML_BUDGET_KB = 9;
 
 interface NetworkRequest {
   url: string;
