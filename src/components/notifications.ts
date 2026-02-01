@@ -312,7 +312,6 @@ export class Notifications extends LitElement {
         margin-top: 10px;
         cursor: pointer;
 
-        flex-direction: column;
         height: auto;
         gap: 10px;
       }
@@ -331,12 +330,13 @@ export class Notifications extends LitElement {
       }
 
       .link-card img {
-        height: 100%;
-        min-height: 280px;
-        width: 100%;
         min-width: 80px;
         border-radius: 0;
         object-fit: cover;
+
+        height: 20%;
+        width: 20%;
+        padding: 8px;
       }
 
       .link-card-content {
