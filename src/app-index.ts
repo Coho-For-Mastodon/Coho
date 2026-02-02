@@ -1,5 +1,5 @@
 import { LitElement, css, html } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 
 import { router } from './router/routes';
 
@@ -7,11 +7,14 @@ import { router } from './router/routes';
 import './config/localization.js';
 
 import './pages/app-login';
-import { getSettings } from './services/settings';
-import { applyThemeColor } from './utils/theme-color';
 
 @customElement('app-index')
 export class AppIndex extends LitElement {
+  /**
+   * Whether the user is authenticated (has valid credentials stored)
+   * True = returning authenticated user, False = brand new user or logged out
+   */
+  @state() isAuthenticated = false;
   static get styles() {
     return css`
       main {
@@ -62,10 +65,13 @@ export class AppIndex extends LitElement {
   }
 
   async handleInitTheme() {
+    const { getSettings } = await import('./services/settings');
     const settings = await getSettings();
     console.log('settings', settings);
 
     const potentialColor = settings.primary_color;
+
+    const { applyThemeColor } = await import('./utils/theme-color');
 
     if (potentialColor) {
       // Sync to localStorage for instant theme on next load (migration for existing users)
@@ -84,19 +90,26 @@ export class AppIndex extends LitElement {
 
   firstUpdated() {
     // Sync localStorage credentials to IndexedDB for service worker access
+    // and determine authentication state
     this.syncCredentialsToIndexedDB();
 
-    this.handleInitTheme();
+    // Check initial authentication state
+    this.checkAuthenticationState();
+    console.log('[App] isAuthenticated:', this.isAuthenticated);
 
-    // Preload data during idle time if conditions are good
-    // This is lazy-imported to avoid impacting first load bundle size
-    this.initIdlePreload();
+    if (this.isAuthenticated) {
+      this.handleInitTheme();
 
-    // Lazy-load image preview dialog on first preview-image event
-    this.initLazyImagePreview();
+      // Preload data during idle time if conditions are good
+      // This is lazy-imported to avoid impacting first load bundle size
+      this.initIdlePreload();
 
-    // Lazy-load shortcuts help dialog on first show-shortcuts-help event
-    this.initLazyShortcutsHelp();
+      // Lazy-load image preview dialog on first preview-image event
+      this.initLazyImagePreview();
+
+      // Lazy-load shortcuts help dialog on first show-shortcuts-help event
+      this.initLazyShortcutsHelp();
+    }
 
     router.addEventListener('route-changed', () => {
       this.requestUpdate();
@@ -210,6 +223,20 @@ export class AppIndex extends LitElement {
       await set('server', server);
       console.log('[App] Synced credentials to IndexedDB');
     }
+  }
+
+  /**
+   * Check if the user has valid authentication credentials
+   * Sets isAuthenticated to true for returning users, false for new users
+   */
+  private checkAuthenticationState() {
+    const accessToken = localStorage.getItem('accessToken');
+    const server = localStorage.getItem('server');
+    this.isAuthenticated = !!(accessToken && server);
+    console.log(
+      '[App] Authentication state:',
+      this.isAuthenticated ? 'authenticated' : 'new user'
+    );
   }
 
   render() {

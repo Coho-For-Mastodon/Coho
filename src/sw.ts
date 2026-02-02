@@ -357,25 +357,44 @@ self.addEventListener('sync', (event: Event) => {
 });
 
 // Special handler for navigation to support SPA
+// Uses stale-while-revalidate: serve cached app shell instantly, update in background
 async function navigationHandler(request: Request): Promise<Response> {
   const cache = await caches.open(CACHE_NAMES.pages);
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
+
+  // Try to get cached response first (for instant loading)
+  const cachedResponse = await cache.match(request);
+  const cachedIndex = await cache.match('/index.html');
+
+  // Start network fetch in parallel (don't await yet)
+  const networkPromise = fetch(request)
+    .then((response) => {
+      if (response.ok) {
+        // Update cache in background
+        cache.put(request, response.clone());
+      }
       return response;
-    }
-  } catch {
-    // ignore
+    })
+    .catch(() => null);
+
+  // If we have a cached response, return it immediately
+  // The network fetch continues in the background to update the cache
+  if (cachedResponse) {
+    // Fire and forget - update cache for next visit
+    void networkPromise;
+    return cachedResponse;
   }
 
-  // Try matching the request in the versioned cache
-  const cachedResponse = await cache.match(request);
-  if (cachedResponse) return cachedResponse;
+  // If we have cached index.html (SPA fallback), return it
+  if (cachedIndex) {
+    void networkPromise;
+    return cachedIndex;
+  }
 
-  // Fallback to index.html from versioned cache
-  const index = await cache.match('/index.html');
-  if (index) return index;
+  // No cache available - must wait for network
+  const networkResponse = await networkPromise;
+  if (networkResponse) {
+    return networkResponse;
+  }
 
   // If everything fails
   return new Response('Offline', { status: 503, statusText: 'Offline' });

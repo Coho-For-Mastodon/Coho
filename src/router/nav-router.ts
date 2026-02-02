@@ -1,39 +1,5 @@
 import type { TemplateResult } from 'lit';
 
-let polyfillsLoaded = false;
-
-function hasNavigationAPI(): boolean {
-  return typeof window !== 'undefined' && 'navigation' in window;
-}
-
-function hasURLPattern(): boolean {
-  return typeof URLPattern !== 'undefined';
-}
-
-function isBrowser(): boolean {
-  return typeof window !== 'undefined';
-}
-
-async function ensurePolyfills(): Promise<void> {
-  if (polyfillsLoaded) return;
-
-  const loadPromises: Promise<unknown>[] = [];
-
-  if (!hasURLPattern()) {
-    loadPromises.push(import('urlpattern-polyfill'));
-  }
-
-  if (!hasNavigationAPI()) {
-    loadPromises.push(import('@virtualstate/navigation/polyfill'));
-  }
-
-  if (loadPromises.length > 0) {
-    await Promise.all(loadPromises);
-  }
-
-  polyfillsLoaded = true;
-}
-
 /**
  * Base navigation state type - extend this for app-specific state.
  *
@@ -133,7 +99,13 @@ export function lazy(importFn: () => Promise<unknown>): RouterPlugin {
 export class Router extends EventTarget {
   private routes: Route[];
   private globalPlugins: RouterPlugin[];
+  /** Fast lookup for exact path routes (no parameters) */
+  private exactRoutes: Map<string, Route> = new Map();
+  /** URLPattern matchers for parameterized routes - built lazily */
   private patterns: Map<URLPattern, Route> = new Map();
+  /** Routes with parameters, pending pattern creation */
+  private pendingPatternRoutes: Route[] = [];
+  private patternsBuilt = false;
   private currentRoute: Route | null = null;
   private initialized = false;
 
@@ -196,9 +168,28 @@ export class Router extends EventTarget {
   }
 
   /**
-   * Match a pathname to a route using URLPattern
+   * Build URLPatterns for parameterized routes (called lazily on first pattern match need)
+   */
+  private ensurePatterns(): void {
+    if (this.patternsBuilt) return;
+    for (const route of this.pendingPatternRoutes) {
+      const pattern = new URLPattern({ pathname: route.path });
+      this.patterns.set(pattern, route);
+    }
+    this.patternsBuilt = true;
+  }
+
+  /**
+   * Match a pathname to a route.
+   * Uses fast O(1) lookup for exact paths, falls back to URLPattern for parameterized routes.
    */
   private matchRoute(pathname: string): Route | null {
+    // Fast path: exact match (most routes)
+    const exactMatch = this.exactRoutes.get(pathname);
+    if (exactMatch) return exactMatch;
+
+    // Slow path: pattern matching for parameterized routes (e.g., /post/:id)
+    this.ensurePatterns();
     for (const [pattern, route] of this.patterns) {
       if (pattern.test({ pathname })) {
         return route;
@@ -366,18 +357,18 @@ export class Router extends EventTarget {
       return;
     }
 
-    // Skip initialization if not in browser (SSR)
-    if (!isBrowser()) {
-      return;
-    }
+    // Skip SSR
+    if (typeof window === 'undefined') return;
 
-    // Load polyfills if needed (URLPattern, Navigation API)
-    await ensurePolyfills();
-
-    // Build URLPattern matchers for each route (after polyfill is loaded)
+    // Categorize routes: exact paths go to fast Map, parameterized routes deferred
     for (const route of this.routes) {
-      const pattern = new URLPattern({ pathname: route.path });
-      this.patterns.set(pattern, route);
+      if (route.path.includes(':')) {
+        // Parameterized route - defer URLPattern creation until needed
+        this.pendingPatternRoutes.push(route);
+      } else {
+        // Exact path - use fast Map lookup
+        this.exactRoutes.set(route.path, route);
+      }
     }
 
     // Set initial route
