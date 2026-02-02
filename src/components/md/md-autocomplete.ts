@@ -1,11 +1,10 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, property, state, query } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 
 export interface AutocompleteOption {
   value: string;
   label: string;
   description?: string;
-  icon?: string;
 }
 
 /**
@@ -16,18 +15,12 @@ export interface AutocompleteOption {
 export class MdAutocomplete extends LitElement {
   @property({ type: String }) value = '';
   @property({ type: String }) placeholder = '';
-  @property({ type: Boolean }) disabled = false;
-  @property({ type: Boolean }) autofocus = false;
-  @property({ type: String }) variant: 'filled' | 'outlined' = 'filled';
-  @property({ type: Boolean }) pill = false;
   @property({ type: Array }) options: AutocompleteOption[] = [];
   @property({ type: Boolean }) loading = false;
 
   @state() private _showDropdown = false;
   @state() private _highlightedIndex = -1;
   @state() private _isFocused = false;
-
-  @query('input') private _input!: HTMLInputElement;
 
   // When options change and input is focused, show the dropdown
   updated(changedProperties: Map<string, unknown>) {
@@ -103,7 +96,7 @@ export class MdAutocomplete extends LitElement {
       opacity: 1;
     }
 
-    input:hover:not(:disabled) {
+    input:hover {
       background-color: color-mix(
         in srgb,
         var(--_on-surface) 8%,
@@ -120,40 +113,6 @@ export class MdAutocomplete extends LitElement {
         var(--_on-surface) 12%,
         var(--_surface-container-highest)
       );
-    }
-
-    input:disabled {
-      opacity: 0.38;
-      cursor: not-allowed;
-      background-color: var(--_surface-container-highest);
-    }
-
-    /* Outlined variant */
-    input.outlined {
-      background-color: transparent;
-      border: 1px solid var(--_outline);
-      border-radius: 4px;
-    }
-
-    input.outlined:hover:not(:disabled) {
-      border-color: var(--_on-surface);
-      background-color: transparent;
-    }
-
-    input.pill {
-      border-radius: 9999px;
-      border-bottom: none;
-    }
-
-    input.pill.outlined {
-      border-radius: 9999px;
-    }
-
-    input.outlined:focus {
-      border-color: var(--_primary);
-      border-width: 2px;
-      background-color: transparent;
-      padding: 11px 15px;
     }
 
     /* Dropdown styles */
@@ -236,25 +195,6 @@ export class MdAutocomplete extends LitElement {
       color: var(--_on-surface-variant);
       font-size: 14px;
     }
-
-    /* Icon in item */
-    .item-content {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .item-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 4px;
-      object-fit: cover;
-    }
-
-    .item-text {
-      flex: 1;
-      min-width: 0;
-    }
   `;
 
   connectedCallback() {
@@ -266,12 +206,6 @@ export class MdAutocomplete extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     document.removeEventListener('click', this._handleOutsideClick);
-  }
-
-  firstUpdated() {
-    if (this.autofocus && this._input) {
-      this._input.focus();
-    }
   }
 
   private _handleOutsideClick = (e: Event) => {
@@ -386,8 +320,6 @@ export class MdAutocomplete extends LitElement {
           type="text"
           .value="${this.value}"
           placeholder="${this.placeholder}"
-          ?disabled="${this.disabled}"
-          class="${this.variant} ${this.pill ? 'pill' : ''}"
           @input="${this._handleInput}"
           @focus="${this._handleFocus}"
           @blur="${this._handleBlur}"
@@ -416,27 +348,12 @@ export class MdAutocomplete extends LitElement {
                       @click="${() => this._selectOption(option)}"
                       @mouseenter="${() => (this._highlightedIndex = index)}"
                     >
-                      <div class="item-content">
-                        ${option.icon
-                          ? html`<img
-                              class="item-icon"
-                              src="${option.icon}"
-                              alt=""
-                              loading="lazy"
-                              @error="${(e: Event) =>
-                                ((e.target as HTMLImageElement).style.display =
-                                  'none')}"
-                            />`
-                          : null}
-                        <div class="item-text">
-                          <div class="item-label">${option.label}</div>
-                          ${option.description
-                            ? html`<div class="item-description">
-                                ${option.description}
-                              </div>`
-                            : null}
-                        </div>
-                      </div>
+                      <div class="item-label">${option.label}</div>
+                      ${option.description
+                        ? html`<div class="item-description">
+                            ${option.description}
+                          </div>`
+                        : null}
                     </div>
                   `
                 )}

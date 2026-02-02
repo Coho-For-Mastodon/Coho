@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { fixture, html, elementUpdated, cleanupFixtures } from '../test-utils';
-import '../../src/components/post-dialog';
-import type { PostDialog } from '../../src/components/post-dialog';
+import '../../src/components/post-composer';
+import type { PostComposer } from '../../src/components/post-composer';
 import { setupAuth } from '../setup';
 
 // Helper to wait for animation frame
@@ -34,7 +34,7 @@ function createDataTransferWithFiles(files: File[]): DataTransfer {
   return dataTransfer;
 }
 
-describe('post-dialog multi-image upload', () => {
+describe('post-composer multi-image upload', () => {
   beforeEach(() => {
     setupAuth();
     cleanupFixtures();
@@ -42,7 +42,9 @@ describe('post-dialog multi-image upload', () => {
 
   describe('initialization', () => {
     it('should initialize with default maxMediaAttachments of 4', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
 
       await elementUpdated(el);
 
@@ -50,7 +52,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should initialize with empty attachments array', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
 
       await elementUpdated(el);
 
@@ -58,7 +62,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should fetch maxMediaAttachments from instance config', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
 
       // Wait for firstUpdated to complete (includes async instance fetch)
       await elementUpdated(el);
@@ -71,7 +77,9 @@ describe('post-dialog multi-image upload', () => {
 
   describe('attachment limit enforcement', () => {
     it('should allow adding attachments up to the limit', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       // Manually set attachments to simulate adding images
@@ -87,7 +95,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should prevent adding more attachments when at limit via attachFile', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       // Set attachments to max (4)
@@ -109,7 +119,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should disable attach button when at attachment limit', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
       await waitForFrames(3);
 
@@ -133,7 +145,9 @@ describe('post-dialog multi-image upload', () => {
 
   describe('paste handling', () => {
     it('should add pasted image as attachment', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       const file = createMockFile('pasted.png', 'image/png');
@@ -162,7 +176,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should not add pasted image when poll is enabled', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       (el as any).pollEnabled = true;
@@ -191,7 +207,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should not add pasted image when at attachment limit', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       // Set attachments to max
@@ -225,7 +243,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should handle multiple images in paste (up to limit)', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       // Pre-set 2 attachments
@@ -260,7 +280,9 @@ describe('post-dialog multi-image upload', () => {
 
   describe('drop handling', () => {
     it('should add dropped image as attachment', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       const file = createMockFile('dropped.png', 'image/png');
@@ -281,7 +303,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should handle multiple dropped files (up to limit)', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       const files = [
@@ -309,7 +333,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should not add dropped files when poll is enabled', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       (el as any).pollEnabled = true;
@@ -334,7 +360,9 @@ describe('post-dialog multi-image upload', () => {
 
   describe('pending upload handling', () => {
     it('should prevent publishing when attachments are pending', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
       await waitForFrames(3);
 
@@ -358,14 +386,16 @@ describe('post-dialog multi-image upload', () => {
       await elementUpdated(el);
 
       // Call publish - it should return early due to pending attachment
-      await (el as any).publish();
+      await (el as any)._handleSubmit();
 
       // The attachments should still be there (not cleared by successful publish)
       expect((el as any).attachments.length).toBe(1);
     });
 
     it('should allow publishing when all attachments are uploaded', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
       await waitForFrames(3);
 
@@ -390,7 +420,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should disable publish button when uploads are pending', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
       await waitForFrames(3);
 
@@ -416,7 +448,9 @@ describe('post-dialog multi-image upload', () => {
 
   describe('image removal', () => {
     it('should remove attachment by id', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       (el as any).attachments = [
@@ -435,7 +469,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should revoke blob URL when removing attachment', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       // Spy on URL.revokeObjectURL
@@ -458,7 +494,9 @@ describe('post-dialog multi-image upload', () => {
 
   describe('dialog state reset', () => {
     it('should clear attachments when dialog is reset', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       (el as any).attachments = [
@@ -468,7 +506,7 @@ describe('post-dialog multi-image upload', () => {
 
       await elementUpdated(el);
 
-      (el as any).resetDialogState();
+      (el as any).reset();
 
       await elementUpdated(el);
 
@@ -476,7 +514,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should revoke blob URLs when resetting dialog state', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
@@ -491,7 +531,7 @@ describe('post-dialog multi-image upload', () => {
 
       await elementUpdated(el);
 
-      (el as any).resetDialogState();
+      (el as any).reset();
 
       expect(revokeSpy).toHaveBeenCalledWith(blobUrl1);
       expect(revokeSpy).toHaveBeenCalledWith(blobUrl2);
@@ -502,7 +542,9 @@ describe('post-dialog multi-image upload', () => {
 
   describe('poll and media mutual exclusion', () => {
     it('should not allow toggling poll when attachments exist', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       // Add an attachment
@@ -522,7 +564,9 @@ describe('post-dialog multi-image upload', () => {
     });
 
     it('should not allow attaching media when poll is enabled', async () => {
-      const el = await fixture<PostDialog>(html`<post-dialog></post-dialog>`);
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
       await elementUpdated(el);
 
       (el as any).pollEnabled = true;
