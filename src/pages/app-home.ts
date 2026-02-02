@@ -21,7 +21,6 @@ import '../components/pwa-install';
 import '../components/guest-login-banner';
 import '../components/home-sidebar';
 import '../components/settings-drawer-content';
-import '../components/post-detail-dialog';
 import '../components/home-tabs-nav';
 
 import { getEffectiveParams } from '../utils/launch-params';
@@ -71,6 +70,7 @@ export class AppHome extends LitElement {
   @state() hasNewNotifications: boolean = false;
 
   @state() trendingTags: TrendingTag[] = [];
+  @state() trendingTagsLoading: boolean = true;
 
   private tabController = new TabController(this);
   @state() loadedTabs = new Set<string>();
@@ -80,9 +80,16 @@ export class AppHome extends LitElement {
   @state() userTermsLoaded: boolean = false;
   @state() rightClickLoaded: boolean = false;
 
+  // Lazy loading states for dialogs
+  @state() postDialogLoaded: boolean = false;
+  @state() postDetailDialogLoaded: boolean = false;
+
   // PWA Install states
   @state() showInstallPrompt: boolean = false;
   @state() pwaInstallLoaded: boolean = false;
+
+  // Mobile detection for conditional rendering
+  @state() isMobile: boolean = false;
 
   // Guest mode state
   @state() isGuestMode: boolean = false;
@@ -97,6 +104,8 @@ export class AppHome extends LitElement {
     'summary-dialog',
     'translation-toast',
     'error-toast',
+    'post-dialog',
+    'post-detail-dialog',
   ]);
 
   // DOM element references using @query for type safety
@@ -122,6 +131,9 @@ export class AppHome extends LitElement {
     const { isGuestMode: checkGuestMode } =
       await import('../services/auth-state');
     this.isGuestMode = checkGuestMode();
+
+    // Detect mobile for conditional sidebar rendering
+    this.isMobile = window.matchMedia('(max-width: 820px)').matches;
 
     // Listen for keyboard shortcut tab switches
     window.addEventListener('switch-tab', this._handleSwitchTab);
@@ -150,15 +162,22 @@ export class AppHome extends LitElement {
       init();
     });
 
-    const { resetLastPageID, getTrendingTags } =
-      await import('../services/timeline');
-    await resetLastPageID();
+    // Reset pagination state (non-blocking - internally synchronous)
+    import('../services/timeline').then(({ resetLastPageID }) => {
+      resetLastPageID();
+    });
 
-    try {
-      this.trendingTags = await getTrendingTags();
-    } catch (err) {
-      console.error('Error fetching trending tags', err);
-    }
+    // Defer trending tags fetch to idle time - not critical for initial render
+    window.requestIdleCallback(async () => {
+      try {
+        const { getTrendingTags } = await import('../services/timeline');
+        this.trendingTags = await getTrendingTags();
+      } catch (err) {
+        console.error('Error fetching trending tags', err);
+      } finally {
+        this.trendingTagsLoading = false;
+      }
+    });
 
     window.requestIdleCallback(
       async () => {
@@ -176,7 +195,7 @@ export class AppHome extends LitElement {
           this.hasNewNotifications = await checkNewNotifications();
         }
       },
-      { timeout: 3000 }
+      { timeout: 1000 }
     );
 
     const tabData = effectiveParams.get('tab');
@@ -219,11 +238,11 @@ export class AppHome extends LitElement {
       }
     });
 
-    // Load right-click component immediately
-    this.loadRightClick();
-
-    // Check if we should show the install prompt
-    this.checkInstallPrompt();
+    // Defer right-click menu and install prompt check - not needed immediately
+    window.requestIdleCallback(() => {
+      this.loadRightClick();
+      this.checkInstallPrompt();
+    });
 
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
@@ -294,9 +313,15 @@ export class AppHome extends LitElement {
   }
 
   async openNewDialog(shareName?: string) {
-    // if on desktop, open the dialog
-    // if (window.innerWidth > 600) {
-    await import('../components/post-dialog');
+    // Lazy load post-dialog component
+    if (!this.postDialogLoaded) {
+      if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
+        this.postDialogLoaded = true;
+      }
+    }
+
+    // Add dialog to DOM
+    await this.overlays.show('post-dialog');
 
     // Wait for the custom element to be defined and upgraded
     await customElements.whenDefined('post-dialog');
@@ -396,6 +421,21 @@ export class AppHome extends LitElement {
   }
 
   async handleOpenTweet(tweet: Post) {
+    // Lazy load post-detail-dialog component
+    if (!this.postDetailDialogLoaded) {
+      if (
+        await lazyLoad('postDetailDialog', componentLoaders.postDetailDialog)
+      ) {
+        this.postDetailDialogLoaded = true;
+      }
+    }
+
+    // Add dialog to DOM
+    await this.overlays.show('post-detail-dialog');
+
+    // Wait for Lit to update the DOM
+    await this.updateComplete;
+
     // Open post in a fullscreen dialog instead of navigating to a new page
     // The dialog handles history state so back button closes it
     this.postDetailDialog?.open(tweet);
@@ -715,7 +755,13 @@ export class AppHome extends LitElement {
         `
       )}
 
-      <post-dialog @published="${() => this.handleReload()}"></post-dialog>
+      <!-- Post Dialog - only in DOM when needed -->
+      ${this.overlays.render(
+        'post-dialog',
+        () => html`
+          <post-dialog @published="${() => this.handleReload()}"></post-dialog>
+        `
+      )}
 
       <!-- Settings Drawer - only in DOM when needed -->
       ${this.overlays.render(
@@ -783,6 +829,7 @@ export class AppHome extends LitElement {
             slot="nav"
             .isGuestMode="${this.isGuestMode}"
             .hasNewNotifications="${this.hasNewNotifications}"
+            .activeTab="${this.tabController.activeTab}"
             @reload-home="${() => this.reloadHome()}"
             @open-new-post="${() => this.openNewDialog()}"
           ></home-tabs-nav>
@@ -844,12 +891,16 @@ export class AppHome extends LitElement {
           </md-tab-panel>
         </md-tabs>
 
-        <home-sidebar
-          .user="${this.user}"
-          .trendingTags="${this.trendingTags}"
-          .isGuestMode="${this.isGuestMode}"
-        ></home-sidebar>
-
+        ${!this.isMobile
+          ? html`
+              <home-sidebar
+                .user="${this.user}"
+                .trendingTags="${this.trendingTags}"
+                .trendingTagsLoading="${this.trendingTagsLoading}"
+                .isGuestMode="${this.isGuestMode}"
+              ></home-sidebar>
+            `
+          : nothing}
         ${this.isGuestMode
           ? nothing
           : html`
@@ -898,8 +949,11 @@ export class AppHome extends LitElement {
         `
       )}
 
-      <!-- Post Detail Dialog - fullscreen dialog for viewing posts -->
-      <post-detail-dialog></post-detail-dialog>
+      <!-- Post Detail Dialog - fullscreen dialog for viewing posts, only in DOM when needed -->
+      ${this.overlays.render(
+        'post-detail-dialog',
+        () => html`<post-detail-dialog></post-detail-dialog>`
+      )}
     `;
   }
 }

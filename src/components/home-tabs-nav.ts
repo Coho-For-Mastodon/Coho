@@ -11,6 +11,15 @@ import './md/md-button';
 export class HomeTabsNav extends LitElement {
   @property({ type: Boolean }) isGuestMode = false;
   @property({ type: Boolean }) hasNewNotifications = false;
+  @property({ type: String }) activeTab = 'general';
+
+  /**
+   * Helper to get the correct icon path based on active state
+   */
+  private getIconSrc(panel: string, baseName: string): string {
+    const variant = this.activeTab === panel ? 'filled' : 'outline';
+    return `/assets/${baseName}-${variant}.svg`;
+  }
 
   connectedCallback() {
     super.connectedCallback();
@@ -36,15 +45,24 @@ export class HomeTabsNav extends LitElement {
   render() {
     return html`
       <md-tab panel="general" @click="${this._handleReload}">
-        <md-icon slot="icon" src="/assets/home-outline.svg"></md-icon>
+        <md-icon
+          slot="icon"
+          src="${this.getIconSrc('general', 'home')}"
+        ></md-icon>
         <span class="tab-label">${msg('Home')}</span>
       </md-tab>
       <md-tab panel="search">
-        <md-icon slot="icon" src="/assets/search-outline.svg"></md-icon>
+        <md-icon
+          slot="icon"
+          src="${this.getIconSrc('search', 'search')}"
+        ></md-icon>
         <span class="tab-label">${msg('Explore')}</span>
       </md-tab>
       <md-tab panel="notifications" ?disabled="${this.isGuestMode}">
-        <md-icon slot="icon" src="/assets/notifications-outline.svg"></md-icon>
+        <md-icon
+          slot="icon"
+          src="${this.getIconSrc('notifications', 'notifications')}"
+        ></md-icon>
         <span class="tab-label">${msg('Notifications')}</span>
         ${this.hasNewNotifications
           ? html`<span class="notification-dot"></span>`
@@ -58,7 +76,10 @@ export class HomeTabsNav extends LitElement {
           : nothing}
       </md-tab>
       <md-tab panel="bookmarks" ?disabled="${this.isGuestMode}">
-        <md-icon slot="icon" src="/assets/bookmark-outline.svg"></md-icon>
+        <md-icon
+          slot="icon"
+          src="${this.getIconSrc('bookmarks', 'bookmark')}"
+        ></md-icon>
         <span class="tab-label">${msg('Saved')}</span>
         ${this.isGuestMode
           ? html`<md-icon
@@ -69,7 +90,10 @@ export class HomeTabsNav extends LitElement {
           : nothing}
       </md-tab>
       <md-tab panel="faves" ?disabled="${this.isGuestMode}">
-        <md-icon slot="icon" src="/assets/heart-outline.svg"></md-icon>
+        <md-icon
+          slot="icon"
+          src="${this.getIconSrc('faves', 'heart')}"
+        ></md-icon>
         <span class="tab-label">${msg('Favorites')}</span>
         ${this.isGuestMode
           ? html`<md-icon

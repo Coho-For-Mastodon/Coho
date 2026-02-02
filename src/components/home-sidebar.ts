@@ -26,6 +26,7 @@ import { setAuthRedirect } from '../utils/auth-redirect';
 export class HomeSidebar extends LitElement {
   @property({ type: Object }) user: Account | null = null;
   @property({ type: Array }) trendingTags: TrendingTag[] = [];
+  @property({ type: Boolean }) trendingTagsLoading = false;
   @property({ type: Boolean }) isGuestMode = false;
 
   static styles = css`
@@ -324,6 +325,27 @@ export class HomeSidebar extends LitElement {
   }
 
   private renderTrendingTags() {
+    // Show skeleton while loading
+    if (this.trendingTagsLoading) {
+      return html`
+        <div class="sidebar-card">
+          <h3>${msg('Trending Tags')}</h3>
+          ${[1, 2, 3, 4, 5].map(
+            () => html`
+              <div class="trending-item">
+                <md-skeleton width="60%" height="16px"></md-skeleton>
+                <md-skeleton
+                  width="40%"
+                  height="12px"
+                  style="margin-top: 4px;"
+                ></md-skeleton>
+              </div>
+            `
+          )}
+        </div>
+      `;
+    }
+
     if (!this.trendingTags || this.trendingTags.length === 0) {
       return nothing;
     }

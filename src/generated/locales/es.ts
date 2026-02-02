@@ -306,7 +306,6 @@ export const templates = {
   sa74f7bccdd96faa0: `Choose a valid poll duration.`,
   s35f6d88e3dccb4c5: `Remove media attachments before publishing a poll.`,
   s6573065ac52955ac: `Your post will be published when you're back online`,
-  sdbb213ea813073f2: `AI Image`,
   s177e08713b52d021: `Add to post`,
   sb25bd3e46439f38c: `Describe the image...`,
   s45cb501abd43ba52: `Generate`,
