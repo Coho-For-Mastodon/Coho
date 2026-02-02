@@ -82,6 +82,9 @@ export class MdIcon extends LitElement {
   @state() private svgContent = '';
   @state() private loadError = false;
 
+  /** Track the currently loaded src to avoid redundant loads */
+  private _loadedSrc?: string;
+
   static styles = css`
     :host {
       display: inline-flex;
@@ -100,6 +103,9 @@ export class MdIcon extends LitElement {
       color: inherit;
       fill: currentColor;
       vertical-align: middle;
+      transition:
+        opacity 0.15s ease-in-out,
+        transform 0.15s ease-in-out;
     }
 
     .icon svg {
@@ -196,11 +202,17 @@ export class MdIcon extends LitElement {
   private async loadExternalIcon() {
     if (!this.src) return;
 
+    // Skip if we already loaded this exact src
+    if (this._loadedSrc === this.src && this.svgContent) {
+      return;
+    }
+
     // Check cache first
     const cached = SVG_CACHE.get(this.src);
     if (cached) {
       this.svgContent = cached;
       this.loadError = false;
+      this._loadedSrc = this.src;
 
       this.dispatchEvent(
         new CustomEvent('md-icon-load', {
@@ -226,6 +238,7 @@ export class MdIcon extends LitElement {
 
       this.svgContent = text;
       this.loadError = false;
+      this._loadedSrc = this.src;
 
       this.dispatchEvent(
         new CustomEvent('md-icon-load', {

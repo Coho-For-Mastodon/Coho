@@ -85,6 +85,7 @@ export const componentLoaders = {
 
   // Dialog components
   postDialog: () => import('../components/post-dialog'),
+  postDetailDialog: () => import('../components/post-detail-dialog'),
 } as const;
 
 /**

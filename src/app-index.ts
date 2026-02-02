@@ -1,5 +1,5 @@
 import { LitElement, css, html } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { customElement, state } from 'lit/decorators.js';
 
 import { router } from './router/routes';
 
@@ -7,12 +7,14 @@ import { router } from './router/routes';
 import './config/localization.js';
 
 import './pages/app-login';
-import './components/header';
-import './components/pwa-update';
-import { getSettings } from './services/settings';
 
 @customElement('app-index')
 export class AppIndex extends LitElement {
+  /**
+   * Whether the user is authenticated (has valid credentials stored)
+   * True = returning authenticated user, False = brand new user or logged out
+   */
+  @state() isAuthenticated = false;
   static get styles() {
     return css`
       main {
@@ -55,44 +57,59 @@ export class AppIndex extends LitElement {
 
     // Initialize router (loads initial route's lazy imports)
     router.init();
+
+    // Defer PWA update component - not needed immediately, loads on browser idle
+    requestIdleCallback(() => import('./components/pwa-update'), {
+      timeout: 5000,
+    });
   }
 
   async handleInitTheme() {
+    const { getSettings } = await import('./services/settings');
     const settings = await getSettings();
     console.log('settings', settings);
 
     const potentialColor = settings.primary_color;
+
+    const { applyThemeColor } = await import('./utils/theme-color');
 
     if (potentialColor) {
       // Sync to localStorage for instant theme on next load (migration for existing users)
       if (!localStorage.getItem('coho-theme-color')) {
         localStorage.setItem('coho-theme-color', potentialColor);
       }
-      this.applyThemeColor(potentialColor);
+      applyThemeColor(potentialColor, { useIdleCallback: true });
     } else {
       // get css variable color
       const color = getComputedStyle(document.body).getPropertyValue(
         '--sl-color-primary-600'
       );
-      this.applyThemeColor(color);
+      applyThemeColor(color, { useIdleCallback: true });
     }
   }
 
   firstUpdated() {
     // Sync localStorage credentials to IndexedDB for service worker access
+    // and determine authentication state
     this.syncCredentialsToIndexedDB();
 
-    this.handleInitTheme();
+    // Check initial authentication state
+    this.checkAuthenticationState();
+    console.log('[App] isAuthenticated:', this.isAuthenticated);
 
-    // Preload data during idle time if conditions are good
-    // This is lazy-imported to avoid impacting first load bundle size
-    this.initIdlePreload();
+    if (this.isAuthenticated) {
+      this.handleInitTheme();
 
-    // Lazy-load image preview dialog on first preview-image event
-    this.initLazyImagePreview();
+      // Preload data during idle time if conditions are good
+      // This is lazy-imported to avoid impacting first load bundle size
+      this.initIdlePreload();
 
-    // Lazy-load shortcuts help dialog on first show-shortcuts-help event
-    this.initLazyShortcutsHelp();
+      // Lazy-load image preview dialog on first preview-image event
+      this.initLazyImagePreview();
+
+      // Lazy-load shortcuts help dialog on first show-shortcuts-help event
+      this.initLazyShortcutsHelp();
+    }
 
     router.addEventListener('route-changed', () => {
       this.requestUpdate();
@@ -209,140 +226,17 @@ export class AppIndex extends LitElement {
   }
 
   /**
-   * Apply theme color to both Shoelace and MD3 design tokens
+   * Check if the user has valid authentication credentials
+   * Sets isAuthenticated to true for returning users, false for new users
    */
-  private applyThemeColor(color: string) {
-    const root = document.documentElement;
-
-    // Shoelace tokens
-    root.style.setProperty('--sl-color-primary-600', color);
-    root.style.setProperty('--primary-color', color);
-
-    // MD3 tokens - primary color (set on :root for highest priority)
-    root.style.setProperty('--md-sys-color-primary', color);
-    root.style.setProperty('--md-sys-color-outline', color);
-
-    // Generate lighter/darker variants for better MD3 integration
-    const lighterVariant = this.adjustColorBrightness(color, 40);
-    const darkerVariant = this.adjustColorBrightness(color, -40);
-
-    root.style.setProperty('--sl-color-primary-500', lighterVariant);
-    root.style.setProperty('--sl-color-primary-700', darkerVariant);
-
-    // Also update body for legacy support
-    document.body.style.setProperty('--sl-color-primary-600', color);
-    document.body.style.setProperty('--md-sys-color-primary', color);
-    document.body.style.setProperty('--md-sys-color-outline', color);
-
-    requestIdleCallback(
-      () => {
-        // Update theme-color meta tags with tinted background
-        this.updateThemeMetaTags(color);
-      },
-      { timeout: 8000 }
+  private checkAuthenticationState() {
+    const accessToken = localStorage.getItem('accessToken');
+    const server = localStorage.getItem('server');
+    this.isAuthenticated = !!(accessToken && server);
+    console.log(
+      '[App] Authentication state:',
+      this.isAuthenticated ? 'authenticated' : 'new user'
     );
-  }
-
-  /**
-   * Parse any color format (hex, rgb, rgba) to RGB components
-   */
-  private parseColor(color: string): { r: number; g: number; b: number } {
-    color = color.trim();
-
-    // Handle rgb/rgba format: rgb(r, g, b) or rgb(r g b)
-    const rgbMatch = color.match(/rgba?\s*\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
-    if (rgbMatch) {
-      return {
-        r: parseInt(rgbMatch[1], 10),
-        g: parseInt(rgbMatch[2], 10),
-        b: parseInt(rgbMatch[3], 10),
-      };
-    }
-
-    // Handle hex format
-    let hex = color.replace('#', '');
-    // Handle shorthand hex (#abc -> #aabbcc)
-    if (hex.length === 3) {
-      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-    }
-    return {
-      r: parseInt(hex.substring(0, 2), 16),
-      g: parseInt(hex.substring(2, 4), 16),
-      b: parseInt(hex.substring(4, 6), 16),
-    };
-  }
-
-  /**
-   * Mix two colors in sRGB color space
-   * @param color1 First color (hex or rgb format)
-   * @param color2 Second color (hex or rgb format)
-   * @param weight Weight of color1 (0-100)
-   */
-  private mixColors(color1: string, color2: string, weight: number): string {
-    const c1 = this.parseColor(color1);
-    const c2 = this.parseColor(color2);
-    const w = weight / 100;
-
-    const r = Math.round(c1.r * w + c2.r * (1 - w));
-    const g = Math.round(c1.g * w + c2.g * (1 - w));
-    const b = Math.round(c1.b * w + c2.b * (1 - w));
-
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-  }
-
-  /**
-   * Update the theme-color meta tags with tinted background colors
-   * This affects the Window Controls Overlay / titlebar area
-   */
-  private updateThemeMetaTags(primaryColor: string) {
-    // Calculate tinted backgrounds matching CSS: color-mix(in srgb, primary X%, base)
-    // These match --md-sys-color-background from md-tokens.css:
-    // Dark: color-mix(in srgb, var(--md-sys-color-primary) 5%, #141314)
-    // Light: color-mix(in srgb, var(--md-sys-color-primary) 10%, #ffffff)
-    const lightBackground = this.mixColors(primaryColor, '#ffffff', 10);
-    const darkBackground = this.mixColors(primaryColor, '#141314', 5);
-
-    // Find and update the meta tags
-    const darkMeta = document.querySelector(
-      'meta[name="theme-color"][media="(prefers-color-scheme: dark)"]'
-    );
-    const lightMeta = document.querySelector(
-      'meta[name="theme-color"][media="(prefers-color-scheme: light)"]'
-    );
-
-    if (darkMeta) {
-      darkMeta.setAttribute('content', darkBackground);
-    }
-    if (lightMeta) {
-      lightMeta.setAttribute('content', lightBackground);
-    }
-  }
-
-  /**
-   * Adjust color brightness (from app-theme component)
-   */
-  private adjustColorBrightness(col: string, amt: number): string {
-    let usePound = false;
-    if (col[0] === '#') {
-      col = col.slice(1);
-      usePound = true;
-    }
-
-    const num = parseInt(col, 16);
-
-    let r = (num >> 16) + amt;
-    if (r > 255) r = 255;
-    else if (r < 0) r = 0;
-
-    let b = ((num >> 8) & 0x00ff) + amt;
-    if (b > 255) b = 255;
-    else if (b < 0) b = 0;
-
-    let g = (num & 0x0000ff) + amt;
-    if (g > 255) g = 255;
-    else if (g < 0) g = 0;
-
-    return (usePound ? '#' : '') + (g | (b << 8) | (r << 16)).toString(16);
   }
 
   render() {

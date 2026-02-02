@@ -28,8 +28,8 @@ import type {
 
 import { shouldDisableVirtualScroll } from '../utils/browser';
 
-// Keyboard navigation handler bound reference
-import hotkeys from 'hotkeys-js';
+// Keyboard navigation handler - dynamically imported to reduce initial bundle
+import type { default as HotkeysType } from 'hotkeys-js';
 
 // Types for analyze feature
 interface AnalyzeEntity {
@@ -557,8 +557,13 @@ export class Timeline extends LitElement {
 
   // Keyboard navigation methods
   private _keyboardScope = 'timeline';
+  private _hotkeys: typeof HotkeysType | null = null;
 
-  private _setupKeyboardNavigation() {
+  private async _setupKeyboardNavigation() {
+    // Dynamically import hotkeys-js to reduce initial bundle size
+    const { default: hotkeys } = await import('hotkeys-js');
+    this._hotkeys = hotkeys;
+
     // Set up alt+j/k navigation with a specific scope for this timeline
     hotkeys('alt+j,alt+k', this._keyboardScope, (event, handler) => {
       // Only handle if this timeline is visible/active
@@ -588,7 +593,7 @@ export class Timeline extends LitElement {
   };
 
   private _cleanupKeyboardNavigation() {
-    hotkeys.unbind('alt+j,alt+k', this._keyboardScope);
+    this._hotkeys?.unbind('alt+j,alt+k', this._keyboardScope);
     window.removeEventListener('refresh-timeline', this._handleRefreshEvent);
   }
 

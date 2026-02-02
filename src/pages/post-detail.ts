@@ -1,18 +1,18 @@
 import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
-import { localized, msg, str } from '@lit/localize';
+import { localized, msg } from '@lit/localize';
 
 import '../components/header';
 import '../components/timeline-item';
 import '../components/md/md-icon';
 import '../components/md/md-icon-button';
-import '../components/md/md-text-area';
 import '../components/md/md-skeleton-card';
+import '../components/post-composer';
 import { Post } from '../interfaces/Post';
 import { getReplies } from '../services/timeline';
 
-import { replyToPost, getPostDetail } from '../services/posts';
-import type { MdTextArea } from '../components/md/md-text-area';
+import { getPostDetail } from '../services/posts';
+import type { PostComposer } from '../components/post-composer';
 import { router, type AppNavigationState } from '../router/routes';
 import { getNotificationById } from '../mastodon/api/notifications';
 
@@ -30,7 +30,7 @@ export class PostDetail extends LitElement {
 
   @property({ type: Object }) passed_tweet: Post | null = null;
 
-  @query('md-text-area') private replyTextArea!: MdTextArea;
+  @query('post-composer') private replyComposer!: PostComposer;
 
   static styles = [
     css`
@@ -139,45 +139,6 @@ export class PostDetail extends LitElement {
           var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
         border-radius: 16px;
         padding: 10px;
-      }
-
-      .composer-inner {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .replying-to-indicator {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
-        padding: 4px 8px;
-        background: var(--md-sys-color-surface-container-high);
-        border-radius: 8px;
-      }
-
-      md-text-area {
-        width: 100%;
-      }
-
-      md-text-area.reply-input {
-        --md-text-area-min-height: 56px;
-        --md-text-area-resize: none;
-        --md-text-area-radius: 14px;
-        --md-text-area-padding: 10px 12px;
-      }
-
-      .composer-actions {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 8px;
-      }
-
-      md-button::part(control) {
-        border: none;
       }
 
       @media (min-width: 820px) {
@@ -401,27 +362,20 @@ export class PostDetail extends LitElement {
     }
   }
 
-  async handleReply() {
-    const tweetToReplyTo = this.replyingTo || this.tweet;
-
-    if (this.replyTextArea?.value && tweetToReplyTo && tweetToReplyTo.id) {
-      await replyToPost(tweetToReplyTo.id, this.replyTextArea.value);
-
-      await this.loadReplies();
-
-      this.replies = [...this.replies];
-
-      this.replyTextArea.value = '';
-      this.replyingTo = null;
-    }
+  async handleReplyPublished() {
+    // Reload replies after publishing
+    await this.loadReplies();
+    this.replies = [...this.replies];
+    this.replyingTo = null;
   }
 
   handleReplyClick(e: CustomEvent) {
     e.preventDefault();
     this.replyingTo = e.detail.tweet;
 
-    if (this.replyTextArea) {
-      this.replyTextArea.focus();
+    if (this.replyComposer) {
+      this.replyComposer.replyTo = e.detail.tweet;
+      this.replyComposer.focus();
     }
   }
 
@@ -566,46 +520,19 @@ export class PostDetail extends LitElement {
           : html`
               <footer class="composer">
                 <div class="composer-shell">
-                  <div class="composer-inner">
-                    ${this.replyingTo
-                      ? html`
-                          <div class="replying-to-indicator">
-                            <span
-                              >${msg(
-                                str`Replying to @${this.replyingTo.account.acct}`
-                              )}</span
-                            >
-                            <md-icon-button
-                              name="close"
-                              @click=${() => (this.replyingTo = null)}
-                            ></md-icon-button>
-                          </div>
-                        `
-                      : nothing}
-
-                    <md-text-area
-                      class="reply-input"
-                      variant="outlined"
-                      rows="2"
-                      .placeholder="${msg('Reply to this post...')}"
-                    ></md-text-area>
-
-                    <div class="composer-actions">
-                      <md-button
-                        @click="${() => this.handleReply()}"
-                        id="reply-button"
-                        variant="filled"
-                        pill
-                        size="small"
-                      >
-                        ${msg('Reply')}
-                        <md-icon
-                          slot="suffix"
-                          src="/assets/add-outline.svg"
-                        ></md-icon>
-                      </md-button>
-                    </div>
-                  </div>
+                  <post-composer
+                    compact
+                    rows="2"
+                    .replyTo=${this.replyingTo || this.tweet}
+                    placeholder=${msg('Reply to this post...')}
+                    @published=${() => this.handleReplyPublished()}
+                    @reply-cleared=${() => {
+                      this.replyingTo = null;
+                      if (this.replyComposer && this.tweet) {
+                        this.replyComposer.replyTo = this.tweet;
+                      }
+                    }}
+                  ></post-composer>
                 </div>
               </footer>
             `}

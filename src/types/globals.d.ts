@@ -45,6 +45,23 @@ declare global {
     connection?: NetworkInformation;
   }
 
+  // Scheduler API (Prioritized Task Scheduling)
+  interface Scheduler {
+    yield(): Promise<void>;
+    postTask<T>(
+      callback: () => T | Promise<T>,
+      options?: SchedulerPostTaskOptions
+    ): Promise<T>;
+  }
+
+  interface SchedulerPostTaskOptions {
+    priority?: 'user-blocking' | 'user-visible' | 'background';
+    signal?: AbortSignal;
+    delay?: number;
+  }
+
+  const scheduler: Scheduler;
+
   // Network Information API
   interface NetworkInformation {
     saveData: boolean;

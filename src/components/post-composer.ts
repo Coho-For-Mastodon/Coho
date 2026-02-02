@@ -1,0 +1,1777 @@
+import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
+import { customElement, property, state, query } from 'lit/decorators.js';
+import { msg, str, localized } from '@lit/localize';
+
+import './md/md-button.js';
+import './md/md-text-field.js';
+import './md/md-text-area.js';
+import './md/md-icon.js';
+import './md/md-icon-button.js';
+import './md/md-select.js';
+import './md/md-option.js';
+import './md/md-checkbox.js';
+import './media-edit-dialog.js';
+import './md/md-skeleton.js';
+import './handwriting-dialog.js';
+
+import type { MdTextArea } from './md/md-text-area.js';
+import type { MdTextField } from './md/md-text-field.js';
+
+import {
+  publishPost,
+  publishPollPost,
+  replyToPost,
+  uploadImageFromBlob,
+  updateMedia,
+  pickMedia,
+} from '../services/posts';
+import { getInstanceInfo } from '../services/account';
+import {
+  proofread,
+  isProofreaderAvailable,
+  isAudioTranscriptionAvailable,
+  transcribeAudio,
+  isHandwritingRecognitionAvailable,
+} from '../services/ai';
+import { showInfoToast } from '../utils/optimistic-updates';
+
+import type { Post } from '../interfaces/Post';
+
+import MarkdownWorker from '../utils/markdown-worker?worker';
+
+export interface LocalAttachment {
+  id: string;
+  preview_url: string;
+  description: string | null;
+  pending?: boolean;
+  file?: File;
+}
+
+export interface ComposerSubmitEvent {
+  status: string;
+  attachments: LocalAttachment[];
+  visibility: string;
+  sensitive: boolean;
+  spoilerText: string;
+  poll: {
+    options: string[];
+    expiresIn: number;
+    multiple: boolean;
+  } | null;
+  replyToId: string | null;
+}
+
+/**
+ * A reusable post composer component that can be used for both new posts and replies.
+ * Supports media attachments, polls, AI features (proofreading, speech-to-text, handwriting),
+ * content warnings, and visibility settings.
+ *
+ * @fires submit - Dispatched when the user submits the post
+ * @fires published - Dispatched after the post is successfully published (when autoPublish is true)
+ */
+@localized()
+@customElement('post-composer')
+export class PostComposer extends LitElement {
+  /**
+   * The post being replied to, if any. When set, the composer shows a "replying to" indicator.
+   */
+  @property({ type: Object }) replyTo: Post | null = null;
+
+  /**
+   * Whether this composer is in compact mode (for inline replies).
+   * Compact mode shows fewer action buttons.
+   */
+  @property({ type: Boolean }) compact = false;
+
+  /**
+   * Placeholder text for the textarea.
+   */
+  @property({ type: String }) placeholder = '';
+
+  /**
+   * Whether to automatically publish the post when submitted.
+   * If false, the component will dispatch a 'submit' event with the post data.
+   */
+  @property({ type: Boolean }) autoPublish = true;
+
+  /**
+   * Number of rows for the textarea.
+   */
+  @property({ type: Number }) rows = 6;
+
+  @state() attachments: Array<LocalAttachment> = [];
+  @state() editDialogOpen = false;
+  @state() activeAttachment: LocalAttachment | null = null;
+  @state() attaching: boolean = false;
+
+  @state() hasStatus: boolean = false;
+  @state() sensitive: boolean = false;
+  @state() visibility: string = 'public';
+
+  @state() maxChars: number = 500;
+  @state() maxMediaAttachments: number = 4;
+  @state() charCount: number = 0;
+
+  // Poll composer state
+  @state() pollEnabled: boolean = false;
+  @state() pollOptions: string[] = ['', ''];
+  @state() pollDurationSeconds: number = 60 * 60; // 1h default
+  @state() pollMultiple: boolean = false;
+  @state() pollError: string | null = null;
+
+  @state() proofreading: boolean = false;
+  @state() proofreadResult: ProofreadResult | null = null;
+  @state() proofreaderAvailable: boolean = false;
+
+  // Speech-to-text state
+  @state() isRecording: boolean = false;
+  @state() isTranscribing: boolean = false;
+  @state() speechToTextAvailable: boolean = false;
+
+  // Handwriting recognition state
+  @state() handwritingAvailable: boolean = false;
+  @state() handwritingDialogOpen: boolean = false;
+
+  // Drag and drop state
+  @state() isDraggingOver: boolean = false;
+
+  // Publishing state
+  @state() isPublishing: boolean = false;
+
+  // MediaRecorder for speech-to-text
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: Blob[] = [];
+
+  @query('md-text-area') private textArea!: MdTextArea;
+  @query('#sensitive-input') private sensitiveInput!: MdTextField;
+  @query('media-edit-dialog')
+  private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
+
+  static styles = css`
+    :host {
+      display: block;
+    }
+
+    .composer-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .replying-to-indicator {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant);
+      padding: 4px 8px;
+      background: var(--md-sys-color-surface-container-high);
+      border-radius: 8px;
+    }
+
+    /* Poll height animation using interpolate-size */
+    .poll-wrapper {
+      interpolate-size: allow-keywords;
+      height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition:
+        height 0.3s cubic-bezier(0.2, 0, 0, 1),
+        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .poll-wrapper.open {
+      height: auto;
+      opacity: 1;
+    }
+
+    .poll-composer {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface, #ffffff) 6%,
+        transparent
+      );
+      border: 1px solid
+        var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
+    }
+
+    .poll-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .poll-title {
+      font-weight: 700;
+      font-size: var(--md-sys-typescale-title-small-font-size, 14px);
+    }
+
+    .poll-subtitle {
+      color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
+      font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+    }
+
+    .poll-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .poll-option-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .poll-option-input {
+      flex: 1;
+    }
+
+    .poll-actions-row {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .poll-settings {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .poll-error {
+      margin-top: 10px;
+      color: var(--md-sys-color-error, #ffb4ab);
+      font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+    }
+
+    md-text-area {
+      width: 100%;
+    }
+
+    .actions-row {
+      display: flex;
+      justify-content: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mobile-icon-button {
+      display: none;
+    }
+
+    .desktop-button {
+      display: inline-flex;
+    }
+
+    @media (max-width: 1400px) {
+      .mobile-icon-button {
+        display: inline-flex;
+      }
+
+      .desktop-button {
+        display: none;
+      }
+    }
+
+    /* Compact mode always shows icon buttons */
+    :host([compact]) .mobile-icon-button {
+      display: inline-flex;
+    }
+
+    :host([compact]) .desktop-button {
+      display: none;
+    }
+
+    .footer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .footer-actions > div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .char-count {
+      font-size: var(--md-sys-typescale-label-small-font-size, 11px);
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+    }
+
+    .char-count.over-limit {
+      color: var(--md-sys-color-error, #ffb4ab);
+    }
+
+    /* Attachment previews */
+    .attachments-list {
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 6px;
+      list-style: none;
+      margin-top: 8px;
+      overflow: hidden;
+      overflow-x: scroll;
+    }
+
+    .attachments-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    .img-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 8em;
+      background: #00000040;
+      padding: 6px;
+      gap: 6px;
+      border-radius: 6px;
+    }
+
+    .img-preview img {
+      width: 8em;
+      height: 8em;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .preview-actions {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    md-skeleton {
+      height: 8em;
+      width: 8em;
+    }
+
+    #attachment-loading {
+      margin-top: 8px;
+    }
+
+    /* Sensitive warning input */
+    #sensitive-warning {
+      margin-top: 8px;
+    }
+
+    #sensitive-warning md-text-field {
+      width: 100%;
+    }
+
+    /* Proofread styles */
+    .proofread-container {
+      position: relative;
+    }
+
+    .proofread-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 320px;
+      margin-top: 4px;
+      padding: 8px 0;
+      background-color: var(--md-sys-color-surface-container, #2b2930);
+      color: var(--md-sys-color-on-surface, #e6e1e5);
+      border-radius: 4px;
+      box-shadow:
+        0 1px 2px 0 rgba(0, 0, 0, 0.3),
+        0 2px 6px 2px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+      animation: dropdownFadeIn 0.15s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes dropdownFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .proofread-dropdown-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    .proofread-dropdown-label {
+      font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+      font-weight: 500;
+    }
+
+    .proofread-dropdown-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .proofread-dropdown-content {
+      max-height: 100px;
+      overflow-y: auto;
+      padding: 0 12px 8px;
+    }
+
+    .proofread-dropdown-content p {
+      margin: 0;
+      font-size: var(--md-sys-typescale-body-small-font-size, 13px);
+      line-height: 1.5;
+      color: var(--md-sys-color-on-surface, #e6e1e5);
+    }
+
+    .proofread-success {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      font-size: var(--md-sys-typescale-label-small-font-size, 11px);
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+      background: var(--md-sys-color-surface-container, #2b2930);
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    @media (prefers-color-scheme: light) {
+      .proofread-dropdown,
+      .proofread-success {
+        background-color: var(--md-sys-color-surface-container, #f3edf7);
+        color: var(--md-sys-color-on-surface, #1d1b20);
+      }
+
+      .proofread-dropdown-label {
+        color: var(--md-sys-color-on-surface-variant, #49454f);
+      }
+
+      .proofread-dropdown-content p {
+        color: var(--md-sys-color-on-surface, #1d1b20);
+      }
+    }
+
+    /* Speech-to-text styles */
+    .mic-button,
+    .proofread-button {
+      --md-icon-button-icon-size: 18px;
+      transition: opacity 0.2s ease;
+    }
+
+    .mic-button:hover,
+    .proofread-button:hover {
+      opacity: 1;
+    }
+
+    .proofread-button.proofreading {
+      --md-icon-button-icon-color: #e879f9;
+      opacity: 1 !important;
+      animation: ai-glow 1.5s ease-in-out infinite;
+      border-radius: 50%;
+    }
+
+    .proofread-button[disabled] {
+      opacity: 0.3;
+    }
+
+    .mic-button.recording {
+      --md-icon-button-icon-color: #fff;
+      background-color: #e53935;
+      border-radius: 50%;
+      opacity: 1;
+      animation: recording-pulse 1s ease-in-out infinite;
+    }
+
+    .mic-button.transcribing {
+      --md-icon-button-icon-color: #e879f9;
+      opacity: 1 !important;
+      animation: ai-glow 1.5s ease-in-out infinite;
+      border-radius: 50%;
+    }
+
+    .pen-button {
+      --md-icon-button-icon-size: 18px;
+      transition: opacity 0.2s ease;
+    }
+
+    .pen-button:hover {
+      opacity: 1;
+    }
+
+    @keyframes recording-pulse {
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(244, 67, 54, 0);
+      }
+    }
+
+    @keyframes ai-glow {
+      0%,
+      100% {
+        box-shadow: 0 0 2px 1px rgba(232, 121, 249, 0.5);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow:
+          0 0 6px 2px rgba(232, 121, 249, 0.7),
+          0 0 12px 4px rgba(217, 70, 239, 0.4);
+        transform: scale(1.05);
+      }
+    }
+
+    /* Drag and drop styles */
+    :host([dragging-over]) .composer-wrapper {
+      outline: 2px dashed var(--md-sys-color-primary, #d0bcff);
+      outline-offset: -4px;
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-primary, #d0bcff) 8%,
+        transparent
+      );
+      border-radius: 12px;
+    }
+  `;
+
+  protected async firstUpdated() {
+    // Get instance limits
+    const instance = await getInstanceInfo();
+    if (instance.configuration?.statuses?.max_characters) {
+      this.maxChars = instance.configuration.statuses.max_characters;
+    } else if (instance.max_toot_chars) {
+      this.maxChars = instance.max_toot_chars;
+    }
+    if (instance.configuration?.statuses?.max_media_attachments) {
+      this.maxMediaAttachments =
+        instance.configuration.statuses.max_media_attachments;
+    }
+
+    // Check if AI features are available
+    this.proofreaderAvailable = await isProofreaderAvailable();
+    this.speechToTextAvailable = isAudioTranscriptionAvailable();
+    this.handwritingAvailable = await isHandwritingRecognitionAvailable();
+
+    // Add event listeners
+    this.addEventListener('keydown', this._handleKeydown);
+    this.addEventListener('paste', this._handlePaste);
+    this.addEventListener('dragover', this._handleDragOver);
+    this.addEventListener('dragleave', this._handleDragLeave);
+    this.addEventListener('drop', this._handleDrop);
+  }
+
+  protected updated(changedProperties: PropertyValues) {
+    super.updated(changedProperties);
+
+    // Sync compact attribute for CSS
+    if (changedProperties.has('compact')) {
+      this.toggleAttribute('compact', this.compact);
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener('keydown', this._handleKeydown);
+    this.removeEventListener('paste', this._handlePaste);
+    this.removeEventListener('dragover', this._handleDragOver);
+    this.removeEventListener('dragleave', this._handleDragLeave);
+    this.removeEventListener('drop', this._handleDrop);
+
+    // Clean up any blob URLs to prevent memory leaks
+    this.attachments.forEach((att) => {
+      if (att.preview_url.startsWith('blob:')) {
+        URL.revokeObjectURL(att.preview_url);
+      }
+    });
+
+    // Stop any active recording
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+  }
+
+  // Public API methods
+
+  /**
+   * Get the current text value of the composer.
+   */
+  get value(): string {
+    return this.textArea?.value || '';
+  }
+
+  /**
+   * Set the text value of the composer.
+   */
+  set value(val: string) {
+    if (this.textArea) {
+      this.textArea.value = val;
+      this.charCount = val.length;
+      this.hasStatus = val.length > 0;
+    }
+  }
+
+  /**
+   * Focus the text area.
+   */
+  focus() {
+    this.textArea?.focus();
+  }
+
+  /**
+   * Reset the composer to its initial state.
+   */
+  reset() {
+    this._resetState();
+  }
+
+  /**
+   * Clear the reply context.
+   */
+  clearReplyTo() {
+    this.replyTo = null;
+    this.dispatchEvent(
+      new CustomEvent('reply-cleared', { bubbles: true, composed: true })
+    );
+  }
+
+  /**
+   * Add an attachment (e.g., from AI image generation).
+   * The attachment should already be uploaded to the server.
+   */
+  addAttachment(attachment: LocalAttachment) {
+    if (this.attachments.length >= this.maxMediaAttachments) {
+      showInfoToast(
+        msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+      );
+      return false;
+    }
+
+    if (this.pollEnabled) {
+      showInfoToast(msg('Disable the poll to attach media.'));
+      return false;
+    }
+
+    this.attachments = [...this.attachments, attachment];
+    return true;
+  }
+
+  /**
+   * Get the current attachments.
+   */
+  getAttachments(): LocalAttachment[] {
+    return [...this.attachments];
+  }
+
+  // Event handlers
+
+  private _handleKeydown = (event: KeyboardEvent) => {
+    // Ctrl/Cmd+Enter to submit
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      this._handleSubmit();
+    }
+  };
+
+  private _handlePaste = (event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    if (this.pollEnabled) {
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          event.preventDefault();
+          showInfoToast(msg('Disable the poll to attach media.'));
+          return;
+        }
+      }
+      return;
+    }
+
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        event.preventDefault();
+
+        if (this.attachments.length >= this.maxMediaAttachments) {
+          showInfoToast(
+            msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+          );
+          return;
+        }
+
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        this._addFileAttachment(file);
+      }
+    }
+  };
+
+  private _handleDragOver = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.dataTransfer?.types.includes('Files')) {
+      event.dataTransfer.dropEffect = 'copy';
+      if (!this.isDraggingOver) {
+        this.isDraggingOver = true;
+        this.setAttribute('dragging-over', '');
+      }
+    }
+  };
+
+  private _handleDragLeave = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const relatedTarget = event.relatedTarget as Node | null;
+    if (!relatedTarget || !this.contains(relatedTarget)) {
+      this.isDraggingOver = false;
+      this.removeAttribute('dragging-over');
+    }
+  };
+
+  private _handleDrop = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.isDraggingOver = false;
+    this.removeAttribute('dragging-over');
+
+    const files = event.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    if (this.pollEnabled) {
+      showInfoToast(msg('Disable the poll to attach media.'));
+      return;
+    }
+
+    for (const file of files) {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        if (this.attachments.length >= this.maxMediaAttachments) {
+          showInfoToast(
+            msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+          );
+          return;
+        }
+        this._addFileAttachment(file);
+      }
+    }
+  };
+
+  private _handleStatusChange(ev: Event) {
+    const target = ev.target as HTMLTextAreaElement;
+    this.charCount = target.value.length;
+    this.hasStatus = target.value.length > 0;
+  }
+
+  // File attachment methods
+
+  private _addFileAttachment(file: File) {
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const previewUrl = URL.createObjectURL(file);
+
+    const newAttachment: LocalAttachment = {
+      id: tempId,
+      preview_url: previewUrl,
+      description: null,
+      pending: true,
+      file,
+    };
+
+    this.attachments = [...this.attachments, newAttachment];
+    this._uploadFile(file, tempId);
+  }
+
+  private async _uploadFile(file: File, tempId: string) {
+    try {
+      const result = await uploadImageFromBlob(file);
+
+      // Find and update the attachment
+      const index = this.attachments.findIndex((a) => a.id === tempId);
+      if (index !== -1) {
+        const oldPreview = this.attachments[index].preview_url;
+        if (oldPreview.startsWith('blob:')) {
+          URL.revokeObjectURL(oldPreview);
+        }
+
+        this.attachments = this.attachments.map((a) =>
+          a.id === tempId
+            ? {
+                id: result.id,
+                preview_url: result.preview_url,
+                description: result.description,
+                pending: false,
+              }
+            : a
+        );
+      }
+    } catch (err) {
+      console.error('Failed to upload file:', err);
+      // Remove the failed attachment
+      this.attachments = this.attachments.filter((a) => a.id !== tempId);
+      showInfoToast(msg('Failed to upload media'));
+    }
+  }
+
+  async attachFile() {
+    if (this.pollEnabled) {
+      showInfoToast(msg('Disable the poll to attach media.'));
+      return;
+    }
+
+    if (this.attachments.length >= this.maxMediaAttachments) {
+      showInfoToast(
+        msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+      );
+      return;
+    }
+
+    const files = await pickMedia();
+    if (!files || files.length === 0) return;
+
+    for (const file of files) {
+      if (this.attachments.length >= this.maxMediaAttachments) {
+        showInfoToast(
+          msg(str`Maximum ${this.maxMediaAttachments} attachments allowed.`)
+        );
+        break;
+      }
+      this._addFileAttachment(file);
+    }
+  }
+
+  removeImage(id: string) {
+    const attachment = this.attachments.find((a) => a.id === id);
+    if (attachment?.preview_url.startsWith('blob:')) {
+      URL.revokeObjectURL(attachment.preview_url);
+    }
+    this.attachments = this.attachments.filter((a) => a.id !== id);
+  }
+
+  openEditDialog(attachment: LocalAttachment) {
+    this.activeAttachment = attachment;
+    this.editDialogOpen = true;
+  }
+
+  async handleMediaSave(e: CustomEvent) {
+    const { id, description, editedBlob } = e.detail;
+
+    const attachment = this.attachments.find((a) => a.id === id);
+    if (!attachment) {
+      this.mediaEditDialog?.completeUpload(false);
+      return;
+    }
+
+    const blobToUpload =
+      editedBlob || (attachment.file ? attachment.file : null);
+
+    if (blobToUpload) {
+      try {
+        const result = await uploadImageFromBlob(blobToUpload);
+
+        if (description) {
+          await updateMedia(result.id, description);
+        }
+
+        if (attachment.preview_url.startsWith('blob:')) {
+          URL.revokeObjectURL(attachment.preview_url);
+        }
+
+        this.attachments = this.attachments.map((a) =>
+          a.id === id
+            ? {
+                id: result.id,
+                preview_url: result.preview_url,
+                description,
+                pending: false,
+              }
+            : a
+        );
+
+        if (this.activeAttachment?.id === id) {
+          this.activeAttachment = null;
+        }
+
+        this.mediaEditDialog?.completeUpload(true);
+      } catch (err) {
+        console.error('Failed to upload media', err);
+        this.mediaEditDialog?.completeUpload(false);
+      }
+      return;
+    }
+
+    this.attachments = this.attachments.map((a) =>
+      a.id === id ? { ...a, description } : a
+    );
+
+    if (this.activeAttachment?.id === id) {
+      this.activeAttachment = null;
+    }
+
+    if (!attachment.pending) {
+      try {
+        await updateMedia(id, description);
+        this.mediaEditDialog?.completeUpload(true);
+      } catch (err) {
+        console.error('Failed to update media description', err);
+        this.mediaEditDialog?.completeUpload(false);
+      }
+    } else {
+      this.mediaEditDialog?.completeUpload(true);
+    }
+  }
+
+  // Poll methods
+
+  private _togglePoll() {
+    if (!this.pollEnabled && this.attachments.length > 0) {
+      showInfoToast(msg('Remove media attachments before adding a poll.'));
+      return;
+    }
+
+    this.pollEnabled = !this.pollEnabled;
+    this.pollError = null;
+
+    if (!this.pollEnabled) {
+      this.pollOptions = ['', ''];
+      this.pollDurationSeconds = 60 * 60;
+      this.pollMultiple = false;
+    }
+  }
+
+  private _setPollOption(index: number, value: string) {
+    const next = [...this.pollOptions];
+    next[index] = String(value ?? '');
+    this.pollOptions = next;
+    this.pollError = null;
+  }
+
+  private _readInputEventValue(e: Event): string {
+    const detailValue = (e as CustomEvent<{ value?: string }>).detail?.value;
+    if (typeof detailValue === 'string') return detailValue;
+
+    const target = e.target as HTMLInputElement | null;
+    if (target && typeof target.value === 'string') return target.value;
+
+    const first = e.composedPath?.()[0] as HTMLInputElement | undefined;
+    if (first && typeof first.value === 'string') return first.value;
+
+    return '';
+  }
+
+  private _addPollOption() {
+    if (this.pollOptions.length >= 4) return;
+    this.pollOptions = [...this.pollOptions, ''];
+    this.pollError = null;
+  }
+
+  private _removePollOption(index: number) {
+    if (this.pollOptions.length <= 2) return;
+    this.pollOptions = this.pollOptions.filter((_, i) => i !== index);
+    this.pollError = null;
+  }
+
+  private _getPollPayload(): {
+    options: string[];
+    expiresIn: number;
+    multiple: boolean;
+  } | null {
+    if (!this.pollEnabled) return null;
+
+    const options = this.pollOptions
+      .map((o) => String(o ?? '').trim())
+      .filter(Boolean);
+    if (options.length < 2 || options.length > 4) {
+      this.pollError = msg('Add between 2 and 4 options.');
+      return null;
+    }
+
+    const normalized = options.map((o) => o.toLowerCase());
+    const unique = new Set(normalized);
+    if (unique.size !== normalized.length) {
+      this.pollError = msg('Poll options must be unique.');
+      return null;
+    }
+
+    if (
+      !Number.isFinite(this.pollDurationSeconds) ||
+      this.pollDurationSeconds <= 0
+    ) {
+      this.pollError = msg('Choose a valid poll duration.');
+      return null;
+    }
+
+    return {
+      options,
+      expiresIn: this.pollDurationSeconds,
+      multiple: this.pollMultiple,
+    };
+  }
+
+  // AI feature methods
+
+  async doProofread() {
+    const text = this.textArea?.value;
+    if (!text || text.trim().length === 0) return;
+
+    this.proofreading = true;
+    this.proofreadResult = null;
+
+    try {
+      const result = await proofread(text);
+      this.proofreadResult = result;
+    } catch (error) {
+      console.error('Proofreading failed:', error);
+    } finally {
+      this.proofreading = false;
+    }
+  }
+
+  applyCorrections() {
+    if (!this.proofreadResult) return;
+
+    if (this.textArea) {
+      this.textArea.value = this.proofreadResult.correctedInput;
+      this.charCount = this.proofreadResult.correctedInput.length;
+      this.hasStatus = this.proofreadResult.correctedInput.length > 0;
+    }
+
+    this.proofreadResult = null;
+  }
+
+  dismissProofread() {
+    this.proofreadResult = null;
+  }
+
+  // Speech-to-text methods
+
+  async toggleRecording() {
+    if (this.isRecording) {
+      await this.stopRecording();
+    } else {
+      await this.startRecording();
+    }
+  }
+
+  async startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, sampleRate: 16000 },
+      });
+
+      this.audioChunks = [];
+
+      const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+      ];
+
+      let selectedMimeType = '';
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+
+      const options: MediaRecorderOptions = selectedMimeType
+        ? { mimeType: selectedMimeType }
+        : {};
+
+      this.mediaRecorder = new MediaRecorder(stream, options);
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+
+        const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+        const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+        await this.handleTranscription(audioBlob);
+      };
+
+      this.mediaRecorder.start(250);
+      this.isRecording = true;
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+    }
+  }
+
+  async stopRecording() {
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+      this.isRecording = false;
+    }
+  }
+
+  async handleTranscription(audioBlob: Blob) {
+    this.isTranscribing = true;
+
+    try {
+      const transcribedText = await transcribeAudio(audioBlob);
+
+      if (transcribedText && this.textArea) {
+        const currentText = this.textArea.value;
+        if (currentText.trim().length > 0) {
+          this.textArea.value = currentText + ' ' + transcribedText;
+        } else {
+          this.textArea.value = transcribedText;
+        }
+
+        this.charCount = this.textArea.value.length;
+        this.hasStatus = this.textArea.value.length > 0;
+      }
+    } catch (error) {
+      console.error('Transcription failed:', error);
+    } finally {
+      this.isTranscribing = false;
+    }
+  }
+
+  // Handwriting
+
+  openHandwritingDialog() {
+    this.handwritingDialogOpen = true;
+  }
+
+  handleHandwritingComplete(e: CustomEvent<{ text: string }>) {
+    const recognizedText = e.detail.text;
+
+    if (recognizedText && this.textArea) {
+      const currentText = this.textArea.value;
+      if (currentText.trim().length > 0) {
+        this.textArea.value = currentText + ' ' + recognizedText;
+      } else {
+        this.textArea.value = recognizedText;
+      }
+
+      this.charCount = this.textArea.value.length;
+      this.hasStatus = this.textArea.value.length > 0;
+    }
+
+    this.handwritingDialogOpen = false;
+  }
+
+  handleHandwritingClose() {
+    this.handwritingDialogOpen = false;
+  }
+
+  // Sensitivity
+
+  markAsSensitive() {
+    this.sensitive = !this.sensitive;
+  }
+
+  // Submit / Publish
+
+  private async _handleSubmit() {
+    const status = this.textArea?.value;
+    if (!status || status.length === 0) return;
+
+    if (this.autoPublish) {
+      await this._publish();
+    } else {
+      const pollPayload = this._getPollPayload();
+      if (this.pollEnabled && !pollPayload) return; // Validation failed
+
+      const event: ComposerSubmitEvent = {
+        status,
+        attachments: [...this.attachments],
+        visibility: this.visibility,
+        sensitive: this.sensitive,
+        spoilerText: this.sensitive ? (this.sensitiveInput?.value ?? '') : '',
+        poll: pollPayload,
+        replyToId: this.replyTo?.id ?? null,
+      };
+
+      this.dispatchEvent(
+        new CustomEvent('submit', {
+          bubbles: true,
+          composed: true,
+          detail: event,
+        })
+      );
+    }
+  }
+
+  private async _publish() {
+    const status = this.textArea?.value;
+    if (!status || status.length === 0) return;
+
+    this.isPublishing = true;
+
+    const worker = new MarkdownWorker();
+
+    worker.onmessage = async (_e: MessageEvent<string>) => {
+      const isOffline = !navigator.onLine;
+
+      try {
+        const pollPayload = this._getPollPayload();
+
+        if (pollPayload && this.attachments.length > 0) {
+          this.pollError = msg(
+            'Remove media attachments before publishing a poll.'
+          );
+          worker.terminate();
+          this.isPublishing = false;
+          return;
+        }
+
+        let spoilerText = '';
+        if (this.sensitive) {
+          spoilerText = this.sensitiveInput?.value ?? '';
+        }
+
+        // Handle reply vs new post
+        if (this.replyTo?.id) {
+          // Reply mode - use replyToPost which accepts mediaIds
+          await replyToPost(
+            this.replyTo.id,
+            status,
+            this.attachments.length > 0
+              ? this.attachments.map((att) => att.id)
+              : undefined
+          );
+        } else if (this.attachments.length > 0) {
+          await publishPost(
+            status,
+            this.attachments.map((att) => att.id),
+            this.sensitive,
+            spoilerText,
+            this.visibility
+          );
+        } else if (pollPayload) {
+          await publishPollPost(
+            status,
+            pollPayload,
+            this.sensitive,
+            spoilerText,
+            this.visibility
+          );
+        } else {
+          await publishPost(
+            status,
+            undefined,
+            this.sensitive,
+            spoilerText,
+            this.visibility
+          );
+        }
+      } catch (error) {
+        console.error('[PostComposer] Publish error:', error);
+
+        if (isOffline) {
+          showInfoToast(
+            msg("Your post will be published when you're back online")
+          );
+          this._resetState();
+          worker.terminate();
+          this.isPublishing = false;
+          return;
+        }
+
+        worker.terminate();
+        this.isPublishing = false;
+        return;
+      }
+
+      // Success
+      this._resetState();
+      worker.terminate();
+
+      this.dispatchEvent(
+        new CustomEvent('published', {
+          bubbles: true,
+          composed: true,
+          detail: { status },
+        })
+      );
+
+      this.isPublishing = false;
+    };
+
+    worker.postMessage(status);
+  }
+
+  private _resetState() {
+    this.attachments.forEach((att) => {
+      if (att.preview_url.startsWith('blob:')) {
+        URL.revokeObjectURL(att.preview_url);
+      }
+    });
+    this.attachments = [];
+    this.charCount = 0;
+    this.hasStatus = false;
+    this.sensitive = false;
+    this.proofreadResult = null;
+    this.isRecording = false;
+    this.isTranscribing = false;
+    this.replyTo = null;
+
+    this.pollEnabled = false;
+    this.pollOptions = ['', ''];
+    this.pollDurationSeconds = 60 * 60;
+    this.pollMultiple = false;
+    this.pollError = null;
+
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+    this.mediaRecorder = null;
+    this.audioChunks = [];
+
+    if (this.textArea) {
+      this.textArea.value = '';
+    }
+  }
+
+  // Render methods
+
+  private _renderReplyIndicator() {
+    if (!this.replyTo) return nothing;
+
+    return html`
+      <div class="replying-to-indicator">
+        <span>${msg(str`Replying to @${this.replyTo.account.acct}`)}</span>
+        <md-icon-button
+          src="/assets/close-outline.svg"
+          @click=${() => this.clearReplyTo()}
+        ></md-icon-button>
+      </div>
+    `;
+  }
+
+  private _renderTextArea() {
+    const placeholderText =
+      this.placeholder ||
+      (this.replyTo
+        ? msg('Reply to this post...')
+        : msg("What's on your mind?"));
+
+    return html`
+      <md-text-area
+        @change="${(e: Event) => this._handleStatusChange(e)}"
+        @input="${(e: Event) => this._handleStatusChange(e)}"
+        autofocus
+        placeholder=${placeholderText}
+        rows="${this.rows}"
+        maxlength="${this.maxChars}"
+      ></md-text-area>
+    `;
+  }
+
+  private _renderActions() {
+    return html`
+      <div class="actions-row">
+        <!-- Visibility selector -->
+        ${!this.compact
+          ? html`
+              <md-select
+                .value=${this.visibility}
+                @change=${(e: CustomEvent<{ value: string }>) =>
+                  (this.visibility = e.detail.value)}
+                style="width: 140px; min-width: 140px;"
+                pill
+              >
+                <md-option value="public">${msg('Public')}</md-option>
+                <md-option value="unlisted">${msg('Unlisted')}</md-option>
+                <md-option value="private">${msg('Followers Only')}</md-option>
+                <md-option value="direct">${msg('Direct')}</md-option>
+              </md-select>
+            `
+          : nothing}
+
+        <!-- Desktop buttons -->
+        <md-button
+          class="desktop-button"
+          variant="outlined"
+          ?disabled=${this.attachments.length > 0}
+          @click="${() => this._togglePoll()}"
+        >
+          ${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
+        </md-button>
+
+        <md-button
+          class="desktop-button"
+          variant="outlined"
+          @click="${() => this.markAsSensitive()}"
+        >
+          ${msg('Content Warning')}
+          <md-icon src="/assets/eye-outline.svg"></md-icon>
+        </md-button>
+
+        <md-button
+          class="desktop-button"
+          pill
+          variant="outlined"
+          @click="${() => this.attachFile()}"
+          ?disabled=${this.pollEnabled ||
+          this.attachments.length >= this.maxMediaAttachments}
+        >
+          ${msg('Attach Media')}
+          <md-icon src="/assets/attach-outline.svg"></md-icon>
+        </md-button>
+
+        <!-- Mobile icon buttons -->
+        <md-icon-button
+          class="mobile-icon-button"
+          label="${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}"
+          src="/assets/chatbox-outline.svg"
+          ?disabled=${this.attachments.length > 0}
+          @click="${() => this._togglePoll()}"
+        ></md-icon-button>
+
+        <md-icon-button
+          class="mobile-icon-button"
+          label=${msg('Content Warning')}
+          src="/assets/eye-outline.svg"
+          @click="${() => this.markAsSensitive()}"
+        ></md-icon-button>
+
+        <md-icon-button
+          class="mobile-icon-button"
+          label=${msg('Attach Media')}
+          src="/assets/attach-outline.svg"
+          @click="${() => this.attachFile()}"
+          ?disabled=${this.pollEnabled ||
+          this.attachments.length >= this.maxMediaAttachments}
+        ></md-icon-button>
+
+        <!-- Proofreader -->
+        ${this.proofreaderAvailable ? this._renderProofreader() : nothing}
+
+        <!-- Speech-to-text -->
+        ${this.speechToTextAvailable
+          ? html`
+              <md-icon-button
+                class="mic-button ${this.isRecording ? 'recording' : ''} ${this
+                  .isTranscribing
+                  ? 'transcribing'
+                  : ''}"
+                label="${this.isRecording
+                  ? msg('Stop recording')
+                  : this.isTranscribing
+                    ? msg('Transcribing...')
+                    : msg('Voice input')}"
+                src="${this.isRecording
+                  ? '/assets/stop-circle-outline.svg'
+                  : '/assets/mic-outline.svg'}"
+                ?disabled=${this.isTranscribing}
+                @click="${() => this.toggleRecording()}"
+                title="${this.isRecording || this.isTranscribing
+                  ? ''
+                  : 'On-device AI'}"
+              ></md-icon-button>
+            `
+          : nothing}
+
+        <!-- Handwriting -->
+        ${this.handwritingAvailable
+          ? html`
+              <md-icon-button
+                class="pen-button"
+                label=${msg('Handwriting input')}
+                src="/assets/brush-outline.svg"
+                @click="${() => this.openHandwritingDialog()}"
+                title="On-device AI"
+              ></md-icon-button>
+            `
+          : nothing}
+      </div>
+    `;
+  }
+
+  private _renderProofreader() {
+    return html`
+      <div class="proofread-container">
+        ${this.proofreadResult && this.proofreadResult.corrections.length === 0
+          ? html`
+              <span class="proofread-success">
+                ✓ ${msg('Looks good!')}
+                <md-icon-button
+                  class="proofread-button"
+                  label=${msg('Dismiss')}
+                  src="/assets/close-outline.svg"
+                  @click="${() => this.dismissProofread()}"
+                ></md-icon-button>
+              </span>
+            `
+          : html`
+              <md-icon-button
+                class="proofread-button ${this.proofreading
+                  ? 'proofreading'
+                  : ''}"
+                label="${this.proofreading
+                  ? msg('Checking...')
+                  : msg('Proofread')}"
+                src="/assets/sparkles-outline.svg"
+                ?disabled=${!this.hasStatus || this.proofreading}
+                @click="${() => this.doProofread()}"
+                title="${this.proofreading ? '' : 'On-device AI'}"
+              ></md-icon-button>
+            `}
+        ${this.proofreadResult && this.proofreadResult.corrections.length > 0
+          ? html`
+              <div class="proofread-dropdown">
+                <div class="proofread-dropdown-header">
+                  <span class="proofread-dropdown-label">
+                    ${msg('Suggested revision')}
+                    (${this.proofreadResult.corrections.length}
+                    change${this.proofreadResult.corrections.length > 1
+                      ? 's'
+                      : ''})
+                  </span>
+                  <div class="proofread-dropdown-actions">
+                    <md-button
+                      size="small"
+                      variant="filled"
+                      pill
+                      @click="${() => this.applyCorrections()}"
+                      >${msg('Apply')}</md-button
+                    >
+                    <md-button
+                      size="small"
+                      variant="text"
+                      @click="${() => this.dismissProofread()}"
+                      >${msg('Dismiss')}</md-button
+                    >
+                  </div>
+                </div>
+                <div class="proofread-dropdown-content">
+                  <p>${this.proofreadResult.correctedInput}</p>
+                </div>
+              </div>
+            `
+          : null}
+      </div>
+    `;
+  }
+
+  private _renderSensitiveWarning() {
+    if (!this.sensitive) return nothing;
+
+    return html`
+      <div id="sensitive-warning">
+        <md-text-field
+          id="sensitive-input"
+          placeholder=${msg('Write your warning here')}
+        ></md-text-field>
+      </div>
+    `;
+  }
+
+  private _renderPoll() {
+    return html`
+      <div class="poll-wrapper ${this.pollEnabled ? 'open' : ''}">
+        <div class="poll-composer">
+          <div class="poll-header">
+            <div class="poll-title">${msg('Poll')}</div>
+            <div class="poll-subtitle">${msg('Add 2–4 options')}</div>
+          </div>
+
+          <div class="poll-options">
+            ${this.pollOptions.map(
+              (opt, idx) => html`
+                <div class="poll-option-row">
+                  <md-text-field
+                    class="poll-option-input"
+                    placeholder=${msg(str`Option ${idx + 1}`)}
+                    .value=${String(opt ?? '')}
+                    @input=${(e: Event) =>
+                      this._setPollOption(idx, this._readInputEventValue(e))}
+                  ></md-text-field>
+
+                  <md-icon-button
+                    label=${msg('Remove option')}
+                    src="/assets/close-outline.svg"
+                    ?disabled=${this.pollOptions.length <= 2}
+                    @click=${() => this._removePollOption(idx)}
+                  ></md-icon-button>
+                </div>
+              `
+            )}
+
+            <div class="poll-actions-row">
+              <md-button
+                variant="text"
+                size="small"
+                pill
+                ?disabled=${this.pollOptions.length >= 4}
+                @click=${() => this._addPollOption()}
+              >
+                ${msg('Add option')}
+              </md-button>
+            </div>
+          </div>
+
+          <div class="poll-settings">
+            <md-select
+              .value=${String(this.pollDurationSeconds)}
+              @change=${(e: CustomEvent<{ value: string }>) =>
+                (this.pollDurationSeconds = parseInt(e.detail.value, 10))}
+              pill
+              style="width: 180px; min-width: 180px;"
+            >
+              <md-option value="${String(5 * 60)}"
+                >${msg('5 minutes')}</md-option
+              >
+              <md-option value="${String(30 * 60)}"
+                >${msg('30 minutes')}</md-option
+              >
+              <md-option value="${String(60 * 60)}">${msg('1 hour')}</md-option>
+              <md-option value="${String(6 * 60 * 60)}"
+                >${msg('6 hours')}</md-option
+              >
+              <md-option value="${String(24 * 60 * 60)}"
+                >${msg('1 day')}</md-option
+              >
+              <md-option value="${String(3 * 24 * 60 * 60)}"
+                >${msg('3 days')}</md-option
+              >
+              <md-option value="${String(7 * 24 * 60 * 60)}"
+                >${msg('7 days')}</md-option
+              >
+            </md-select>
+
+            <md-checkbox
+              .checked=${this.pollMultiple}
+              @change=${(e: CustomEvent<{ checked: boolean }>) =>
+                (this.pollMultiple = e.detail.checked)}
+            >
+              ${msg('Allow multiple choices')}
+            </md-checkbox>
+          </div>
+
+          ${this.pollError
+            ? html`<div class="poll-error">${this.pollError}</div>`
+            : null}
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderAttachments() {
+    if (this.attaching) {
+      return html`
+        <div id="attachment-loading">
+          <md-skeleton></md-skeleton>
+        </div>
+      `;
+    }
+
+    if (this.attachments.length === 0) return nothing;
+
+    return html`
+      <ul class="attachments-list">
+        ${this.attachments.map(
+          (attachment) => html`
+            <div class="img-preview">
+              <div class="preview-actions">
+                <md-icon-button
+                  size="small"
+                  @click="${() => this.removeImage(attachment.id)}"
+                >
+                  <md-icon src="/assets/close-outline.svg"></md-icon>
+                </md-icon-button>
+                <md-icon-button
+                  size="small"
+                  @click="${() => this.openEditDialog(attachment)}"
+                >
+                  <md-icon src="/assets/brush-outline.svg"></md-icon>
+                </md-icon-button>
+              </div>
+              <img
+                src="${attachment.preview_url}"
+                alt="${attachment.description || ''}"
+              />
+            </div>
+          `
+        )}
+      </ul>
+    `;
+  }
+
+  private _renderFooter() {
+    return html`
+      <div class="footer-actions">
+        <span
+          class="char-count ${this.charCount > this.maxChars
+            ? 'over-limit'
+            : ''}"
+        >
+          ${this.charCount} / ${this.maxChars}
+        </span>
+        <md-button
+          ?disabled="${!this.hasStatus ||
+          this.attaching ||
+          this.attachments.some((a) => a.pending) ||
+          this.isPublishing}"
+          pill
+          variant="filled"
+          @click="${() => this._handleSubmit()}"
+        >
+          ${this.replyTo ? msg('Reply') : msg('Publish')}
+        </md-button>
+      </div>
+    `;
+  }
+
+  render() {
+    return html`
+      <div class="composer-wrapper">
+        ${this._renderReplyIndicator()} ${this._renderTextArea()}
+        ${this._renderActions()} ${this._renderSensitiveWarning()}
+        ${this._renderPoll()} ${this._renderAttachments()}
+        ${this._renderFooter()}
+      </div>
+
+      <media-edit-dialog
+        .open="${this.editDialogOpen}"
+        .imageSrc="${this.activeAttachment?.preview_url || ''}"
+        .description="${this.activeAttachment?.description || ''}"
+        .mediaId="${this.activeAttachment?.id || ''}"
+        @close="${() => {
+          this.editDialogOpen = false;
+          this.activeAttachment = null;
+        }}"
+        @save="${this.handleMediaSave}"
+      ></media-edit-dialog>
+
+      <handwriting-dialog
+        .open="${this.handwritingDialogOpen}"
+        @handwriting-complete="${this.handleHandwritingComplete}"
+        @close="${() => this.handleHandwritingClose()}"
+      ></handwriting-dialog>
+    `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'post-composer': PostComposer;
+  }
+}

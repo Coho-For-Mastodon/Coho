@@ -143,7 +143,11 @@ export async function publishPollPost(
   return publishPost(post, undefined, sensitive, spoilerText, visibility, poll);
 }
 
-export async function replyToPost(id: string, content: string): Promise<Post> {
+export async function replyToPost(
+  id: string,
+  content: string,
+  mediaIds?: string[]
+): Promise<Post> {
   const server = getServer();
   const accessToken = getAccessToken();
   const formData = new FormData();
@@ -151,6 +155,13 @@ export async function replyToPost(id: string, content: string): Promise<Post> {
   formData.append('in_reply_to_id', id);
 
   formData.append('status', content && content.length > 0 ? content : '');
+
+  // Attach media IDs if provided
+  if (mediaIds && mediaIds.length > 0) {
+    for (const mediaId of mediaIds) {
+      formData.append('media_ids[]', mediaId);
+    }
+  }
 
   // make a fetch request to post a status using the mastodon api
   const response = await fetch(`https://${server}/api/v1/statuses`, {
