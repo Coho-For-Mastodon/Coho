@@ -312,6 +312,11 @@ export default defineConfig({
             if (id.includes('/node_modules/idb-keyval')) {
               return 'vendor-idb-keyval';
             }
+
+            // Separate tslib for better caching (stable dependency)
+            if (id.includes('/node_modules/tslib')) {
+              return 'vendor-tslib';
+            }
           }
         },
       },

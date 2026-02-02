@@ -22,6 +22,7 @@ import '../components/guest-login-banner';
 import '../components/home-sidebar';
 import '../components/settings-drawer-content';
 import '../components/home-tabs-nav';
+import '../components/header';
 
 import { getEffectiveParams } from '../utils/launch-params';
 import { TabController } from '../controllers/tab-controller';

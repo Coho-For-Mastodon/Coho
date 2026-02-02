@@ -7,8 +7,6 @@ import { router } from './router/routes';
 import './config/localization.js';
 
 import './pages/app-login';
-import './components/header';
-import './components/pwa-update';
 import { getSettings } from './services/settings';
 import { applyThemeColor } from './utils/theme-color';
 
@@ -56,6 +54,11 @@ export class AppIndex extends LitElement {
 
     // Initialize router (loads initial route's lazy imports)
     router.init();
+
+    // Defer PWA update component - not needed immediately, loads on browser idle
+    requestIdleCallback(() => import('./components/pwa-update'), {
+      timeout: 5000,
+    });
   }
 
   async handleInitTheme() {
