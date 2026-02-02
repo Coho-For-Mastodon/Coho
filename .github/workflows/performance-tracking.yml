@@ -1,0 +1,550 @@
+name: Performance Tracking
+
+on:
+  push:
+    branches: [main]
+  # Allow manual runs for debugging
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  performance-test:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    outputs:
+      js_size: ${{ steps.results.outputs.js_size }}
+      css_size: ${{ steps.results.outputs.css_size }}
+      html_size: ${{ steps.results.outputs.html_size }}
+      total_size: ${{ steps.results.outputs.total_size }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright deps (cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run bundle size tests and capture output
+        id: bundle-test
+        run: |
+          # Run the test and capture output
+          npm run test:bundle-size 2>&1 | tee bundle-output.txt || true
+
+      - name: Parse results
+        id: results
+        run: |
+          # Extract the sizes from the test output
+          # Looking for lines like "  JavaScript Total: 24.5 KB | Budget: 30 KB"
+          JS_SIZE=$(grep "JavaScript Total:" bundle-output.txt | sed -E 's/.*Total: ([0-9.]+) KB.*/\1/' || echo "0")
+          CSS_SIZE=$(grep "CSS Total:" bundle-output.txt | sed -E 's/.*Total: ([0-9.]+) KB.*/\1/' || echo "0")
+          HTML_SIZE=$(grep "HTML Total:" bundle-output.txt | sed -E 's/.*Total: ([0-9.]+) KB.*/\1/' || echo "0")
+          
+          # Calculate total
+          TOTAL_SIZE=$(echo "$JS_SIZE + $CSS_SIZE + $HTML_SIZE" | bc)
+          
+          echo "js_size=$JS_SIZE" >> $GITHUB_OUTPUT
+          echo "css_size=$CSS_SIZE" >> $GITHUB_OUTPUT
+          echo "html_size=$HTML_SIZE" >> $GITHUB_OUTPUT
+          echo "total_size=$TOTAL_SIZE" >> $GITHUB_OUTPUT
+          
+          echo "📊 Parsed results:"
+          echo "  JS: ${JS_SIZE} KB"
+          echo "  CSS: ${CSS_SIZE} KB"
+          echo "  HTML: ${HTML_SIZE} KB"
+          echo "  Total: ${TOTAL_SIZE} KB"
+
+      - name: Upload test output
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-output
+          path: bundle-output.txt
+
+  update-history:
+    name: Update Performance History
+    needs: performance-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: performance-history
+          fetch-depth: 0
+        continue-on-error: true
+
+      - name: Create branch if doesn't exist
+        run: |
+          if [ ! -d ".git" ] || ! git rev-parse --verify performance-history >/dev/null 2>&1; then
+            git clone --depth 1 https://github.com/${{ github.repository }}.git temp-checkout || true
+            mkdir -p performance-data
+            echo '[]' > performance-data/history.json
+            git init
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -b performance-history
+          fi
+
+      - name: Setup directory structure
+        run: |
+          mkdir -p performance-data
+          if [ ! -f performance-data/history.json ]; then
+            echo '[]' > performance-data/history.json
+          fi
+
+      - name: Add new entry to history
+        run: |
+          # Create new entry
+          NEW_ENTRY=$(cat <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "${{ github.sha }}",
+            "commit_short": "${GITHUB_SHA:0:7}",
+            "commit_message": $(echo '${{ github.event.head_commit.message }}' | head -1 | jq -Rs '.'),
+            "js_kb": ${{ needs.performance-test.outputs.js_size }},
+            "css_kb": ${{ needs.performance-test.outputs.css_size }},
+            "html_kb": ${{ needs.performance-test.outputs.html_size }},
+            "total_kb": ${{ needs.performance-test.outputs.total_size }},
+            "budgets": {
+              "js_kb": 30,
+              "css_kb": 15,
+              "html_kb": 9,
+              "total_kb": 54
+            }
+          }
+          EOF
+          )
+          
+          # Append to history (keep last 100 entries)
+          jq --argjson new "$NEW_ENTRY" '. + [$new] | .[-100:]' performance-data/history.json > temp.json
+          mv temp.json performance-data/history.json
+
+      - name: Generate dashboard HTML
+        run: |
+          cat > performance-data/index.html << 'DASHBOARD_EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Coho Performance Dashboard</title>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <style>
+              :root {
+                --bg-primary: #0d1117;
+                --bg-secondary: #161b22;
+                --bg-tertiary: #21262d;
+                --text-primary: #f0f6fc;
+                --text-secondary: #8b949e;
+                --border: #30363d;
+                --accent: #58a6ff;
+                --success: #3fb950;
+                --warning: #d29922;
+                --danger: #f85149;
+              }
+              
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: var(--bg-primary);
+                color: var(--text-primary);
+                line-height: 1.5;
+                padding: 2rem;
+              }
+              
+              .container { max-width: 1200px; margin: 0 auto; }
+              
+              h1 {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+              }
+              
+              .subtitle {
+                color: var(--text-secondary);
+                margin-bottom: 2rem;
+              }
+              
+              .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-bottom: 2rem;
+              }
+              
+              .stat-card {
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 1.25rem;
+              }
+              
+              .stat-label {
+                color: var(--text-secondary);
+                font-size: 0.875rem;
+                margin-bottom: 0.25rem;
+              }
+              
+              .stat-value {
+                font-size: 1.75rem;
+                font-weight: 600;
+              }
+              
+              .stat-budget {
+                font-size: 0.75rem;
+                color: var(--text-secondary);
+                margin-top: 0.25rem;
+              }
+              
+              .stat-change {
+                font-size: 0.875rem;
+                margin-top: 0.25rem;
+              }
+              
+              .change-positive { color: var(--danger); }
+              .change-negative { color: var(--success); }
+              .change-neutral { color: var(--text-secondary); }
+              
+              .chart-container {
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+              }
+              
+              .chart-title {
+                font-size: 1.125rem;
+                margin-bottom: 1rem;
+              }
+              
+              .history-table {
+                width: 100%;
+                border-collapse: collapse;
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                overflow: hidden;
+              }
+              
+              .history-table th,
+              .history-table td {
+                padding: 0.75rem 1rem;
+                text-align: left;
+                border-bottom: 1px solid var(--border);
+              }
+              
+              .history-table th {
+                background: var(--bg-tertiary);
+                font-weight: 600;
+                font-size: 0.875rem;
+                color: var(--text-secondary);
+              }
+              
+              .history-table tr:last-child td { border-bottom: none; }
+              
+              .history-table tr:hover td { background: var(--bg-tertiary); }
+              
+              .commit-link {
+                color: var(--accent);
+                text-decoration: none;
+                font-family: monospace;
+              }
+              
+              .commit-link:hover { text-decoration: underline; }
+              
+              .commit-message {
+                color: var(--text-secondary);
+                font-size: 0.875rem;
+                max-width: 300px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+              
+              .size-cell {
+                font-family: monospace;
+                font-size: 0.875rem;
+              }
+              
+              .under-budget { color: var(--success); }
+              .over-budget { color: var(--danger); }
+              
+              .updated-at {
+                color: var(--text-secondary);
+                font-size: 0.875rem;
+                margin-top: 1rem;
+                text-align: center;
+              }
+              
+              @media (max-width: 768px) {
+                body { padding: 1rem; }
+                h1 { font-size: 1.5rem; }
+                .stat-value { font-size: 1.5rem; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🦦 Coho Performance Dashboard</h1>
+              <p class="subtitle">Bundle size tracking over time</p>
+              
+              <div class="stats-grid" id="stats-grid"></div>
+              
+              <div class="chart-container">
+                <h2 class="chart-title">Bundle Size History</h2>
+                <canvas id="history-chart"></canvas>
+              </div>
+              
+              <div class="chart-container">
+                <h2 class="chart-title">Recent Commits</h2>
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Commit</th>
+                      <th>Message</th>
+                      <th>JS</th>
+                      <th>CSS</th>
+                      <th>HTML</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="history-tbody"></tbody>
+                </table>
+              </div>
+              
+              <p class="updated-at" id="updated-at"></p>
+            </div>
+            
+            <script>
+              const REPO_URL = 'https://github.com/${{ github.repository }}';
+              
+              async function loadData() {
+                const response = await fetch('history.json');
+                return await response.json();
+              }
+              
+              function formatDate(dateStr) {
+                return new Date(dateStr).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              }
+              
+              function renderStats(data) {
+                const latest = data[data.length - 1];
+                const previous = data[data.length - 2];
+                
+                const statsGrid = document.getElementById('stats-grid');
+                
+                const metrics = [
+                  { key: 'js_kb', label: 'JavaScript', budget: latest.budgets.js_kb },
+                  { key: 'css_kb', label: 'CSS', budget: latest.budgets.css_kb },
+                  { key: 'html_kb', label: 'HTML', budget: latest.budgets.html_kb },
+                  { key: 'total_kb', label: 'Total', budget: latest.budgets.total_kb }
+                ];
+                
+                statsGrid.innerHTML = metrics.map(({ key, label, budget }) => {
+                  const value = latest[key];
+                  const prevValue = previous ? previous[key] : value;
+                  const change = value - prevValue;
+                  const changeClass = change > 0 ? 'change-positive' : change < 0 ? 'change-negative' : 'change-neutral';
+                  const changeText = change === 0 ? '±0' : (change > 0 ? '+' : '') + change.toFixed(1);
+                  const statusClass = value <= budget ? 'under-budget' : 'over-budget';
+                  
+                  return `
+                    <div class="stat-card">
+                      <div class="stat-label">${label}</div>
+                      <div class="stat-value ${statusClass}">${value.toFixed(1)} KB</div>
+                      <div class="stat-budget">Budget: ${budget} KB</div>
+                      ${previous ? `<div class="stat-change ${changeClass}">${changeText} KB from previous</div>` : ''}
+                    </div>
+                  `;
+                }).join('');
+              }
+              
+              function renderChart(data) {
+                const ctx = document.getElementById('history-chart').getContext('2d');
+                const labels = data.map(d => formatDate(d.timestamp));
+                
+                new Chart(ctx, {
+                  type: 'line',
+                  data: {
+                    labels,
+                    datasets: [
+                      {
+                        label: 'JavaScript',
+                        data: data.map(d => d.js_kb),
+                        borderColor: '#f85149',
+                        backgroundColor: 'rgba(248, 81, 73, 0.1)',
+                        tension: 0.1
+                      },
+                      {
+                        label: 'CSS',
+                        data: data.map(d => d.css_kb),
+                        borderColor: '#58a6ff',
+                        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                        tension: 0.1
+                      },
+                      {
+                        label: 'HTML',
+                        data: data.map(d => d.html_kb),
+                        borderColor: '#3fb950',
+                        backgroundColor: 'rgba(63, 185, 80, 0.1)',
+                        tension: 0.1
+                      },
+                      {
+                        label: 'Total',
+                        data: data.map(d => d.total_kb),
+                        borderColor: '#d29922',
+                        backgroundColor: 'rgba(210, 153, 34, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1
+                      }
+                    ]
+                  },
+                  options: {
+                    responsive: true,
+                    interaction: {
+                      intersect: false,
+                      mode: 'index'
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        title: {
+                          display: true,
+                          text: 'Size (KB)',
+                          color: '#8b949e'
+                        },
+                        grid: { color: '#30363d' },
+                        ticks: { color: '#8b949e' }
+                      },
+                      x: {
+                        grid: { color: '#30363d' },
+                        ticks: { 
+                          color: '#8b949e',
+                          maxRotation: 45,
+                          minRotation: 45
+                        }
+                      }
+                    },
+                    plugins: {
+                      legend: {
+                        labels: { color: '#f0f6fc' }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          afterTitle: (items) => {
+                            const idx = items[0].dataIndex;
+                            return `Commit: ${data[idx].commit_short}`;
+                          }
+                        }
+                      }
+                    }
+                  }
+                });
+              }
+              
+              function renderTable(data) {
+                const tbody = document.getElementById('history-tbody');
+                const recent = [...data].reverse().slice(0, 20);
+                
+                tbody.innerHTML = recent.map(entry => {
+                  const jsClass = entry.js_kb <= entry.budgets.js_kb ? 'under-budget' : 'over-budget';
+                  const cssClass = entry.css_kb <= entry.budgets.css_kb ? 'under-budget' : 'over-budget';
+                  const htmlClass = entry.html_kb <= entry.budgets.html_kb ? 'under-budget' : 'over-budget';
+                  const totalClass = entry.total_kb <= entry.budgets.total_kb ? 'under-budget' : 'over-budget';
+                  
+                  return `
+                    <tr>
+                      <td>${formatDate(entry.timestamp)}</td>
+                      <td><a class="commit-link" href="${REPO_URL}/commit/${entry.commit}" target="_blank">${entry.commit_short}</a></td>
+                      <td class="commit-message" title="${entry.commit_message}">${entry.commit_message}</td>
+                      <td class="size-cell ${jsClass}">${entry.js_kb.toFixed(1)} KB</td>
+                      <td class="size-cell ${cssClass}">${entry.css_kb.toFixed(1)} KB</td>
+                      <td class="size-cell ${htmlClass}">${entry.html_kb.toFixed(1)} KB</td>
+                      <td class="size-cell ${totalClass}">${entry.total_kb.toFixed(1)} KB</td>
+                    </tr>
+                  `;
+                }).join('');
+              }
+              
+              async function init() {
+                const data = await loadData();
+                
+                if (data.length === 0) {
+                  document.querySelector('.container').innerHTML = '<h1>🦦 Coho Performance Dashboard</h1><p>No data yet. Performance history will appear after the first run.</p>';
+                  return;
+                }
+                
+                renderStats(data);
+                renderChart(data);
+                renderTable(data);
+                
+                const latest = data[data.length - 1];
+                document.getElementById('updated-at').textContent = `Last updated: ${new Date(latest.timestamp).toLocaleString()}`;
+              }
+              
+              init();
+            </script>
+          </body>
+          </html>
+          DASHBOARD_EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add performance-data/
+          git commit -m "📊 Update performance history for ${GITHUB_SHA:0:7}" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git performance-history
+
+  # Deploy the dashboard to GitHub Pages
+  deploy-dashboard:
+    name: Deploy Dashboard
+    needs: update-history
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: performance-history
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'performance-data'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -225,6 +225,32 @@ export const mastodonHandlers = [
   }),
 ];
 
+// Mock instance search results
+export const mockInstanceSearchResults = {
+  instances: [
+    {
+      name: 'mastodon.social',
+      users: 1000000,
+      thumbnail: 'https://mastodon.social/icon.png',
+      info: { short_description: 'The original Mastodon server' },
+    },
+    {
+      name: 'tech.lgbt',
+      users: 50000,
+      thumbnail: 'https://tech.lgbt/icon.png',
+      info: { short_description: 'For LGBTQ+ people in tech' },
+    },
+    {
+      name: 'fosstodon.org',
+      users: 75000,
+      thumbnail: 'https://fosstodon.org/icon.png',
+      info: {
+        short_description: 'For Free & Open Source Software enthusiasts',
+      },
+    },
+  ],
+};
+
 // Firebase Functions handlers
 export const functionsHandlers = [
   http.get(
@@ -248,10 +274,69 @@ export const functionsHandlers = [
     }
   ),
 
+  // OAuth authentication - initiate OAuth flow
+  http.post(
+    'https://us-central1-coho-mastodon.cloudfunctions.net/authenticate',
+    async ({ request }) => {
+      const url = new URL(request.url);
+      const server = url.searchParams.get('server');
+      const redirectUri =
+        url.searchParams.get('redirect_uri') || 'http://localhost:3000';
+      // Return a mock OAuth redirect URL with code and state
+      return HttpResponse.json({
+        url: `${redirectUri}?code=mock_auth_code_12345&state=mock_state_${server}`,
+      });
+    }
+  ),
+
+  // OAuth token exchange - get access token from code
+  http.post(
+    'https://us-central1-coho-mastodon.cloudfunctions.net/getClient',
+    async ({ request }) => {
+      const url = new URL(request.url);
+      const code = url.searchParams.get('code');
+      if (!code) {
+        return HttpResponse.json(
+          { error: 'Missing code parameter' },
+          { status: 400 }
+        );
+      }
+      // Return a mock access token
+      return HttpResponse.json({
+        access_token: 'mock-access-token-from-oauth',
+      });
+    }
+  ),
+
   http.post('https://us-central1-coho-mastodon.cloudfunctions.net/*', () => {
     return HttpResponse.json({ ok: true });
   }),
 ];
 
+// Instance search API handlers (instances.social)
+export const instanceSearchHandlers = [
+  http.get(
+    'https://instances.social/api/1.0/instances/search',
+    ({ request }) => {
+      const url = new URL(request.url);
+      const query = url.searchParams.get('q')?.toLowerCase() || '';
+
+      // Filter mock instances based on query
+      const filtered = mockInstanceSearchResults.instances.filter((inst) =>
+        inst.name.toLowerCase().includes(query)
+      );
+
+      return HttpResponse.json({
+        instances:
+          filtered.length > 0 ? filtered : mockInstanceSearchResults.instances,
+      });
+    }
+  ),
+];
+
 // Combined handlers
-export const handlers = [...mastodonHandlers, ...functionsHandlers];
+export const handlers = [
+  ...mastodonHandlers,
+  ...functionsHandlers,
+  ...instanceSearchHandlers,
+];
