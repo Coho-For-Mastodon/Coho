@@ -27,6 +27,10 @@ import type {
 } from '../types/events';
 
 import { shouldDisableVirtualScroll } from '../utils/browser';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 
 // Keyboard navigation handler - dynamically imported to reduce initial bundle
 import type { default as HotkeysType } from 'hotkeys-js';
@@ -691,7 +695,7 @@ export class Timeline extends LitElement {
     if (!trigger || !root) return;
 
     if (!this._observer) {
-      this._observer = new IntersectionObserver(
+      this._observer = createIntersectionObserver(
         (entries) => {
           if (
             entries[0].isIntersecting &&
@@ -710,7 +714,7 @@ export class Timeline extends LitElement {
     }
 
     // Always re-observe to ensure we're tracking the correct element
-    this._observer.disconnect();
+    disconnectIntersectionObserver(this._observer);
     this._observer.observe(trigger);
   }
 

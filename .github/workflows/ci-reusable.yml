@@ -1,0 +1,251 @@
+name: CI (Reusable)
+
+on:
+  workflow_call:
+
+jobs:
+  # ============================================
+  # PARALLEL CHECKS (no dependencies)
+  # ============================================
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Check formatting
+        id: format-check
+        run: npm run format:check
+        continue-on-error: true
+      - name: Comment on PR if formatting fails
+        if: steps.format-check.outcome == 'failure' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **Formatting issues detected**\n\nPlease run `npm run format` locally and commit the changes.\n\nYou can also run `npm run format:check` to see the issues.'
+            })
+      - name: Fail if formatting check failed
+        if: steps.format-check.outcome == 'failure'
+        run: exit 1
+
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browsers
+        run: npx playwright install chromium firefox
+      - name: Install Playwright deps
+        run: npx playwright install-deps chromium firefox
+      - run: npm run test:run
+
+  build-functions:
+    name: Build Functions
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  # ============================================
+  # BUILD APP (depends on lint, typecheck)
+  # ============================================
+
+  build-app:
+    name: Build App
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+
+      # Check if translations are up to date
+      - name: Check for unextracted translations
+        run: |
+          npm run localize:extract
+          git diff --exit-code xliff/ || (echo "Error: Translation files are out of sync. Run 'npm run localize:extract' and commit the changes." && exit 1)
+
+      - name: Build production bundle
+        run: npm run build
+
+      # Upload build artifact for downstream jobs
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ============================================
+  # BUNDLE SIZE TEST (depends on build)
+  # ============================================
+
+  bundle-size-test:
+    name: Bundle Size Test
+    runs-on: ubuntu-latest
+    needs: [build-app]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+
+      # Download pre-built artifact
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      # Cache Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Playwright deps (cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # Run bundle size tests
+      - name: Run bundle size tests
+        run: npm run test:bundle-size
+
+  # ============================================
+  # E2E TESTS (required)
+  # ============================================
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [build-app]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+
+      # Download pre-built artifact
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      # Cache Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Playwright deps (cached)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # Run E2E tests
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+  # ============================================
+  # CI SUCCESS GATE
+  # All required checks must pass for this to succeed
+  # ============================================
+
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs:
+      [
+        lint,
+        format-check,
+        typecheck,
+        unit-tests,
+        build-app,
+        build-functions,
+        bundle-size-test,
+        e2e-tests,
+      ]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" ]] || \
+             [[ "${{ needs.format-check.result }}" != "success" ]] || \
+             [[ "${{ needs.typecheck.result }}" != "success" ]] || \
+             [[ "${{ needs.unit-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.build-app.result }}" != "success" ]] || \
+             [[ "${{ needs.build-functions.result }}" != "success" ]] || \
+             [[ "${{ needs.bundle-size-test.result }}" != "success" ]] || \
+             [[ "${{ needs.e2e-tests.result }}" != "success" ]]; then
+            echo "One or more required jobs failed"
+            exit 1
+          fi
+          echo "All required CI checks passed!"

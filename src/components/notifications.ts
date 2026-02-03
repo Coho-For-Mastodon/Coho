@@ -3,6 +3,10 @@ import { customElement, state } from 'lit/decorators.js';
 import { msg, localized } from '@lit/localize';
 import { router } from '../router/routes';
 import { parseEmojis } from '../utils/emoji-parser';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 
 import '@lit-labs/virtualizer';
 import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
@@ -33,6 +37,7 @@ export class Notifications extends LitElement {
   @state() hasMoreNotifications: boolean = true;
 
   private _observer: IntersectionObserver | null = null;
+  private _loadObserver: IntersectionObserver | null = null;
   private _activeRoot: Element | null = null;
 
   static styles = [
@@ -497,13 +502,8 @@ export class Notifications extends LitElement {
   async firstUpdated() {
     //load notifications when this component is visible using intersectionObserver
 
-    const options = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1,
-    };
-
-    const observer = new IntersectionObserver((entries, observer) => {
+    disconnectIntersectionObserver(this._loadObserver);
+    this._loadObserver = createIntersectionObserver((entries) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
           await scheduler.yield();
@@ -548,17 +548,21 @@ export class Notifications extends LitElement {
             navigator.clearAppBadge?.();
           }
 
-          observer.disconnect();
+          disconnectIntersectionObserver(this._loadObserver);
+          this._loadObserver = null;
         }
       });
-    }, options);
+    });
 
-    observer.observe(this);
+    this._loadObserver.observe(this);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    this._observer?.disconnect();
+    disconnectIntersectionObserver(this._observer);
+    disconnectIntersectionObserver(this._loadObserver);
+    this._observer = null;
+    this._loadObserver = null;
   }
 
   updated(changedProperties: PropertyValues) {
@@ -580,8 +584,8 @@ export class Notifications extends LitElement {
     if (!trigger || !root) return;
 
     if (this._activeRoot !== root) {
-      this._observer?.disconnect();
-      this._observer = new IntersectionObserver(
+      disconnectIntersectionObserver(this._observer);
+      this._observer = createIntersectionObserver(
         (entries) => {
           if (
             entries[0].isIntersecting &&
@@ -600,7 +604,7 @@ export class Notifications extends LitElement {
       this._activeRoot = root;
     }
 
-    this._observer?.disconnect();
+    disconnectIntersectionObserver(this._observer);
     this._observer?.observe(trigger);
   }
 

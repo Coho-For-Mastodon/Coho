@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { mdSharedStyles } from './md-shared-styles.js';
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error';
 
@@ -47,111 +48,144 @@ export class MdToast extends LitElement {
 
   private hideTimer?: number;
 
-  static styles = css`
-    :host {
-      display: block;
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 999999;
-      pointer-events: none;
-      visibility: hidden;
-    }
-
-    :host([position='bottom']) {
-      bottom: 16px;
-    }
-
-    :host([position='top']) {
-      top: 16px;
-    }
-
-    :host([open]) {
-      pointer-events: auto;
-      visibility: visible;
-    }
-
-    .toast-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 280px;
-      max-width: min(560px, calc(100vw - 32px));
-      padding: 14px 16px;
-      border-radius: 4px;
-      background: #313033;
-      color: #f5eff7;
-      box-shadow:
-        0px 1px 2px rgba(0, 0, 0, 0.3),
-        0px 2px 6px 2px rgba(0, 0, 0, 0.15);
-      font-family:
-        Roboto,
-        system-ui,
-        -apple-system,
-        sans-serif;
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      line-height: 20px;
-      font-weight: 400;
-      opacity: 0;
-      transform: translateY(100px);
-      transition:
-        opacity 0.2s cubic-bezier(0, 0, 0.2, 1),
-        transform 0.2s cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    :host([open]) .toast-container {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    :host([position='top']) .toast-container {
-      transform: translateY(-100px);
-    }
-
-    :host([position='top'][open]) .toast-container {
-      transform: translateY(0);
-    }
-
-    /* Variant backgrounds */
-    :host([variant='success']) .toast-container {
-      background: #2e7d32;
-      color: #ffffff;
-    }
-
-    :host([variant='error']) .toast-container {
-      background: var(--md-sys-color-error, #b3261e);
-      color: var(--md-sys-color-on-error, #ffffff);
-    }
-
-    :host([variant='warning']) .toast-container {
-      background: #f57c00;
-      color: #ffffff;
-    }
-
-    /* Dark mode overrides */
-    @media (prefers-color-scheme: dark) {
-      .toast-container {
-        background: #383838;
-        color: white;
+  static styles = [
+    mdSharedStyles,
+    css`
+      :host {
+        display: block;
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 999999;
+        pointer-events: none;
+        visibility: hidden;
       }
 
+      :host([position='bottom']) {
+        bottom: 16px;
+      }
+
+      :host([position='top']) {
+        top: 16px;
+      }
+
+      :host([open]) {
+        pointer-events: auto;
+        visibility: visible;
+      }
+
+      .toast-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 280px;
+        max-width: min(560px, calc(100vw - 32px));
+        padding: 14px 16px;
+        border-radius: 4px;
+        background: #313033;
+        color: #f5eff7;
+        box-shadow:
+          0px 1px 2px rgba(0, 0, 0, 0.3),
+          0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+        font-size: var(--md-sys-typescale-body-medium-font-size);
+        line-height: 20px;
+        font-weight: 400;
+        opacity: 0;
+        transform: translateY(100px);
+        transition:
+          opacity 0.2s cubic-bezier(0, 0, 0.2, 1),
+          transform 0.2s cubic-bezier(0, 0, 0.2, 1);
+      }
+
+      :host([open]) .toast-container {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      :host([position='top']) .toast-container {
+        transform: translateY(-100px);
+      }
+
+      :host([position='top'][open]) .toast-container {
+        transform: translateY(0);
+      }
+
+      /* Variant backgrounds */
       :host([variant='success']) .toast-container {
-        background: #4caf50;
+        background: #2e7d32;
         color: #ffffff;
       }
 
       :host([variant='error']) .toast-container {
-        background: #f2b8b5;
-        color: #601410;
+        background: var(--md-sys-color-error, #b3261e);
+        color: var(--md-sys-color-on-error, #ffffff);
       }
 
       :host([variant='warning']) .toast-container {
-        background: #ff9800;
+        background: #f57c00;
         color: #ffffff;
       }
 
+      /* Dark mode overrides */
+      @media (prefers-color-scheme: dark) {
+        .toast-container {
+          background: #383838;
+          color: white;
+        }
+
+        :host([variant='success']) .toast-container {
+          background: #4caf50;
+          color: #ffffff;
+        }
+
+        :host([variant='error']) .toast-container {
+          background: #f2b8b5;
+          color: #601410;
+        }
+
+        :host([variant='warning']) .toast-container {
+          background: #ff9800;
+          color: #ffffff;
+        }
+
+        button {
+          color: #6750a4;
+        }
+
+        :host([variant='success']) button,
+        :host([variant='error']) button,
+        :host([variant='warning']) button {
+          color: #ffffff;
+        }
+      }
+
+      .message {
+        flex: 1;
+        margin: 0;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+
       button {
-        color: #6750a4;
+        background: none;
+        border: none;
+        color: #d0bcff;
+        font-family: inherit;
+        font-size: var(--md-sys-typescale-label-large-font-size);
+        font-weight: 500;
+        letter-spacing: 0.1px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);
+        position: relative;
+        overflow: hidden;
       }
 
       :host([variant='success']) button,
@@ -159,75 +193,40 @@ export class MdToast extends LitElement {
       :host([variant='warning']) button {
         color: #ffffff;
       }
-    }
 
-    .message {
-      flex: 1;
-      margin: 0;
-    }
-
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
-    }
-
-    button {
-      background: none;
-      border: none;
-      color: #d0bcff;
-      font-family: inherit;
-      font-size: var(--md-sys-typescale-label-large-font-size);
-      font-weight: 500;
-      letter-spacing: 0.1px;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      text-transform: uppercase;
-      transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    :host([variant='success']) button,
-    :host([variant='error']) button,
-    :host([variant='warning']) button {
-      color: #ffffff;
-    }
-
-    button:hover {
-      background: color-mix(in srgb, currentColor 8%, transparent);
-    }
-
-    button:active {
-      background: color-mix(in srgb, currentColor 12%, transparent);
-    }
-
-    button:focus-visible {
-      outline: 2px solid currentColor;
-      outline-offset: 2px;
-    }
-
-    .close-button {
-      padding: 4px;
-      min-width: 24px;
-      min-height: 24px;
-    }
-
-    /* Mobile responsive */
-    @media (max-width: 820px) {
-      :host {
-        left: 8px;
-        right: 8px;
-        transform: none;
+      button:hover {
+        background: color-mix(in srgb, currentColor 8%, transparent);
       }
 
-      .toast-container {
-        max-width: 100%;
+      button:active {
+        background: color-mix(in srgb, currentColor 12%, transparent);
       }
-    }
-  `;
+
+      button:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+      }
+
+      .close-button {
+        padding: 4px;
+        min-width: 24px;
+        min-height: 24px;
+      }
+
+      /* Mobile responsive */
+      @media (max-width: 820px) {
+        :host {
+          left: 8px;
+          right: 8px;
+          transform: none;
+        }
+
+        .toast-container {
+          max-width: 100%;
+        }
+      }
+    `,
+  ];
 
   /**
    * Show the toast programmatically

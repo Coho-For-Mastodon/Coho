@@ -1,8 +1,13 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Post } from '../interfaces/Post';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 
 import './timeline-item';
+import './timeline-list';
 import './md/md-skeleton-card';
 import './md/md-divider';
 
@@ -11,45 +16,19 @@ export class Bookmarks extends LitElement {
   @state() bookmarks: Post[] = [];
   @state() isLoading = true;
 
-  static styles = [
-    css`
-      :host {
-        display: block;
+  private _observer: IntersectionObserver | null = null;
 
-        contain: paint layout style;
-        content-visibility: auto;
-      }
-
-      ul {
-        display: flex;
-        flex-direction: column;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-
-        gap: 16px;
-
-        height: 90vh;
-        overflow-y: scroll;
-        overflow-x: hidden;
-      }
-
-            @media (max-width: 820px) {
-        .bookmarks-container {
-          padding: 0;
-    `,
-  ];
+  static styles = css`
+    :host {
+      display: block;
+    }
+  `;
 
   async connectedCallback() {
     super.connectedCallback();
 
-    const options = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1,
-    };
-
-    const observer = new IntersectionObserver((entries, observer) => {
+    disconnectIntersectionObserver(this._observer);
+    this._observer = createIntersectionObserver((entries) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
           this.isLoading = true;
@@ -70,23 +49,30 @@ export class Bookmarks extends LitElement {
           }
 
           this.isLoading = false;
-          observer.disconnect();
+          disconnectIntersectionObserver(this._observer);
+          this._observer = null;
         }
       });
-    }, options);
+    });
 
-    observer.observe(this);
+    this._observer.observe(this);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    disconnectIntersectionObserver(this._observer);
+    this._observer = null;
   }
 
   render() {
     return html`
-      <ul class="scrollbar-hidden">
+      <timeline-list>
         ${this.isLoading
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : this.bookmarks.map((bookmark: Post) => {
               return html` <timeline-item .tweet=${bookmark}></timeline-item> `;
             })}
-      </ul>
+      </timeline-list>
     `;
   }
 }

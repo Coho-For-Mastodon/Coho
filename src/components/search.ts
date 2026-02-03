@@ -3,6 +3,10 @@ import { customElement, state, property, query } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 
 import { router } from '../router/routes';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 
 interface SearchData {
   query?: string;
@@ -26,6 +30,8 @@ export class Search extends LitElement {
   @property({ type: String }) avatar: string = '';
 
   @query('input') private _input!: HTMLInputElement;
+
+  private _observer: IntersectionObserver | null = null;
 
   static styles = [
     css`
@@ -159,13 +165,8 @@ export class Search extends LitElement {
   public async connectedCallback() {
     super.connectedCallback();
 
-    const options = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1,
-    };
-
-    const observer = new IntersectionObserver((entries, observer) => {
+    disconnectIntersectionObserver(this._observer);
+    this._observer = createIntersectionObserver((entries) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
           const { searchTimeline } = await import('../services/timeline');
@@ -182,12 +183,19 @@ export class Search extends LitElement {
           });
           this.dispatchEvent(event);
 
-          observer.disconnect();
+          disconnectIntersectionObserver(this._observer);
+          this._observer = null;
         }
       });
-    }, options);
+    });
 
-    observer.observe(this);
+    this._observer.observe(this);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    disconnectIntersectionObserver(this._observer);
+    this._observer = null;
   }
 
   private _handleContainerClick() {
