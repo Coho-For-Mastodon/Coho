@@ -25,7 +25,7 @@ import {
   updateMedia,
   pickMedia,
 } from '../services/posts';
-import { getInstanceInfo } from '../services/account';
+import { getInstanceInfo, searchAccounts } from '../services/account';
 import {
   proofread,
   isProofreaderAvailable,
@@ -34,8 +34,14 @@ import {
   isHandwritingRecognitionAvailable,
 } from '../services/ai';
 import { showInfoToast } from '../utils/optimistic-updates';
+import {
+  estimateMentionDropdownHeight,
+  findMentionMatch,
+  getCaretCoordinates,
+} from '../utils/mention-utils';
 
 import type { Post } from '../interfaces/Post';
+import type { Account as MastodonAccount } from '../mastodon/types/account';
 
 import MarkdownWorker from '../utils/markdown-worker?worker';
 
@@ -112,6 +118,17 @@ export class PostComposer extends LitElement {
   @state() maxMediaAttachments: number = 4;
   @state() charCount: number = 0;
 
+  // Mention picker state
+  @state() mentionOpen: boolean = false;
+  @state() mentionQuery: string = '';
+  @state() mentionResults: MastodonAccount[] = [];
+  @state() mentionLoading: boolean = false;
+  @state() mentionActiveIndex: number = -1;
+  @state() mentionAnchorLeft: number = 0;
+  @state() mentionAnchorTop: number = 0;
+  @state() mentionDropdownWidth: number = 280;
+  @state() mentionAnchorReady: boolean = false;
+
   // Poll composer state
   @state() pollEnabled: boolean = false;
   @state() pollOptions: string[] = ['', ''];
@@ -142,6 +159,10 @@ export class PostComposer extends LitElement {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
 
+  private mentionQueryRange: { start: number; end: number } | null = null;
+  private mentionSearchTimer: number | null = null;
+  private mentionRequestId = 0;
+
   @query('md-text-area') private textArea!: MdTextArea;
   @query('#sensitive-input') private sensitiveInput!: MdTextField;
   @query('media-edit-dialog')
@@ -156,6 +177,96 @@ export class PostComposer extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 8px;
+    }
+
+    .text-area-wrapper {
+      position: relative;
+      anchor-name: --composer-text-area;
+    }
+
+    .mention-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: auto;
+      z-index: 20;
+      max-height: 240px;
+      overflow-y: auto;
+      border-radius: 12px;
+      background: var(--md-sys-color-surface-container, #f3edf7);
+      border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.12));
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.2),
+        0 2px 6px rgba(0, 0, 0, 0.15);
+      width: min(320px, 100%);
+    }
+
+    @supports (position-anchor: --composer-text-area) {
+      .mention-dropdown {
+        position-anchor: --composer-text-area;
+        top: anchor(bottom);
+        left: anchor(left);
+        right: auto;
+        margin-top: 6px;
+      }
+    }
+
+    .mention-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .mention-item:hover,
+    .mention-item.active {
+      background-color: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface, #1d1b20) 10%,
+        transparent
+      );
+    }
+
+    .mention-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--md-sys-color-surface-container-high, #e6e0e9);
+    }
+
+    .mention-text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      gap: 2px;
+    }
+
+    .mention-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface, #1d1b20);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mention-acct {
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant, #49454f);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mention-state {
+      padding: 12px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant, #49454f);
     }
 
     .replying-to-indicator {
@@ -576,6 +687,13 @@ export class PostComposer extends LitElement {
     this.addEventListener('dragover', this._handleDragOver);
     this.addEventListener('dragleave', this._handleDragLeave);
     this.addEventListener('drop', this._handleDrop);
+
+    const nativeTextArea = this._getNativeTextArea();
+    if (nativeTextArea) {
+      nativeTextArea.addEventListener('keyup', this._handleCaretMove);
+      nativeTextArea.addEventListener('click', this._handleCaretMove);
+      nativeTextArea.addEventListener('scroll', this._handleCaretMove);
+    }
   }
 
   protected updated(changedProperties: PropertyValues) {
@@ -594,6 +712,14 @@ export class PostComposer extends LitElement {
     this.removeEventListener('dragover', this._handleDragOver);
     this.removeEventListener('dragleave', this._handleDragLeave);
     this.removeEventListener('drop', this._handleDrop);
+    this._closeMentionPicker();
+
+    const nativeTextArea = this._getNativeTextArea();
+    if (nativeTextArea) {
+      nativeTextArea.removeEventListener('keyup', this._handleCaretMove);
+      nativeTextArea.removeEventListener('click', this._handleCaretMove);
+      nativeTextArea.removeEventListener('scroll', this._handleCaretMove);
+    }
 
     // Clean up any blob URLs to prevent memory leaks
     this.attachments.forEach((att) => {
@@ -687,6 +813,31 @@ export class PostComposer extends LitElement {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
       this._handleSubmit();
+      return;
+    }
+
+    if (!this.mentionOpen) return;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this._moveMentionSelection(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this._moveMentionSelection(-1);
+        break;
+      case 'Enter':
+      case 'Tab':
+        if (this.mentionActiveIndex >= 0) {
+          event.preventDefault();
+          this._applyMention(this.mentionResults[this.mentionActiveIndex]);
+        }
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this._closeMentionPicker();
+        break;
     }
   };
 
@@ -776,10 +927,208 @@ export class PostComposer extends LitElement {
     }
   };
 
+  private _handleCaretMove = () => {
+    const nativeTextArea = this._getNativeTextArea();
+    if (!nativeTextArea) return;
+
+    const cursor = nativeTextArea.selectionStart ?? nativeTextArea.value.length;
+
+    // Only recompute mention suggestions when the mention picker is open.
+    // This ensures that moving the caret away from a mention token will
+    // close the picker and prevent unintended mention insertion.
+    if (!this.mentionOpen) {
+      return;
+    }
+
+    this._updateMentionSuggestions(
+      nativeTextArea.value,
+      cursor,
+      nativeTextArea
+    );
+  };
+
   private _handleStatusChange(ev: Event) {
-    const target = ev.target as HTMLTextAreaElement;
-    this.charCount = target.value.length;
-    this.hasStatus = target.value.length > 0;
+    const target = ev.target as MdTextArea | HTMLTextAreaElement;
+    const value = target.value;
+
+    this.charCount = value.length;
+    this.hasStatus = value.length > 0;
+
+    const nativeTextArea = this._getNativeTextArea();
+    const cursor =
+      nativeTextArea?.selectionStart ??
+      nativeTextArea?.value.length ??
+      value.length;
+
+    this._updateMentionSuggestions(value, cursor, nativeTextArea);
+  }
+
+  private _getNativeTextArea(): HTMLTextAreaElement | null {
+    return this.textArea?.shadowRoot?.querySelector('textarea') ?? null;
+  }
+
+  private _updateMentionSuggestions(
+    value: string,
+    cursor: number,
+    nativeTextArea: HTMLTextAreaElement | null
+  ) {
+    const mentionMatch = findMentionMatch(value, cursor);
+    if (!mentionMatch) {
+      this._closeMentionPicker();
+      return;
+    }
+
+    const query = mentionMatch.query;
+    this.mentionQueryRange = {
+      start: mentionMatch.start,
+      end: mentionMatch.end,
+    };
+
+    if (query.length === 0) {
+      this._closeMentionPicker();
+      return;
+    }
+
+    const isSameQuery = query === this.mentionQuery && this.mentionOpen;
+
+    if (nativeTextArea) {
+      this._updateMentionCaretPosition(nativeTextArea, cursor);
+    }
+
+    this.mentionOpen = true;
+
+    if (isSameQuery) {
+      return;
+    }
+
+    this.mentionQuery = query;
+    this._fetchMentionResults(query);
+  }
+
+  private _updateMentionCaretPosition(
+    textarea: HTMLTextAreaElement,
+    cursor: number
+  ) {
+    const wrapper = this.renderRoot.querySelector(
+      '.text-area-wrapper'
+    ) as HTMLElement | null;
+    if (!wrapper) return;
+
+    const coords = getCaretCoordinates(textarea, cursor);
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const textareaRect = textarea.getBoundingClientRect();
+    const width = Math.min(320, Math.max(220, wrapperRect.width - 16));
+
+    let left = textareaRect.left - wrapperRect.left + coords.left;
+    left = Math.max(8, Math.min(left, wrapperRect.width - width - 8));
+
+    const estimatedHeight = estimateMentionDropdownHeight(
+      this.mentionResults.length,
+      this.mentionLoading
+    );
+    const belowTop =
+      textareaRect.top - wrapperRect.top + coords.top + coords.lineHeight + 6;
+    const aboveTop =
+      textareaRect.top - wrapperRect.top + coords.top - estimatedHeight - 6;
+    const spaceBelow = wrapperRect.height - belowTop;
+    const spaceAbove = textareaRect.top - wrapperRect.top + coords.top - 6;
+
+    const top =
+      spaceBelow >= estimatedHeight || spaceBelow >= spaceAbove
+        ? belowTop
+        : Math.max(6, aboveTop);
+
+    this.mentionAnchorLeft = left;
+    this.mentionAnchorTop = top;
+    this.mentionDropdownWidth = width;
+    this.mentionAnchorReady = true;
+  }
+
+  private _fetchMentionResults(query: string) {
+    if (this.mentionSearchTimer !== null) {
+      window.clearTimeout(this.mentionSearchTimer);
+    }
+
+    this.mentionSearchTimer = window.setTimeout(async () => {
+      const requestId = ++this.mentionRequestId;
+      this.mentionLoading = true;
+
+      try {
+        const results = await searchAccounts(query, 6);
+        if (requestId !== this.mentionRequestId) return;
+
+        this.mentionResults = results || [];
+        this.mentionActiveIndex = this.mentionResults.length > 0 ? 0 : -1;
+        this._handleCaretMove();
+      } catch (error) {
+        console.error('[PostComposer] Mention search failed:', error);
+        if (requestId !== this.mentionRequestId) return;
+
+        this.mentionResults = [];
+        this.mentionActiveIndex = -1;
+      } finally {
+        if (requestId === this.mentionRequestId) {
+          this.mentionLoading = false;
+          this.mentionOpen = true;
+        }
+      }
+    }, 200);
+  }
+
+  private _moveMentionSelection(step: number) {
+    if (this.mentionResults.length === 0) return;
+
+    const nextIndex =
+      (this.mentionActiveIndex + step + this.mentionResults.length) %
+      this.mentionResults.length;
+    this.mentionActiveIndex = nextIndex;
+  }
+
+  private _applyMention(account: MastodonAccount) {
+    if (!this.mentionQueryRange) return;
+
+    const nativeTextArea = this._getNativeTextArea();
+    const currentValue = nativeTextArea?.value || this.textArea?.value || '';
+    const { start, end } = this.mentionQueryRange;
+
+    const acct = account.acct;
+    const prefix = currentValue.slice(0, start);
+    const suffix = currentValue.slice(end);
+    const mentionText = `@${acct}`;
+    const needsSpace = suffix.length === 0 || !/^\s/.test(suffix);
+    const insertText = mentionText + (needsSpace ? ' ' : '');
+    const nextValue = `${prefix}${insertText}${suffix}`;
+
+    if (nativeTextArea) {
+      nativeTextArea.value = nextValue;
+      const nextCursor = prefix.length + insertText.length;
+      nativeTextArea.selectionStart = nextCursor;
+      nativeTextArea.selectionEnd = nextCursor;
+      nativeTextArea.focus();
+    }
+
+    if (this.textArea) {
+      this.textArea.value = nextValue;
+    }
+
+    this.charCount = nextValue.length;
+    this.hasStatus = nextValue.length > 0;
+    this._closeMentionPicker();
+  }
+
+  private _closeMentionPicker() {
+    if (this.mentionSearchTimer !== null) {
+      window.clearTimeout(this.mentionSearchTimer);
+    }
+    this.mentionSearchTimer = null;
+    this.mentionRequestId += 1;
+    this.mentionOpen = false;
+    this.mentionQuery = '';
+    this.mentionResults = [];
+    this.mentionLoading = false;
+    this.mentionActiveIndex = -1;
+    this.mentionQueryRange = null;
+    this.mentionAnchorReady = false;
   }
 
   // File attachment methods
@@ -1338,6 +1687,8 @@ export class PostComposer extends LitElement {
     this.pollMultiple = false;
     this.pollError = null;
 
+    this._closeMentionPicker();
+
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
     }
@@ -1365,6 +1716,57 @@ export class PostComposer extends LitElement {
     `;
   }
 
+  private _renderMentionPicker() {
+    if (!this.mentionOpen) return nothing;
+
+    const mentionStyle = this.mentionAnchorReady
+      ? `left: ${this.mentionAnchorLeft}px; top: ${this.mentionAnchorTop}px; width: ${this.mentionDropdownWidth}px;`
+      : '';
+
+    return html`
+      <div class="mention-dropdown" role="listbox" style="${mentionStyle}">
+        ${this.mentionLoading
+          ? html`<div class="mention-state">${msg('Searching...')}</div>`
+          : this.mentionResults.length === 0
+            ? html`<div class="mention-state">
+                ${msg('No matching accounts')}
+              </div>`
+            : this.mentionResults.map((account, index) => {
+                const displayName =
+                  account.display_name?.trim() || account.acct;
+                const avatar =
+                  account.avatar_static ||
+                  account.avatar ||
+                  '/assets/icons/new-icons/icon-72x72.png';
+                const isActive = index === this.mentionActiveIndex;
+
+                return html`
+                  <div
+                    class="mention-item ${isActive ? 'active' : ''}"
+                    role="option"
+                    aria-selected=${isActive}
+                    @mouseenter=${() => {
+                      if (this.mentionActiveIndex !== index) {
+                        this.mentionActiveIndex = index;
+                      }
+                    }}
+                    @mousedown=${(event: MouseEvent) => {
+                      event.preventDefault();
+                      this._applyMention(account);
+                    }}
+                  >
+                    <img class="mention-avatar" src="${avatar}" alt="" />
+                    <div class="mention-text">
+                      <span class="mention-name">${displayName}</span>
+                      <span class="mention-acct">@${account.acct}</span>
+                    </div>
+                  </div>
+                `;
+              })}
+      </div>
+    `;
+  }
+
   private _renderTextArea() {
     const placeholderText =
       this.placeholder ||
@@ -1373,14 +1775,18 @@ export class PostComposer extends LitElement {
         : msg("What's on your mind?"));
 
     return html`
-      <md-text-area
-        @change="${(e: Event) => this._handleStatusChange(e)}"
-        @input="${(e: Event) => this._handleStatusChange(e)}"
-        autofocus
-        placeholder=${placeholderText}
-        rows="${this.rows}"
-        maxlength="${this.maxChars}"
-      ></md-text-area>
+      <div class="text-area-wrapper">
+        <md-text-area
+          @change="${(e: Event) => this._handleStatusChange(e)}"
+          @input="${(e: Event) => this._handleStatusChange(e)}"
+          @focusout="${() => this._closeMentionPicker()}"
+          autofocus
+          placeholder=${placeholderText}
+          rows="${this.rows}"
+          maxlength="${this.maxChars}"
+        ></md-text-area>
+        ${this._renderMentionPicker()}
+      </div>
     `;
   }
 

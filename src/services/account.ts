@@ -5,6 +5,7 @@ import type {
   CredentialAccount,
   UpdateCredentialsParams,
 } from '../mastodon/types/account';
+import { searchAccounts as mastodonSearchAccounts } from '../mastodon/api/accounts';
 
 // Helper functions to always get fresh values from localStorage
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
@@ -654,4 +655,8 @@ export const reportUser = async (
 
   const data = await response.json();
   return data;
+};
+
+export const searchAccounts = async (query: string, limit = 6) => {
+  return mastodonSearchAccounts(query, limit);
 };
