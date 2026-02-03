@@ -174,10 +174,10 @@ test.describe('Server Autocomplete', () => {
 
     // Type to trigger search
     await input.fill('tech');
-    await page.waitForTimeout(400);
 
-    // Click on tech.lgbt option (use first() to handle duplicates)
+    // Wait for the tech.lgbt option to appear instead of using a fixed timeout
     const option = autocomplete.getByText('tech.lgbt').first();
+    await expect(option).toBeVisible();
     await option.click();
 
     // Input should now have the selected value
