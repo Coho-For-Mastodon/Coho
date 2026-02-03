@@ -128,3 +128,19 @@ export const getUsersPosts = async (
   const data = await response.json();
   return data;
 };
+
+export const searchAccounts = async (
+  query: string,
+  limit = 6
+): Promise<Account[]> => {
+  const { url } = getClientConfig();
+  const response = await apiFetch(
+    `https://${url}/api/v1/accounts/search?q=${encodeURIComponent(query)}&limit=${limit}&resolve=true`,
+    {
+      method: 'GET',
+    }
+  );
+
+  const data = await response.json();
+  return data;
+};
