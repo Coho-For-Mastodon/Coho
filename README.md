@@ -49,11 +49,11 @@ Fast, private, and no server required—these features run entirely on your devi
 
 ### Cross Platform PWA
 
-Install Coho on any device—iOS, Android, Windows, macOS, or Linux. It's a true progressive web app with full offline support.
+Install Coho on any device—iOS, Android, Windows, macOS, or Linux. It's a progressive web app with full offline support.
 
 ### Modern Material Design
 
-Built with the latest Material Design 3 components for a polished, accessible experience.
+Coho is inspired by Material Design, following the latest MD3 Expressive spec to a large degree. This gives Coho a modern, relaxed, touch friendly design that looks good on any device.
 
 ### Theming
 
