@@ -1733,8 +1733,10 @@ export class PostComposer extends LitElement {
                     class="mention-item ${isActive ? 'active' : ''}"
                     role="option"
                     aria-selected=${isActive}
-                    @mousemove=${() => {
-                      this.mentionActiveIndex = index;
+                    @mouseenter=${() => {
+                      if (this.mentionActiveIndex !== index) {
+                        this.mentionActiveIndex = index;
+                      }
                     }}
                     @mousedown=${(event: MouseEvent) => {
                       event.preventDefault();
