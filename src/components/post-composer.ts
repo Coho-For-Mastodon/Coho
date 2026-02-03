@@ -928,11 +928,23 @@ export class PostComposer extends LitElement {
   };
 
   private _handleCaretMove = () => {
-    if (!this.mentionOpen) return;
     const nativeTextArea = this._getNativeTextArea();
     if (!nativeTextArea) return;
+
     const cursor = nativeTextArea.selectionStart ?? nativeTextArea.value.length;
-    this._updateMentionCaretPosition(nativeTextArea, cursor);
+
+    // Only recompute mention suggestions when the mention picker is open.
+    // This ensures that moving the caret away from a mention token will
+    // close the picker and prevent unintended mention insertion.
+    if (!this.mentionOpen) {
+      return;
+    }
+
+    this._updateMentionSuggestions(
+      nativeTextArea.value,
+      cursor,
+      nativeTextArea
+    );
   };
 
   private _handleStatusChange(ev: Event) {
