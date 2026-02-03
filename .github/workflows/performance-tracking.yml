@@ -61,7 +61,7 @@ jobs:
           HTML_SIZE=$(grep "HTML Total:" bundle-output.txt | sed -E 's/.*Total: ([0-9.]+) KB.*/\1/' || echo "0")
           
           # Calculate total
-          TOTAL_SIZE=$(echo "$JS_SIZE + $CSS_SIZE + $HTML_SIZE" | bc)
+          TOTAL_SIZE=$(awk "BEGIN {print $JS_SIZE + $CSS_SIZE + $HTML_SIZE}")
           
           echo "js_size=$JS_SIZE" >> $GITHUB_OUTPUT
           echo "css_size=$CSS_SIZE" >> $GITHUB_OUTPUT
