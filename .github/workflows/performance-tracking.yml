@@ -87,22 +87,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: performance-history
           fetch-depth: 0
-        continue-on-error: true
 
-      - name: Create branch if doesn't exist
+      - name: Ensure performance-history branch exists and is checked out
         run: |
-          if [ ! -d ".git" ] || ! git rev-parse --verify performance-history >/dev/null 2>&1; then
-            git clone --depth 1 https://github.com/${{ github.repository }}.git temp-checkout || true
-            mkdir -p performance-data
-            echo '[]' > performance-data/history.json
-            git init
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git checkout -b performance-history
+          if [ ! -d ".git" ]; then
+            echo "Error: .git directory not found; actions/checkout must run first."
+            exit 1
           fi
 
+          # Check if performance-history exists on remote
+          if git ls-remote --exit-code origin performance-history >/dev/null 2>&1; then
+            echo "Remote branch 'performance-history' exists; fetching and checking it out."
+            git fetch origin performance-history
+            git switch performance-history 2>/dev/null || git checkout performance-history
+          else
+            echo "Remote branch 'performance-history' does not exist; creating it from current HEAD."
+            git switch -c performance-history 2>/dev/null || git checkout -b performance-history
+            git push -u origin performance-history
+          fi
       - name: Setup directory structure
         run: |
           mkdir -p performance-data
