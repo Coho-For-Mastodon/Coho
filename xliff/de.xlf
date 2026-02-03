@@ -1210,6 +1210,12 @@
 <trans-unit id="s45cb501abd43ba52">
   <source>Generate</source>
 </trans-unit>
+<trans-unit id="sf46397f167ec5533">
+  <source>Searching...</source>
+</trans-unit>
+<trans-unit id="s3a5907d5d552d0af">
+  <source>No matching accounts</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
