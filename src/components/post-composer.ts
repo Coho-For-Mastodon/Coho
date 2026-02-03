@@ -34,6 +34,11 @@ import {
   isHandwritingRecognitionAvailable,
 } from '../services/ai';
 import { showInfoToast } from '../utils/optimistic-updates';
+import {
+  estimateMentionDropdownHeight,
+  findMentionMatch,
+  getCaretCoordinates,
+} from '../utils/mention-utils';
 
 import type { Post } from '../interfaces/Post';
 import type { Account as MastodonAccount } from '../mastodon/types/account';
@@ -955,21 +960,17 @@ export class PostComposer extends LitElement {
     cursor: number,
     nativeTextArea: HTMLTextAreaElement | null
   ) {
-    const textBeforeCursor = value.slice(0, cursor);
-    const match = textBeforeCursor.match(
-      /(^|(?:\s|\(|\[|\{))@([\w@.-]{0,50})$/
-    );
-
-    if (!match) {
+    const mentionMatch = findMentionMatch(value, cursor);
+    if (!mentionMatch) {
       this._closeMentionPicker();
       return;
     }
 
-    const query = match[2] || '';
-    const matchIndex = match.index ?? 0;
-    const prefix = match[1] || '';
-    const atIndex = matchIndex + prefix.length;
-    this.mentionQueryRange = { start: atIndex, end: cursor };
+    const query = mentionMatch.query;
+    this.mentionQueryRange = {
+      start: mentionMatch.start,
+      end: mentionMatch.end,
+    };
 
     if (query.length === 0) {
       this._closeMentionPicker();
@@ -1001,7 +1002,7 @@ export class PostComposer extends LitElement {
     ) as HTMLElement | null;
     if (!wrapper) return;
 
-    const coords = this._getCaretCoordinates(textarea, cursor);
+    const coords = getCaretCoordinates(textarea, cursor);
     const wrapperRect = wrapper.getBoundingClientRect();
     const textareaRect = textarea.getBoundingClientRect();
     const width = Math.min(320, Math.max(220, wrapperRect.width - 16));
@@ -1009,7 +1010,10 @@ export class PostComposer extends LitElement {
     let left = textareaRect.left - wrapperRect.left + coords.left;
     left = Math.max(8, Math.min(left, wrapperRect.width - width - 8));
 
-    const estimatedHeight = this._estimateMentionHeight();
+    const estimatedHeight = estimateMentionDropdownHeight(
+      this.mentionResults.length,
+      this.mentionLoading
+    );
     const belowTop =
       textareaRect.top - wrapperRect.top + coords.top + coords.lineHeight + 6;
     const aboveTop =
@@ -1026,93 +1030,6 @@ export class PostComposer extends LitElement {
     this.mentionAnchorTop = top;
     this.mentionDropdownWidth = width;
     this.mentionAnchorReady = true;
-  }
-
-  private _estimateMentionHeight(): number {
-    if (this.mentionLoading) {
-      return 52;
-    }
-
-    const itemCount =
-      this.mentionResults.length > 0 ? this.mentionResults.length : 1;
-    const rowHeight = 48;
-    const padding = 12;
-    return Math.min(240, itemCount * rowHeight + padding);
-  }
-
-  private _getCaretCoordinates(
-    textarea: HTMLTextAreaElement,
-    position: number
-  ): { left: number; top: number; lineHeight: number } {
-    const style = getComputedStyle(textarea);
-    const div = document.createElement('div');
-    const span = document.createElement('span');
-
-    const properties = [
-      'direction',
-      'boxSizing',
-      'width',
-      'height',
-      'overflowX',
-      'overflowY',
-      'borderTopWidth',
-      'borderRightWidth',
-      'borderBottomWidth',
-      'borderLeftWidth',
-      'paddingTop',
-      'paddingRight',
-      'paddingBottom',
-      'paddingLeft',
-      'fontStyle',
-      'fontVariant',
-      'fontWeight',
-      'fontStretch',
-      'fontSize',
-      'fontSizeAdjust',
-      'lineHeight',
-      'fontFamily',
-      'textAlign',
-      'textTransform',
-      'textIndent',
-      'textDecoration',
-      'letterSpacing',
-      'wordSpacing',
-      'tabSize',
-      'MozTabSize',
-      'whiteSpace',
-      'wordBreak',
-      'wordWrap',
-    ];
-
-    properties.forEach((prop) => {
-      div.style.setProperty(prop, style.getPropertyValue(prop));
-    });
-
-    div.style.position = 'absolute';
-    div.style.visibility = 'hidden';
-    div.style.whiteSpace = 'pre-wrap';
-    div.style.wordWrap = 'break-word';
-    div.style.top = '0';
-    div.style.left = '-9999px';
-    div.style.overflow = 'hidden';
-
-    div.textContent = textarea.value.substring(0, position);
-    span.textContent = textarea.value.substring(position) || '.';
-    div.appendChild(span);
-
-    document.body.appendChild(div);
-
-    const spanRect = span.getBoundingClientRect();
-    const divRect = div.getBoundingClientRect();
-    const lineHeight =
-      parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2;
-
-    document.body.removeChild(div);
-
-    const left = spanRect.left - divRect.left - textarea.scrollLeft;
-    const top = spanRect.top - divRect.top - textarea.scrollTop;
-
-    return { left, top, lineHeight };
   }
 
   private _fetchMentionResults(query: string) {
