@@ -255,7 +255,7 @@
   <target>Publicación no encontrada</target>
 </trans-unit>
 <trans-unit id="s5c9971c0a0a32300">
-  <source>Replying to @<x id="0" equiv-text="${this.replyingTo.account.acct}"/></source>
+  <source>Replying to @<x id="0" equiv-text="${this.replyTo.account.acct}"/></source>
   <target>Respondiendo a @<x id="0" equiv-text="${this.replyingTo.account.acct}"/></target>
 </trans-unit>
 <trans-unit id="s9d3248be9803bbe0">
@@ -1180,8 +1180,35 @@
 <trans-unit id="see68daede2d8aaa1">
   <source>Maximum <x id="0" equiv-text="${this.maxMediaAttachments}"/> attachments allowed.</source>
 </trans-unit>
-<trans-unit id="s0ba0b30c4cde4dd9">
-  <source>Please wait for media uploads to complete.</source>
+<trans-unit id="s45e6d0c9b559ac46">
+  <source>Failed to upload media</source>
+</trans-unit>
+<trans-unit id="sa1b93fa7b8ce3f85">
+  <source>Remove media attachments before adding a poll.</source>
+</trans-unit>
+<trans-unit id="s9aef4290017e3fcd">
+  <source>Add between 2 and 4 options.</source>
+</trans-unit>
+<trans-unit id="s71f5cfc2bbff06f3">
+  <source>Poll options must be unique.</source>
+</trans-unit>
+<trans-unit id="sa74f7bccdd96faa0">
+  <source>Choose a valid poll duration.</source>
+</trans-unit>
+<trans-unit id="s35f6d88e3dccb4c5">
+  <source>Remove media attachments before publishing a poll.</source>
+</trans-unit>
+<trans-unit id="s6573065ac52955ac">
+  <source>Your post will be published when you're back online</source>
+</trans-unit>
+<trans-unit id="s177e08713b52d021">
+  <source>Add to post</source>
+</trans-unit>
+<trans-unit id="sb25bd3e46439f38c">
+  <source>Describe the image...</source>
+</trans-unit>
+<trans-unit id="s45cb501abd43ba52">
+  <source>Generate</source>
 </trans-unit>
 </body>
 </file>
