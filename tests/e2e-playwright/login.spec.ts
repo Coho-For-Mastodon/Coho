@@ -197,11 +197,8 @@ test.describe('Server Autocomplete', () => {
 
     // With single character, should show popular instances
     // The component shows POPULAR_INSTANCES for queries < 2 chars
-    await page.waitForTimeout(100);
-
-    // Check that autocomplete still has options available
-    // (may or may not show dropdown for single char depending on implementation)
-    await expect(autocomplete).toBeVisible();
+    const popularOption = autocomplete.getByText('mastodon.social').first();
+    await expect(popularOption).toBeVisible({ timeout: 5000 });
   });
 });
 
