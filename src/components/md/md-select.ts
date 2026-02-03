@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { mdSharedStyles } from './md-shared-styles.js';
 
 /**
  * Material Design 3 Select Component
@@ -17,203 +18,207 @@ export class MdSelect extends LitElement {
   @state() private _open = false;
   @state() private _options: MdOption[] = [];
 
-  static styles = css`
-    :host {
-      display: block;
-      position: relative;
-      min-width: 200px;
-    }
+  static styles = [
+    mdSharedStyles,
+    css`
+      :host {
+        display: block;
+        position: relative;
+        min-width: 200px;
+      }
 
-    .select-container {
-      position: relative;
-    }
+      .select-container {
+        position: relative;
+      }
 
-    .select-input {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      min-height: 26px;
-      padding: 8px 16px;
-      border-radius: 4px 4px 0 0;
-      background-color: var(--md-sys-color-surface-container-highest, #e6e0e9);
-      cursor: pointer;
-      user-select: none;
-      font-family:
-        'Roboto',
-        system-ui,
-        -apple-system,
-        sans-serif;
-      font-size: var(--md-sys-typescale-body-large-font-size);
-      font-weight: 400;
-      line-height: 24px;
-      letter-spacing: 0.5px;
-      color: var(--md-sys-color-on-surface, #1d1b20);
-      border-bottom: 1px solid var(--md-sys-color-on-surface-variant, #49454f);
-      transition:
-        background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-        border-bottom-color 0.2s cubic-bezier(0.2, 0, 0, 1);
-      position: relative;
-    }
-
-    .select-input:hover:not(.disabled) {
-      background-color: color-mix(
-        in srgb,
-        var(--md-sys-color-on-surface, #1d1b20) 8%,
-        var(--md-sys-color-surface-container-highest, #e6e0e9)
-      );
-    }
-
-    .select-input.open {
-      border-bottom-color: var(--md-sys-color-primary, #6750a4);
-      border-bottom-width: 2px;
-    }
-
-    .select-input.outlined {
-      background-color: transparent;
-      border: 1px solid var(--md-sys-color-outline, #79747e);
-      border-radius: 4px;
-    }
-
-    .select-input.outlined:hover:not(.disabled) {
-      border-color: var(--md-sys-color-on-surface, #1d1b20);
-      background-color: transparent;
-    }
-
-    .select-input.outlined.open {
-      border-color: var(--md-sys-color-primary, #6750a4);
-      border-width: 2px;
-    }
-
-    .select-input.pill {
-      border-radius: 9999px;
-      border-bottom: none;
-    }
-
-    .select-input.pill.outlined {
-      border-radius: 9999px;
-    }
-
-    .select-input.disabled {
-      opacity: 0.38;
-      cursor: not-allowed;
-      background-color: var(--md-sys-color-surface-container-highest, #e6e0e9);
-    }
-
-    .select-label {
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .select-label.placeholder {
-      color: var(--md-sys-color-on-surface-variant, #49454f);
-    }
-
-    .dropdown-icon {
-      width: 24px;
-      height: 24px;
-      transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-      fill: currentColor;
-    }
-
-    .select-input.open .dropdown-icon {
-      transform: rotate(180deg);
-    }
-
-    .dropdown {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
-      right: 0;
-      max-height: 280px;
-      overflow-y: auto;
-      background: var(--md-sys-color-surface-container, #f3edf7);
-      border-radius: 4px;
-      box-shadow:
-        0px 1px 2px rgba(0, 0, 0, 0.3),
-        0px 2px 6px 2px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
-      opacity: 0;
-      transform: scaleY(0);
-      transform-origin: top;
-      transition:
-        opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
-        transform 0.15s cubic-bezier(0.2, 0, 0, 1);
-      pointer-events: none;
-    }
-
-    .dropdown.open {
-      opacity: 1;
-      transform: scaleY(1);
-      pointer-events: auto;
-    }
-
-    .backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 999;
-      background: transparent;
-      display: none;
-    }
-
-    .backdrop.open {
-      display: block;
-    }
-
-    ::slotted(md-option) {
-      cursor: pointer;
-    }
-
-    /* Focus visible styles */
-    .select-input:focus-visible {
-      outline: 2px solid var(--md-sys-color-primary, #6750a4);
-      outline-offset: 2px;
-    }
-
-    /* Dark mode */
-    @media (prefers-color-scheme: dark) {
       .select-input {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 26px;
+        padding: 8px 16px;
+        border-radius: 4px 4px 0 0;
         background-color: var(
           --md-sys-color-surface-container-highest,
-          #36343b
+          #e6e0e9
         );
-        color: var(--md-sys-color-on-surface, #e6e1e5);
-        border-bottom-color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        cursor: pointer;
+        user-select: none;
+        font-size: var(--md-sys-typescale-body-large-font-size);
+        font-weight: 400;
+        line-height: 24px;
+        letter-spacing: 0.5px;
+        color: var(--md-sys-color-on-surface, #1d1b20);
+        border-bottom: 1px solid var(--md-sys-color-on-surface-variant, #49454f);
+        transition:
+          background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+          border-bottom-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        position: relative;
       }
 
       .select-input:hover:not(.disabled) {
         background-color: color-mix(
           in srgb,
-          var(--md-sys-color-on-surface, #e6e1e5) 8%,
-          var(--md-sys-color-surface-container-highest, #36343b)
+          var(--md-sys-color-on-surface, #1d1b20) 8%,
+          var(--md-sys-color-surface-container-highest, #e6e0e9)
         );
+      }
+
+      .select-input.open {
+        border-bottom-color: var(--md-sys-color-primary, #6750a4);
+        border-bottom-width: 2px;
       }
 
       .select-input.outlined {
         background-color: transparent;
-        border-color: var(--md-sys-color-outline, #938f99);
+        border: 1px solid var(--md-sys-color-outline, #79747e);
+        border-radius: 4px;
       }
 
       .select-input.outlined:hover:not(.disabled) {
-        border-color: var(--md-sys-color-on-surface, #e6e1e5);
+        border-color: var(--md-sys-color-on-surface, #1d1b20);
+        background-color: transparent;
+      }
+
+      .select-input.outlined.open {
+        border-color: var(--md-sys-color-primary, #6750a4);
+        border-width: 2px;
+      }
+
+      .select-input.pill {
+        border-radius: 9999px;
+        border-bottom: none;
+      }
+
+      .select-input.pill.outlined {
+        border-radius: 9999px;
+      }
+
+      .select-input.disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+        background-color: var(
+          --md-sys-color-surface-container-highest,
+          #e6e0e9
+        );
+      }
+
+      .select-label {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .select-label.placeholder {
-        color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        color: var(--md-sys-color-on-surface-variant, #49454f);
+      }
+
+      .dropdown-icon {
+        width: 24px;
+        height: 24px;
+        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+        fill: currentColor;
+      }
+
+      .select-input.open .dropdown-icon {
+        transform: rotate(180deg);
       }
 
       .dropdown {
-        background: var(--md-sys-color-surface-container, #211f26);
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        max-height: 280px;
+        overflow-y: auto;
+        background: var(--md-sys-color-surface-container, #f3edf7);
+        border-radius: 4px;
         box-shadow:
-          0px 1px 3px 1px rgba(0, 0, 0, 0.15),
-          0px 1px 2px rgba(0, 0, 0, 0.3);
+          0px 1px 2px rgba(0, 0, 0, 0.3),
+          0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        opacity: 0;
+        transform: scaleY(0);
+        transform-origin: top;
+        transition:
+          opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
+          transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+        pointer-events: none;
       }
-    }
-  `;
+
+      .dropdown.open {
+        opacity: 1;
+        transform: scaleY(1);
+        pointer-events: auto;
+      }
+
+      .backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 999;
+        background: transparent;
+        display: none;
+      }
+
+      .backdrop.open {
+        display: block;
+      }
+
+      ::slotted(md-option) {
+        cursor: pointer;
+      }
+
+      /* Focus visible styles */
+      .select-input:focus-visible {
+        outline: 2px solid var(--md-sys-color-primary, #6750a4);
+        outline-offset: 2px;
+      }
+
+      /* Dark mode */
+      @media (prefers-color-scheme: dark) {
+        .select-input {
+          background-color: var(
+            --md-sys-color-surface-container-highest,
+            #36343b
+          );
+          color: var(--md-sys-color-on-surface, #e6e1e5);
+          border-bottom-color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        }
+
+        .select-input:hover:not(.disabled) {
+          background-color: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface, #e6e1e5) 8%,
+            var(--md-sys-color-surface-container-highest, #36343b)
+          );
+        }
+
+        .select-input.outlined {
+          background-color: transparent;
+          border-color: var(--md-sys-color-outline, #938f99);
+        }
+
+        .select-input.outlined:hover:not(.disabled) {
+          border-color: var(--md-sys-color-on-surface, #e6e1e5);
+        }
+
+        .select-label.placeholder {
+          color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        }
+
+        .dropdown {
+          background: var(--md-sys-color-surface-container, #211f26);
+          box-shadow:
+            0px 1px 3px 1px rgba(0, 0, 0, 0.15),
+            0px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+      }
+    `,
+  ];
 
   connectedCallback() {
     super.connectedCallback();

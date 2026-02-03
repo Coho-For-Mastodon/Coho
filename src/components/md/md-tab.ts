@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { mdSharedStyles } from './md-shared-styles.js';
 
 /**
  * MD3 Tab Button
@@ -37,230 +38,51 @@ export class MdTab extends LitElement {
    */
   @property({ type: Boolean, reflect: true }) disabled = false;
 
-  static styles = css`
-    :host {
-      display: inline-flex;
-      position: relative;
-      outline: none;
-      flex: 1;
-      min-width: 0;
-    }
+  static styles = [
+    mdSharedStyles,
+    css`
+      :host {
+        display: inline-flex;
+        position: relative;
+        outline: none;
+        flex: 1;
+        min-width: 0;
+      }
 
-    button {
-      all: unset;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 12px 16px;
-      min-height: 64px;
-      cursor: pointer;
-      position: relative;
-      flex: 1;
-      box-sizing: border-box;
-
-      /* Typography - Label Medium for tabs */
-      font-family:
-        Roboto,
-        system-ui,
-        -apple-system,
-        sans-serif;
-      font-size: 12px;
-      font-weight: 500;
-      line-height: 16px;
-      letter-spacing: 0.5px;
-
-      color: var(
-        --md-sys-color-on-surface-variant,
-        var(--sl-color-neutral-600)
-      );
-      background: transparent;
-      transition: color 0.2s cubic-bezier(0.2, 0, 0, 1);
-      white-space: nowrap;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* Vertical orientation (side nav) - stacked icon/label layout like MD3 nav rail */
-    :host([data-orientation='vertical']) button,
-    :host([data-orientation='horizontal'][data-placement='bottom']) button {
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 4px;
-      padding: 12px 2px 12px;
-      min-height: 56px;
-      width: 100%;
-      font-size: 11px;
-      line-height: 16px;
-      letter-spacing: 0.1px;
-      border-radius: 0;
-      background: transparent;
-    }
-
-    :host([data-orientation='vertical']) {
-      flex: none;
-      width: 80px;
-    }
-
-    /* Icon container with pill background for vertical nav and mobile bottom nav */
-    :host([data-orientation='vertical']) .icon-container,
-    :host([data-orientation='horizontal'][data-placement='bottom'])
-      .icon-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 64px;
-      height: 32px;
-      border-radius: 16px;
-      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    :host([data-orientation='vertical']:hover) .icon-container,
-    :host([data-orientation='horizontal'][data-placement='bottom']:hover)
-      .icon-container {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600)) 8%,
-        transparent
-      );
-    }
-
-    :host([active][data-orientation='vertical']) .icon-container,
-    :host([active][data-orientation='horizontal'][data-placement='bottom'])
-      .icon-container {
-      background: var(
-        --md-sys-color-secondary-container,
-        color-mix(
-          in srgb,
-          var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
-          transparent
-        )
-      );
-    }
-
-    /* Icon container - default (horizontal top) */
-    .icon-container {
-      display: contents;
-    }
-
-    /* Icon slot */
-    ::slotted([slot='icon']) {
-      width: 24px;
-      height: 24px;
-      font-size: 24px;
-      flex-shrink: 0;
-    }
-
-    /* Active state */
-    :host([active]) button {
-      color: var(--md-sys-color-primary, var(--sl-color-primary-600));
-    }
-
-    /* Active icon fill */
-    :host([active]) ::slotted([slot='icon']) {
-      color: var(--md-sys-color-primary, var(--sl-color-primary-600));
-    }
-
-    /* Disabled state */
-    :host([disabled]) button {
-      color: var(--md-sys-color-on-surface, var(--sl-color-neutral-400));
-      opacity: 0.38;
-      cursor: not-allowed;
-      pointer-events: none;
-    }
-
-    /* Hover overlay */
-    button::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: currentColor;
-      opacity: 0;
-      transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-      pointer-events: none;
-      border-radius: inherit;
-    }
-
-    /* Only show button hover overlay for horizontal tabs */
-    :host(:not([data-orientation='vertical'])) button:hover::before {
-      opacity: 0.08;
-    }
-
-    :host(:not([data-orientation='vertical'])) button:active::before {
-      opacity: 0.12;
-    }
-
-    /* Disable button overlay for vertical tabs - hover is on icon-container instead */
-    :host([data-orientation='vertical']) button::before,
-    :host([data-orientation='horizontal'][data-placement='bottom'])
-      button::before {
-      display: none;
-    }
-
-    /* Focus visible ring */
-    :host(:focus-visible) button::after {
-      content: '';
-      position: absolute;
-      inset: 4px;
-      border: 2px solid var(--md-sys-color-primary, var(--sl-color-primary-600));
-      border-radius: 8px;
-      pointer-events: none;
-    }
-
-    /* Active indicator - MD3 pill shape */
-    .indicator {
-      position: absolute;
-      background: var(--md-sys-color-primary, var(--sl-color-primary-600));
-      transition:
-        transform 0.2s cubic-bezier(0.2, 0, 0, 1),
-        opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-      opacity: 0;
-      transform: scaleX(0);
-    }
-
-    /* Horizontal indicator (bottom) - centered pill */
-    :host([data-orientation='horizontal']) .indicator {
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%) scaleX(0);
-      width: calc(100% - 32px);
-      min-width: 24px;
-      max-width: 48px;
-      height: 3px;
-      border-radius: 3px 3px 0 0;
-    }
-
-    /* Horizontal bottom placement indicator (top) - Hidden for mobile style pill */
-    :host([data-orientation='horizontal'][data-placement='bottom']) .indicator {
-      display: none;
-    }
-
-    /* Vertical indicator - hidden since we use background highlight instead */
-    :host([data-orientation='vertical']) .indicator {
-      display: none;
-    }
-
-    :host([data-orientation='vertical'][data-placement='end']) .indicator {
-      display: none;
-    }
-
-    /* Vertical active state - handled by icon-container pill, no full button background */
-    :host([active][data-orientation='vertical']) button,
-    :host([active][data-orientation='horizontal'][data-placement='bottom'])
       button {
-      background: transparent;
-    }
+        all: unset;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 12px 16px;
+        min-height: 64px;
+        cursor: pointer;
+        position: relative;
+        flex: 1;
+        box-sizing: border-box;
 
-    :host([active]) .indicator {
-      opacity: 1;
-      transform: translateX(-50%) scaleX(1);
-    }
+        /* Typography - Label Medium for tabs */
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 16px;
+        letter-spacing: 0.5px;
 
-    /* Mobile - force bottom nav styling for horizontal tabs */
-    @media (max-width: 820px) {
-      :host([data-orientation='horizontal']) button {
+        color: var(
+          --md-sys-color-on-surface-variant,
+          var(--sl-color-neutral-600)
+        );
+        background: transparent;
+        transition: color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        white-space: nowrap;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Vertical orientation (side nav) - stacked icon/label layout like MD3 nav rail */
+      :host([data-orientation='vertical']) button,
+      :host([data-orientation='horizontal'][data-placement='bottom']) button {
         flex-direction: column;
         justify-content: center;
         align-items: center;
@@ -275,7 +97,15 @@ export class MdTab extends LitElement {
         background: transparent;
       }
 
-      :host([data-orientation='horizontal']) .icon-container {
+      :host([data-orientation='vertical']) {
+        flex: none;
+        width: 80px;
+      }
+
+      /* Icon container with pill background for vertical nav and mobile bottom nav */
+      :host([data-orientation='vertical']) .icon-container,
+      :host([data-orientation='horizontal'][data-placement='bottom'])
+        .icon-container {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -285,7 +115,9 @@ export class MdTab extends LitElement {
         transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
       }
 
-      :host([data-orientation='horizontal']:hover) .icon-container {
+      :host([data-orientation='vertical']:hover) .icon-container,
+      :host([data-orientation='horizontal'][data-placement='bottom']:hover)
+        .icon-container {
         background: color-mix(
           in srgb,
           var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600)) 8%,
@@ -293,7 +125,9 @@ export class MdTab extends LitElement {
         );
       }
 
-      :host([active][data-orientation='horizontal']) .icon-container {
+      :host([active][data-orientation='vertical']) .icon-container,
+      :host([active][data-orientation='horizontal'][data-placement='bottom'])
+        .icon-container {
         background: var(
           --md-sys-color-secondary-container,
           color-mix(
@@ -304,57 +138,225 @@ export class MdTab extends LitElement {
         );
       }
 
-      :host([data-orientation='horizontal']) button::before {
-        display: none;
+      /* Icon container - default (horizontal top) */
+      .icon-container {
+        display: contents;
       }
 
-      :host([data-orientation='horizontal']) .indicator {
-        display: none;
+      /* Icon slot */
+      ::slotted([slot='icon']) {
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
+        flex-shrink: 0;
       }
 
-      :host([active][data-orientation='horizontal']) button {
-        background: transparent;
-      }
-    }
-
-    /* Dark mode */
-    @media (prefers-color-scheme: dark) {
-      button {
-        color: var(
-          --md-sys-color-on-surface-variant,
-          var(--sl-color-neutral-400)
-        );
-      }
-
+      /* Active state */
       :host([active]) button {
         color: var(--md-sys-color-primary, var(--sl-color-primary-600));
       }
 
+      /* Active icon fill */
+      :host([active]) ::slotted([slot='icon']) {
+        color: var(--md-sys-color-primary, var(--sl-color-primary-600));
+      }
+
+      /* Disabled state */
       :host([disabled]) button {
-        color: var(--md-sys-color-on-surface, var(--sl-color-neutral-600));
+        color: var(--md-sys-color-on-surface, var(--sl-color-neutral-400));
+        opacity: 0.38;
+        cursor: not-allowed;
+        pointer-events: none;
       }
-    }
 
-    /* Ripple effect on click */
-    @keyframes ripple {
-      from {
-        transform: scale(0);
-        opacity: 0.4;
-      }
-      to {
-        transform: scale(1);
+      /* Hover overlay */
+      button::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: currentColor;
         opacity: 0;
+        transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
+        pointer-events: none;
+        border-radius: inherit;
       }
-    }
 
-    .ripple {
-      position: absolute;
-      border-radius: 50%;
-      background: currentColor;
-      pointer-events: none;
-      animation: ripple 0.6s cubic-bezier(0.2, 0, 0, 1);
-    }
-  `;
+      /* Only show button hover overlay for horizontal tabs */
+      :host(:not([data-orientation='vertical'])) button:hover::before {
+        opacity: 0.08;
+      }
+
+      :host(:not([data-orientation='vertical'])) button:active::before {
+        opacity: 0.12;
+      }
+
+      /* Disable button overlay for vertical tabs - hover is on icon-container instead */
+      :host([data-orientation='vertical']) button::before,
+      :host([data-orientation='horizontal'][data-placement='bottom'])
+        button::before {
+        display: none;
+      }
+
+      /* Focus visible ring */
+      :host(:focus-visible) button::after {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border: 2px solid
+          var(--md-sys-color-primary, var(--sl-color-primary-600));
+        border-radius: 8px;
+        pointer-events: none;
+      }
+
+      /* Active indicator - MD3 pill shape */
+      .indicator {
+        position: absolute;
+        background: var(--md-sys-color-primary, var(--sl-color-primary-600));
+        transition:
+          transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+          opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
+        opacity: 0;
+        transform: scaleX(0);
+      }
+
+      /* Horizontal indicator (bottom) - centered pill */
+      :host([data-orientation='horizontal']) .indicator {
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%) scaleX(0);
+        width: calc(100% - 32px);
+        min-width: 24px;
+        max-width: 48px;
+        height: 3px;
+        border-radius: 3px 3px 0 0;
+      }
+
+      /* Horizontal bottom placement indicator (top) - Hidden for mobile style pill */
+      :host([data-orientation='horizontal'][data-placement='bottom'])
+        .indicator {
+        display: none;
+      }
+
+      /* Vertical indicator - hidden since we use background highlight instead */
+      :host([data-orientation='vertical']) .indicator {
+        display: none;
+      }
+
+      :host([data-orientation='vertical'][data-placement='end']) .indicator {
+        display: none;
+      }
+
+      /* Vertical active state - handled by icon-container pill, no full button background */
+      :host([active][data-orientation='vertical']) button,
+      :host([active][data-orientation='horizontal'][data-placement='bottom'])
+        button {
+        background: transparent;
+      }
+
+      :host([active]) .indicator {
+        opacity: 1;
+        transform: translateX(-50%) scaleX(1);
+      }
+
+      /* Mobile - force bottom nav styling for horizontal tabs */
+      @media (max-width: 820px) {
+        :host([data-orientation='horizontal']) button {
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          gap: 4px;
+          padding: 12px 2px 12px;
+          min-height: 56px;
+          width: 100%;
+          font-size: 11px;
+          line-height: 16px;
+          letter-spacing: 0.1px;
+          border-radius: 0;
+          background: transparent;
+        }
+
+        :host([data-orientation='horizontal']) .icon-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 64px;
+          height: 32px;
+          border-radius: 16px;
+          transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        :host([data-orientation='horizontal']:hover) .icon-container {
+          background: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600))
+              8%,
+            transparent
+          );
+        }
+
+        :host([active][data-orientation='horizontal']) .icon-container {
+          background: var(
+            --md-sys-color-secondary-container,
+            color-mix(
+              in srgb,
+              var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
+              transparent
+            )
+          );
+        }
+
+        :host([data-orientation='horizontal']) button::before {
+          display: none;
+        }
+
+        :host([data-orientation='horizontal']) .indicator {
+          display: none;
+        }
+
+        :host([active][data-orientation='horizontal']) button {
+          background: transparent;
+        }
+      }
+
+      /* Dark mode */
+      @media (prefers-color-scheme: dark) {
+        button {
+          color: var(
+            --md-sys-color-on-surface-variant,
+            var(--sl-color-neutral-400)
+          );
+        }
+
+        :host([active]) button {
+          color: var(--md-sys-color-primary, var(--sl-color-primary-600));
+        }
+
+        :host([disabled]) button {
+          color: var(--md-sys-color-on-surface, var(--sl-color-neutral-600));
+        }
+      }
+
+      /* Ripple effect on click */
+      @keyframes ripple {
+        from {
+          transform: scale(0);
+          opacity: 0.4;
+        }
+        to {
+          transform: scale(1);
+          opacity: 0;
+        }
+      }
+
+      .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: currentColor;
+        pointer-events: none;
+        animation: ripple 0.6s cubic-bezier(0.2, 0, 0, 1);
+      }
+    `,
+  ];
 
   private _handleClick(e: MouseEvent) {
     if (this.disabled) return;

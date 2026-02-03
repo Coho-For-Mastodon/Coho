@@ -6,6 +6,10 @@ import { classMap } from 'lit/directives/class-map.js';
 import { router } from '../router/routes';
 import { parseEmojis } from '../utils/emoji-parser';
 import { Account } from '../mastodon/types';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 
 @customElement('user-profile')
 export class UserProfile extends LitElement {
@@ -13,6 +17,8 @@ export class UserProfile extends LitElement {
 
   @property({ type: Boolean }) small: boolean = false;
   @property({ type: Boolean }) boosted: boolean = false;
+
+  private _observer: IntersectionObserver | null = null;
 
   static styles = [
     css`
@@ -95,23 +101,28 @@ export class UserProfile extends LitElement {
   ];
 
   async firstUpdated() {
-    const options = {
-      root: null,
-      rootMargin: '100px',
-      threshold: 0,
-    };
+    disconnectIntersectionObserver(this._observer);
+    this._observer = createIntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          console.log('Observing user profile image intersection');
+          this.loadImage();
+          this._observer?.unobserve(entry.target);
+          disconnectIntersectionObserver(this._observer);
+          this._observer = null;
+        });
+      },
+      {
+        rootMargin: '100px',
+        threshold: 0,
+      }
+    );
 
-    const observer = new IntersectionObserver((entries, observer) => {
-      entries.forEach((entry) => {
-        console.log('Observing user profile image intersection');
-        this.loadImage();
-        observer.unobserve(entry.target);
-
-        observer.disconnect();
-      });
-    }, options);
-
-    observer.observe(this.shadowRoot?.querySelector('img') as Element);
+    const img = this.shadowRoot?.querySelector('img');
+    if (img) {
+      this._observer.observe(img);
+    }
 
     window.requestIdleCallback(async () => {
       if (this.shadowRoot) {
@@ -119,6 +130,12 @@ export class UserProfile extends LitElement {
         enableVibrate(this.shadowRoot);
       }
     });
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    disconnectIntersectionObserver(this._observer);
+    this._observer = null;
   }
 
   loadImage() {
