@@ -14,169 +14,13 @@ concurrency:
 
 jobs:
   # ============================================
-  # RUN ALL CI CHECKS FIRST
+  # RUN ALL CI CHECKS FIRST (reusable workflow)
   # ============================================
 
-  lint:
-    name: Lint
+  ci:
+    name: CI
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
-
-  format-check:
-    name: Format Check
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - name: Check formatting
-        id: format-check
-        run: npm run format:check
-        continue-on-error: true
-      - name: Comment on PR if formatting fails
-        if: steps.format-check.outcome == 'failure'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '⚠️ **Formatting issues detected**\n\nPlease run `npm run format` locally and commit the changes.\n\nYou can also run `npm run format:check` to see the issues.'
-            })
-      - name: Fail if formatting check failed
-        if: steps.format-check.outcome == 'failure'
-        run: exit 1
-
-  typecheck:
-    name: TypeScript Check
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npx tsc --noEmit
-
-  unit-tests:
-    name: Unit Tests
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-      - name: Install Playwright deps (cached)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
-      - run: npm run test:run
-
-  build-functions:
-    name: Build Functions
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: functions
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-          cache-dependency-path: functions/package-lock.json
-      - run: npm ci
-      - run: npm run build
-
-  build-app:
-    name: Build App
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    needs: [lint, typecheck]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-
-      - name: Check for unextracted translations
-        run: |
-          npm run localize:extract
-          git diff --exit-code xliff/ || (echo "Error: Translation files are out of sync." && exit 1)
-
-      - name: Build production bundle
-        run: npm run build
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          retention-days: 1
-
-  bundle-size-test:
-    name: Bundle Size Test
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
-    needs: [build-app]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-      - name: Install Playwright deps (cached)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
-
-      - name: Run bundle size tests
-        run: npm run test:bundle-size
+    uses: ./.github/workflows/ci-reusable.yml
 
   # ============================================
   # DEPLOY PREVIEW (only after all checks pass)
@@ -186,16 +30,7 @@ jobs:
     name: Deploy Preview
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
-    needs:
-      [
-        lint,
-        format-check,
-        typecheck,
-        unit-tests,
-        build-app,
-        build-functions,
-        bundle-size-test,
-      ]
+    needs: [ci]
     steps:
       - uses: actions/checkout@v4
 
