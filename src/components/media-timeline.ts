@@ -1,6 +1,11 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { getPaginatedHomeTimeline } from '../services/timeline';
+import { shouldDisableVirtualScroll } from '../utils/browser';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 
 import './md/md-skeleton';
 import '@lit-labs/virtualizer';
@@ -15,9 +20,13 @@ import type { RepliesEvent } from '../types/events';
 export class MediaTimeline extends LitElement {
   @state() timeline: Post[] = [];
   @state() loadingData: boolean = false;
+  private _observer: IntersectionObserver | null = null;
 
-  @property({ type: String }) timelineType: 'Home' | 'Public' | 'Media' =
-    'Home';
+  @property({ type: String }) timelineType:
+    | 'Home'
+    | 'Local'
+    | 'Federated'
+    | 'Media' = 'Home';
 
   static styles = [
     css`
@@ -38,6 +47,16 @@ export class MediaTimeline extends LitElement {
       }
 
       lit-virtualizer {
+        display: block;
+        border-radius: 6px;
+        margin: 0;
+        padding: 0;
+        height: 90vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .scroller-fallback {
         display: block;
         border-radius: 6px;
         margin: 0;
@@ -100,6 +119,47 @@ export class MediaTimeline extends LitElement {
     this.loadingData = false;
   }
 
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    disconnectIntersectionObserver(this._observer);
+    this._observer = null;
+  }
+
+  updated() {
+    if (shouldDisableVirtualScroll()) {
+      this._setupInfiniteScroll();
+    }
+  }
+
+  private _setupInfiniteScroll() {
+    const trigger = this.shadowRoot?.querySelector('#infinite-scroll-trigger');
+    const root = this.shadowRoot?.querySelector('.scroller-fallback');
+
+    if (!trigger || !root) return;
+
+    if (!this._observer) {
+      this._observer = createIntersectionObserver(
+        (entries) => {
+          if (
+            entries[0].isIntersecting &&
+            !this.loadingData &&
+            this.timeline.length > 0
+          ) {
+            this.loadMore();
+          }
+        },
+        {
+          root,
+          rootMargin: '500px',
+          threshold: 0,
+        }
+      );
+    }
+
+    disconnectIntersectionObserver(this._observer);
+    this._observer.observe(trigger);
+  }
+
   /** Handle visibility changes from lit-virtualizer to trigger load more */
   private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
     const { last } = e;
@@ -152,20 +212,37 @@ export class MediaTimeline extends LitElement {
   }
 
   render() {
-    return html`
-      <lit-virtualizer
-        scroller
-        .items="${this.timeline as Post[]}"
-        .renderItem="${(tweet: Post) => html`
-          <timeline-item
-            ?show="${true}"
-            @replies="${(e: RepliesEvent) => this.handleReplies(e.detail.data)}"
-            .tweet="${tweet}"
-          ></timeline-item>
-        `}"
-        @visibilityChanged="${this._handleVisibilityChanged}"
-      >
-      </lit-virtualizer>
-    `;
+    return shouldDisableVirtualScroll()
+      ? html`
+          <div class="scroller-fallback">
+            ${this.timeline.map(
+              (tweet) => html`
+                <timeline-item
+                  ?show="${true}"
+                  @replies="${(e: RepliesEvent) =>
+                    this.handleReplies(e.detail.data)}"
+                  .tweet="${tweet}"
+                ></timeline-item>
+              `
+            )}
+            <div id="infinite-scroll-trigger" style="height: 1px;"></div>
+          </div>
+        `
+      : html`
+          <lit-virtualizer
+            scroller
+            .items="${this.timeline as Post[]}"
+            .renderItem="${(tweet: Post) => html`
+              <timeline-item
+                ?show="${true}"
+                @replies="${(e: RepliesEvent) =>
+                  this.handleReplies(e.detail.data)}"
+                .tweet="${tweet}"
+              ></timeline-item>
+            `}"
+            @visibilityChanged="${this._handleVisibilityChanged}"
+          >
+          </lit-virtualizer>
+        `;
   }
 }

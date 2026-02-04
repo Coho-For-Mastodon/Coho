@@ -279,6 +279,10 @@ export const prefetchNextPage = (maxId: string, type = 'home'): void => {
     Authorization: `Bearer ${accessToken}`,
   });
 
+  if (type.startsWith('list:')) {
+    return;
+  }
+
   const fetchUrl = `https://${server}/api/v1/timelines/${type}?limit=10&max_id=${maxId}`;
 
   // Fire-and-forget fetch - SW will cache the response
@@ -292,8 +296,11 @@ export const prefetchNextPage = (maxId: string, type = 'home'): void => {
 };
 
 // Use mastodon library's getPublicTimeline
-export const getPublicTimeline = async (): Promise<Post[]> => {
-  return mastodonGetPublicTimeline(false) as unknown as Promise<Post[]>;
+export const getPublicTimeline = async (
+  local: boolean = false,
+  maxId?: string
+): Promise<Post[]> => {
+  return mastodonGetPublicTimeline(local, maxId) as unknown as Promise<Post[]>;
 };
 
 // Use Firebase function for boostPost (favorite) - this route has background sync support

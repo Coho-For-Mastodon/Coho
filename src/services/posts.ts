@@ -56,6 +56,37 @@ export async function deletePost(id: string): Promise<Post> {
   return data;
 }
 
+export async function pinPost(id: string): Promise<Post> {
+  const server = getServer();
+  const accessToken = getAccessToken();
+  const response = await fetch(`https://${server}/api/v1/statuses/${id}/pin`, {
+    method: 'POST',
+    headers: new Headers({
+      Authorization: `Bearer ${accessToken}`,
+    }),
+  });
+
+  const data = await response.json();
+  return data;
+}
+
+export async function unpinPost(id: string): Promise<Post> {
+  const server = getServer();
+  const accessToken = getAccessToken();
+  const response = await fetch(
+    `https://${server}/api/v1/statuses/${id}/unpin`,
+    {
+      method: 'POST',
+      headers: new Headers({
+        Authorization: `Bearer ${accessToken}`,
+      }),
+    }
+  );
+
+  const data = await response.json();
+  return data;
+}
+
 export async function getPostDetail(id: string): Promise<Post> {
   const server = getServer();
   const accessToken = getAccessToken();

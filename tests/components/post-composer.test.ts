@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { fixture, html, elementUpdated, cleanupFixtures } from '../test-utils';
+
+const hoisted = vi.hoisted(() => ({
+  showInfoToast: vi.fn(),
+}));
+
+vi.mock('../../src/utils/optimistic-updates', () => ({
+  showInfoToast: hoisted.showInfoToast,
+}));
+
 import '../../src/components/post-composer';
 import type { PostComposer } from '../../src/components/post-composer';
 import { setupAuth } from '../setup';
@@ -577,6 +586,79 @@ describe('post-composer multi-image upload', () => {
 
       // No attachments should be added
       expect((el as any).attachments.length).toBe(0);
+    });
+  });
+
+  describe('poll helpers', () => {
+    it('reads input values from detail, target, or composed path', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      const fromDetail = (el as any)._readInputEventValue(
+        new CustomEvent('change', { detail: { value: 'detail' } })
+      );
+      expect(fromDetail).toBe('detail');
+
+      const target = document.createElement('input');
+      target.value = 'target';
+      const fromTarget = (el as any)._readInputEventValue({
+        target,
+      } as Event);
+      expect(fromTarget).toBe('target');
+
+      const fromPath = (el as any)._readInputEventValue({
+        composedPath: () => [{ value: 'path' }],
+      } as unknown as Event);
+      expect(fromPath).toBe('path');
+    });
+
+    it('validates and builds poll payload', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      (el as any).pollEnabled = true;
+      (el as any).pollOptions = ['Only one'];
+
+      expect((el as any)._getPollPayload()).toBeNull();
+      expect((el as any).pollError).toBeTruthy();
+
+      (el as any).pollOptions = ['Same', 'same'];
+      expect((el as any)._getPollPayload()).toBeNull();
+
+      (el as any).pollOptions = ['One', 'Two'];
+      (el as any).pollDurationSeconds = 0;
+      expect((el as any)._getPollPayload()).toBeNull();
+
+      (el as any).pollDurationSeconds = 3600;
+      const payload = (el as any)._getPollPayload();
+      expect(payload).toEqual({
+        options: ['One', 'Two'],
+        expiresIn: 3600,
+        multiple: false,
+      });
+    });
+
+    it('toggles poll state and resets when disabled', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      (el as any).pollEnabled = true;
+      (el as any).pollOptions = ['A', 'B', 'C'];
+      (el as any).pollDurationSeconds = 7200;
+      (el as any).pollMultiple = true;
+
+      (el as any)._togglePoll();
+
+      expect((el as any).pollEnabled).toBe(false);
+      expect((el as any).pollOptions).toEqual(['', '']);
+      expect((el as any).pollDurationSeconds).toBe(60 * 60);
+      expect((el as any).pollMultiple).toBe(false);
     });
   });
 });

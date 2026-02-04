@@ -26,3 +26,20 @@ export const addBookmark = async (id: string) => {
   const data = await response.json();
   return data;
 };
+
+export const removeBookmark = async (id: string) => {
+  const { url, accessToken } = getClientConfig();
+  const response = await fetch(
+    `https://${url}/api/v1/statuses/${id}/unbookmark`,
+    {
+      method: 'POST',
+      headers: new Headers({
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      }),
+    }
+  );
+
+  const data = await response.json();
+  return data;
+};

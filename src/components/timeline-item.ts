@@ -4,7 +4,6 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { getSettings, Settings } from '../services/settings';
 import {
   toggleStatusAction,
-  performOneWayAction,
   shareStatus as shareStatusAction,
   showGuestActionToast,
 } from '../utils/timeline-actions';
@@ -29,6 +28,7 @@ export class TimelineItem extends LitElement {
   @property({ type: Boolean }) showreply: boolean = false;
   @property({ type: Boolean }) guestMode: boolean = false;
   @property({ type: Boolean, reflect: true }) focused: boolean = false;
+  @property({ type: Boolean }) allowPin: boolean = false;
 
   @state() isBoosted: boolean = false;
   @state() isReblogged: boolean = false;
@@ -93,6 +93,27 @@ export class TimelineItem extends LitElement {
         width: auto;
 
         overflow-x: hidden;
+      }
+
+      md-card::part(base) {
+        border: 1px
+          solidcolor-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #2b2930) 60%,
+            transparent
+          );
+        transition:
+          background 0.2s ease,
+          border-color 0.2s ease;
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 0px;
+      }
+
+      :host(:hover) md-card::part(base) {
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        border-color: var(--md-sys-color-outline-variant, #2b2930);
       }
 
       image-carousel {
@@ -702,36 +723,104 @@ export class TimelineItem extends LitElement {
   async bookmark(id: string) {
     if (!this.tweet) return;
 
+    const isActive = this.isBookmarked || this.tweet.bookmarked;
+
     // Store original state for rollback
     const originalBookmarked = this.isBookmarked;
     const originalTweetBookmarked = this.tweet.bookmarked;
 
-    await performOneWayAction(
-      this.guestMode,
-      'bookmark posts',
-      // Optimistic update
-      () => {
-        this.isBookmarked = true;
+    await toggleStatusAction({
+      guestMode: this.guestMode,
+      actionName: 'bookmark posts',
+      isActive,
+      onOptimisticUpdate: (active) => {
+        this.isBookmarked = active;
         if (this.tweet) {
-          this.tweet.bookmarked = true;
+          this.tweet.bookmarked = active;
         }
         this.requestUpdate();
       },
-      // API Call
-      async () => {
+      doApiCall: async () => {
         const { addBookmark } = await import('../services/bookmarks');
         return addBookmark(id);
       },
-      // Rollback
-      () => {
+      undoApiCall: async () => {
+        const { removeBookmark } = await import('../services/bookmarks');
+        return removeBookmark(id);
+      },
+      onRollback: () => {
         this.isBookmarked = originalBookmarked;
         if (this.tweet) {
           this.tweet.bookmarked = originalTweetBookmarked;
         }
         this.requestUpdate();
       },
-      'Failed to bookmark post.'
+      errorMessageDo: 'Failed to bookmark post.',
+      errorMessageUndo: 'Failed to remove bookmark.',
+    });
+
+    this.dispatchEvent(
+      new CustomEvent('bookmark-change', {
+        detail: {
+          id,
+          active: !isActive,
+        },
+        bubbles: true,
+        composed: true,
+      })
     );
+  }
+
+  async togglePin() {
+    if (!this.tweet) return;
+
+    if (this.guestMode) {
+      showGuestActionToast('pin posts');
+      return;
+    }
+
+    const originalPinned = this.tweet.pinned;
+
+    await toggleStatusAction({
+      guestMode: this.guestMode,
+      actionName: 'pin posts',
+      isActive: originalPinned,
+      onOptimisticUpdate: (active) => {
+        if (this.tweet) {
+          this.tweet.pinned = active;
+        }
+        this.requestUpdate();
+      },
+      doApiCall: async () => {
+        const { pinPost } = await import('../services/posts');
+        return pinPost(this.tweet!.id);
+      },
+      undoApiCall: async () => {
+        const { unpinPost } = await import('../services/posts');
+        return unpinPost(this.tweet!.id);
+      },
+      onRollback: () => {
+        if (this.tweet) {
+          this.tweet.pinned = originalPinned;
+        }
+        this.requestUpdate();
+      },
+      errorMessageDo: 'Failed to pin post.',
+      errorMessageUndo: 'Failed to unpin post.',
+    });
+
+    if (this.tweet.pinned !== originalPinned) {
+      this.dispatchEvent(
+        new CustomEvent('pin-change', {
+          detail: {
+            post: this.tweet,
+            pinned: this.tweet.pinned,
+          },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
   }
 
   async replies() {
@@ -1007,6 +1096,16 @@ export class TimelineItem extends LitElement {
     this.reportStatusId = undefined;
   }
 
+  private addToList(account: Account) {
+    this.dispatchEvent(
+      new CustomEvent('add-to-list', {
+        detail: { account },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   getHandlers(): TimelineItemHandlers {
     return {
       viewSensitive: () => this.viewSensitive(),
@@ -1016,6 +1115,8 @@ export class TimelineItem extends LitElement {
       bookmark: (id: string) => this.bookmark(id),
       favorite: (id: string) => this.favorite(id),
       reblog: (id: string) => this.reblog(id),
+      togglePin: () => this.togglePin(),
+      addToList: (account: Account) => this.addToList(account),
       translatePost: (content: string | null) => this.translatePost(content),
       shareStatus: (tweet: Post | null) => this.shareStatus(tweet),
       deleteStatus: () => this.deleteStatus(),
@@ -1040,6 +1141,7 @@ export class TimelineItem extends LitElement {
       isBookmarked: this.isBookmarked,
       isBoosted: this.isBoosted,
       isReblogged: this.isReblogged,
+      canPin: this.allowPin && !this.guestMode,
       loadingThread: this.loadingThread,
       threadExpanded: this.threadExpanded,
       threadPosts: this.threadPosts,

@@ -308,6 +308,7 @@ export type ProfilePostsFilter = 'posts' | 'posts_replies' | 'media';
 
 // Cache key prefix for user posts
 const USER_POSTS_CACHE_PREFIX = 'user_posts_';
+const USER_PINNED_POSTS_CACHE_PREFIX = 'user_pinned_posts_';
 
 export const getUsersPosts = async (
   id: string,
@@ -365,6 +366,46 @@ export const getUsersPosts = async (
     }
 
     // Return empty array if no cached data
+    return [];
+  }
+};
+
+export const getPinnedPosts = async (id: string) => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+  const cacheKey = `${USER_PINNED_POSTS_CACHE_PREFIX}${id}`;
+
+  const url = `${FIREBASE_FUNCTIONS_BASE_URL}/getPinnedPosts?id=${id}&code=${accessToken}&server=${server}`;
+
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (Array.isArray(data)) {
+      await set(cacheKey, data);
+      console.log('[getPinnedPosts] Posts cached for offline access');
+      return data;
+    }
+
+    return [];
+  } catch (err) {
+    console.log('[getPinnedPosts] Network error, trying cache:', err);
+
+    try {
+      const cachedPosts = await get(cacheKey);
+      if (cachedPosts) {
+        console.log('[getPinnedPosts] Using cached posts data');
+        return cachedPosts;
+      }
+    } catch (cacheErr) {
+      console.log('[getPinnedPosts] Cache retrieval failed:', cacheErr);
+    }
+
     return [];
   }
 };

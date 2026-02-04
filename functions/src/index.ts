@@ -620,6 +620,45 @@ export const getUserPosts = onRequest(
   }
 );
 
+export const getPinnedPosts = onRequest(
+  async (request: Request, response: Response) => {
+    if (request.method === 'OPTIONS') {
+      applyCors(request, response);
+      response.status(204).send('');
+      return;
+    }
+
+    applyCors(request, response);
+
+    const accessToken = request.query.code as string;
+    const server = `https://${request.query.server}`;
+    const id = request.query.id as string;
+
+    if (!accessToken || !server || !id) {
+      response.status(400).json({ error: 'Missing required parameters' });
+      return;
+    }
+
+    try {
+      const apiResponse = await fetch(
+        `${server}/api/v1/accounts/${id}/statuses?pinned=true&limit=40`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      const data = await apiResponse.json();
+      response.json(data);
+    } catch (error) {
+      logger.error('Get pinned posts failed', { error });
+      response.status(500).json({ error: 'Get pinned posts failed' });
+    }
+  }
+);
+
 export const getAccount = onRequest(
   async (request: Request, response: Response) => {
     if (request.method === 'OPTIONS') {

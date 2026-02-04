@@ -4,6 +4,7 @@ import { localized, msg, str } from '@lit/localize';
 import {
   followUser,
   getAccount,
+  getPinnedPosts,
   getUsersPosts,
   isFollowingMe,
   unfollowUser,
@@ -16,6 +17,11 @@ import {
 } from '../services/account';
 import { withOptimisticUpdate } from '../utils/optimistic-updates';
 import { shouldLoadMore } from '../utils/infinite-scroll';
+import { shouldDisableVirtualScroll } from '../utils/browser';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 import '@lit-labs/virtualizer';
 import type { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 
@@ -50,6 +56,7 @@ import { router, type AppNavigationState } from '../router/routes';
 export class AppProfile extends LitElement {
   @state() user: Account | undefined;
   @state() posts: Post[] = [];
+  @state() pinnedPosts: Post[] = [];
   @state() followed: boolean = false;
   @state() following: boolean = false;
   @state() muted: boolean = false;
@@ -69,6 +76,8 @@ export class AppProfile extends LitElement {
   @state() avatarReady: boolean = false;
   @state() isGuestMode: boolean = false;
   @state() avatarFailed: boolean = false;
+  private _mediaObserver: IntersectionObserver | null = null;
+  private _listObserver: IntersectionObserver | null = null;
 
   @query('#preview-content') private previewContent!: HTMLElement;
   @query('#edit') private editDialog!: MdDialog;
@@ -561,7 +570,40 @@ export class AppProfile extends LitElement {
         padding: 0 16px;
       }
 
+      #pinned-section {
+        margin-bottom: 20px;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      #pinned-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--md-sys-color-on-surface-variant);
+        margin-bottom: 12px;
+      }
+
+      #pinned-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      #pinned-section md-divider {
+        margin-top: 16px;
+        opacity: 0.5;
+      }
+
       lit-virtualizer {
+        display: block;
+        contain: none;
+      }
+
+      .scroller-fallback {
         display: block;
         contain: none;
       }
@@ -816,11 +858,12 @@ export class AppProfile extends LitElement {
     this.avatarFailed = true;
   }
 
-  private _observer: IntersectionObserver | undefined;
-
   disconnectedCallback() {
     super.disconnectedCallback();
-    this._observer?.disconnect();
+    disconnectIntersectionObserver(this._mediaObserver);
+    disconnectIntersectionObserver(this._listObserver);
+    this._mediaObserver = null;
+    this._listObserver = null;
   }
 
   updated(changedProperties: PropertyValues) {
@@ -833,8 +876,12 @@ export class AppProfile extends LitElement {
       if (this.activeSegment === 'media') {
         this.setupMediaObserver();
       } else {
-        this._observer?.disconnect();
+        disconnectIntersectionObserver(this._mediaObserver);
       }
+    }
+
+    if (shouldDisableVirtualScroll()) {
+      this._setupInfiniteScroll();
     }
   }
 
@@ -844,9 +891,9 @@ export class AppProfile extends LitElement {
       const sentinel = this.renderRoot.querySelector('#media-sentinel');
       if (!sentinel) return;
 
-      if (this._observer) this._observer.disconnect();
+      if (this._mediaObserver) this._mediaObserver.disconnect();
 
-      this._observer = new IntersectionObserver(
+      this._mediaObserver = new IntersectionObserver(
         (entries) => {
           if (
             entries[0].isIntersecting &&
@@ -859,7 +906,7 @@ export class AppProfile extends LitElement {
         { rootMargin: '400px' }
       );
 
-      this._observer.observe(sentinel);
+      this._mediaObserver.observe(sentinel);
     }, 0);
   }
 
@@ -893,15 +940,17 @@ export class AppProfile extends LitElement {
       const shouldFetchRelationship = !this.isOwnProfile && !this.isGuestMode;
 
       // Fetch account (if not already from nav state), posts, and relationship data in parallel
-      const [accountData, postsData, relationshipData] = await Promise.all([
-        // Skip account fetch if we already have it from navigation state
-        this.user ? Promise.resolve(this.user) : getAccount(id),
-        getUsersPosts(id),
-        // isFollowingMe returns the full relationship object with following, followed_by, muting, blocking
-        shouldFetchRelationship
-          ? isFollowingMe(id).catch(() => null)
-          : Promise.resolve(null),
-      ]);
+      const [accountData, postsData, relationshipData, pinnedPostsData] =
+        await Promise.all([
+          // Skip account fetch if we already have it from navigation state
+          this.user ? Promise.resolve(this.user) : getAccount(id),
+          getUsersPosts(id),
+          // isFollowingMe returns the full relationship object with following, followed_by, muting, blocking
+          shouldFetchRelationship
+            ? isFollowingMe(id).catch(() => null)
+            : Promise.resolve(null),
+          getPinnedPosts(id),
+        ]);
 
       console.log(accountData);
 
@@ -917,6 +966,7 @@ export class AppProfile extends LitElement {
 
       console.log(postsData);
       this.posts = Array.isArray(postsData) ? postsData : [];
+      this.pinnedPosts = Array.isArray(pinnedPostsData) ? pinnedPostsData : [];
       this.loadingProfile = false;
       this.loadingPosts = false;
 
@@ -973,16 +1023,34 @@ export class AppProfile extends LitElement {
     if (!this.user) return;
     this.loadingPosts = true;
     this.hasMorePosts = true; // Reset pagination state
-    const postsData = await getUsersPosts(this.user.id, this.activeSegment);
+    const [postsData, pinnedPostsData] = await Promise.all([
+      getUsersPosts(this.user.id, this.activeSegment),
+      this.activeSegment === 'posts'
+        ? getPinnedPosts(this.user.id)
+        : Promise.resolve(this.pinnedPosts),
+    ]);
     console.log(postsData);
 
     this.posts = postsData;
+    if (this.activeSegment === 'posts') {
+      this.pinnedPosts = Array.isArray(pinnedPostsData) ? pinnedPostsData : [];
+    }
     this.loadingPosts = false;
+  }
+
+  private getVisiblePostsCount(): number {
+    if (this.activeSegment !== 'posts' || this.pinnedPosts.length === 0) {
+      return this.posts.length;
+    }
+
+    const pinnedIds = new Set(this.pinnedPosts.map((post) => post.id));
+    return this.posts.filter((post) => !pinnedIds.has(post.id)).length;
   }
 
   /** Handle visibility changes from lit-virtualizer to trigger load more */
   private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
-    if (shouldLoadMore(e, this.posts.length, this.loadingMorePosts)) {
+    const visiblePostsCount = this.getVisiblePostsCount();
+    if (shouldLoadMore(e, visiblePostsCount, this.loadingMorePosts)) {
       await this.loadMorePosts();
     }
   }
@@ -1045,6 +1113,59 @@ export class AppProfile extends LitElement {
 
     this.activeSegment = newSegment;
     await this.reloadPosts();
+  }
+
+  private _setupInfiniteScroll() {
+    const trigger = this.shadowRoot?.querySelector(
+      '#posts-infinite-scroll-trigger'
+    );
+
+    if (!trigger) return;
+
+    if (!this._listObserver) {
+      this._listObserver = createIntersectionObserver(
+        (entries) => {
+          if (
+            entries[0].isIntersecting &&
+            !this.loadingMorePosts &&
+            this.hasMorePosts
+          ) {
+            this.loadMorePosts();
+          }
+        },
+        {
+          root: this,
+          rootMargin: '500px',
+          threshold: 0,
+        }
+      );
+    }
+
+    disconnectIntersectionObserver(this._listObserver);
+    this._listObserver.observe(trigger);
+  }
+
+  private handlePinChange(
+    e: CustomEvent<{ post: Post; pinned: boolean }>
+  ): void {
+    const { post, pinned } = e.detail;
+    if (!post) return;
+
+    const updatedPost = { ...post, pinned };
+
+    if (pinned) {
+      if (!this.pinnedPosts.some((item) => item.id === post.id)) {
+        this.pinnedPosts = [updatedPost, ...this.pinnedPosts];
+      }
+    } else if (this.pinnedPosts.length > 0) {
+      this.pinnedPosts = this.pinnedPosts.filter((item) => item.id !== post.id);
+    }
+
+    if (this.posts.length > 0) {
+      this.posts = this.posts.map((item) =>
+        item.id === post.id ? { ...item, pinned } : item
+      );
+    }
   }
 
   async unfollow() {
@@ -1266,6 +1387,15 @@ export class AppProfile extends LitElement {
         </div>
       `;
     }
+
+    const showPinned =
+      this.activeSegment === 'posts' && this.pinnedPosts.length > 0;
+    const pinnedIds = showPinned
+      ? new Set(this.pinnedPosts.map((post) => post.id))
+      : null;
+    const visiblePosts = showPinned
+      ? this.posts.filter((post) => !pinnedIds!.has(post.id))
+      : this.posts;
 
     return html`
       <app-header ?enableBack="${true}"></app-header>
@@ -1512,35 +1642,109 @@ export class AppProfile extends LitElement {
 
       <!-- Posts -->
       <div id="posts-container">
-        ${this.loadingPosts && this.posts.length === 0
+        ${showPinned
+          ? html`
+              <div id="pinned-section">
+                <div id="pinned-header">
+                  <md-icon name="bookmark" size="18px"></md-icon>
+                  <span>${msg('Pinned')}</span>
+                </div>
+                <div id="pinned-list">
+                  ${this.pinnedPosts.map(
+                    (post) => html`
+                      <div class="post-item">
+                        <timeline-item
+                          @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleOpenPost(e.detail.tweet)}"
+                          @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.editPost(e.detail.tweet)}"
+                          @delete="${() => this.reloadPosts()}"
+                          @pin-change="${(e: CustomEvent) =>
+                            this.handlePinChange(e)}"
+                          .tweet=${post}
+                          ?guestMode="${this.isGuestMode}"
+                          ?allowPin="${this.isOwnProfile && !this.isGuestMode}"
+                        ></timeline-item>
+                      </div>
+                    `
+                  )}
+                </div>
+                <md-divider></md-divider>
+              </div>
+            `
+          : null}
+        ${this.loadingPosts && this.posts.length === 0 && !showPinned
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : this.activeSegment === 'media'
             ? this.renderMediaGrid()
-            : html`
-                <lit-virtualizer
-                  class="${this.loadingPosts ? 'posts-loading' : ''}"
-                  .items=${this.posts}
-                  .renderItem=${(post: Post) => html`
-                    <div class="post-item">
-                      <timeline-item
-                        @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.handleOpenPost(e.detail.tweet)}"
-                        @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.editPost(e.detail.tweet)}"
-                        @delete="${() => this.reloadPosts()}"
-                        .tweet=${post}
-                        ?guestMode="${this.isGuestMode}"
-                      ></timeline-item>
-                    </div>
-                  `}
-                  @visibilityChanged=${this._handleVisibilityChanged}
-                ></lit-virtualizer>
-                ${this.loadingMorePosts
-                  ? html`<div class="load-more-indicator">
-                      <md-skeleton width="100%" height="120px"></md-skeleton>
-                    </div>`
-                  : null}
-              `}
+            : shouldDisableVirtualScroll()
+              ? html`
+                  <div
+                    class="scroller-fallback ${this.loadingPosts
+                      ? 'posts-loading'
+                      : ''}"
+                  >
+                    ${visiblePosts.map(
+                      (post) => html`
+                        <div class="post-item">
+                          <timeline-item
+                            @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                              this.handleOpenPost(e.detail.tweet)}"
+                            @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                              this.editPost(e.detail.tweet)}"
+                            @delete="${() => this.reloadPosts()}"
+                            @pin-change="${(e: CustomEvent) =>
+                              this.handlePinChange(e)}"
+                            .tweet=${post}
+                            ?guestMode="${this.isGuestMode}"
+                            ?allowPin="${this.isOwnProfile &&
+                            !this.isGuestMode}"
+                          ></timeline-item>
+                        </div>
+                      `
+                    )}
+                    <div
+                      id="posts-infinite-scroll-trigger"
+                      style="height: 1px;"
+                    ></div>
+                    ${this.loadingMorePosts
+                      ? html`<div class="load-more-indicator">
+                          <md-skeleton
+                            width="100%"
+                            height="120px"
+                          ></md-skeleton>
+                        </div>`
+                      : null}
+                  </div>
+                `
+              : html`
+                  <lit-virtualizer
+                    class="${this.loadingPosts ? 'posts-loading' : ''}"
+                    .items=${visiblePosts}
+                    .renderItem=${(post: Post) => html`
+                      <div class="post-item">
+                        <timeline-item
+                          @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleOpenPost(e.detail.tweet)}"
+                          @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.editPost(e.detail.tweet)}"
+                          @delete="${() => this.reloadPosts()}"
+                          @pin-change="${(e: CustomEvent) =>
+                            this.handlePinChange(e)}"
+                          .tweet=${post}
+                          ?guestMode="${this.isGuestMode}"
+                          ?allowPin="${this.isOwnProfile && !this.isGuestMode}"
+                        ></timeline-item>
+                      </div>
+                    `}
+                    @visibilityChanged=${this._handleVisibilityChanged}
+                  ></lit-virtualizer>
+                  ${this.loadingMorePosts
+                    ? html`<div class="load-more-indicator">
+                        <md-skeleton width="100%" height="120px"></md-skeleton>
+                      </div>`
+                    : null}
+                `}
       </div>
 
       <report-dialog

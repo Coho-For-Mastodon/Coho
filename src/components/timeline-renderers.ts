@@ -27,6 +27,8 @@ export interface TimelineItemHandlers {
   bookmark: (id: string) => void;
   favorite: (id: string) => void;
   reblog: (id: string) => void;
+  togglePin: () => void;
+  addToList: (account: Account) => void;
   translatePost: (content: string | null) => void;
   shareStatus: (tweet: Post | null) => void;
   deleteStatus: () => void;
@@ -52,6 +54,7 @@ export interface TimelineItemState {
   isBookmarked: boolean;
   isBoosted: boolean;
   isReblogged: boolean;
+  canPin: boolean;
   loadingThread: boolean;
   threadExpanded: boolean;
   threadPosts: Post[];
@@ -222,10 +225,36 @@ export function renderRegularTweet(
                 <md-icon slot="prefix" name="language"></md-icon>
                 ${msg('Translate')}
               </md-menu-item>
+              ${
+                !state.guestMode &&
+                state.tweet?.account &&
+                state.tweet?.account.id !== state.currentUser?.id
+                  ? html`
+                      <md-menu-item
+                        @click=${() => handlers.addToList(state.tweet!.account)}
+                      >
+                        <md-icon slot="prefix" name="albums"></md-icon>
+                        ${msg('Add to list')}
+                      </md-menu-item>
+                    `
+                  : null
+              }
               <md-menu-item @click="${() => handlers.shareStatus(state.tweet || null)}">
                 <md-icon slot="prefix" name="share"></md-icon>
                 ${msg('Share')}
               </md-menu-item>
+              ${
+                state.canPin
+                  ? html`
+                      <md-menu-item @click="${() => handlers.togglePin()}">
+                        <md-icon slot="prefix" name="bookmark"></md-icon>
+                        ${state.tweet?.pinned
+                          ? msg('Unpin from profile')
+                          : msg('Pin to profile')}
+                      </md-menu-item>
+                    `
+                  : null
+              }
               ${
                 state.tweet?.account.id !== state.currentUser?.id
                   ? html`
@@ -452,12 +481,35 @@ export function renderReblog(
               <md-icon slot="prefix" name="language"></md-icon>
               ${msg('Translate')}
             </md-menu-item>
+            ${!state.guestMode &&
+            state.tweet?.reblog?.account &&
+            state.tweet?.reblog?.account.id !== state.currentUser?.id
+              ? html`
+                  <md-menu-item
+                    @click=${() =>
+                      handlers.addToList(state.tweet!.reblog!.account)}
+                  >
+                    <md-icon slot="prefix" name="albums"></md-icon>
+                    ${msg('Add to list')}
+                  </md-menu-item>
+                `
+              : null}
             <md-menu-item
               @click="${() => handlers.shareStatus(state.tweet || null)}"
             >
               <md-icon slot="prefix" name="share"></md-icon>
               ${msg('Share')}
             </md-menu-item>
+            ${state.canPin
+              ? html`
+                  <md-menu-item @click="${() => handlers.togglePin()}">
+                    <md-icon slot="prefix" name="bookmark"></md-icon>
+                    ${state.tweet?.pinned
+                      ? msg('Unpin from profile')
+                      : msg('Pin to profile')}
+                  </md-menu-item>
+                `
+              : null}
             ${state.tweet?.reblog?.account.id !== state.currentUser?.id
               ? html`
                   <md-menu-item
