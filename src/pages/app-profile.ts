@@ -17,6 +17,11 @@ import {
 } from '../services/account';
 import { withOptimisticUpdate } from '../utils/optimistic-updates';
 import { shouldLoadMore } from '../utils/infinite-scroll';
+import { shouldDisableVirtualScroll } from '../utils/browser';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 import '@lit-labs/virtualizer';
 import type { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 
@@ -71,6 +76,8 @@ export class AppProfile extends LitElement {
   @state() avatarReady: boolean = false;
   @state() isGuestMode: boolean = false;
   @state() avatarFailed: boolean = false;
+  private _mediaObserver: IntersectionObserver | null = null;
+  private _listObserver: IntersectionObserver | null = null;
 
   @query('#preview-content') private previewContent!: HTMLElement;
   @query('#edit') private editDialog!: MdDialog;
@@ -596,6 +603,11 @@ export class AppProfile extends LitElement {
         contain: none;
       }
 
+      .scroller-fallback {
+        display: block;
+        contain: none;
+      }
+
       .post-item {
         padding-bottom: 16px;
         width: 100%;
@@ -846,11 +858,12 @@ export class AppProfile extends LitElement {
     this.avatarFailed = true;
   }
 
-  private _observer: IntersectionObserver | undefined;
-
   disconnectedCallback() {
     super.disconnectedCallback();
-    this._observer?.disconnect();
+    disconnectIntersectionObserver(this._mediaObserver);
+    disconnectIntersectionObserver(this._listObserver);
+    this._mediaObserver = null;
+    this._listObserver = null;
   }
 
   updated(changedProperties: PropertyValues) {
@@ -863,8 +876,12 @@ export class AppProfile extends LitElement {
       if (this.activeSegment === 'media') {
         this.setupMediaObserver();
       } else {
-        this._observer?.disconnect();
+        disconnectIntersectionObserver(this._mediaObserver);
       }
+    }
+
+    if (shouldDisableVirtualScroll()) {
+      this._setupInfiniteScroll();
     }
   }
 
@@ -874,9 +891,9 @@ export class AppProfile extends LitElement {
       const sentinel = this.renderRoot.querySelector('#media-sentinel');
       if (!sentinel) return;
 
-      if (this._observer) this._observer.disconnect();
+      if (this._mediaObserver) this._mediaObserver.disconnect();
 
-      this._observer = new IntersectionObserver(
+      this._mediaObserver = new IntersectionObserver(
         (entries) => {
           if (
             entries[0].isIntersecting &&
@@ -889,7 +906,7 @@ export class AppProfile extends LitElement {
         { rootMargin: '400px' }
       );
 
-      this._observer.observe(sentinel);
+      this._mediaObserver.observe(sentinel);
     }, 0);
   }
 
@@ -1096,6 +1113,36 @@ export class AppProfile extends LitElement {
 
     this.activeSegment = newSegment;
     await this.reloadPosts();
+  }
+
+  private _setupInfiniteScroll() {
+    const trigger = this.shadowRoot?.querySelector(
+      '#posts-infinite-scroll-trigger'
+    );
+
+    if (!trigger) return;
+
+    if (!this._listObserver) {
+      this._listObserver = createIntersectionObserver(
+        (entries) => {
+          if (
+            entries[0].isIntersecting &&
+            !this.loadingMorePosts &&
+            this.hasMorePosts
+          ) {
+            this.loadMorePosts();
+          }
+        },
+        {
+          root: this,
+          rootMargin: '500px',
+          threshold: 0,
+        }
+      );
+    }
+
+    disconnectIntersectionObserver(this._listObserver);
+    this._listObserver.observe(trigger);
   }
 
   private handlePinChange(
@@ -1630,34 +1677,74 @@ export class AppProfile extends LitElement {
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : this.activeSegment === 'media'
             ? this.renderMediaGrid()
-            : html`
-                <lit-virtualizer
-                  class="${this.loadingPosts ? 'posts-loading' : ''}"
-                  .items=${visiblePosts}
-                  .renderItem=${(post: Post) => html`
-                    <div class="post-item">
-                      <timeline-item
-                        @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.handleOpenPost(e.detail.tweet)}"
-                        @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.editPost(e.detail.tweet)}"
-                        @delete="${() => this.reloadPosts()}"
-                        @pin-change="${(e: CustomEvent) =>
-                          this.handlePinChange(e)}"
-                        .tweet=${post}
-                        ?guestMode="${this.isGuestMode}"
-                        ?allowPin="${this.isOwnProfile && !this.isGuestMode}"
-                      ></timeline-item>
-                    </div>
-                  `}
-                  @visibilityChanged=${this._handleVisibilityChanged}
-                ></lit-virtualizer>
-                ${this.loadingMorePosts
-                  ? html`<div class="load-more-indicator">
-                      <md-skeleton width="100%" height="120px"></md-skeleton>
-                    </div>`
-                  : null}
-              `}
+            : shouldDisableVirtualScroll()
+              ? html`
+                  <div
+                    class="scroller-fallback ${this.loadingPosts
+                      ? 'posts-loading'
+                      : ''}"
+                  >
+                    ${visiblePosts.map(
+                      (post) => html`
+                        <div class="post-item">
+                          <timeline-item
+                            @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                              this.handleOpenPost(e.detail.tweet)}"
+                            @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                              this.editPost(e.detail.tweet)}"
+                            @delete="${() => this.reloadPosts()}"
+                            @pin-change="${(e: CustomEvent) =>
+                              this.handlePinChange(e)}"
+                            .tweet=${post}
+                            ?guestMode="${this.isGuestMode}"
+                            ?allowPin="${this.isOwnProfile &&
+                            !this.isGuestMode}"
+                          ></timeline-item>
+                        </div>
+                      `
+                    )}
+                    <div
+                      id="posts-infinite-scroll-trigger"
+                      style="height: 1px;"
+                    ></div>
+                    ${this.loadingMorePosts
+                      ? html`<div class="load-more-indicator">
+                          <md-skeleton
+                            width="100%"
+                            height="120px"
+                          ></md-skeleton>
+                        </div>`
+                      : null}
+                  </div>
+                `
+              : html`
+                  <lit-virtualizer
+                    class="${this.loadingPosts ? 'posts-loading' : ''}"
+                    .items=${visiblePosts}
+                    .renderItem=${(post: Post) => html`
+                      <div class="post-item">
+                        <timeline-item
+                          @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleOpenPost(e.detail.tweet)}"
+                          @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.editPost(e.detail.tweet)}"
+                          @delete="${() => this.reloadPosts()}"
+                          @pin-change="${(e: CustomEvent) =>
+                            this.handlePinChange(e)}"
+                          .tweet=${post}
+                          ?guestMode="${this.isGuestMode}"
+                          ?allowPin="${this.isOwnProfile && !this.isGuestMode}"
+                        ></timeline-item>
+                      </div>
+                    `}
+                    @visibilityChanged=${this._handleVisibilityChanged}
+                  ></lit-virtualizer>
+                  ${this.loadingMorePosts
+                    ? html`<div class="load-more-indicator">
+                        <md-skeleton width="100%" height="120px"></md-skeleton>
+                      </div>`
+                    : null}
+                `}
       </div>
 
       <report-dialog
