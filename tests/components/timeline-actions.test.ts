@@ -38,8 +38,8 @@ describe('app-timeline actions', () => {
       html`<app-timeline .autoLoad=${false}></app-timeline>`
     );
 
-    el.timelineType = 'public';
-    expect(el.timelineTitle).toBe('Public');
+    el.timelineType = 'federated';
+    expect(el.timelineTitle).toBe('Federated');
 
     el.timelineType = 'home and some trending';
     expect(el.timelineTitle).toBe('Home & Trending');
