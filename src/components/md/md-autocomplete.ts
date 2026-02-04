@@ -1,6 +1,5 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { mdSharedStyles } from './md-shared-styles.js';
 
 export interface AutocompleteOption {
   value: string;
@@ -34,170 +33,169 @@ export class MdAutocomplete extends LitElement {
     }
   }
 
-  static styles = [
-    mdSharedStyles,
-    css`
-      :host {
-        display: block;
-        width: 100%;
-        position: relative;
+  static styles = css`
+    :host {
+      display: block;
+      width: 100%;
+      position: relative;
 
-        /* Colors */
-        --_surface-container: var(--md-sys-color-surface-container, #f3edf7);
+      /* Colors */
+      --_surface-container: var(--md-sys-color-surface-container, #f3edf7);
+      --_surface-container-highest: var(
+        --md-sys-color-surface-container-highest,
+        #e6e0e9
+      );
+      --_on-surface: var(--md-sys-color-on-surface, #1d1b20);
+      --_on-surface-variant: var(--md-sys-color-on-surface-variant, #49454f);
+      --_primary: var(--md-sys-color-primary, #6750a4);
+      --_outline: var(--md-sys-color-outline, #79747e);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :host {
+        --_surface-container: var(--md-sys-color-surface-container, #2b2930);
         --_surface-container-highest: var(
           --md-sys-color-surface-container-highest,
-          #e6e0e9
+          #49454f
         );
-        --_on-surface: var(--md-sys-color-on-surface, #1d1b20);
-        --_on-surface-variant: var(--md-sys-color-on-surface-variant, #49454f);
-        --_primary: var(--md-sys-color-primary, #6750a4);
-        --_outline: var(--md-sys-color-outline, #79747e);
+        --_on-surface: var(--md-sys-color-on-surface, #e6e0e9);
+        --_on-surface-variant: var(--md-sys-color-on-surface-variant, #cac4d0);
+        --_primary: var(--md-sys-color-primary, #d0bcff);
+        --_outline: var(--md-sys-color-outline, #938f99);
       }
+    }
 
-      @media (prefers-color-scheme: dark) {
-        :host {
-          --_surface-container: var(--md-sys-color-surface-container, #2b2930);
-          --_surface-container-highest: var(
-            --md-sys-color-surface-container-highest,
-            #49454f
-          );
-          --_on-surface: var(--md-sys-color-on-surface, #e6e0e9);
-          --_on-surface-variant: var(
-            --md-sys-color-on-surface-variant,
-            #cac4d0
-          );
-          --_primary: var(--md-sys-color-primary, #d0bcff);
-          --_outline: var(--md-sys-color-outline, #938f99);
-        }
-      }
+    .autocomplete-container {
+      position: relative;
+      width: 100%;
+    }
 
-      .autocomplete-container {
-        position: relative;
-        width: 100%;
-      }
+    input {
+      width: 100%;
+      min-height: 40px;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 52px;
+      background-color: var(--_surface-container-highest);
+      font-family:
+        'Roboto',
+        system-ui,
+        -apple-system,
+        sans-serif;
+      font-size: var(--md-sys-typescale-body-large-font-size);
+      font-weight: 400;
+      line-height: 24px;
+      letter-spacing: 0.5px;
+      color: var(--_on-surface);
+      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+      box-sizing: border-box;
+    }
 
-      input {
-        width: 100%;
-        min-height: 40px;
-        padding: 12px 16px;
-        border: none;
-        border-radius: 52px;
-        background-color: var(--_surface-container-highest);
-        font-size: var(--md-sys-typescale-body-large-font-size);
-        font-weight: 400;
-        line-height: 24px;
-        letter-spacing: 0.5px;
-        color: var(--_on-surface);
-        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
-        box-sizing: border-box;
-      }
+    input::placeholder {
+      color: var(--_on-surface-variant);
+      opacity: 1;
+    }
 
-      input::placeholder {
-        color: var(--_on-surface-variant);
-        opacity: 1;
-      }
+    input:hover {
+      background-color: color-mix(
+        in srgb,
+        var(--_on-surface) 8%,
+        var(--_surface-container-highest)
+      );
+    }
 
-      input:hover {
-        background-color: color-mix(
-          in srgb,
-          var(--_on-surface) 8%,
-          var(--_surface-container-highest)
-        );
-      }
+    input:focus {
+      outline: none;
+      border-bottom-color: var(--_primary);
+      border-bottom-width: 2px;
+      background-color: color-mix(
+        in srgb,
+        var(--_on-surface) 12%,
+        var(--_surface-container-highest)
+      );
+    }
 
-      input:focus {
-        outline: none;
-        border-bottom-color: var(--_primary);
-        border-bottom-width: 2px;
-        background-color: color-mix(
-          in srgb,
-          var(--_on-surface) 12%,
-          var(--_surface-container-highest)
-        );
-      }
+    /* Dropdown styles */
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: var(--_surface-container);
+      border-radius: 0 0 12px 12px;
+      box-shadow:
+        0 2px 6px 2px rgba(0, 0, 0, 0.15),
+        0 1px 2px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      display: none;
+    }
 
-      /* Dropdown styles */
-      .dropdown {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        max-height: 300px;
-        overflow-y: auto;
-        background-color: var(--_surface-container);
-        border-radius: 0 0 12px 12px;
-        box-shadow:
-          0 2px 6px 2px rgba(0, 0, 0, 0.15),
-          0 1px 2px rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        display: none;
-      }
+    .dropdown.open {
+      display: block;
+    }
 
-      .dropdown.open {
-        display: block;
-      }
+    .dropdown-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
+    }
 
-      .dropdown-item {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        padding: 12px 16px;
-        cursor: pointer;
-        transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
-      }
+    .dropdown-item:hover,
+    .dropdown-item.highlighted {
+      background-color: color-mix(
+        in srgb,
+        var(--_on-surface) 8%,
+        var(--_surface-container)
+      );
+    }
 
-      .dropdown-item:hover,
-      .dropdown-item.highlighted {
-        background-color: color-mix(
-          in srgb,
-          var(--_on-surface) 8%,
-          var(--_surface-container)
-        );
-      }
+    .dropdown-item:active {
+      background-color: color-mix(
+        in srgb,
+        var(--_on-surface) 12%,
+        var(--_surface-container)
+      );
+    }
 
-      .dropdown-item:active {
-        background-color: color-mix(
-          in srgb,
-          var(--_on-surface) 12%,
-          var(--_surface-container)
-        );
-      }
+    .dropdown-item:last-child {
+      border-radius: 0 0 12px 12px;
+    }
 
-      .dropdown-item:last-child {
-        border-radius: 0 0 12px 12px;
-      }
+    .item-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--_on-surface);
+    }
 
-      .item-label {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--_on-surface);
-      }
+    .item-description {
+      font-size: 12px;
+      color: var(--_on-surface-variant);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-      .item-description {
-        font-size: 12px;
-        color: var(--_on-surface-variant);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+    .loading-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--_on-surface-variant);
+      font-size: 14px;
+    }
 
-      .loading-indicator {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        color: var(--_on-surface-variant);
-        font-size: 14px;
-      }
-
-      .no-results {
-        padding: 16px;
-        text-align: center;
-        color: var(--_on-surface-variant);
-        font-size: 14px;
-      }
-    `,
-  ];
+    .no-results {
+      padding: 16px;
+      text-align: center;
+      color: var(--_on-surface-variant);
+      font-size: 14px;
+    }
+  `;
 
   connectedCallback() {
     super.connectedCallback();
