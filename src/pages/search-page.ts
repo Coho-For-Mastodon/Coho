@@ -5,6 +5,7 @@ import { localized, msg } from '@lit/localize';
 import '../components/search';
 import '../components/media-timeline';
 import '../components/post-detail-dialog';
+import '../components/timeline-item';
 import { router } from '../router/routes';
 
 import '../components/md/md-skeleton';
@@ -170,6 +171,34 @@ export class SearchPage extends LitElement {
         flex-direction: column;
         background: linear-gradient(145deg, #1a1a1d 0%, #2d2d33 100%);
         border-radius: 0 0 16px 16px;
+      }
+
+      /* Hashtags List */
+      #hashtagsList {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        height: 74vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      #hashtagsList li {
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: var(--md-sys-color-surface-container, #2d2d33);
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      #hashtagsList li:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
       }
 
       .card-identity {
@@ -615,6 +644,8 @@ export class SearchPage extends LitElement {
             (this.activeSegment = e.detail.value)}"
         >
           <md-segment value="accounts">${msg('Accounts')}</md-segment>
+          <md-segment value="statuses">${msg('Posts')}</md-segment>
+          <md-segment value="hashtags">${msg('Hashtags')}</md-segment>
           <md-segment value="trending">${msg('Trending')}</md-segment>
           <md-segment value="news">${msg('News')}</md-segment>
         </md-segmented-button>
@@ -726,6 +757,20 @@ export class SearchPage extends LitElement {
               `}
         </div>
 
+        <div class="panel ${this.activeSegment === 'statuses' ? 'active' : ''}">
+          <ul>
+            ${this.searchData && this.searchData.statuses
+              ? this.searchData.statuses.map((status) => {
+                  return html`<timeline-item
+                    .tweet="${status}"
+                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                      this.handleOpenPost(e.detail.tweet)}"
+                  ></timeline-item>`;
+                })
+              : null}
+          </ul>
+        </div>
+
         <div class="panel ${this.activeSegment === 'trending' ? 'active' : ''}">
           <ul>
             ${this.trending
@@ -760,17 +805,14 @@ export class SearchPage extends LitElement {
         <div class="panel ${this.activeSegment === 'hashtags' ? 'active' : ''}">
           ${this.searchData && this.searchData.hashtags
             ? html`
-                <ul>
-                  ${this.searchData && this.searchData.hashtags
-                    ? this.searchData.hashtags.map((hashtag) => {
-                        return html`<li
-                          @click="${() =>
-                            this.handleHashtagClick(hashtag.name)}"
-                        >
-                          <div class="account">#${hashtag.name}</div>
-                        </li>`;
-                      })
-                    : null}
+                <ul id="hashtagsList">
+                  ${this.searchData.hashtags.map((hashtag) => {
+                    return html`<li
+                      @click="${() => this.handleHashtagClick(hashtag.name)}"
+                    >
+                      <div class="account">#${hashtag.name}</div>
+                    </li>`;
+                  })}
                 </ul>
               `
             : null}
