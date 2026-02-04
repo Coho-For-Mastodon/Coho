@@ -12,6 +12,8 @@ A fast, offline-first Mastodon client.
 
 ## Why Coho?
 
+[Check our Wiki for more](https://github.com/jgw96/Coho/wiki)
+
 ### Performance
 
 Coho is built for speed. No matter what device you're on or how spotty your network connection is, the app stays fast and responsive. We leverage the best of the modern web platform to deliver a native-quality experience.
