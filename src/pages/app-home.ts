@@ -35,6 +35,8 @@ import type { Timeline } from '../components/timeline';
 import type { PostDialog } from '../components/post-dialog';
 import type { PwaInstall } from '../components/pwa-install';
 import type { PostDetailDialog } from '../components/post-detail-dialog';
+import type { ListsDialog } from '../components/lists-dialog';
+import type { ListMembershipDialog } from '../components/list-membership-dialog';
 
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
@@ -44,10 +46,12 @@ import { LazyOverlayManager } from '../utils/lazy-overlay';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
+import type { List } from '../mastodon/types';
 import {
   checkNewNotifications,
   markNotificationsRead,
 } from '../services/notifications';
+import { getLists } from '../services/lists';
 import type {
   TabChangeEvent,
   HandleSummaryEvent,
@@ -84,6 +88,8 @@ export class AppHome extends LitElement {
   // Lazy loading states for dialogs
   @state() postDialogLoaded: boolean = false;
   @state() postDetailDialogLoaded: boolean = false;
+  @state() listsDialogLoaded: boolean = false;
+  @state() listMembershipDialogLoaded: boolean = false;
 
   // PWA Install states
   @state() showInstallPrompt: boolean = false;
@@ -94,6 +100,9 @@ export class AppHome extends LitElement {
 
   // Guest mode state
   @state() isGuestMode: boolean = false;
+  @state() lists: List[] = [];
+  @state() listsLoading: boolean = false;
+  @state() listMembershipAccount: Account | null = null;
 
   // Lazy overlay manager for dialogs/drawers/toasts
   // This keeps overlays out of DOM until they're needed
@@ -107,6 +116,8 @@ export class AppHome extends LitElement {
     'error-toast',
     'post-dialog',
     'post-detail-dialog',
+    'lists-dialog',
+    'list-membership-dialog',
   ]);
 
   // DOM element references using @query for type safety
@@ -122,6 +133,9 @@ export class AppHome extends LitElement {
   @query('#install-dialog') private installDialog!: MdDialog;
   @query('pwa-install') private pwaInstall!: PwaInstall;
   @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
+  @query('lists-dialog') private listsDialog!: ListsDialog;
+  @query('list-membership-dialog')
+  private listMembershipDialog!: ListMembershipDialog;
 
   static get styles() {
     return [styles, homeStyles];
@@ -262,6 +276,12 @@ export class AppHome extends LitElement {
         this.user = user ?? null;
       });
     }
+
+    if (!this.isGuestMode) {
+      window.requestIdleCallback(() => {
+        this.loadLists();
+      });
+    }
   }
 
   /**
@@ -395,6 +415,66 @@ export class AppHome extends LitElement {
     clearTimelineCache();
 
     this.homeTimeline?.refreshTimeline(true); // Pass true to skip saving stale cache
+  }
+
+  private async loadLists() {
+    if (this.listsLoading) return;
+    this.listsLoading = true;
+    try {
+      this.lists = await getLists();
+    } catch (error) {
+      console.error('Failed to load lists', error);
+    } finally {
+      this.listsLoading = false;
+    }
+  }
+
+  private _handleListsUpdated = (
+    event: CustomEvent<{ lists: List[] }>
+  ): void => {
+    this.lists = event.detail.lists;
+  };
+
+  private async openListsDialog() {
+    if (this.isGuestMode) return;
+
+    if (!this.listsDialogLoaded) {
+      if (await lazyLoad('listsDialog', componentLoaders.listsDialog)) {
+        this.listsDialogLoaded = true;
+      }
+    }
+
+    await this.overlays.show('lists-dialog');
+    await customElements.whenDefined('lists-dialog');
+    await this.updateComplete;
+    this.listsDialog?.show();
+  }
+
+  private async openListMembershipDialog(account: Account) {
+    if (this.isGuestMode) return;
+
+    this.listMembershipAccount = account;
+
+    if (!this.listMembershipDialogLoaded) {
+      if (
+        await lazyLoad(
+          'listMembershipDialog',
+          componentLoaders.listMembershipDialog
+        )
+      ) {
+        this.listMembershipDialogLoaded = true;
+      }
+    }
+
+    await this.overlays.show('list-membership-dialog');
+    await customElements.whenDefined('list-membership-dialog');
+    await this.updateComplete;
+    this.listMembershipDialog?.show(account);
+  }
+
+  private async _handleOpenManageListsFromMembership() {
+    this.overlays.hideImmediately('list-membership-dialog');
+    await this.openListsDialog();
   }
 
   openBotDrawer() {
@@ -764,6 +844,31 @@ export class AppHome extends LitElement {
         `
       )}
 
+      <!-- Lists Dialog - only in DOM when needed -->
+      ${this.overlays.render(
+        'lists-dialog',
+        () => html`
+          <lists-dialog
+            @md-dialog-hide="${() => this.overlays.hide('lists-dialog')}"
+            @lists-updated="${this._handleListsUpdated}"
+          ></lists-dialog>
+        `
+      )}
+
+      <!-- List Membership Dialog - only in DOM when needed -->
+      ${this.overlays.render(
+        'list-membership-dialog',
+        () => html`
+          <list-membership-dialog
+            .account=${this.listMembershipAccount}
+            @md-dialog-hide="${() =>
+              this.overlays.hide('list-membership-dialog')}"
+            @open-manage-lists="${() =>
+              this._handleOpenManageListsFromMembership()}"
+          ></list-membership-dialog>
+        `
+      )}
+
       <!-- Settings Drawer - only in DOM when needed -->
       ${this.overlays.render(
         'settings-drawer',
@@ -843,15 +948,25 @@ export class AppHome extends LitElement {
                 this.showSummary($event)}"
               @handle-translating="${($event: HandleTranslatingEvent) =>
                 this.handleTranslating($event)}"
+              @manage-lists="${() => this.openListsDialog()}"
+              @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
+                this.openListMembershipDialog(event.detail.account)}"
               class="homeTimeline"
-              timelineType="${this.isGuestMode ? 'public' : 'home'}"
+              timelineType="${this.isGuestMode ? 'federated' : 'home'}"
               ?guestMode="${this.isGuestMode}"
+              .lists="${this.lists}"
               @replies="${($event: RepliesEvent) =>
                 this.handleReplies($event.detail.data, $event.detail.id ?? '')}"
             ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="media">
-            <app-timeline timelineType="media"></app-timeline>
+            <app-timeline
+              timelineType="media"
+              .lists="${this.lists}"
+              @manage-lists="${() => this.openListsDialog()}"
+              @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
+                this.openListMembershipDialog(event.detail.account)}"
+            ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="messages">
             ${this.loadedTabs.has('messages')
@@ -859,7 +974,13 @@ export class AppHome extends LitElement {
               : nothing}
           </md-tab-panel>
           <md-tab-panel name="custom">
-            <app-timeline timelineType="public"></app-timeline>
+            <app-timeline
+              timelineType="federated"
+              .lists="${this.lists}"
+              @manage-lists="${() => this.openListsDialog()}"
+              @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
+                this.openListMembershipDialog(event.detail.account)}"
+            ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="bookmarks">
             ${this.loadedTabs.has('bookmarks')
