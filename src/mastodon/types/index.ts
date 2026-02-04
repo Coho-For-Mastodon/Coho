@@ -58,3 +58,6 @@ export type { SearchResult, SearchType } from './search';
 
 // Conversation types
 export type { Conversation } from './conversation';
+
+// List types
+export type { List, ListRepliesPolicy } from './list';
