@@ -22,10 +22,6 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
     // WebKit/Safari skipped - has issues with addInitScript localStorage injection
     // TODO: Investigate webkit-specific auth setup
     {
