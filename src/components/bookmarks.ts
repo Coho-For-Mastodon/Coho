@@ -64,13 +64,32 @@ export class Bookmarks extends LitElement {
     this._observer = null;
   }
 
+  private handleBookmarkChange(
+    event: CustomEvent<{ id: string; active: boolean }>
+  ) {
+    const { id, active } = event.detail;
+    if (active) return;
+    this.bookmarks = this.bookmarks.filter((bookmark) => bookmark.id !== id);
+  }
+
   render() {
     return html`
       <timeline-list>
         ${this.isLoading
           ? html`<md-skeleton-card count="5"></md-skeleton-card>`
           : this.bookmarks.map((bookmark: Post) => {
-              return html` <timeline-item .tweet=${bookmark}></timeline-item> `;
+              return html`
+                <timeline-item
+                  .tweet=${bookmark}
+                  @bookmark-change=${(event: CustomEvent) =>
+                    this.handleBookmarkChange(
+                      event as CustomEvent<{
+                        id: string;
+                        active: boolean;
+                      }>
+                    )}
+                ></timeline-item>
+              `;
             })}
       </timeline-list>
     `;

@@ -2,6 +2,7 @@ import { Post } from '../interfaces/Post';
 import {
   getBookmarks as mastodonGetBookmarks,
   addBookmark as mastodonAddBookmark,
+  removeBookmark as mastodonRemoveBookmark,
 } from '../mastodon/api/bookmarks';
 
 export const getBookmarks = async (): Promise<Post[]> => {
@@ -10,3 +11,4 @@ export const getBookmarks = async (): Promise<Post[]> => {
 };
 
 export const addBookmark = mastodonAddBookmark;
+export const removeBookmark = mastodonRemoveBookmark;
