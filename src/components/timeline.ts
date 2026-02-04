@@ -153,23 +153,37 @@ export class Timeline extends LitElement {
 
   @property({ type: String }) timelineType:
     | 'home'
-    | 'public'
+    | 'local'
+    | 'federated'
     | 'media'
     | 'for you'
-    | 'home and some trending' = 'home';
+    | 'home and some trending'
+    | `list:${string}` = 'home';
 
   @property({ type: Boolean }) guestMode: boolean = false;
 
   @property({ type: Array }) data: Post[] | undefined;
   @property({ type: Boolean }) header: boolean = true;
   @property({ type: Boolean }) autoLoad: boolean = true;
+  @property({ type: Array }) lists: Array<{ id: string; title: string }> = [];
 
   get timelineTitle() {
+    if (this.timelineType.startsWith('list:')) {
+      const listId = this.timelineType.split(':')[1];
+      const match = this.lists.find((list) => list.id === listId);
+      if (match) {
+        return match.title;
+      }
+      return 'List';
+    }
+
     switch (this.timelineType) {
       case 'home':
         return 'Home';
-      case 'public':
-        return 'Public';
+      case 'local':
+        return 'Local';
+      case 'federated':
+        return 'Federated';
       case 'media':
         return 'Media';
       case 'for you':
@@ -977,7 +991,13 @@ export class Timeline extends LitElement {
     console.log('saved timeline type', savedTimelineType);
 
     if (savedTimelineType) {
-      this.timelineType = savedTimelineType;
+      const migratedTimelineType =
+        savedTimelineType === 'public' ? 'federated' : savedTimelineType;
+      this.timelineType = migratedTimelineType;
+      if (migratedTimelineType !== savedTimelineType) {
+        const { set } = await import('idb-keyval');
+        await set('timelineType', migratedTimelineType);
+      }
     }
 
     // Check cache first
@@ -1118,6 +1138,27 @@ export class Timeline extends LitElement {
     }
 
     switch (this.timelineType) {
+      default: {
+        if (this.timelineType.startsWith('list:')) {
+          const listId = this.timelineType.split(':')[1];
+          const { getListTimeline } = await import('../services/lists');
+          const listTimeline = await getListTimeline(listId);
+
+          this.timeline = [];
+          await this.updateComplete;
+
+          const uniqueList = Array.from(
+            new Map(listTimeline.map((post: Post) => [post.id, post])).values()
+          ) as Post[];
+
+          this.timeline = await enrichPostsWithReplyContext(uniqueList);
+
+          saveTimelineCache(this.timelineType, this.timeline, 0);
+
+          this.requestUpdate();
+        }
+        break;
+      }
       case 'for you': {
         const timelineDataMix = await mixTimeline('home');
         console.log('timelineData', timelineDataMix);
@@ -1210,20 +1251,49 @@ export class Timeline extends LitElement {
         this.requestUpdate();
         break;
       }
-      case 'public': {
-        const timelineDataPub = await getPreviewTimeline();
-        console.log(timelineDataPub);
+      case 'local': {
+        const { getPublicTimeline } = await import('../services/timeline');
+        const timelineDataLocal = await getPublicTimeline(true);
+        console.log(timelineDataLocal);
 
         this.timeline = [];
         await this.updateComplete;
 
         // Deduplicate by post ID
         const uniquePub = Array.from(
-          new Map(timelineDataPub.map((post: Post) => [post.id, post])).values()
+          new Map(
+            timelineDataLocal.map((post: Post) => [post.id, post])
+          ).values()
         ) as Post[];
 
         // Enrich posts with reply context
         this.timeline = await enrichPostsWithReplyContext(uniquePub);
+
+        // Save to cache after successful fetch
+        saveTimelineCache(this.timelineType, this.timeline, 0);
+
+        this.requestUpdate();
+        break;
+      }
+      case 'federated': {
+        let timelineDataFed: Post[] = [];
+        if (this.guestMode) {
+          timelineDataFed = await getPreviewTimeline();
+        } else {
+          const { getPublicTimeline } = await import('../services/timeline');
+          timelineDataFed = await getPublicTimeline(false);
+        }
+
+        this.timeline = [];
+        await this.updateComplete;
+
+        // Deduplicate by post ID
+        const uniqueFed = Array.from(
+          new Map(timelineDataFed.map((post: Post) => [post.id, post])).values()
+        ) as Post[];
+
+        // Enrich posts with reply context
+        this.timeline = await enrichPostsWithReplyContext(uniqueFed);
 
         // Save to cache after successful fetch
         saveTimelineCache(this.timelineType, this.timeline, 0);
@@ -1255,9 +1325,6 @@ export class Timeline extends LitElement {
         this.requestUpdate();
         break;
       }
-
-      default:
-        break;
     }
   }
 
@@ -1268,10 +1335,42 @@ export class Timeline extends LitElement {
         ? this.timeline[this.timeline.length - 1].id
         : undefined;
 
-    const timelineData: Post[] = await getPaginatedHomeTimeline(
-      this.timelineType ? this.timelineType : 'home',
-      lastPostId
-    );
+    let timelineData: Post[] = [];
+    switch (this.timelineType) {
+      case 'home':
+      case 'for you':
+      case 'home and some trending':
+      case 'media':
+        timelineData = await getPaginatedHomeTimeline(
+          this.timelineType ? this.timelineType : 'home',
+          lastPostId
+        );
+        break;
+      case 'local': {
+        const { getPublicTimeline } = await import('../services/timeline');
+        timelineData = await getPublicTimeline(true, lastPostId);
+        break;
+      }
+      case 'federated': {
+        if (this.guestMode) {
+          timelineData = await getPreviewTimeline();
+        } else {
+          const { getPublicTimeline } = await import('../services/timeline');
+          timelineData = await getPublicTimeline(false, lastPostId);
+        }
+        break;
+      }
+      default: {
+        if (this.timelineType.startsWith('list:')) {
+          const listId = this.timelineType.split(':')[1];
+          const { getListTimeline } = await import('../services/lists');
+          timelineData = await getListTimeline(listId, lastPostId);
+          break;
+        }
+        timelineData = await getPaginatedHomeTimeline('home', lastPostId);
+        break;
+      }
+    }
 
     // Deduplicate posts by ID to prevent showing duplicates
     const existingIds = new Set(this.timeline.map((post) => post.id));
@@ -1320,8 +1419,18 @@ export class Timeline extends LitElement {
           freshPosts = await getPaginatedHomeTimeline('home');
           break;
         }
-        case 'public': {
-          freshPosts = await getPreviewTimeline();
+        case 'local': {
+          const { getPublicTimeline } = await import('../services/timeline');
+          freshPosts = await getPublicTimeline(true);
+          break;
+        }
+        case 'federated': {
+          if (this.guestMode) {
+            freshPosts = await getPreviewTimeline();
+          } else {
+            const { getPublicTimeline } = await import('../services/timeline');
+            freshPosts = await getPublicTimeline(false);
+          }
           break;
         }
         case 'media': {
@@ -1331,8 +1440,14 @@ export class Timeline extends LitElement {
           );
           break;
         }
-        default:
+        default: {
+          if (this.timelineType.startsWith('list:')) {
+            const listId = this.timelineType.split(':')[1];
+            const { getListTimeline } = await import('../services/lists');
+            freshPosts = await getListTimeline(listId);
+          }
           break;
+        }
       }
 
       if (freshPosts.length === 0) {
@@ -1456,7 +1571,14 @@ export class Timeline extends LitElement {
   }
 
   async changeTimelineType(
-    type: 'home' | 'public' | 'media' | 'for you' | 'home and some trending'
+    type:
+      | 'home'
+      | 'local'
+      | 'federated'
+      | 'media'
+      | 'for you'
+      | 'home and some trending'
+      | `list:${string}`
   ) {
     this.timelineType = type;
 
@@ -1550,10 +1672,44 @@ export class Timeline extends LitElement {
                 </md-menu-item>
                 <md-divider></md-divider>
                 <md-menu-item
-                  @click="${() => this.changeTimelineType('public')}"
+                  @click="${() => this.changeTimelineType('local')}"
                 >
-                  Public
+                  Local
                 </md-menu-item>
+                <md-menu-item
+                  @click="${() => this.changeTimelineType('federated')}"
+                >
+                  Federated
+                </md-menu-item>
+                ${!this.guestMode
+                  ? html`
+                      <md-divider></md-divider>
+                      ${this.lists.map(
+                        (list) => html`
+                          <md-menu-item
+                            @click=${() =>
+                              this.changeTimelineType(`list:${list.id}`)}
+                          >
+                            ${list.title}
+                          </md-menu-item>
+                        `
+                      )}
+                      ${this.lists.length
+                        ? html`<md-divider></md-divider>`
+                        : null}
+                      <md-menu-item
+                        @click=${() =>
+                          this.dispatchEvent(
+                            new CustomEvent('manage-lists', {
+                              bubbles: true,
+                              composed: true,
+                            })
+                          )}
+                      >
+                        Manage lists...
+                      </md-menu-item>
+                    `
+                  : null}
               </md-menu>
             </md-dropdown>
 

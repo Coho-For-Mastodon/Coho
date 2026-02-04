@@ -16,8 +16,11 @@ export class MediaTimeline extends LitElement {
   @state() timeline: Post[] = [];
   @state() loadingData: boolean = false;
 
-  @property({ type: String }) timelineType: 'Home' | 'Public' | 'Media' =
-    'Home';
+  @property({ type: String }) timelineType:
+    | 'Home'
+    | 'Local'
+    | 'Federated'
+    | 'Media' = 'Home';
 
   static styles = [
     css`
