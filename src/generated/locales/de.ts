@@ -298,6 +298,8 @@ export const templates = {
   sfe2f8c98d9edbf7a: `Beitrag nicht gefunden`,
   sff9d51b6c5a73163: `Alt-Text`,
   sd5f22d89131b35d7: `Add to list`,
+  s766a38dbb162d7a6: `Unpin from profile`,
+  s616e22549f37d8c0: `Pin to profile`,
   see68daede2d8aaa1: str`Maximum ${0} attachments allowed.`,
   sd4d317f1fe40a847: `Disable the poll to attach media.`,
   s45e6d0c9b559ac46: `Failed to upload media`,
@@ -338,4 +340,5 @@ export const templates = {
   sa645dc2d0d79bac9: `Choose lists for this account`,
   sc84fecbbff68c425: `No lists yet.`,
   sf8087cf42c39ed5c: `Hashtags`,
+  s44851a8adf059eef: `Pinned`,
 };

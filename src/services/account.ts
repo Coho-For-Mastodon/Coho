@@ -373,29 +373,15 @@ export const getUsersPosts = async (
 export const getPinnedPosts = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const cacheKey = `${USER_PINNED_POSTS_CACHE_PREFIX}${id}`;
+  const cacheKey = `${USER_PINNED_POSTS_CACHE_PREFIX}${server}_${id}`;
 
-  const url = `${FIREBASE_FUNCTIONS_BASE_URL}/getPinnedPosts?id=${id}&code=${accessToken}&server=${server}`;
+  const url = `${FIREBASE_FUNCTIONS_BASE_URL}/getPinnedPosts?id=${encodeURIComponent(
+    id
+  )}&code=${encodeURIComponent(accessToken)}&server=${encodeURIComponent(
+    server
+  )}`;
 
-  try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (Array.isArray(data)) {
-      await set(cacheKey, data);
-      console.log('[getPinnedPosts] Posts cached for offline access');
-      return data;
-    }
-
-    return [];
-  } catch (err) {
-    console.log('[getPinnedPosts] Network error, trying cache:', err);
-
+  const tryCache = async () => {
     try {
       const cachedPosts = await get(cacheKey);
       if (cachedPosts) {
@@ -405,9 +391,59 @@ export const getPinnedPosts = async (id: string) => {
     } catch (cacheErr) {
       console.log('[getPinnedPosts] Cache retrieval failed:', cacheErr);
     }
-
     return [];
+  };
+
+  const cacheIfValid = async (data: unknown) => {
+    if (Array.isArray(data)) {
+      await set(cacheKey, data);
+      console.log('[getPinnedPosts] Posts cached for offline access');
+      return data;
+    }
+    return null;
+  };
+
+  if (!server) {
+    return tryCache();
   }
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const cached = await cacheIfValid(data);
+    if (cached) return cached;
+  } catch (err) {
+    console.log('[getPinnedPosts] Function error, trying direct API:', err);
+  }
+
+  try {
+    const headers = accessToken
+      ? { Authorization: `Bearer ${accessToken}` }
+      : undefined;
+    const apiResponse = await fetch(
+      `https://${server}/api/v1/accounts/${id}/statuses?pinned=true&limit=40`,
+      {
+        method: 'GET',
+        headers,
+      }
+    );
+
+    if (!apiResponse.ok) {
+      throw new Error(`HTTP ${apiResponse.status}`);
+    }
+
+    const data = await apiResponse.json();
+    const cached = await cacheIfValid(data);
+    if (cached) return cached;
+  } catch (err) {
+    console.log('[getPinnedPosts] Direct API error, trying cache:', err);
+  }
+
+  return tryCache();
 };
 
 export const getUsersFollowers = async (id: string) => {
