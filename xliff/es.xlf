@@ -1297,6 +1297,15 @@
 <trans-unit id="sf8087cf42c39ed5c">
   <source>Hashtags</source>
 </trans-unit>
+<trans-unit id="s766a38dbb162d7a6">
+  <source>Unpin from profile</source>
+</trans-unit>
+<trans-unit id="s616e22549f37d8c0">
+  <source>Pin to profile</source>
+</trans-unit>
+<trans-unit id="s44851a8adf059eef">
+  <source>Pinned</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
