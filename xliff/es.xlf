@@ -1216,6 +1216,87 @@
 <trans-unit id="s3a5907d5d552d0af">
   <source>No matching accounts</source>
 </trans-unit>
+<trans-unit id="s8acee5a69537fbde">
+  <source>Unable to update lists for this account. Please try again.</source>
+</trans-unit>
+<trans-unit id="sa5b903eb773c25ac">
+  <source>Add to lists</source>
+</trans-unit>
+<trans-unit id="se5d74072f5f79194">
+  <source>Choose lists for <x id="0" equiv-text="${displayName}"/></source>
+</trans-unit>
+<trans-unit id="sa645dc2d0d79bac9">
+  <source>Choose lists for this account</source>
+</trans-unit>
+<trans-unit id="sc84fecbbff68c425">
+  <source>No lists yet.</source>
+</trans-unit>
+<trans-unit id="s31679cf8c4aacbdd">
+  <source>Unable to load lists. Please try again.</source>
+</trans-unit>
+<trans-unit id="sbf698aa3a40d1d79">
+  <source>Followed replies</source>
+</trans-unit>
+<trans-unit id="s0e117811880f3942">
+  <source>No replies</source>
+</trans-unit>
+<trans-unit id="s05d09a8e0f0a5649">
+  <source>List replies</source>
+</trans-unit>
+<trans-unit id="s3ec7ab54f14c1245">
+  <source>List name is required.</source>
+</trans-unit>
+<trans-unit id="s4daac8688c1c159c">
+  <source>Unable to create list. Please try again.</source>
+</trans-unit>
+<trans-unit id="s68c220a1aefa7ea9">
+  <source>Unable to update list. Please try again.</source>
+</trans-unit>
+<trans-unit id="s290fb73de84f355b">
+  <source>Unable to delete list. Please try again.</source>
+</trans-unit>
+<trans-unit id="se0ff60d1c9b51a67">
+  <source>Replies policy</source>
+</trans-unit>
+<trans-unit id="sb34f92f721500ef7">
+  <source>Manage lists</source>
+</trans-unit>
+<trans-unit id="saf458952feffaf42">
+  <source>Create a list</source>
+</trans-unit>
+<trans-unit id="sb40ff06d6fe15d38">
+  <source>List name</source>
+</trans-unit>
+<trans-unit id="s99775221d3003db4">
+  <source>Creating...</source>
+</trans-unit>
+<trans-unit id="s1bfc5d13a351d84f">
+  <source>Create list</source>
+</trans-unit>
+<trans-unit id="sfa288e022c504e9b">
+  <source>Your lists</source>
+</trans-unit>
+<trans-unit id="sdf17192a9579f884">
+  <source>Loading lists...</source>
+</trans-unit>
+<trans-unit id="s89fa7b1bb77d0a04">
+  <source>No lists yet. Create one above.</source>
+</trans-unit>
+<trans-unit id="s717d4a2cd3f7d66f">
+  <source>Saving...</source>
+</trans-unit>
+<trans-unit id="s64ef2a6c2dd1d3d1">
+  <source>Edit</source>
+</trans-unit>
+<trans-unit id="sdc673e73b5c13aea">
+  <source>Delete</source>
+</trans-unit>
+<trans-unit id="sd5f22d89131b35d7">
+  <source>Add to list</source>
+</trans-unit>
+<trans-unit id="sf8087cf42c39ed5c">
+  <source>Hashtags</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
