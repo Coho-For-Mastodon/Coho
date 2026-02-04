@@ -95,6 +95,27 @@ export class TimelineItem extends LitElement {
         overflow-x: hidden;
       }
 
+      md-card::part(base) {
+        border: 1px
+          solidcolor-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #2b2930) 60%,
+            transparent
+          );
+        transition:
+          background 0.2s ease,
+          border-color 0.2s ease;
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 0px;
+      }
+
+      :host(:hover) md-card::part(base) {
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        border-color: var(--md-sys-color-outline-variant, #2b2930);
+      }
+
       image-carousel {
         margin-left: -12px;
         margin-right: -12px;
