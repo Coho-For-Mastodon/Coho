@@ -1,12 +1,12 @@
 # Service Worker Architecture
 
-Coho uses a custom service worker implementation for PWA functionality. This document explains the setup, build process, and key features.
+Coho uses a custom service worker for PWA functionality, offline resilience, and background work. This document describes the build, registration, caching strategies, and key features.
 
 ## File Structure
 
 ```
 src/sw.ts              ← Source of truth (TypeScript)
-vite.config.ts         ← Build plugins (build-sw-dev, build-sw)
+vite.config.ts         ← Build plugins (dev-service-worker, build-sw)
 public/sw.js           ← Dev build output (gitignored)
 dist/sw.js             ← Production build output
 index.html             ← Registration script
@@ -14,103 +14,91 @@ index.html             ← Registration script
 
 ## Build Process
 
-The service worker is built separately from the main app bundle using custom Vite plugins defined in `vite.config.ts`:
+The service worker is built separately from the main app using custom Vite plugins in `vite.config.ts`.
 
-### Development (`build-sw-dev` plugin)
+### Development (`dev-service-worker` plugin)
 
-- **Trigger**: Runs on `configureServer` hook when dev server starts
+- **Trigger**: `buildStart` when Vite dev server starts (`apply: 'serve'`)
 - **Output**: `public/sw.js`
-- **Format**: ES module, unminified for debugging
-- **Version**: Injects `__APP_VERSION__` with ISO timestamp
+- **Format**: ES module, unminified
+- **Version**: Injects `__APP_VERSION__` with an ISO timestamp
 
 ### Production (`build-sw` plugin)
 
-- **Trigger**: Runs on `writeBundle` hook after main build
+- **Trigger**: `closeBundle` after the main build completes (`apply: 'build'`)
 - **Output**: `dist/sw.js`
 - **Format**: ES module, minified with Terser
-- **Optimizations**: Inlines all dynamic imports (critical for SW scope)
+- **Optimizations**: Inlines all imports (required for SW scope)
 
-Both builds share a `CACHE_VERSION` constant for cache busting.
+Both builds inject `__APP_VERSION__`, which is used to version cache names.
 
 ## Registration
 
-The service worker is registered in `index.html`:
+The service worker is registered in `index.html` after a 15s delay to prioritize initial page load:
 
 ```javascript
 const swUrl = '/sw.js';
 const swOptions = { scope: '/', type: 'module' };
+
 navigator.serviceWorker.register(swUrl, swOptions);
 ```
 
 ### Update Handling
 
-- Listens for `controllerchange` → triggers page reload
-- Listens for `SW_ACTIVATED` message → triggers reload
-- Dispatches `pwa-update-available` custom event for UI notification
+- **`controllerchange`**: forces a page reload when a new SW takes control.
+- **`SW_ACTIVATED` message**: forces a reload when activation completes.
+- **`pwa-update-available` event**: dispatched with `updateServiceWorker()` to call `SKIP_WAITING`.
 
-## Caching Strategies
+## Caching Strategy
 
-| Content Type        | Strategy                    | Cache Name         |
-| ------------------- | --------------------------- | ------------------ |
-| Navigation requests | Network-first, SPA fallback | `pages-{VERSION}`  |
-| Scripts & styles    | Cache-first                 | `assets-{VERSION}` |
-| Images              | Cache-first (lazy)          | `images-{VERSION}` |
-| API GET requests    | Network-first               | `pages-{VERSION}`  |
-| API mutations       | Network-only                | —                  |
+| Content Type        | Strategy                        | Cache Name          |
+| ------------------- | ------------------------------- | ------------------- |
+| Navigation requests | Stale-while-revalidate app shell | `pages-{VERSION}`   |
+| Scripts & styles    | Cache-first                      | `assets-{VERSION}`  |
+| Images              | Cache-first                      | `images-{VERSION}`  |
+| API GET requests    | Network-first                    | `pages-{VERSION}`   |
+| Mutations           | Network with background sync     | —                   |
 
 ### Precached Resources
 
 On install, the SW precaches:
 
-- `/` (app shell)
+- `/`
 - `/index.html`
 - `/manifest.json`
 
-## Features
+## Offline & Background Sync
 
-### Push Notifications
+### Mutation Queue
 
-Full Mastodon notification support with:
+For Mastodon API mutations and other non-GET API requests, the SW attempts a network request. If it fails due to a network error, the request is queued and replayed later.
 
-- Rich notification display (mentions, favorites, boosts, follows, polls)
-- Notification actions (reply, favorite, boost)
-- Badge count management via Badging API
-- Click-to-navigate to relevant content
+- **Sync tag**: `mastodon-api-sync`
+- **Queue key**: `background-sync-queue` (IndexedDB via `idb-keyval`)
 
-### Share Target
+Queued requests are stored as:
 
-PWA share target handling:
+```typescript
+interface QueuedRequest {
+  id: string;
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string | null;
+  timestamp: number;
+}
+```
 
-- Caches shared media files temporarily
-- Redirects to compose page with shared content
-- Supports text, URLs, and media attachments
+### Replay Behavior
 
-### Background Sync
+- 2xx responses: removed from queue
+- 4xx responses: removed from queue (won't succeed on retry)
+- 5xx responses: kept for retry
+- Network error: kept for retry
 
-Periodic background sync for:
+### Supported Mutation Endpoints
 
-- Timeline updates
-- Notification polling
-- Widget data refresh (Windows widgets)
-
-### Offline Support
-
-- Serves cached pages when offline
-- Falls back to `/index.html` for SPA routes
-- Queues failed mutations to IndexedDB for retry via Background Sync API
-
-## Background Sync for Mutations
-
-When a Mastodon API mutation (POST/PUT/DELETE) fails due to network error, the service worker:
-
-1. **Queues the request** to IndexedDB with full request details (URL, method, headers, body)
-2. **Registers for background sync** using the `sync` event API
-3. **Returns a 202 Accepted** response so UI can update optimistically
-4. **Replays queued requests** when connectivity is restored
-
-### Supported Mutations
-
-The following Mastodon API endpoints are queued for background sync:
+The following Mastodon API endpoints are queued when offline:
 
 | Action                      | Endpoint Pattern                          |
 | --------------------------- | ----------------------------------------- |
@@ -126,49 +114,66 @@ The following Mastodon API endpoints are queued for background sync:
 | Vote in poll                | `POST /api/v1/polls/:id/votes`            |
 | Clear/dismiss notifications | `POST /api/v1/notifications/...`          |
 
-### Queue Storage
+## Share Target
 
-Queued requests are stored in IndexedDB under the key `background-sync-queue` using `idb-keyval`. Each entry contains:
+`/share` POST requests are intercepted to support the Web Share Target flow.
 
-```typescript
-interface QueuedRequest {
-  id: string; // Unique ID for deduplication
-  url: string; // Full request URL
-  method: string; // HTTP method
-  headers: Record<string, string>;
-  body: string | null; // Serialized body
-  timestamp: number; // When queued
-}
-```
+- Shared files are cached in `shareTarget` cache storage.
+- The user is redirected to `/home` with query parameters referencing cached files.
 
-### Replay Behavior
+## Notifications & Widgets
 
-- 2xx responses: Request succeeded, removed from queue
-- 4xx responses: Client error, removed from queue (won't succeed on retry)
-- 5xx responses: Server error, kept in queue for retry
-- Network error: Kept in queue for retry
+### Push Notifications
+
+- Handles Mastodon push payloads, strips HTML, and shows rich notifications.
+- Uses the Badging API when available.
+- Notification actions include “Follow back” for follow events.
+
+### Notification Clicks
+
+- Clears badge counts.
+- Focuses or opens a window to the relevant route.
+- Supports follow-back action by fetching the notification and issuing a follow request.
+
+### Windows Widgets
+
+- Responds to `widgetinstall` and updates widget templates via `self.widgets`.
+
+### Periodic Sync
+
+Uses `periodicsync` to keep content fresh:
+
+- `get-notifications` → fetches notifications and triggers badges/notifications
+- `timeline-sync` → refreshes timeline cache in IndexedDB
 
 ## Authentication
 
-The service worker accesses auth tokens from **IndexedDB** (not localStorage):
+The service worker cannot access `localStorage`, so credentials are synced to IndexedDB by the app:
 
 ```typescript
-import { get } from 'idb-keyval';
-
 const accessToken = await get('accessToken');
 const server = await get('server');
 ```
 
-> **Important**: Auth tokens must be synced to IndexedDB. This happens in `app-index.ts` via `syncCredentialsToIndexedDB()`. The frontend uses localStorage, but the SW cannot access localStorage.
+`app-index.ts` performs the sync on startup.
+
+## Cache Cleanup
+
+Old caches are deleted on activation, excluding the share-target cache:
+
+```typescript
+if (!Object.values(CACHE_NAMES).includes(cacheName) && cacheName !== 'shareTarget') {
+  return caches.delete(cacheName);
+}
+```
 
 ## Debugging
 
 ### Check SW Status
 
 ```javascript
-// In browser console
-navigator.serviceWorker.controller; // Active SW
-navigator.serviceWorker.ready; // Promise for ready SW
+navigator.serviceWorker.controller;
+navigator.serviceWorker.ready;
 ```
 
 ### View Caches
@@ -177,43 +182,21 @@ DevTools → Application → Cache Storage
 
 ### Force Update
 
-DevTools → Application → Service Workers → "Update on reload"
+DevTools → Application → Service Workers → “Update on reload”
 
 ### Version Check
 
 The SW logs its version on load:
 
 ```
-[SW] Build version: 2025-12-15T22:30:00.000Z
-```
-
-## Cache Cleanup
-
-Old caches are automatically deleted on activation:
-
-```typescript
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => !Object.values(CACHE_NAMES).includes(key))
-            .map((key) => caches.delete(key))
-        )
-      )
-  );
-});
+[SW] Build version: 2026-02-04T18:32:00.000Z
 ```
 
 ## Why Not Workbox?
 
-Coho uses a custom implementation instead of Workbox for:
+Coho uses a custom SW for:
 
-1. **Full control** over caching strategies and SW lifecycle
-2. **Smaller bundle** — no Workbox runtime overhead
-3. **Custom features** — share target, widgets, Mastodon-specific push handling
-4. **Simpler debugging** — straightforward code without abstraction layers
-
-The tradeoff is more manual code, but it's well-suited for Coho's specific PWA requirements.
+- Full control over caching, lifecycle, and background sync
+- Smaller runtime footprint
+- Custom features like share target handling and Mastodon-specific notifications
+- Easier debugging without extra abstraction layers
