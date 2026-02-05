@@ -688,6 +688,26 @@ export function renderThread(
                   </image-carousel>
                 `
               : html``}
+            ${threadPost.card
+              ? html`
+                  <div
+                    @click="${() =>
+                      handlers.openLinkCard(threadPost.card?.url || '')}"
+                    class="link-card"
+                  >
+                    <img
+                      src="${threadPost.card.image ||
+                      '/assets/bookmark-outline.svg'}"
+                      alt="${threadPost.card.title}"
+                    />
+
+                    <div class="link-card-content">
+                      <h4>${threadPost.card.title}</h4>
+                      <p>${threadPost.card.description}</p>
+                    </div>
+                  </div>
+                `
+              : null}
             <div class="actions" slot="footer">
               <md-button
                 variant="text"
