@@ -658,10 +658,6 @@
   <source>Voice input</source>
   <target>Entrada de voz</target>
 </trans-unit>
-<trans-unit id="s2d054d97a4f96f9c">
-  <source>Handwriting input</source>
-  <target>Entrada de escritura a mano</target>
-</trans-unit>
 <trans-unit id="s4fa317f81c22728b">
   <source>Write your warning here</source>
   <target>Escribe tu advertencia aquí</target>
@@ -1305,6 +1301,21 @@
 </trans-unit>
 <trans-unit id="s44851a8adf059eef">
   <source>Pinned</source>
+</trans-unit>
+<trans-unit id="sdfe19437ad125da9">
+  <source>Draft loaded</source>
+</trans-unit>
+<trans-unit id="sd095f475bdee35a6">
+  <source>Load draft</source>
+</trans-unit>
+<trans-unit id="sc0d63d7f492b898b">
+  <source>Save draft</source>
+</trans-unit>
+<trans-unit id="s3099b09746811456">
+  <source>Saving draft...</source>
+</trans-unit>
+<trans-unit id="s1d38ea159eb7063f">
+  <source>Draft saved</source>
 </trans-unit>
 </body>
 </file>
