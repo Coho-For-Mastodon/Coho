@@ -15,7 +15,6 @@ import './md/md-skeleton.js';
 import './handwriting-dialog.js';
 
 import type { MdTextArea } from './md/md-text-area.js';
-import type { MdTextField } from './md/md-text-field.js';
 
 import {
   publishPost,
@@ -39,6 +38,13 @@ import {
   findMentionMatch,
   getCaretCoordinates,
 } from '../utils/mention-utils';
+import {
+  buildDraftKey,
+  deleteDraft,
+  loadDraft,
+  saveDraft,
+  type DraftPost,
+} from '../services/drafts';
 
 import type { Post } from '../interfaces/Post';
 import type { Account as MastodonAccount } from '../mastodon/types/account';
@@ -110,8 +116,10 @@ export class PostComposer extends LitElement {
   @state() activeAttachment: LocalAttachment | null = null;
   @state() attaching: boolean = false;
 
+  @state() statusText: string = '';
   @state() hasStatus: boolean = false;
   @state() sensitive: boolean = false;
+  @state() spoilerText: string = '';
   @state() visibility: string = 'public';
 
   @state() maxChars: number = 500;
@@ -155,16 +163,23 @@ export class PostComposer extends LitElement {
   // Publishing state
   @state() isPublishing: boolean = false;
 
+  // Draft state
+  @state() draftStatus: 'idle' | 'saving' | 'saved' = 'idle';
+  @state() draftAvailable: boolean = false;
+  @state() draftApplied: boolean = false;
+
   // MediaRecorder for speech-to-text
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
+
+  private draftKey: string | null = null;
+  private draftSnapshot: DraftPost | null = null;
 
   private mentionQueryRange: { start: number; end: number } | null = null;
   private mentionSearchTimer: number | null = null;
   private mentionRequestId = 0;
 
   @query('md-text-area') private textArea!: MdTextArea;
-  @query('#sensitive-input') private sensitiveInput!: MdTextField;
   @query('media-edit-dialog')
   private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
 
@@ -375,29 +390,10 @@ export class PostComposer extends LitElement {
     }
 
     .mobile-icon-button {
-      display: none;
+      display: inline-flex;
     }
 
     .desktop-button {
-      display: inline-flex;
-    }
-
-    @media (max-width: 1400px) {
-      .mobile-icon-button {
-        display: inline-flex;
-      }
-
-      .desktop-button {
-        display: none;
-      }
-    }
-
-    /* Compact mode always shows icon buttons */
-    :host([compact]) .mobile-icon-button {
-      display: inline-flex;
-    }
-
-    :host([compact]) .desktop-button {
       display: none;
     }
 
@@ -418,6 +414,24 @@ export class PostComposer extends LitElement {
       min-width: 0;
     }
 
+    .footer-meta {
+      justify-content: flex-start;
+    }
+
+    .footer-primary {
+      justify-content: flex-end;
+    }
+
+    .draft-action {
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+    }
+
+    .footer-actions > div:nth-child(2) {
+      flex: 2;
+      align-items: center;
+      justify-content: end;
+    }
+
     .char-count {
       font-size: var(--md-sys-typescale-label-small-font-size, 11px);
       color: var(--md-sys-color-on-surface-variant, #cac4d0);
@@ -425,6 +439,11 @@ export class PostComposer extends LitElement {
 
     .char-count.over-limit {
       color: var(--md-sys-color-error, #ffb4ab);
+    }
+
+    .draft-status {
+      font-size: var(--md-sys-typescale-label-small-font-size, 11px);
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
     }
 
     /* Attachment previews */
@@ -661,6 +680,15 @@ export class PostComposer extends LitElement {
       );
       border-radius: 12px;
     }
+
+    @media (max-width: 820px) {
+      .footer-actions {
+        position: fixed;
+        bottom: 16px;
+        left: 12px;
+        right: 12px;
+      }
+    }
   `;
 
   protected async firstUpdated() {
@@ -694,6 +722,8 @@ export class PostComposer extends LitElement {
       nativeTextArea.addEventListener('click', this._handleCaretMove);
       nativeTextArea.addEventListener('scroll', this._handleCaretMove);
     }
+
+    this._loadDraftForContext();
   }
 
   protected updated(changedProperties: PropertyValues) {
@@ -702,6 +732,10 @@ export class PostComposer extends LitElement {
     // Sync compact attribute for CSS
     if (changedProperties.has('compact')) {
       this.toggleAttribute('compact', this.compact);
+    }
+
+    if (changedProperties.has('replyTo')) {
+      this._loadDraftForContext();
     }
   }
 
@@ -740,17 +774,17 @@ export class PostComposer extends LitElement {
    * Get the current text value of the composer.
    */
   get value(): string {
-    return this.textArea?.value || '';
+    return this.statusText || this.textArea?.value || '';
   }
 
   /**
    * Set the text value of the composer.
    */
   set value(val: string) {
+    const next = String(val ?? '');
+    this._setStatusText(next);
     if (this.textArea) {
-      this.textArea.value = val;
-      this.charCount = val.length;
-      this.hasStatus = val.length > 0;
+      this.textArea.value = next;
     }
   }
 
@@ -949,10 +983,8 @@ export class PostComposer extends LitElement {
 
   private _handleStatusChange(ev: Event) {
     const target = ev.target as MdTextArea | HTMLTextAreaElement;
-    const value = target.value;
-
-    this.charCount = value.length;
-    this.hasStatus = value.length > 0;
+    const value = target.value ?? '';
+    this._setStatusText(value);
 
     const nativeTextArea = this._getNativeTextArea();
     const cursor =
@@ -961,6 +993,16 @@ export class PostComposer extends LitElement {
       value.length;
 
     this._updateMentionSuggestions(value, cursor, nativeTextArea);
+  }
+
+  private _setStatusText(value: string) {
+    this.statusText = value;
+    this.charCount = value.length;
+    this.hasStatus = value.length > 0;
+  }
+
+  private _setSpoilerText(value: string) {
+    this.spoilerText = value;
   }
 
   private _getNativeTextArea(): HTMLTextAreaElement | null {
@@ -1399,8 +1441,7 @@ export class PostComposer extends LitElement {
 
     if (this.textArea) {
       this.textArea.value = this.proofreadResult.correctedInput;
-      this.charCount = this.proofreadResult.correctedInput.length;
-      this.hasStatus = this.proofreadResult.correctedInput.length > 0;
+      this._setStatusText(this.proofreadResult.correctedInput);
     }
 
     this.proofreadResult = null;
@@ -1485,14 +1526,13 @@ export class PostComposer extends LitElement {
 
       if (transcribedText && this.textArea) {
         const currentText = this.textArea.value;
-        if (currentText.trim().length > 0) {
-          this.textArea.value = currentText + ' ' + transcribedText;
-        } else {
-          this.textArea.value = transcribedText;
-        }
+        const nextValue =
+          currentText.trim().length > 0
+            ? currentText + ' ' + transcribedText
+            : transcribedText;
 
-        this.charCount = this.textArea.value.length;
-        this.hasStatus = this.textArea.value.length > 0;
+        this.textArea.value = nextValue;
+        this._setStatusText(nextValue);
       }
     } catch (error) {
       console.error('Transcription failed:', error);
@@ -1512,14 +1552,13 @@ export class PostComposer extends LitElement {
 
     if (recognizedText && this.textArea) {
       const currentText = this.textArea.value;
-      if (currentText.trim().length > 0) {
-        this.textArea.value = currentText + ' ' + recognizedText;
-      } else {
-        this.textArea.value = recognizedText;
-      }
+      const nextValue =
+        currentText.trim().length > 0
+          ? currentText + ' ' + recognizedText
+          : recognizedText;
 
-      this.charCount = this.textArea.value.length;
-      this.hasStatus = this.textArea.value.length > 0;
+      this.textArea.value = nextValue;
+      this._setStatusText(nextValue);
     }
 
     this.handwritingDialogOpen = false;
@@ -1552,7 +1591,7 @@ export class PostComposer extends LitElement {
         attachments: [...this.attachments],
         visibility: this.visibility,
         sensitive: this.sensitive,
-        spoilerText: this.sensitive ? (this.sensitiveInput?.value ?? '') : '',
+        spoilerText: this.sensitive ? this.spoilerText : '',
         poll: pollPayload,
         replyToId: this.replyTo?.id ?? null,
       };
@@ -1592,7 +1631,7 @@ export class PostComposer extends LitElement {
 
         let spoilerText = '';
         if (this.sensitive) {
-          spoilerText = this.sensitiveInput?.value ?? '';
+          spoilerText = this.spoilerText;
         }
 
         // Handle reply vs new post
@@ -1650,6 +1689,7 @@ export class PostComposer extends LitElement {
 
       // Success
       this._resetState();
+      void this._clearDraft();
       worker.terminate();
 
       this.dispatchEvent(
@@ -1676,6 +1716,9 @@ export class PostComposer extends LitElement {
     this.charCount = 0;
     this.hasStatus = false;
     this.sensitive = false;
+    this.spoilerText = '';
+    this.statusText = '';
+    this.draftApplied = false;
     this.proofreadResult = null;
     this.isRecording = false;
     this.isTranscribing = false;
@@ -1698,6 +1741,179 @@ export class PostComposer extends LitElement {
     if (this.textArea) {
       this.textArea.value = '';
     }
+  }
+
+  // Drafts
+
+  private _getDraftKey(): string | null {
+    const server = localStorage.getItem('server');
+    const userId = localStorage.getItem('currentUserID');
+    if (!server || !userId) return null;
+    return buildDraftKey({
+      server,
+      userId,
+      replyToId: this.replyTo?.id ?? null,
+    });
+  }
+
+  private _hasDraftContent(): boolean {
+    return (
+      this.statusText.trim().length > 0 ||
+      this.attachments.length > 0 ||
+      this.pollEnabled ||
+      this.sensitive ||
+      this.spoilerText.trim().length > 0
+    );
+  }
+
+  private async _loadDraftForContext() {
+    const key = this._getDraftKey();
+    this.draftKey = key;
+    this.draftSnapshot = null;
+    this.draftAvailable = false;
+    this.draftApplied = false;
+
+    if (!key) return;
+
+    const draft = await loadDraft(key);
+    if (!draft) return;
+
+    this.draftSnapshot = draft;
+    this.draftAvailable = true;
+
+    if (!this._hasDraftContent()) {
+      await this._applyDraft(draft);
+    }
+  }
+
+  private async _applyDraft(draft: DraftPost) {
+    this.draftApplied = true;
+
+    this.statusText = draft.status ?? '';
+    this.visibility = draft.visibility ?? 'public';
+    this.sensitive = !!draft.sensitive;
+    this.spoilerText = draft.spoilerText ?? '';
+    this.pollEnabled = !!draft.poll;
+    this.pollOptions = draft.poll?.options?.length
+      ? [...draft.poll.options]
+      : ['', ''];
+    this.pollDurationSeconds = draft.poll?.expiresIn ?? 60 * 60;
+    this.pollMultiple = !!draft.poll?.multiple;
+    this.pollError = null;
+
+    this.attachments.forEach((att) => {
+      if (att.preview_url.startsWith('blob:')) {
+        URL.revokeObjectURL(att.preview_url);
+      }
+    });
+    this.attachments = [];
+
+    if (draft.attachments?.length) {
+      for (const attachment of draft.attachments) {
+        if (attachment.file) {
+          const file =
+            attachment.file instanceof File
+              ? attachment.file
+              : new File([attachment.file], 'draft-attachment', {
+                  type: attachment.file.type || 'application/octet-stream',
+                });
+          this._restorePendingAttachment(file, attachment.description);
+        } else {
+          this.attachments = [
+            ...this.attachments,
+            {
+              id: attachment.id,
+              preview_url: attachment.preview_url,
+              description: attachment.description ?? null,
+              pending: attachment.pending,
+            },
+          ];
+        }
+      }
+    }
+
+    await this.updateComplete;
+    if (this.textArea) {
+      this.textArea.value = this.statusText;
+    }
+    this.charCount = this.statusText.length;
+    this.hasStatus = this.statusText.length > 0;
+
+    this.draftStatus = 'saved';
+  }
+
+  private _restorePendingAttachment(file: File, description: string | null) {
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const previewUrl = URL.createObjectURL(file);
+    const newAttachment: LocalAttachment = {
+      id: tempId,
+      preview_url: previewUrl,
+      description,
+      pending: true,
+      file,
+    };
+
+    this.attachments = [...this.attachments, newAttachment];
+    this._uploadFile(file, tempId);
+  }
+
+  private async _saveDraft() {
+    if (!this.draftKey) return;
+
+    if (!this._hasDraftContent()) {
+      await this._clearDraft();
+      return;
+    }
+
+    this.draftStatus = 'saving';
+
+    const attachments = this.attachments.map((attachment) => ({
+      id: attachment.id,
+      preview_url: attachment.preview_url.startsWith('blob:')
+        ? ''
+        : attachment.preview_url,
+      description: attachment.description ?? null,
+      pending: attachment.pending,
+      file: attachment.file,
+    }));
+
+    const draft: DraftPost = {
+      id: this.draftKey,
+      status: this.statusText,
+      visibility: this.visibility,
+      sensitive: this.sensitive,
+      spoilerText: this.sensitive ? this.spoilerText : '',
+      poll: this.pollEnabled
+        ? {
+            options: [...this.pollOptions],
+            expiresIn: this.pollDurationSeconds,
+            multiple: this.pollMultiple,
+          }
+        : null,
+      replyToId: this.replyTo?.id ?? null,
+      attachments,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveDraft(this.draftKey, draft);
+    this.draftSnapshot = draft;
+    this.draftAvailable = true;
+    this.draftStatus = 'saved';
+  }
+
+  private async _clearDraft() {
+    if (!this.draftKey) return;
+    await deleteDraft(this.draftKey);
+    this.draftSnapshot = null;
+    this.draftAvailable = false;
+    this.draftApplied = false;
+    this.draftStatus = 'idle';
+  }
+
+  private async _loadDraftFromSnapshot() {
+    if (!this.draftSnapshot) return;
+    await this._applyDraft(this.draftSnapshot);
+    showInfoToast(msg('Draft loaded'));
   }
 
   // Render methods
@@ -1780,6 +1996,7 @@ export class PostComposer extends LitElement {
           @change="${(e: Event) => this._handleStatusChange(e)}"
           @input="${(e: Event) => this._handleStatusChange(e)}"
           @focusout="${() => this._closeMentionPicker()}"
+          .value=${this.statusText}
           autofocus
           placeholder=${placeholderText}
           rows="${this.rows}"
@@ -1810,37 +2027,6 @@ export class PostComposer extends LitElement {
               </md-select>
             `
           : nothing}
-
-        <!-- Desktop buttons -->
-        <md-button
-          class="desktop-button"
-          variant="outlined"
-          ?disabled=${this.attachments.length > 0}
-          @click="${() => this._togglePoll()}"
-        >
-          ${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
-        </md-button>
-
-        <md-button
-          class="desktop-button"
-          variant="outlined"
-          @click="${() => this.markAsSensitive()}"
-        >
-          ${msg('Content Warning')}
-          <md-icon src="/assets/eye-outline.svg"></md-icon>
-        </md-button>
-
-        <md-button
-          class="desktop-button"
-          pill
-          variant="outlined"
-          @click="${() => this.attachFile()}"
-          ?disabled=${this.pollEnabled ||
-          this.attachments.length >= this.maxMediaAttachments}
-        >
-          ${msg('Attach Media')}
-          <md-icon src="/assets/attach-outline.svg"></md-icon>
-        </md-button>
 
         <!-- Mobile icon buttons -->
         <md-icon-button
@@ -1891,19 +2077,6 @@ export class PostComposer extends LitElement {
                 title="${this.isRecording || this.isTranscribing
                   ? ''
                   : 'On-device AI'}"
-              ></md-icon-button>
-            `
-          : nothing}
-
-        <!-- Handwriting -->
-        ${this.handwritingAvailable
-          ? html`
-              <md-icon-button
-                class="pen-button"
-                label=${msg('Handwriting input')}
-                src="/assets/brush-outline.svg"
-                @click="${() => this.openHandwritingDialog()}"
-                title="On-device AI"
               ></md-icon-button>
             `
           : nothing}
@@ -1984,6 +2157,9 @@ export class PostComposer extends LitElement {
       <div id="sensitive-warning">
         <md-text-field
           id="sensitive-input"
+          .value=${this.spoilerText}
+          @input=${(e: Event) =>
+            this._setSpoilerText(this._readInputEventValue(e))}
           placeholder=${msg('Write your warning here')}
         ></md-text-field>
       </div>
@@ -2122,26 +2298,52 @@ export class PostComposer extends LitElement {
   }
 
   private _renderFooter() {
+    const canSaveDraft = this._hasDraftContent();
+    const showLoadDraft = this.draftAvailable && !this.draftApplied;
+
     return html`
       <div class="footer-actions">
-        <span
-          class="char-count ${this.charCount > this.maxChars
-            ? 'over-limit'
-            : ''}"
-        >
-          ${this.charCount} / ${this.maxChars}
-        </span>
-        <md-button
-          ?disabled="${!this.hasStatus ||
-          this.attaching ||
-          this.attachments.some((a) => a.pending) ||
-          this.isPublishing}"
-          pill
-          variant="filled"
-          @click="${() => this._handleSubmit()}"
-        >
-          ${this.replyTo ? msg('Reply') : msg('Publish')}
-        </md-button>
+        <div class="footer-meta">
+          ${showLoadDraft
+            ? html`
+                <md-button
+                  size="small"
+                  variant="text"
+                  class="draft-action"
+                  @click="${() => this._loadDraftFromSnapshot()}"
+                >
+                  ${msg('Load draft')}
+                </md-button>
+              `
+            : nothing}
+          <md-button
+            size="small"
+            variant="text"
+            class="draft-action"
+            ?disabled=${!canSaveDraft}
+            @click="${() => this._saveDraft()}"
+          >
+            ${msg('Save draft')}
+          </md-button>
+          ${this.draftStatus === 'saving'
+            ? html`<span class="draft-status">${msg('Saving draft...')}</span>`
+            : this.draftStatus === 'saved'
+              ? html`<span class="draft-status">${msg('Draft saved')}</span>`
+              : nothing}
+        </div>
+        <div class="footer-primary">
+          <md-button
+            ?disabled="${!this.hasStatus ||
+            this.attaching ||
+            this.attachments.some((a) => a.pending) ||
+            this.isPublishing}"
+            pill
+            variant="filled"
+            @click="${() => this._handleSubmit()}"
+          >
+            ${this.replyTo ? msg('Reply') : msg('Publish')}
+          </md-button>
+        </div>
       </div>
     `;
   }

@@ -36,6 +36,11 @@ export interface TimelineItemHandlers {
   openPost: () => void;
   openParentPost: () => void;
   openLinkCard: (url: string) => void;
+  handleContentClick: (
+    event: Event,
+    post: Post | null | undefined,
+    openPostOnNonLink?: boolean
+  ) => void;
   showThread: () => void;
   muteUser: (accountId: string) => void;
   blockUser: (accountId: string) => void;
@@ -128,6 +133,8 @@ export function renderReplyContext(
             </div>
           `
         : html`<div
+            @click="${(e: Event) =>
+              handlers.handleContentClick(e, state.tweet?.reply_to)}"
             .innerHTML="${parseEmojis(
               state.tweet?.reply_to?.content || '',
               state.tweet?.reply_to?.emojis || []
@@ -313,7 +320,8 @@ export function renderRegularTweet(
       </div>
 
       <div
-        @click="${handlers.openPost}"
+        @click="${(e: Event) =>
+          handlers.handleContentClick(e, state.tweet, true)}"
         .innerHTML="${parseEmojis(state.tweet?.content || '', state.tweet?.emojis || [])}"
       ></div>
 
@@ -546,7 +554,8 @@ export function renderReblog(
       </div>
 
       <div
-        @click="${() => handlers.openPost()}"
+        @click="${(e: Event) =>
+          handlers.handleContentClick(e, state.tweet?.reblog, true)}"
         .innerHTML="${parseEmojis(
           state.tweet.reblog.content || '',
           state.tweet.reblog.emojis || []
@@ -677,7 +686,11 @@ export function renderThread(
                     </md-button>
                   </div>
                 `
-              : html`<div .innerHTML="${threadPost.content}"></div>`}
+              : html`<div
+                  @click="${(e: Event) =>
+                    handlers.handleContentClick(e, threadPost)}"
+                  .innerHTML="${threadPost.content}"
+                ></div>`}
             ${threadPost.poll
               ? html`<timeline-poll .post=${threadPost}></timeline-poll>`
               : null}

@@ -39,6 +39,10 @@ No other Mastodon client handles offline as well as Coho.
 
 Your timeline is cached locally so you can browse even without connectivity. Actions like likes and new posts queue up and sync seamlessly when you reconnect.
 
+### Seamless Mentions & Hashtags
+
+Stay in Coho when you tap `@mentions` or `#hashtags`—we route to the right profile or tag without bouncing you to a remote server where you then have to log in again etc.
+
 ### Smart Features, Powered On-Device
 
 Fast, private, and no server required—these features run entirely on your device:
@@ -53,13 +57,9 @@ Fast, private, and no server required—these features run entirely on your devi
 
 Install Coho on any device—iOS, Android, Windows, macOS, or Linux. It's a progressive web app with full offline support.
 
-### Modern Material Design
-
-Coho is inspired by Material Design, following the latest MD3 Expressive spec to a large degree. This gives Coho a modern, relaxed, touch friendly design that looks good on any device.
-
 ### Theming
 
-Choose your primary color and switch between Dark and Light modes.
+Choose your theme color! Coho also supports light and dark mode.
 
 ### Wellness Mode
 

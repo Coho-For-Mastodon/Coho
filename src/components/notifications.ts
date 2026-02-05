@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { msg, localized } from '@lit/localize';
 import { router } from '../router/routes';
 import { parseEmojis } from '../utils/emoji-parser';
+import { handleStatusContentClick } from '../utils/content-links';
 import {
   createIntersectionObserver,
   disconnectIntersectionObserver,
@@ -888,6 +889,7 @@ export class Notifications extends LitElement {
       <div class="post-preview">
         <div
           class="post-preview-content"
+          @click="${(e: Event) => handleStatusContentClick(e, status)}"
           .innerHTML="${parseEmojis(content, status.emojis || [])}"
         ></div>
         ${mediaAttachments.length > 0

@@ -20,6 +20,7 @@ import {
 } from './timeline-renderers';
 import './report-dialog';
 import type { ReportSubmitDetail } from './report-dialog';
+import { handleStatusContentClick } from '../utils/content-links';
 
 @customElement('timeline-item')
 export class TimelineItem extends LitElement {
@@ -1096,6 +1097,18 @@ export class TimelineItem extends LitElement {
     this.reportStatusId = undefined;
   }
 
+  private handleContentClick(
+    event: Event,
+    post: Post | null | undefined,
+    openPostOnNonLink: boolean = false
+  ) {
+    handleStatusContentClick(
+      event,
+      post,
+      openPostOnNonLink ? () => void this.openPost() : undefined
+    );
+  }
+
   private addToList(account: Account) {
     this.dispatchEvent(
       new CustomEvent('add-to-list', {
@@ -1124,6 +1137,11 @@ export class TimelineItem extends LitElement {
       openPost: () => this.openPost(),
       openParentPost: () => this.openParentPost(),
       openLinkCard: (url: string) => this.openLinkCard(url),
+      handleContentClick: (
+        event: Event,
+        post: Post | null | undefined,
+        openPostOnNonLink?: boolean
+      ) => this.handleContentClick(event, post, openPostOnNonLink),
       showThread: () => this.showThread(),
       muteUser: (accountId: string) => this.muteUser(accountId),
       blockUser: (accountId: string) => this.blockUser(accountId),
