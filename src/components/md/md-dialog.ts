@@ -16,6 +16,8 @@ export class MdDialog extends LitElement {
 
   @query('dialog') dialog!: HTMLDialogElement;
 
+  private openOrigin: { x: number; y: number } | null = null;
+
   static styles = [
     mdSharedStyles,
     css`
@@ -36,6 +38,8 @@ export class MdDialog extends LitElement {
           0 3px 14px 2px rgba(0, 0, 0, 0.12),
           0 5px 5px -3px rgba(0, 0, 0, 0.2);
         overflow: hidden;
+        transform-origin: var(--md-dialog-origin-x, 50%)
+          var(--md-dialog-origin-y, 50%);
       }
 
       dialog[open] {
@@ -189,7 +193,7 @@ export class MdDialog extends LitElement {
       @keyframes dialog-show {
         from {
           opacity: 0;
-          transform: scale(0.95);
+          transform: scale(var(--md-dialog-enter-scale, 0.95));
         }
         to {
           opacity: 1;
@@ -204,7 +208,7 @@ export class MdDialog extends LitElement {
         }
         to {
           opacity: 0;
-          transform: scale(0.95);
+          transform: scale(var(--md-dialog-exit-scale, 0.95));
         }
       }
 
@@ -289,6 +293,23 @@ export class MdDialog extends LitElement {
       if (!this.dialog.open) {
         this.dialog.showModal();
         this.open = true;
+
+        if (this.openOrigin) {
+          const rect = this.dialog.getBoundingClientRect();
+          const originX = this.openOrigin.x - rect.left;
+          const originY = this.openOrigin.y - rect.top;
+          this.dialog.style.setProperty('--md-dialog-origin-x', `${originX}px`);
+          this.dialog.style.setProperty('--md-dialog-origin-y', `${originY}px`);
+          this.dialog.style.setProperty('--md-dialog-enter-scale', '0.86');
+          this.dialog.style.setProperty('--md-dialog-exit-scale', '0.92');
+        } else {
+          this.dialog.style.removeProperty('--md-dialog-origin-x');
+          this.dialog.style.removeProperty('--md-dialog-origin-y');
+          this.dialog.style.removeProperty('--md-dialog-enter-scale');
+          this.dialog.style.removeProperty('--md-dialog-exit-scale');
+        }
+
+        this.openOrigin = null;
         this.dispatchEvent(
           new CustomEvent('md-dialog-show', {
             bubbles: true,
@@ -320,6 +341,10 @@ export class MdDialog extends LitElement {
         this.dialog.close();
       }
     }
+  }
+
+  public setOpenOrigin(origin?: { x: number; y: number } | null) {
+    this.openOrigin = origin ?? null;
   }
 
   private _handleCancel(e: Event) {

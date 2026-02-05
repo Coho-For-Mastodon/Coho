@@ -215,8 +215,13 @@ export class ImageCarousel extends LitElement {
     }, 100);
   }
 
-  async openInBox(image: MediaAttachment) {
+  async openInBox(image: MediaAttachment, event?: MouseEvent) {
     console.log('show image', image);
+    const target = event?.currentTarget as HTMLElement | null;
+    const rect = target?.getBoundingClientRect();
+    const origin = rect
+      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+      : undefined;
 
     window.dispatchEvent(
       new CustomEvent('preview-image', {
@@ -226,6 +231,7 @@ export class ImageCarousel extends LitElement {
           width: image.meta?.original?.width,
           height: image.meta?.original?.height,
           blurhash: image.blurhash,
+          origin,
         },
         bubbles: true,
         composed: true,
@@ -244,7 +250,7 @@ export class ImageCarousel extends LitElement {
               <div
                 class="image-container"
                 style="${style}"
-                @click="${() => this.openInBox(image)}"
+                @click="${(event: MouseEvent) => this.openInBox(image, event)}"
               >
                 ${blurhashUrl
                   ? html`<img

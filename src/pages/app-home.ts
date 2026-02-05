@@ -333,7 +333,16 @@ export class AppHome extends LitElement {
     localStorage.setItem('primary_color', color);
   }
 
-  async openNewDialog(shareName?: string) {
+  private _originFromEvent(
+    event?: Event | null
+  ): { x: number; y: number } | undefined {
+    const target = event?.currentTarget as HTMLElement | null;
+    const rect = target?.getBoundingClientRect();
+    if (!rect) return undefined;
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+
+  async openNewDialog(shareName?: string, origin?: { x: number; y: number }) {
     // Lazy load post-dialog component
     if (!this.postDialogLoaded) {
       if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
@@ -353,7 +362,7 @@ export class AppHome extends LitElement {
     // Wait for the post-dialog's own shadow DOM to render
     if (this.postDialog) {
       await this.postDialog.updateComplete;
-      this.postDialog.openNewDialog(shareName);
+      this.postDialog.openNewDialog(shareName, origin);
     }
   }
 
@@ -937,7 +946,9 @@ export class AppHome extends LitElement {
             .hasNewNotifications="${this.hasNewNotifications}"
             .activeTab="${this.tabController.activeTab}"
             @reload-home="${() => this.reloadHome()}"
-            @open-new-post="${() => this.openNewDialog()}"
+            @open-new-post="${(
+              event: CustomEvent<{ origin?: { x: number; y: number } }>
+            ) => this.openNewDialog(undefined, event.detail?.origin)}"
           ></home-tabs-nav>
 
           <md-tab-panel name="general">
@@ -1027,7 +1038,14 @@ export class AppHome extends LitElement {
           ? nothing
           : html`
               <div id="mobile-actions">
-                <md-button variant="fab" @click="${() => this.openNewDialog()}">
+                <md-button
+                  variant="fab"
+                  @click="${(event: MouseEvent) =>
+                    this.openNewDialog(
+                      undefined,
+                      this._originFromEvent(event)
+                    )}"
+                >
                   <md-icon src="/assets/add-outline.svg"></md-icon>
                 </md-button>
               </div>

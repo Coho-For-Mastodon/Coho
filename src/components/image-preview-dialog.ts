@@ -3,7 +3,6 @@ import { customElement, state, query } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './md/md-icon-button';
 import './md/md-icon';
-import './md/md-skeleton';
 
 @customElement('image-preview-dialog')
 export class ImagePreviewDialog extends LitElement {
@@ -13,6 +12,8 @@ export class ImagePreviewDialog extends LitElement {
   @state() width: number = 0;
   @state() height: number = 0;
   @state() loaded: boolean = false;
+  @state() placeholderWidth: number | null = null;
+  @state() placeholderHeight: number | null = null;
 
   // Swipe gesture state
   @state() private swipeOffset: number = 0;
@@ -24,7 +25,10 @@ export class ImagePreviewDialog extends LitElement {
 
   @query('dialog') dialog!: HTMLDialogElement;
   @query('.container') container!: HTMLElement;
+  @query('.image-wrapper') imageWrapper!: HTMLElement;
   @query('.close-button') closeButton!: HTMLElement;
+
+  private openOrigin: { x: number; y: number } | null = null;
 
   static styles = css`
     :host {
@@ -61,6 +65,12 @@ export class ImagePreviewDialog extends LitElement {
       user-select: none;
     }
 
+    dialog[open] .container {
+      transform-origin: var(--image-preview-origin-x, 50%)
+        var(--image-preview-origin-y, 50%);
+      animation: image-preview-open 0.28s cubic-bezier(0.2, 0, 0, 1);
+    }
+
     .image-wrapper {
       width: 100%;
       height: 100%;
@@ -72,16 +82,25 @@ export class ImagePreviewDialog extends LitElement {
       isolation: isolate;
     }
 
-    md-skeleton {
+    .placeholder-gradient {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      transition: opacity 0.3s ease-out;
+      border-radius: 4px;
+      background:
+        radial-gradient(
+          120% 120% at 20% 10%,
+          rgba(255, 255, 255, 0.18),
+          rgba(255, 255, 255, 0) 55%
+        ),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.18));
+      opacity: 0.85;
+      transition: opacity 0.2s ease-out;
       z-index: 1;
     }
 
-    md-skeleton.hidden {
+    .placeholder-gradient.hidden {
       opacity: 0;
     }
 
@@ -157,6 +176,17 @@ export class ImagePreviewDialog extends LitElement {
       transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       opacity: 0;
     }
+
+    @keyframes image-preview-open {
+      from {
+        opacity: 0;
+        transform: scale(var(--image-preview-enter-scale, 0.9));
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
   `;
 
   connectedCallback() {
@@ -195,6 +225,7 @@ export class ImagePreviewDialog extends LitElement {
   updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('open')) {
       if (this.open) {
+        this.applyOpenOrigin();
         if (this.dialog && !this.dialog.open) this.dialog.showModal();
       } else {
         if (this.dialog && this.dialog.open) this.dialog.close();
@@ -208,7 +239,14 @@ export class ImagePreviewDialog extends LitElement {
     this.width = e.detail.width;
     this.height = e.detail.height;
     this.loaded = false;
+    this.placeholderWidth = null;
+    this.placeholderHeight = null;
+    this.openOrigin = e.detail.origin ?? null;
     this.open = true;
+
+    await this.updateComplete;
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    this.updatePlaceholderSize();
 
     // Lazy load AI service to keep it out of main bundle
     const { isPromptAPIAvailable } = await import('../services/ai');
@@ -224,6 +262,41 @@ export class ImagePreviewDialog extends LitElement {
       this.loaded = true;
     }
   };
+
+  private updatePlaceholderSize() {
+    if (!this.imageWrapper || !this.width || !this.height) return;
+
+    const { width: maxWidth, height: maxHeight } =
+      this.imageWrapper.getBoundingClientRect();
+
+    if (!maxWidth || !maxHeight) return;
+
+    const scale = Math.min(maxWidth / this.width, maxHeight / this.height, 1);
+    this.placeholderWidth = Math.round(this.width * scale);
+    this.placeholderHeight = Math.round(this.height * scale);
+  }
+
+  private applyOpenOrigin() {
+    if (!this.dialog) return;
+
+    if (this.openOrigin) {
+      this.dialog.style.setProperty(
+        '--image-preview-origin-x',
+        `${this.openOrigin.x}px`
+      );
+      this.dialog.style.setProperty(
+        '--image-preview-origin-y',
+        `${this.openOrigin.y}px`
+      );
+      this.dialog.style.setProperty('--image-preview-enter-scale', '0.86');
+    } else {
+      this.dialog.style.removeProperty('--image-preview-origin-x');
+      this.dialog.style.removeProperty('--image-preview-origin-y');
+      this.dialog.style.removeProperty('--image-preview-enter-scale');
+    }
+
+    this.openOrigin = null;
+  }
 
   private async handleGenerateAlt() {
     const { generateAltText } = await import('../services/ai');
@@ -242,6 +315,8 @@ export class ImagePreviewDialog extends LitElement {
       this.width = 0;
       this.height = 0;
       this.loaded = false;
+      this.placeholderWidth = null;
+      this.placeholderHeight = null;
     }, 200);
   }
 
@@ -425,16 +500,20 @@ export class ImagePreviewDialog extends LitElement {
           @touchcancel="${this.handleTouchEnd}"
         >
           <div class="image-wrapper">
-            <md-skeleton
-              class="${this.loaded ? 'hidden' : ''}"
-              width="600px"
-              height="600px"
-            ></md-skeleton>
+            ${!this.loaded && this.placeholderWidth && this.placeholderHeight
+              ? html`<div
+                  class="placeholder-gradient ${this.loaded ? 'hidden' : ''}"
+                  style="width: ${this.placeholderWidth}px; height: ${this
+                    .placeholderHeight}px;"
+                  aria-hidden="true"
+                ></div>`
+              : null}
             <img
               class="${this.loaded ? 'loaded' : ''}"
               .src="${this.src}"
               .alt="${this.alt}"
               width="${ifDefined(this.width || undefined)}"
+              height="${ifDefined(this.height || undefined)}"
               @click="${(e: Event) => e.stopPropagation()}"
               @load="${this.handleImageLoad}"
             />

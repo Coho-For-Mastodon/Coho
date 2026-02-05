@@ -152,6 +152,10 @@ export type SelectChangeEvent = CustomEvent<SelectChangeDetail>;
 export interface PreviewImageDetail {
   src: string;
   alt?: string;
+  width?: number;
+  height?: number;
+  blurhash?: string;
+  origin?: { x: number; y: number };
 }
 
 /** Typed CustomEvent for preview-image */

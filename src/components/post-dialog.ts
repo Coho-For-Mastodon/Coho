@@ -161,9 +161,16 @@ export class PostDialog extends LitElement {
 
   // Public API
 
-  public async openNewDialog(shareName?: string) {
+  public async openNewDialog(
+    shareName?: string,
+    origin?: { x: number; y: number }
+  ) {
     await this.updateComplete;
     await customElements.whenDefined('md-dialog');
+
+    if (origin) {
+      this.notifyDialog?.setOpenOrigin(origin);
+    }
 
     this.notifyDialog?.show();
 

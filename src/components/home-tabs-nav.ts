@@ -36,9 +36,18 @@ export class HomeTabsNav extends LitElement {
     );
   }
 
-  private _handleOpenNewPost() {
+  private _handleOpenNewPost(event: MouseEvent) {
+    const target = event.currentTarget as HTMLElement | null;
+    const rect = target?.getBoundingClientRect();
+    const origin = rect
+      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+      : undefined;
     this.dispatchEvent(
-      new CustomEvent('open-new-post', { bubbles: true, composed: true })
+      new CustomEvent('open-new-post', {
+        bubbles: true,
+        composed: true,
+        detail: { origin },
+      })
     );
   }
 
