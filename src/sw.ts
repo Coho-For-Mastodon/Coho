@@ -122,7 +122,7 @@ async function networkFirst(
   const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (shouldCacheResponse(response)) {
       cache.put(request, response.clone());
     }
     return response;
@@ -148,10 +148,16 @@ async function cacheFirst(
     return cachedResponse;
   }
   const response = await fetch(request);
-  if (response.ok) {
+  if (shouldCacheResponse(response)) {
     cache.put(request, response.clone());
   }
   return response;
+}
+
+function shouldCacheResponse(response: Response): boolean {
+  // Cross-origin <img> requests are often opaque (status 0), but still safe
+  // to cache for offline/performance use-cases.
+  return response.ok || response.type === 'opaque';
 }
 
 // ============================================================================
