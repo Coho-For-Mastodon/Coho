@@ -76,8 +76,13 @@ export class AppProfile extends LitElement {
   @state() avatarReady: boolean = false;
   @state() isGuestMode: boolean = false;
   @state() avatarFailed: boolean = false;
+  private _currentProfileId: string | null = null;
+  private _loadRequestId = 0;
   private _mediaObserver: IntersectionObserver | null = null;
   private _listObserver: IntersectionObserver | null = null;
+  private _boundRouteChanged = () => {
+    void this.handleRouteChange();
+  };
 
   @query('#preview-content') private previewContent!: HTMLElement;
   @query('#edit') private editDialog!: MdDialog;
@@ -864,6 +869,7 @@ export class AppProfile extends LitElement {
     disconnectIntersectionObserver(this._listObserver);
     this._mediaObserver = null;
     this._listObserver = null;
+    router.removeEventListener('route-changed', this._boundRouteChanged);
   }
 
   updated(changedProperties: PropertyValues) {
@@ -914,73 +920,94 @@ export class AppProfile extends LitElement {
     // Check guest mode
     const { isGuestMode } = await import('../services/auth-state');
     this.isGuestMode = isGuestMode();
+    router.addEventListener('route-changed', this._boundRouteChanged);
+    await this.loadProfileFromUrl();
+  }
 
-    // get id from query string
+  private async handleRouteChange() {
+    const path = window.location.pathname;
+    if (path !== '/account') return;
+    await this.loadProfileFromUrl();
+  }
+
+  private async loadProfileFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
+    if (!id || id === this._currentProfileId) return;
 
-    if (id) {
-      // Check if viewing own profile (only matters for authenticated users)
-      const currentUserID = localStorage.getItem('currentUserID');
-      this.isOwnProfile = !this.isGuestMode && currentUserID === id;
+    this._currentProfileId = id;
+    const requestId = ++this._loadRequestId;
 
-      this.loadingProfile = true;
-      this.profileLoadFailed = false;
-      this.loadingPosts = true;
-      this._resetImageStates();
+    // Reset view state when switching profiles.
+    this.user = undefined;
+    this.posts = [];
+    this.pinnedPosts = [];
+    this.followed = false;
+    this.following = false;
+    this.muted = false;
+    this.blocked = false;
+    this.followStatusLoaded = false;
 
-      // Check if account was passed via Navigation API state (instant render path)
-      const navState = router.getNavigationState<AppNavigationState>();
-      if (navState?.account && navState.account.id === id) {
-        this.user = navState.account;
-        this.loadingProfile = false;
-      }
+    // Check if viewing own profile (only matters for authenticated users)
+    const currentUserID = localStorage.getItem('currentUserID');
+    this.isOwnProfile = !this.isGuestMode && currentUserID === id;
 
-      // Determine if we need to fetch relationship data
-      const shouldFetchRelationship = !this.isOwnProfile && !this.isGuestMode;
+    this.loadingProfile = true;
+    this.profileLoadFailed = false;
+    this.loadingPosts = true;
+    this._resetImageStates();
 
-      // Fetch account (if not already from nav state), posts, and relationship data in parallel
-      const [accountData, postsData, relationshipData, pinnedPostsData] =
-        await Promise.all([
-          // Skip account fetch if we already have it from navigation state
-          this.user ? Promise.resolve(this.user) : getAccount(id),
-          getUsersPosts(id),
-          // isFollowingMe returns the full relationship object with following, followed_by, muting, blocking
-          shouldFetchRelationship
-            ? isFollowingMe(id).catch(() => null)
-            : Promise.resolve(null),
-          getPinnedPosts(id),
-        ]);
+    // Check if account was passed via Navigation API state (instant render path)
+    const navState = router.getNavigationState<AppNavigationState>();
+    const navigationAccount =
+      navState?.account && navState.account.id === id ? navState.account : null;
+    if (navigationAccount) {
+      this.user = navigationAccount;
+      this.loadingProfile = false;
+    }
 
-      console.log(accountData);
+    // Determine if we need to fetch relationship data
+    const shouldFetchRelationship = !this.isOwnProfile && !this.isGuestMode;
 
-      if (accountData) {
-        this.user = accountData;
-      } else {
-        // Profile couldn't be loaded (offline with no cache)
-        this.profileLoadFailed = true;
-        this.loadingProfile = false;
-        this.loadingPosts = false;
-        return;
-      }
+    // Fetch account (if not already from nav state), posts, and relationship data in parallel
+    const [accountData, postsData, relationshipData, pinnedPostsData] =
+      await Promise.all([
+        navigationAccount ? Promise.resolve(navigationAccount) : getAccount(id),
+        getUsersPosts(id),
+        // isFollowingMe returns the full relationship object with following, followed_by, muting, blocking
+        shouldFetchRelationship
+          ? isFollowingMe(id).catch(() => null)
+          : Promise.resolve(null),
+        getPinnedPosts(id),
+      ]);
 
-      console.log(postsData);
-      this.posts = Array.isArray(postsData) ? postsData : [];
-      this.pinnedPosts = Array.isArray(pinnedPostsData) ? pinnedPostsData : [];
+    // Ignore stale async results after a newer profile load starts.
+    if (requestId !== this._loadRequestId) return;
+
+    if (accountData) {
+      this.user = accountData;
+    } else {
+      // Profile couldn't be loaded (offline with no cache)
+      this.profileLoadFailed = true;
       this.loadingProfile = false;
       this.loadingPosts = false;
+      return;
+    }
 
-      // Process relationship data if we fetched it
-      if (shouldFetchRelationship && relationshipData) {
-        console.log('relationshipData', relationshipData);
-        if (Array.isArray(relationshipData) && relationshipData[0]) {
-          this.followed = relationshipData[0].following;
-          this.following = relationshipData[0].followed_by;
-          this.muted = relationshipData[0].muting;
-          this.blocked = relationshipData[0].blocking;
-        }
-        this.followStatusLoaded = true;
+    this.posts = Array.isArray(postsData) ? postsData : [];
+    this.pinnedPosts = Array.isArray(pinnedPostsData) ? pinnedPostsData : [];
+    this.loadingProfile = false;
+    this.loadingPosts = false;
+
+    // Process relationship data if we fetched it
+    if (shouldFetchRelationship && relationshipData) {
+      if (Array.isArray(relationshipData) && relationshipData[0]) {
+        this.followed = relationshipData[0].following;
+        this.following = relationshipData[0].followed_by;
+        this.muted = relationshipData[0].muting;
+        this.blocked = relationshipData[0].blocking;
       }
+      this.followStatusLoaded = true;
     }
   }
 

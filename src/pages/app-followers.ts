@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 import { getUsersFollowers } from '../services/account';
+import { router } from '../router/routes';
 
 import '../components/user-profile';
 import type { Account } from '../mastodon/types';
@@ -10,6 +11,10 @@ import type { Account } from '../mastodon/types';
 @customElement('app-followers')
 export class AppFollowers extends LitElement {
   @state() followers: Account[] = [];
+  private _currentAccountId: string | null = null;
+  private _boundRouteChanged = () => {
+    void this.handleRouteChange();
+  };
 
   static styles = [
     css`
@@ -98,14 +103,28 @@ export class AppFollowers extends LitElement {
   ];
 
   async firstUpdated() {
-    // get id from url query params
+    router.addEventListener('route-changed', this._boundRouteChanged);
+    await this.loadFollowersFromUrl();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    router.removeEventListener('route-changed', this._boundRouteChanged);
+  }
+
+  private async handleRouteChange() {
+    if (window.location.pathname !== '/followers') return;
+    await this.loadFollowersFromUrl();
+  }
+
+  private async loadFollowersFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
+    if (!id || id === this._currentAccountId) return;
 
-    if (id) {
-      const followersData = await getUsersFollowers(id);
-      this.followers = [...followersData];
-    }
+    this._currentAccountId = id;
+    const followersData = await getUsersFollowers(id);
+    this.followers = Array.isArray(followersData) ? [...followersData] : [];
   }
 
   render() {

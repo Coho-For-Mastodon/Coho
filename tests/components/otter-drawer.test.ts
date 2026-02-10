@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fixture, html, elementUpdated, cleanupFixtures } from '../test-utils';
 import '../../src/components/otter-drawer';
-import type { OtterDrawer } from '../../src/components/otter-drawer';
+import type { CohoDrawer } from '../../src/components/otter-drawer';
 
 describe('otter-drawer', () => {
   beforeEach(() => {
@@ -9,7 +9,7 @@ describe('otter-drawer', () => {
   });
 
   it('toggles open state via show/hide and updates overlay', async () => {
-    const el = await fixture<OtterDrawer>(
+    const el = await fixture<CohoDrawer>(
       html`<otter-drawer label="Menu"></otter-drawer>`
     );
     await elementUpdated(el);
@@ -39,7 +39,7 @@ describe('otter-drawer', () => {
   });
 
   it('closes on Escape when open', async () => {
-    const el = await fixture<OtterDrawer>(html`<otter-drawer></otter-drawer>`);
+    const el = await fixture<CohoDrawer>(html`<otter-drawer></otter-drawer>`);
     await el.show();
     await elementUpdated(el);
 
