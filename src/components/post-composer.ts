@@ -1219,20 +1219,24 @@ export class PostComposer extends LitElement {
       const index = this.attachments.findIndex((a) => a.id === tempId);
       if (index !== -1) {
         const oldPreview = this.attachments[index].preview_url;
-        if (oldPreview.startsWith('blob:')) {
-          URL.revokeObjectURL(oldPreview);
+        const updatedAttachment: LocalAttachment = {
+          id: result.id,
+          preview_url: result.preview_url,
+          description: result.description,
+          pending: false,
+        };
+
+        if (this.activeAttachment?.id === tempId) {
+          this.activeAttachment = updatedAttachment;
         }
 
         this.attachments = this.attachments.map((a) =>
-          a.id === tempId
-            ? {
-                id: result.id,
-                preview_url: result.preview_url,
-                description: result.description,
-                pending: false,
-              }
-            : a
+          a.id === tempId ? updatedAttachment : a
         );
+
+        if (oldPreview.startsWith('blob:')) {
+          URL.revokeObjectURL(oldPreview);
+        }
       }
     } catch (err) {
       console.error('Failed to upload file:', err);

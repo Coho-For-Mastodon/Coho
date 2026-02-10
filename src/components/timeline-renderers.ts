@@ -29,7 +29,7 @@ export interface TimelineItemHandlers {
   reblog: (id: string) => void;
   togglePin: () => void;
   addToList: (account: Account) => void;
-  translatePost: (content: string | null) => void;
+  translatePost: (content: string | null, statusId?: string) => void;
   shareStatus: (tweet: Post | null) => void;
   deleteStatus: () => void;
   initEditStatus: () => void;
@@ -228,7 +228,7 @@ export function renderRegularTweet(
           <md-dropdown placement="bottom-end">
             <md-icon-button slot="trigger" name="ellipsis-vertical" label="More options" size="small"></md-icon-button>
             <md-menu>
-              <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null)}" title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}>
+              <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null, state.tweet?.id)}" title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}>
                 <md-icon slot="prefix" name="language"></md-icon>
                 ${msg('Translate')}
               </md-menu-item>
@@ -481,7 +481,10 @@ export function renderReblog(
           <md-menu>
             <md-menu-item
               @click="${() =>
-                handlers.translatePost(state.tweet?.reblog?.content || null)}"
+                handlers.translatePost(
+                  state.tweet?.reblog?.content || null,
+                  state.tweet?.reblog?.id
+                )}"
               title=${ifDefined(
                 state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined
               )}

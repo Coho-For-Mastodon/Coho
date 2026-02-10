@@ -134,6 +134,9 @@ declare global {
   }
 
   interface LanguageModelSession {
+    inputUsage?: number;
+    inputQuota?: number;
+    measureInputUsage?(messages: LanguageModelMessage[]): Promise<number>;
     prompt(messages: LanguageModelMessage[]): Promise<string>;
     promptStreaming(messages: LanguageModelMessage[]): AsyncIterable<string>;
     destroy(): void;
@@ -147,7 +150,7 @@ declare global {
   type LanguageModelContent =
     | { type: 'text'; value: string }
     | { type: 'image'; value: Blob | ArrayBuffer | HTMLCanvasElement }
-    | { type: 'audio'; value: ArrayBuffer };
+    | { type: 'audio'; value: Blob | AudioBuffer | BufferSource };
 
   const LanguageModel: LanguageModel;
 

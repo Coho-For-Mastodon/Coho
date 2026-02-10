@@ -105,6 +105,43 @@ export async function getPostDetail(id: string): Promise<Post> {
   return data;
 }
 
+interface PostTranslation {
+  content: string;
+  detected_source_language?: string;
+  provider?: string;
+}
+
+export async function translateStatus(
+  id: string,
+  language?: string
+): Promise<PostTranslation> {
+  const server = getServer();
+  const accessToken = getAccessToken();
+  const formData = new FormData();
+
+  if (language) {
+    formData.append('lang', language);
+  }
+
+  const response = await fetch(
+    `https://${server}/api/v1/statuses/${id}/translate`,
+    {
+      method: 'POST',
+      headers: new Headers({
+        Authorization: `Bearer ${accessToken}`,
+      }),
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to translate post: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
 export async function publishPost(
   post: string,
   ids?: Array<string>,
