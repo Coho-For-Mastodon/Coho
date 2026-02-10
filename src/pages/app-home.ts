@@ -41,7 +41,15 @@ import type { ListMembershipDialog } from '../components/list-membership-dialog'
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
 import { router } from '../router/routes';
-import { lazyLoad, componentLoaders } from '../utils/lazy-component-loader';
+import {
+  lazyLoad,
+  componentLoaders,
+  isLoaded,
+} from '../utils/lazy-component-loader';
+import {
+  ensureListMembershipDialogLoaded,
+  ensureListsDialogLoaded,
+} from '../utils/list-dialogs';
 import { LazyOverlayManager } from '../utils/lazy-overlay';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
@@ -88,8 +96,6 @@ export class AppHome extends LitElement {
   // Lazy loading states for dialogs
   @state() postDialogLoaded: boolean = false;
   @state() postDetailDialogLoaded: boolean = false;
-  @state() listsDialogLoaded: boolean = false;
-  @state() listMembershipDialogLoaded: boolean = false;
 
   // PWA Install states
   @state() showInstallPrompt: boolean = false;
@@ -447,11 +453,7 @@ export class AppHome extends LitElement {
   private async openListsDialog() {
     if (this.isGuestMode) return;
 
-    if (!this.listsDialogLoaded) {
-      if (await lazyLoad('listsDialog', componentLoaders.listsDialog)) {
-        this.listsDialogLoaded = true;
-      }
-    }
+    await ensureListsDialogLoaded();
 
     await this.overlays.show('lists-dialog');
     await customElements.whenDefined('lists-dialog');
@@ -464,16 +466,7 @@ export class AppHome extends LitElement {
 
     this.listMembershipAccount = account;
 
-    if (!this.listMembershipDialogLoaded) {
-      if (
-        await lazyLoad(
-          'listMembershipDialog',
-          componentLoaders.listMembershipDialog
-        )
-      ) {
-        this.listMembershipDialogLoaded = true;
-      }
-    }
+    await ensureListMembershipDialogLoaded();
 
     await this.overlays.show('list-membership-dialog');
     await customElements.whenDefined('list-membership-dialog');
@@ -598,9 +591,13 @@ export class AppHome extends LitElement {
     if (this.loadedTabs.has(tabName)) return;
 
     const loader = componentLoaders[config.loaderKey];
-    if (await lazyLoad(config.loaderKey, loader)) {
-      this.loadedTabs.add(tabName);
-      this.requestUpdate();
+    const alreadyLoaded = isLoaded(config.loaderKey);
+    const loadedNow = alreadyLoaded
+      ? false
+      : await lazyLoad(config.loaderKey, loader);
+
+    if (alreadyLoaded || loadedNow) {
+      this.loadedTabs = new Set(this.loadedTabs).add(tabName);
     }
   }
 

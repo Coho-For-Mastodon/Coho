@@ -41,6 +41,41 @@ export class Notifications extends LitElement {
   private _loadObserver: IntersectionObserver | null = null;
   private _activeRoot: Element | null = null;
 
+  private _applyFollowStatuses(
+    results: Array<{ id: string; following: boolean }>
+  ) {
+    const followById = new Map(
+      results.map(({ id, following }) => [id, following])
+    );
+    let hasChanges = false;
+
+    const updatedNotifications = this.notifications.map((notification) => {
+      if (notification.type !== 'follow') return notification;
+
+      const following = followById.get(notification.account.id);
+      if (following === undefined) return notification;
+
+      const currentFollowing = (
+        notification as Notification & { _cohoFollowing?: boolean }
+      )._cohoFollowing;
+      if (currentFollowing === following) return notification;
+
+      hasChanges = true;
+      return {
+        ...notification,
+        _cohoFollowing: following,
+      } as Notification;
+    });
+
+    if (hasChanges) {
+      this.notifications = updatedNotifications;
+    }
+  }
+
+  private _setFollowStatusForAccount(accountId: string, following: boolean) {
+    this._applyFollowStatuses([{ id: accountId, following }]);
+  }
+
   static styles = [
     css`
       :host {
@@ -639,6 +674,7 @@ export class Notifications extends LitElement {
       newMap.set(id, following);
     });
     this.followingMap = newMap;
+    this._applyFollowStatuses(results);
   }
 
   private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
@@ -771,6 +807,7 @@ export class Notifications extends LitElement {
       const newFollowingMap = new Map(this.followingMap);
       newFollowingMap.set(accountId, true);
       this.followingMap = newFollowingMap;
+      this._setFollowStatusForAccount(accountId, true);
     } catch (err) {
       console.error('Failed to follow user:', err);
     } finally {
@@ -931,7 +968,11 @@ export class Notifications extends LitElement {
 
   renderFollowNotification(notification: Notification) {
     const account = notification.account;
-    const isFollowing = this.followingMap.get(account.id) ?? false;
+    const isFollowing =
+      (notification as Notification & { _cohoFollowing?: boolean })
+        ._cohoFollowing ??
+      this.followingMap.get(account.id) ??
+      false;
     const isLoading = this.loadingFollowMap.get(account.id) ?? false;
 
     // Strip HTML tags from bio for cleaner preview
