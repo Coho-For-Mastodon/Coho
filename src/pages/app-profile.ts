@@ -313,6 +313,7 @@ export class AppProfile extends LitElement {
         grid-template-columns: repeat(3, 1fr);
         gap: 2px;
         padding-bottom: 20px;
+        min-height: 20vh;
       }
 
       /* New CSS Grid Masonry (Grid Lanes) */
