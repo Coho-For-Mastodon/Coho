@@ -7,6 +7,7 @@ import './md/md-text-field.js';
 import './md/md-text-area.js';
 import './md/md-icon.js';
 import './md/md-icon-button.js';
+import './md/md-dialog.js';
 import './md/md-select.js';
 import './md/md-option.js';
 import './md/md-checkbox.js';
@@ -40,9 +41,8 @@ import {
 } from '../utils/mention-utils';
 import {
   buildDraftKey,
-  deleteDraft,
-  loadDraft,
-  saveDraft,
+  listDraftsForContext,
+  saveDraftForContext,
   type DraftPost,
 } from '../services/drafts';
 
@@ -80,6 +80,7 @@ export interface ComposerSubmitEvent {
  *
  * @fires submit - Dispatched when the user submits the post
  * @fires published - Dispatched after the post is successfully published (when autoPublish is true)
+ * @fires draft-saved - Dispatched after a draft is successfully saved
  */
 @localized()
 @customElement('post-composer')
@@ -165,15 +166,15 @@ export class PostComposer extends LitElement {
 
   // Draft state
   @state() draftStatus: 'idle' | 'saving' | 'saved' = 'idle';
-  @state() draftAvailable: boolean = false;
-  @state() draftApplied: boolean = false;
+  @state() availableDrafts: DraftPost[] = [];
+  @state() draftPickerOpen: boolean = false;
+  @state() selectedDraftId: string = '';
 
   // MediaRecorder for speech-to-text
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
 
   private draftKey: string | null = null;
-  private draftSnapshot: DraftPost | null = null;
 
   private mentionQueryRange: { start: number; end: number } | null = null;
   private mentionSearchTimer: number | null = null;
@@ -444,6 +445,25 @@ export class PostComposer extends LitElement {
     .draft-status {
       font-size: var(--md-sys-typescale-label-small-font-size, 11px);
       color: var(--md-sys-color-on-surface-variant, #cac4d0);
+    }
+
+    .draft-picker {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: min(440px, calc(100vw - 64px));
+    }
+
+    .draft-picker-copy {
+      margin: 0;
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+      font-size: var(--md-sys-typescale-body-medium-font-size, 14px);
+    }
+
+    .draft-picker-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
     }
 
     /* Attachment previews */
@@ -1689,7 +1709,6 @@ export class PostComposer extends LitElement {
 
       // Success
       this._resetState();
-      void this._clearDraft();
       worker.terminate();
 
       this.dispatchEvent(
@@ -1718,7 +1737,8 @@ export class PostComposer extends LitElement {
     this.sensitive = false;
     this.spoilerText = '';
     this.statusText = '';
-    this.draftApplied = false;
+    this.draftStatus = 'idle';
+    this.draftPickerOpen = false;
     this.proofreadResult = null;
     this.isRecording = false;
     this.isTranscribing = false;
@@ -1769,26 +1789,15 @@ export class PostComposer extends LitElement {
   private async _loadDraftForContext() {
     const key = this._getDraftKey();
     this.draftKey = key;
-    this.draftSnapshot = null;
-    this.draftAvailable = false;
-    this.draftApplied = false;
+    this.availableDrafts = [];
+    this.selectedDraftId = '';
+    this.draftPickerOpen = false;
 
     if (!key) return;
-
-    const draft = await loadDraft(key);
-    if (!draft) return;
-
-    this.draftSnapshot = draft;
-    this.draftAvailable = true;
-
-    if (!this._hasDraftContent()) {
-      await this._applyDraft(draft);
-    }
+    await this._refreshDraftList(key);
   }
 
   private async _applyDraft(draft: DraftPost) {
-    this.draftApplied = true;
-
     this.statusText = draft.status ?? '';
     this.visibility = draft.visibility ?? 'public';
     this.sensitive = !!draft.sensitive;
@@ -1842,6 +1851,23 @@ export class PostComposer extends LitElement {
     this.draftStatus = 'saved';
   }
 
+  private async _refreshDraftList(keyOverride?: string) {
+    const activeKey = keyOverride ?? this.draftKey;
+    if (!activeKey) {
+      this.availableDrafts = [];
+      this.selectedDraftId = '';
+      return;
+    }
+
+    const drafts = await listDraftsForContext(activeKey);
+    if (this.draftKey !== activeKey) return;
+
+    this.availableDrafts = drafts;
+    if (!drafts.some((draft) => draft.id === this.selectedDraftId)) {
+      this.selectedDraftId = drafts[0]?.id ?? '';
+    }
+  }
+
   private _restorePendingAttachment(file: File, description: string | null) {
     const tempId = `temp-${Date.now()}-${Math.random()}`;
     const previewUrl = URL.createObjectURL(file);
@@ -1860,10 +1886,7 @@ export class PostComposer extends LitElement {
   private async _saveDraft() {
     if (!this.draftKey) return;
 
-    if (!this._hasDraftContent()) {
-      await this._clearDraft();
-      return;
-    }
+    if (!this._hasDraftContent()) return;
 
     this.draftStatus = 'saving';
 
@@ -1877,8 +1900,7 @@ export class PostComposer extends LitElement {
       file: attachment.file,
     }));
 
-    const draft: DraftPost = {
-      id: this.draftKey,
+    const savedDraft = await saveDraftForContext(this.draftKey, {
       status: this.statusText,
       visibility: this.visibility,
       sensitive: this.sensitive,
@@ -1892,27 +1914,63 @@ export class PostComposer extends LitElement {
         : null,
       replyToId: this.replyTo?.id ?? null,
       attachments,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await saveDraft(this.draftKey, draft);
-    this.draftSnapshot = draft;
-    this.draftAvailable = true;
+    });
+    await this._refreshDraftList();
+    this.selectedDraftId = savedDraft.id;
     this.draftStatus = 'saved';
+
+    this.dispatchEvent(
+      new CustomEvent('draft-saved', {
+        bubbles: true,
+        composed: true,
+        detail: { draftId: savedDraft.id },
+      })
+    );
   }
 
-  private async _clearDraft() {
+  private async _openDraftPicker() {
     if (!this.draftKey) return;
-    await deleteDraft(this.draftKey);
-    this.draftSnapshot = null;
-    this.draftAvailable = false;
-    this.draftApplied = false;
-    this.draftStatus = 'idle';
+    await this._refreshDraftList();
+    if (this.availableDrafts.length === 0) return;
+
+    if (!this.selectedDraftId) {
+      this.selectedDraftId = this.availableDrafts[0].id;
+    }
+    this.draftPickerOpen = true;
   }
 
-  private async _loadDraftFromSnapshot() {
-    if (!this.draftSnapshot) return;
-    await this._applyDraft(this.draftSnapshot);
+  private _closeDraftPicker() {
+    this.draftPickerOpen = false;
+  }
+
+  private _handleDraftSelectionChange(
+    e: CustomEvent<{ value: string; oldValue: string }>
+  ) {
+    this.selectedDraftId = e.detail.value;
+  }
+
+  private _formatDraftOptionLabel(draft: DraftPost): string {
+    const trimmedStatus = draft.status.replace(/\s+/g, ' ').trim();
+    const statusPreview =
+      trimmedStatus.length > 64
+        ? `${trimmedStatus.slice(0, 61)}...`
+        : trimmedStatus;
+    const preview = statusPreview || msg('Untitled draft');
+    const parsedDate = Date.parse(draft.updatedAt);
+    const formattedDate = Number.isNaN(parsedDate)
+      ? draft.updatedAt
+      : new Date(parsedDate).toLocaleString();
+    return `${formattedDate} - ${preview}`;
+  }
+
+  private async _loadSelectedDraft() {
+    const draft = this.availableDrafts.find(
+      (entry) => entry.id === this.selectedDraftId
+    );
+    if (!draft) return;
+
+    await this._applyDraft(draft);
+    this._closeDraftPicker();
     showInfoToast(msg('Draft loaded'));
   }
 
@@ -2299,23 +2357,20 @@ export class PostComposer extends LitElement {
 
   private _renderFooter() {
     const canSaveDraft = this._hasDraftContent();
-    const showLoadDraft = this.draftAvailable && !this.draftApplied;
+    const hasSavedDrafts = this.availableDrafts.length > 0;
 
     return html`
       <div class="footer-actions">
         <div class="footer-meta">
-          ${showLoadDraft
-            ? html`
-                <md-button
-                  size="small"
-                  variant="text"
-                  class="draft-action"
-                  @click="${() => this._loadDraftFromSnapshot()}"
-                >
-                  ${msg('Load draft')}
-                </md-button>
-              `
-            : nothing}
+          <md-button
+            size="small"
+            variant="text"
+            class="draft-action"
+            ?disabled=${!hasSavedDrafts}
+            @click="${() => this._openDraftPicker()}"
+          >
+            ${msg('Load draft')}
+          </md-button>
           <md-button
             size="small"
             variant="text"
@@ -2348,6 +2403,48 @@ export class PostComposer extends LitElement {
     `;
   }
 
+  private _renderDraftPickerDialog() {
+    return html`
+      <md-dialog
+        label=${msg('Load draft')}
+        .open=${this.draftPickerOpen}
+        @md-dialog-hide=${() => this._closeDraftPicker()}
+      >
+        <div class="draft-picker">
+          <p class="draft-picker-copy">
+            ${msg('Choose one of your saved drafts.')}
+          </p>
+          <md-select
+            .value=${this.selectedDraftId}
+            placeholder=${msg('Select a draft')}
+            @change=${this._handleDraftSelectionChange}
+          >
+            ${this.availableDrafts.map(
+              (draft) => html`
+                <md-option value="${draft.id}">
+                  ${this._formatDraftOptionLabel(draft)}
+                </md-option>
+              `
+            )}
+          </md-select>
+        </div>
+
+        <div slot="footer" class="draft-picker-actions">
+          <md-button variant="text" @click=${() => this._closeDraftPicker()}>
+            ${msg('Cancel')}
+          </md-button>
+          <md-button
+            variant="filled"
+            ?disabled=${!this.selectedDraftId}
+            @click=${() => this._loadSelectedDraft()}
+          >
+            ${msg('Load draft')}
+          </md-button>
+        </div>
+      </md-dialog>
+    `;
+  }
+
   render() {
     return html`
       <div class="composer-wrapper">
@@ -2356,6 +2453,8 @@ export class PostComposer extends LitElement {
         ${this._renderPoll()} ${this._renderAttachments()}
         ${this._renderFooter()}
       </div>
+
+      ${this._renderDraftPickerDialog()}
 
       <media-edit-dialog
         .open="${this.editDialogOpen}"
