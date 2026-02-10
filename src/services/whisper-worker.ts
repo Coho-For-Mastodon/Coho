@@ -8,22 +8,63 @@ const PipelineFactory = {
   task: 'automatic-speech-recognition',
   model: 'Xenova/whisper-tiny.en',
   instance: null as Promise<unknown> | null,
-
+  isInitialized: false,
   async getInstance(
     progress_callback: ((data: unknown) => void) | undefined = undefined
   ) {
     if (this.instance === null) {
-      this.instance = pipeline('automatic-speech-recognition', this.model, {
-        progress_callback,
-      });
+      this.instance = (async () => {
+        try {
+          return await pipeline('automatic-speech-recognition', this.model, {
+            progress_callback,
+            device: 'webgpu',
+          });
+        } catch (webGpuError) {
+          console.warn(
+            'Whisper webgpu init failed, falling back to default backend:',
+            webGpuError
+          );
+          return pipeline('automatic-speech-recognition', this.model, {
+            progress_callback,
+          });
+        }
+      })();
     }
 
-    return this.instance;
+    try {
+      const instance = await this.instance;
+      this.isInitialized = true;
+      return instance;
+    } catch (error) {
+      // Allow retries after initialization failures
+      this.instance = null;
+      this.isInitialized = false;
+      throw error;
+    }
   },
 };
 
 self.addEventListener('message', async (event) => {
   const { type, id, audioData } = event.data;
+
+  if (type === 'init') {
+    try {
+      await PipelineFactory.getInstance((_data: unknown) => {
+        // Optional: emit download/progress updates in the future
+      });
+
+      self.postMessage({
+        type: 'initialized',
+        id,
+      });
+    } catch (error) {
+      self.postMessage({
+        type: 'error',
+        id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
 
   if (type === 'transcribe') {
     try {

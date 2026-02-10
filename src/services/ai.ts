@@ -60,7 +60,11 @@ export const summarize = async (prompt: string) => {
   }
 };
 
-export const translate = async (prompt: string, language: string = 'en-us') => {
+export const translate = async (
+  prompt: string,
+  language: string = 'en-us',
+  statusId?: string
+) => {
   // Use Chrome's built-in Translator API
   try {
     // Check if the API is available
@@ -91,7 +95,7 @@ export const translate = async (prompt: string, language: string = 'en-us') => {
 
     // Skip translation if source and target are the same
     if (sourceLanguage === targetLanguage) {
-      return { translation: prompt };
+      return prompt;
     }
     console.log(
       'Checking translator capabilities for',
@@ -129,21 +133,16 @@ export const translate = async (prompt: string, language: string = 'en-us') => {
     return translatedText;
   } catch (error) {
     console.error('Translator API error:', error);
+    if (!statusId) {
+      throw new Error('Mastodon translation fallback requires a status ID');
+    }
 
-    const response = await fetch(
-      `${FIREBASE_FUNCTIONS_BASE_URL}/translateStatus?content=${encodeURIComponent(
-        prompt
-      )}&language=${language}`,
-      {
-        method: 'GET',
-        headers: new Headers({
-          'Content-Type': 'application/json',
-        }),
-      }
-    );
-    console.log('translate response', response);
-    const data = await response.json();
-    return data;
+    const targetLanguage = language.split('-')[0].toLowerCase();
+    const { translateStatus } = await import('./posts');
+    const data = await translateStatus(statusId, targetLanguage);
+
+    // Mastodon returns HTML in content; keep dialog output plain text.
+    return data.content.replace(/(<([^>]+)>)/gi, '');
   }
 };
 
@@ -493,12 +492,24 @@ export const isOnDeviceSummarizationAvailable = (): boolean => {
 
 // Lazy-loaded Whisper worker for transformers.js
 let whisperWorker: Worker | null = null;
-let whisperWorkerReady = false;
+let whisperModelReady = false;
+let whisperModelInitPromise: Promise<void> | null = null;
 let messageId = 0;
 const pendingRequests = new Map<
   number,
   { resolve: (text: string | null) => void; reject: (error: Error) => void }
 >();
+const pendingInitRequests = new Map<
+  number,
+  { resolve: () => void; reject: (error: Error) => void }
+>();
+
+const rejectPendingWhisperRequests = (error: Error) => {
+  pendingInitRequests.forEach(({ reject }) => reject(error));
+  pendingInitRequests.clear();
+  pendingRequests.forEach(({ reject }) => reject(error));
+  pendingRequests.clear();
+};
 
 /**
  * Convert audio blob to the format Whisper expects (Float32Array at 16kHz)
@@ -549,19 +560,8 @@ const convertAudioForWhisper = async (
  */
 const getWhisperWorker = (): Promise<Worker> => {
   return new Promise((resolve, reject) => {
-    if (whisperWorker && whisperWorkerReady) {
-      resolve(whisperWorker);
-      return;
-    }
-
     if (whisperWorker) {
-      // Worker exists but not ready yet, wait for it
-      const checkReady = setInterval(() => {
-        if (whisperWorkerReady) {
-          clearInterval(checkReady);
-          resolve(whisperWorker!);
-        }
-      }, 50);
+      resolve(whisperWorker);
       return;
     }
 
@@ -576,10 +576,27 @@ const getWhisperWorker = (): Promise<Worker> => {
       const { type, id, text, error } = event.data;
 
       if (type === 'ready') {
-        console.log('Whisper worker ready');
-        whisperWorkerReady = true;
-        resolve(whisperWorker!);
+        console.log('Whisper worker script ready');
         return;
+      }
+
+      if (type === 'initialized') {
+        whisperModelReady = true;
+        const pendingInit = pendingInitRequests.get(id);
+        if (pendingInit) {
+          pendingInitRequests.delete(id);
+          pendingInit.resolve();
+        }
+        return;
+      }
+
+      if (type === 'error') {
+        const pendingInit = pendingInitRequests.get(id);
+        if (pendingInit) {
+          pendingInitRequests.delete(id);
+          pendingInit.reject(new Error(error));
+          return;
+        }
       }
 
       if (type === 'result' || type === 'error') {
@@ -597,9 +614,42 @@ const getWhisperWorker = (): Promise<Worker> => {
 
     whisperWorker.onerror = (error) => {
       console.error('Whisper worker error:', error);
+      whisperModelReady = false;
+      whisperModelInitPromise = null;
+      rejectPendingWhisperRequests(
+        new Error(error.message || 'Whisper worker error')
+      );
+      whisperWorker = null;
       reject(error);
     };
+
+    resolve(whisperWorker);
   });
+};
+
+/**
+ * Ensure Whisper model is loaded before sending transcription jobs
+ */
+const ensureWhisperModelReady = async (worker: Worker): Promise<void> => {
+  if (whisperModelReady) return;
+
+  if (whisperModelInitPromise) {
+    await whisperModelInitPromise;
+    return;
+  }
+
+  const id = ++messageId;
+  whisperModelInitPromise = new Promise<void>((resolve, reject) => {
+    pendingInitRequests.set(id, { resolve, reject });
+    worker.postMessage({ type: 'init', id });
+  });
+
+  try {
+    await whisperModelInitPromise;
+  } catch (error) {
+    whisperModelInitPromise = null;
+    throw error;
+  }
 };
 
 /**
@@ -615,6 +665,7 @@ const transcribeWithTransformers = async (
   const audioData = await convertAudioForWhisper(audioBlob);
 
   const worker = await getWhisperWorker();
+  await ensureWhisperModelReady(worker);
   const id = ++messageId;
 
   return new Promise((resolve, reject) => {
@@ -634,6 +685,9 @@ const transcribeWithTransformers = async (
 /**
  * Transcribe audio using Chrome's on-device Prompt API (LanguageModel)
  */
+const TRANSCRIPTION_PROMPT =
+  'Please transcribe the following audio recording word for word. Return only the spoken words, nothing else.';
+
 const transcribeWithPromptAPI = async (
   audioBlob: Blob
 ): Promise<string | null> => {
@@ -644,9 +698,6 @@ const transcribeWithPromptAPI = async (
     audioBlob.type
   );
 
-  const arrayBuffer = await audioBlob.arrayBuffer();
-  console.log('ArrayBuffer size:', arrayBuffer.byteLength);
-
   const params = await LanguageModel.params();
   console.log('LanguageModel params:', params);
 
@@ -656,32 +707,50 @@ const transcribeWithPromptAPI = async (
     topK: params.defaultTopK,
   });
 
-  let result = '';
-  const stream = session.promptStreaming([
-    {
-      role: 'user',
-      content: [
-        {
-          type: 'text',
-          value:
-            'Please transcribe the following audio recording word for word. Return only the spoken words, nothing else.',
-        },
-        { type: 'audio', value: arrayBuffer },
-      ],
-    },
-  ]);
+  try {
+    const messages = [
+      {
+        role: 'user' as const,
+        content: [
+          { type: 'text' as const, value: TRANSCRIPTION_PROMPT },
+          { type: 'audio' as const, value: audioBlob },
+        ],
+      },
+    ];
 
-  for await (const chunk of stream) {
-    console.log('Transcription chunk:', chunk);
-    // Chunks are individual tokens, concatenate them
-    result += chunk;
+    const hasQuotaInfo =
+      typeof session.inputUsage === 'number' &&
+      typeof session.inputQuota === 'number';
+    const canMeasureInput = typeof session.measureInputUsage === 'function';
+
+    if (hasQuotaInfo && canMeasureInput && session) {
+      const availableTokens = Math.max(
+        0,
+        session!.inputQuota! - session!.inputUsage!
+      );
+      const measuredTokens = await session!.measureInputUsage!(messages);
+
+      if (measuredTokens > availableTokens) {
+        throw new Error(
+          `Prompt API quota too low for audio transcription (${measuredTokens} required > ${availableTokens} available)`
+        );
+      }
+    }
+
+    let result = '';
+    const stream = session.promptStreaming(messages);
+
+    for await (const chunk of stream) {
+      console.log('Transcription chunk:', chunk);
+      // Chunks are individual tokens, concatenate them
+      result += chunk;
+    }
+
+    console.log('Final transcription result:', result);
+    return result.trim();
+  } finally {
+    session.destroy();
   }
-
-  // Clean up
-  session.destroy();
-
-  console.log('Final transcription result:', result);
-  return result.trim();
 };
 
 /**
