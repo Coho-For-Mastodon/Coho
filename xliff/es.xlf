@@ -286,10 +286,6 @@
   <source>What is this?</source>
   <target>¿Qué es esto?</target>
 </trans-unit>
-<trans-unit id="s5dcb461b65a0024b">
-  <source>Coho is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.</source>
-  <target>Coho es un cliente de Mastodon construido con tecnologías web. Es una aplicación web progresiva, lo que significa que puedes instalarla en tu teléfono o escritorio. También es de código abierto y se puede encontrar en GitHub.</target>
-</trans-unit>
 <trans-unit id="s321c03399a143242">
   <source>Create Account</source>
   <target>Crear Cuenta</target>
@@ -309,10 +305,6 @@
 <trans-unit id="s7e8e808d9576fe5e">
   <source>Account Confirmed, Login</source>
   <target>Cuenta Confirmada, Iniciar Sesión</target>
-</trans-unit>
-<trans-unit id="sf7902ac2315ab44d">
-  <source>Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Coho and login to start using Coho as your Mastodon client.</source>
-  <target>Mastodon es una red social descentralizada que permite a los usuarios crear y unirse a comunidades de su interés. Para usar Mastodon, necesitas elegir un servidor que aloje tu cuenta y te conecte con otros servidores. Elegir un servidor es una decisión importante, ya que afecta tu privacidad, moderación y políticas de contenido. Puedes explorar la lista de servidores a continuación para encontrar uno que se adapte a tus necesidades y preferencias. Una vez que hayas creado una cuenta en el servidor elegido, vuelve a Coho e inicia sesión para comenzar a usar Coho como tu cliente de Mastodon.</target>
 </trans-unit>
 <trans-unit id="s279b9e6f821888b9">
   <source><x id="0" equiv-text="${server.users}"/> users</source>
@@ -477,14 +469,6 @@
 <trans-unit id="s3572098e54bce8fc">
   <source>Close drawer</source>
   <target>Cerrar cajón</target>
-</trans-unit>
-<trans-unit id="s8e99c858052cb7c9">
-  <source>You have entered offline mode. Coho will still work, including if you close and reopen the app, but some functionality may be limited.</source>
-  <target>Has entrado en modo sin conexión. Coho seguirá funcionando, incluso si cierras y vuelves a abrir la aplicación, pero algunas funciones pueden estar limitadas.</target>
-</trans-unit>
-<trans-unit id="s87faee1360273399">
-  <source>You are back online. Coho will resume normal functionality.</source>
-  <target>Estás de vuelta en línea. Coho reanudará su funcionamiento normal.</target>
 </trans-unit>
 <trans-unit id="sbd1a5d538201dae8">
   <source>Launch from your dock or home screen</source>
@@ -1316,6 +1300,21 @@
 </trans-unit>
 <trans-unit id="s1d38ea159eb7063f">
   <source>Draft saved</source>
+</trans-unit>
+<trans-unit id="s2cea62b7e6d106e0">
+  <source>You have entered offline mode. Coho will still work, including if you close and reopen the app, but some functionality may be limited.</source>
+</trans-unit>
+<trans-unit id="sefe7f55f21e4335c">
+  <source>You are back online. Coho will resume normal functionality.</source>
+</trans-unit>
+<trans-unit id="s5c1b3310ecdc878c">
+  <source>Coho is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.</source>
+</trans-unit>
+<trans-unit id="s9ad3e85be89be269">
+  <source>Add @<x id="0" equiv-text="${this.user?.acct}"/> to list</source>
+</trans-unit>
+<trans-unit id="s127804f48e0e56ef">
+  <source>Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Coho and login to start using Coho as your Mastodon client.</source>
 </trans-unit>
 </body>
 </file>
