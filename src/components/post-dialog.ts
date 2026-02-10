@@ -335,6 +335,10 @@ export class PostDialog extends LitElement {
     this.aiBlob = undefined;
   }
 
+  private _handleDraftSaved() {
+    this.notifyDialog?.hide();
+  }
+
   render() {
     return html`
       <md-dialog
@@ -346,6 +350,7 @@ export class PostDialog extends LitElement {
       >
         <post-composer
           @published=${this._handlePublished}
+          @draft-saved=${this._handleDraftSaved}
           rows="6"
         ></post-composer>
 
