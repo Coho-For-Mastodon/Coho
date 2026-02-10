@@ -50,6 +50,10 @@ import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 import { editPost } from '../services/posts';
 import { router, type AppNavigationState } from '../router/routes';
+import {
+  ensureListMembershipDialogLoaded,
+  ensureListsDialogLoaded,
+} from '../utils/list-dialogs';
 
 @localized()
 @customElement('app-profile')
@@ -76,6 +80,8 @@ export class AppProfile extends LitElement {
   @state() avatarReady: boolean = false;
   @state() isGuestMode: boolean = false;
   @state() avatarFailed: boolean = false;
+  @state() showListMembershipDialog: boolean = false;
+  @state() showListsDialog: boolean = false;
   private _mediaObserver: IntersectionObserver | null = null;
   private _listObserver: IntersectionObserver | null = null;
 
@@ -1256,6 +1262,39 @@ export class AppProfile extends LitElement {
     this.showReportDialog = true;
   }
 
+  async openListMembershipDialog() {
+    if (!this.user) return;
+
+    if (this.isGuestMode) {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: 'Sign in to add users to lists',
+            variant: 'info',
+          },
+        })
+      );
+      return;
+    }
+
+    await ensureListMembershipDialogLoaded();
+
+    this.showListMembershipDialog = true;
+  }
+
+  async openListsDialog() {
+    if (this.isGuestMode) return;
+
+    await ensureListsDialogLoaded();
+
+    this.showListsDialog = true;
+  }
+
+  async handleOpenManageListsFromMembership() {
+    this.showListMembershipDialog = false;
+    await this.openListsDialog();
+  }
+
   async handleReportSubmit(e: CustomEvent<ReportSubmitDetail>) {
     const detail = e.detail;
 
@@ -1513,6 +1552,12 @@ export class AppProfile extends LitElement {
                                 ${msg(str`Block @${this.user?.acct}`)}
                               </md-menu-item>`}
                           <md-menu-item
+                            @click="${() => this.openListMembershipDialog()}"
+                          >
+                            <md-icon slot="prefix" name="albums"></md-icon>
+                            ${msg(str`Add @${this.user?.acct} to list`)}
+                          </md-menu-item>
+                          <md-menu-item
                             @click="${() => this.openReportDialog()}"
                           >
                             <md-icon slot="prefix" name="flag"></md-icon>
@@ -1754,6 +1799,22 @@ export class AppProfile extends LitElement {
         @report-submit=${this.handleReportSubmit}
         @report-cancel=${this.handleReportCancel}
       ></report-dialog>
+
+      ${this.showListMembershipDialog
+        ? html`<list-membership-dialog
+            .open=${this.showListMembershipDialog}
+            .account=${this.user ?? null}
+            @md-dialog-hide=${() => (this.showListMembershipDialog = false)}
+            @open-manage-lists=${() =>
+              this.handleOpenManageListsFromMembership()}
+          ></list-membership-dialog>`
+        : null}
+      ${this.showListsDialog
+        ? html`<lists-dialog
+            .open=${this.showListsDialog}
+            @md-dialog-hide=${() => (this.showListsDialog = false)}
+          ></lists-dialog>`
+        : null}
 
       <!-- Post Detail Dialog -->
       <post-detail-dialog></post-detail-dialog>
