@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 import { getFollowing } from '../services/account';
+import { router } from '../router/routes';
 
 import '../components/user-profile';
 import type { Account } from '../mastodon/types';
@@ -10,6 +11,10 @@ import type { Account } from '../mastodon/types';
 @customElement('app-following')
 export class Appfollowing extends LitElement {
   @state() following: Account[] = [];
+  private _currentAccountId: string | null = null;
+  private _boundRouteChanged = () => {
+    void this.handleRouteChange();
+  };
 
   static styles = [
     css`
@@ -73,14 +78,28 @@ export class Appfollowing extends LitElement {
   ];
 
   async firstUpdated() {
-    // get id from url query params
+    router.addEventListener('route-changed', this._boundRouteChanged);
+    await this.loadFollowingFromUrl();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    router.removeEventListener('route-changed', this._boundRouteChanged);
+  }
+
+  private async handleRouteChange() {
+    if (window.location.pathname !== '/following') return;
+    await this.loadFollowingFromUrl();
+  }
+
+  private async loadFollowingFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
+    if (!id || id === this._currentAccountId) return;
 
-    if (id) {
-      const followingData = await getFollowing(id);
-      this.following = [...followingData];
-    }
+    this._currentAccountId = id;
+    const followingData = await getFollowing(id);
+    this.following = Array.isArray(followingData) ? [...followingData] : [];
   }
 
   render() {
