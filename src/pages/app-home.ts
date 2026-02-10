@@ -41,7 +41,11 @@ import type { ListMembershipDialog } from '../components/list-membership-dialog'
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
 import { router } from '../router/routes';
-import { lazyLoad, componentLoaders } from '../utils/lazy-component-loader';
+import {
+  lazyLoad,
+  componentLoaders,
+  isLoaded,
+} from '../utils/lazy-component-loader';
 import {
   ensureListMembershipDialogLoaded,
   ensureListsDialogLoaded,
@@ -587,9 +591,13 @@ export class AppHome extends LitElement {
     if (this.loadedTabs.has(tabName)) return;
 
     const loader = componentLoaders[config.loaderKey];
-    if (await lazyLoad(config.loaderKey, loader)) {
-      this.loadedTabs.add(tabName);
-      this.requestUpdate();
+    const alreadyLoaded = isLoaded(config.loaderKey);
+    const loadedNow = alreadyLoaded
+      ? false
+      : await lazyLoad(config.loaderKey, loader);
+
+    if (alreadyLoaded || loadedNow) {
+      this.loadedTabs = new Set(this.loadedTabs).add(tabName);
     }
   }
 
