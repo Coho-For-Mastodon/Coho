@@ -159,7 +159,7 @@ export class AppExplore extends LitElement {
             <strong>${msg('What is this?')}</strong>
             <p>
               ${msg(
-                'Otter is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.'
+                'Coho is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.'
               )}
             </p>
           </div>

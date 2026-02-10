@@ -255,16 +255,10 @@ export class PostDetail extends LitElement {
     const query = window.location.search.substring(1);
     if (query) {
       try {
-        const decoded = JSON.parse(decodeURIComponent(query));
+        // Some legacy links may use '+' for spaces in query encoding.
+        const normalizedQuery = query.replace(/\+/g, '%20');
+        const decoded = JSON.parse(decodeURIComponent(normalizedQuery));
         console.log('decoded', decoded);
-        // remove + and - from decoded.content
-        if (decoded.reblog) {
-          decoded.reblog.content = decoded.reblog.content
-            .replace(/\+/g, ' ')
-            .replace(/-/g, '');
-        }
-
-        decoded.content = decoded.content.replace(/\+/g, ' ').replace(/-/g, '');
 
         this.tweet = decoded;
       } catch (err) {

@@ -28,7 +28,7 @@ import { getEffectiveParams } from '../utils/launch-params';
 import { TabController } from '../controllers/tab-controller';
 import { shareTarget } from '../services/share-target';
 
-import type { OtterDrawer } from '../components/otter-drawer';
+import type { CohoDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
 import type { MdToast } from '../components/md/md-toast';
 import type { Timeline } from '../components/timeline';
@@ -127,10 +127,10 @@ export class AppHome extends LitElement {
   ]);
 
   // DOM element references using @query for type safety
-  @query('#settings-drawer') private settingsDrawer!: OtterDrawer;
-  @query('#replies-drawer') private repliesDrawer!: OtterDrawer;
-  @query('#theming-drawer') private themingDrawer!: OtterDrawer;
-  @query('#bot-drawer') private botDrawer!: OtterDrawer;
+  @query('#settings-drawer') private settingsDrawer!: CohoDrawer;
+  @query('#replies-drawer') private repliesDrawer!: CohoDrawer;
+  @query('#theming-drawer') private themingDrawer!: CohoDrawer;
+  @query('#bot-drawer') private botDrawer!: CohoDrawer;
   @query('#translation-toast') private translationToast!: MdToast;
   @query('#error-toast') private errorToast!: MdToast;
   @query('#summary-dialog') private summaryDialog!: MdDialog;

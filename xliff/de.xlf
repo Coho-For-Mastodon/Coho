@@ -151,12 +151,12 @@
   <target>Schublade schließen</target>
 </trans-unit>
 <trans-unit id="s8e99c858052cb7c9">
-  <source>You have entered offline mode. Otter will still work, including if you close and reopen the app, but some functionality may be limited.</source>
-  <target>Du bist im Offline-Modus. Otter funktioniert weiterhin, auch wenn du die App schließt und wieder öffnest, aber einige Funktionen sind möglicherweise eingeschränkt.</target>
+  <source>You have entered offline mode. Coho will still work, including if you close and reopen the app, but some functionality may be limited.</source>
+  <target>Du bist im Offline-Modus. Coho funktioniert weiterhin, auch wenn du die App schließt und wieder öffnest, aber einige Funktionen sind möglicherweise eingeschränkt.</target>
 </trans-unit>
 <trans-unit id="s87faee1360273399">
-  <source>You are back online. Otter will resume normal functionality.</source>
-  <target>Du bist wieder online. Otter funktioniert wieder normal.</target>
+  <source>You are back online. Coho will resume normal functionality.</source>
+  <target>Du bist wieder online. Coho funktioniert wieder normal.</target>
 </trans-unit>
 <trans-unit id="sbd1a5d538201dae8">
   <source>Launch from your dock or home screen</source>
@@ -919,8 +919,8 @@
   <target>Was ist das?</target>
 </trans-unit>
 <trans-unit id="s5dcb461b65a0024b">
-  <source>Otter is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.</source>
-  <target>Otter ist ein Mastodon-Client, der mit Webtechnologien erstellt wurde. Es ist eine progressive Web-App, was bedeutet, dass du sie auf deinem Telefon oder Desktop installieren kannst. Es ist auch Open Source und kann auf GitHub gefunden werden.</target>
+  <source>Coho is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.</source>
+  <target>Coho ist ein Mastodon-Client, der mit Webtechnologien erstellt wurde. Es ist eine progressive Web-App, was bedeutet, dass du sie auf deinem Telefon oder Desktop installieren kannst. Es ist auch Open Source und kann auf GitHub gefunden werden.</target>
 </trans-unit>
 <trans-unit id="s321c03399a143242">
   <source>Create Account</source>
@@ -943,8 +943,8 @@
   <target>Konto bestätigt, Anmelden</target>
 </trans-unit>
 <trans-unit id="sf7902ac2315ab44d">
-  <source>Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Otter and login to start using Otter as your Mastodon client.</source>
-  <target>Mastodon ist ein dezentrales soziales Netzwerk, das es Benutzern ermöglicht, Communities zu erstellen und ihnen beizutreten. Um Mastodon zu nutzen, musst du einen Server wählen, der dein Konto hostet und dich mit anderen Servern verbindet. Die Wahl eines Servers ist eine wichtige Entscheidung, da sie deine Privatsphäre, Moderation und Inhaltsrichtlinien beeinflusst. Du kannst die Liste der Server unten durchsuchen, um einen zu finden, der deinen Bedürfnissen und Vorlieben entspricht. Sobald du ein Konto auf deinem gewählten Server erstellt hast, komm zurück zu Otter und melde dich an, um Otter als deinen Mastodon-Client zu nutzen.</target>
+  <source>Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Coho and login to start using Coho as your Mastodon client.</source>
+  <target>Mastodon ist ein dezentrales soziales Netzwerk, das es Benutzern ermöglicht, Communities zu erstellen und ihnen beizutreten. Um Mastodon zu nutzen, musst du einen Server wählen, der dein Konto hostet und dich mit anderen Servern verbindet. Die Wahl eines Servers ist eine wichtige Entscheidung, da sie deine Privatsphäre, Moderation und Inhaltsrichtlinien beeinflusst. Du kannst die Liste der Server unten durchsuchen, um einen zu finden, der deinen Bedürfnissen und Vorlieben entspricht. Sobald du ein Konto auf deinem gewählten Server erstellt hast, komm zurück zu Coho und melde dich an, um Coho als deinen Mastodon-Client zu nutzen.</target>
 </trans-unit>
 <trans-unit id="s279b9e6f821888b9">
   <source><x id="0" equiv-text="${server.users}"/> users</source>

@@ -189,7 +189,7 @@ export class CreateAccount extends LitElement {
         <h1>${msg('Create Account')}</h1>
         <p>
           ${msg(
-            'Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Otter and login to start using Otter as your Mastodon client.'
+            'Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Coho and login to start using Coho as your Mastodon client.'
           )}
         </p>
 

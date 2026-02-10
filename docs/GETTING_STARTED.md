@@ -10,8 +10,8 @@
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/jgw96/Otter.git
-   cd Otter
+   git clone https://github.com/jgw96/Coho.git
+   cd Coho
    ```
 
 2. Install dependencies:

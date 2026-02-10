@@ -44,7 +44,7 @@ const mockCredentials = {
     language: 'en',
     fields: [
       { name: 'Website', value: 'https://coho.app' },
-      { name: 'Team', value: 'Otters' },
+      { name: 'Team', value: 'Cohos' },
     ],
   },
 };
