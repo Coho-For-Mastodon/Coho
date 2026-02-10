@@ -983,7 +983,7 @@ export class TimelineItem extends LitElement {
     }
   }
 
-  async translatePost(postContent: string | null) {
+  async translatePost(postContent: string | null, statusId?: string) {
     if (!postContent) return;
 
     this.dispatchEvent(
@@ -1000,7 +1000,7 @@ export class TimelineItem extends LitElement {
     const text = postContent.replace(/(<([^>]+)>)/gi, '');
 
     const { translate } = await import('../services/ai');
-    const translateData = await translate(text);
+    const translateData = await translate(text, 'en-us', statusId);
 
     if (translateData) {
       console.log(translateData);
@@ -1130,7 +1130,8 @@ export class TimelineItem extends LitElement {
       reblog: (id: string) => this.reblog(id),
       togglePin: () => this.togglePin(),
       addToList: (account: Account) => this.addToList(account),
-      translatePost: (content: string | null) => this.translatePost(content),
+      translatePost: (content: string | null, statusId?: string) =>
+        this.translatePost(content, statusId),
       shareStatus: (tweet: Post | null) => this.shareStatus(tweet),
       deleteStatus: () => this.deleteStatus(),
       initEditStatus: () => this.initEditStatus(),

@@ -42,7 +42,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@huggingface/transformers": "^3.8.1",
+    "@huggingface/transformers": "^4.0.0-next.2",
     "@lit-labs/compiler": "^1.1.2",
     "@lit-labs/virtualizer": "^2.1.1",
     "@lit/localize": "^0.12.2",
