@@ -51,6 +51,8 @@ import type { Account as MastodonAccount } from '../mastodon/types/account';
 
 import MarkdownWorker from '../utils/markdown-worker?worker';
 
+const SCHEDULE_MIN_LEAD_MS = 5 * 60 * 1000;
+
 export interface LocalAttachment {
   id: string;
   preview_url: string;
@@ -70,6 +72,7 @@ export interface ComposerSubmitEvent {
     expiresIn: number;
     multiple: boolean;
   } | null;
+  scheduledAt: string | null;
   replyToId: string | null;
 }
 
@@ -115,6 +118,7 @@ export class PostComposer extends LitElement {
   @state() attachments: Array<LocalAttachment> = [];
   @state() editDialogOpen = false;
   @state() activeAttachment: LocalAttachment | null = null;
+  @state() activeAttachmentImageSrc: string = '';
   @state() attaching: boolean = false;
 
   @state() statusText: string = '';
@@ -122,6 +126,10 @@ export class PostComposer extends LitElement {
   @state() sensitive: boolean = false;
   @state() spoilerText: string = '';
   @state() visibility: string = 'public';
+  @state() scheduleEnabled: boolean = false;
+  @state() scheduleDate: string = '';
+  @state() scheduleTime: string = '';
+  @state() scheduleError: string | null = null;
 
   @state() maxChars: number = 500;
   @state() maxMediaAttachments: number = 4;
@@ -163,16 +171,28 @@ export class PostComposer extends LitElement {
 
   // Publishing state
   @state() isPublishing: boolean = false;
+  @state() publishSuccess: boolean = false;
 
   // Draft state
   @state() draftStatus: 'idle' | 'saving' | 'saved' = 'idle';
   @state() availableDrafts: DraftPost[] = [];
   @state() draftPickerOpen: boolean = false;
   @state() selectedDraftId: string = '';
+  @state() draftDirty: boolean = false;
+
+  // Draft loaded highlight state
+  @state() private draftLoaded: boolean = false;
+
+  // Snapshot of status text at the time a draft was loaded/saved, used to detect changes
+  private lastSavedStatusText: string = '';
+
+  // Draft saved fade timer
+  private draftSavedTimer: ReturnType<typeof setTimeout> | null = null;
 
   // MediaRecorder for speech-to-text
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
+  private activeAttachmentBlobUrl: string | null = null;
 
   private draftKey: string | null = null;
 
@@ -296,20 +316,28 @@ export class PostComposer extends LitElement {
       border-radius: 8px;
     }
 
-    /* Poll height animation using interpolate-size */
+    /* Poll reveal – grid-row collapse (no height animation) */
     .poll-wrapper {
-      interpolate-size: allow-keywords;
-      height: 0;
-      overflow: hidden;
+      display: grid;
+      grid-template-rows: 0fr;
       opacity: 0;
       transition:
-        height 0.3s cubic-bezier(0.2, 0, 0, 1),
+        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
         opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
     }
 
+    .poll-wrapper > .poll-composer {
+      overflow: hidden;
+      min-height: 0;
+    }
+
     .poll-wrapper.open {
-      height: auto;
+      grid-template-rows: 1fr;
       opacity: 1;
+    }
+
+    .poll-wrapper.open > .poll-composer {
+      overflow: visible;
     }
 
     .poll-composer {
@@ -379,6 +407,80 @@ export class PostComposer extends LitElement {
       font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
     }
 
+    /* Schedule reveal – grid-row collapse */
+    .schedule-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition:
+        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
+        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .schedule-wrapper > .schedule-composer {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .schedule-wrapper.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+
+    .schedule-wrapper.open > .schedule-composer {
+      overflow: visible;
+    }
+
+    .schedule-composer {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface, #ffffff) 6%,
+        transparent
+      );
+      border: 1px solid
+        var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .schedule-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .schedule-title {
+      font-weight: 700;
+      font-size: var(--md-sys-typescale-title-small-font-size, 14px);
+    }
+
+    .schedule-subtitle {
+      color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
+      font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+    }
+
+    .schedule-inputs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .schedule-preview {
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+      font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+    }
+
+    .schedule-error {
+      color: var(--md-sys-color-error, #ffb4ab);
+      font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+    }
+
     md-text-area {
       width: 100%;
     }
@@ -410,7 +512,7 @@ export class PostComposer extends LitElement {
       display: flex;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       flex: 1;
       min-width: 0;
     }
@@ -433,19 +535,7 @@ export class PostComposer extends LitElement {
       justify-content: end;
     }
 
-    .char-count {
-      font-size: var(--md-sys-typescale-label-small-font-size, 11px);
-      color: var(--md-sys-color-on-surface-variant, #cac4d0);
-    }
-
-    .char-count.over-limit {
-      color: var(--md-sys-color-error, #ffb4ab);
-    }
-
-    .draft-status {
-      font-size: var(--md-sys-typescale-label-small-font-size, 11px);
-      color: var(--md-sys-color-on-surface-variant, #cac4d0);
-    }
+    /* char-count and draft-status styles are defined above with animations */
 
     .draft-picker {
       display: flex;
@@ -491,6 +581,7 @@ export class PostComposer extends LitElement {
       padding: 6px;
       gap: 6px;
       border-radius: 6px;
+      animation: fadeSlideIn 0.2s cubic-bezier(0.2, 0, 0, 1) both;
     }
 
     .img-preview img {
@@ -516,13 +607,72 @@ export class PostComposer extends LitElement {
       margin-top: 8px;
     }
 
-    /* Sensitive warning input */
+    /* Content warning reveal – grid-row collapse */
+    .cw-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition:
+        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
+        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .cw-wrapper > #sensitive-warning {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .cw-wrapper.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+
     #sensitive-warning {
       margin-top: 8px;
     }
 
     #sensitive-warning md-text-field {
       width: 100%;
+    }
+
+    /* Attachments reveal – grid-row collapse */
+    .attachments-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition:
+        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
+        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .attachments-wrapper > :first-child {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .attachments-wrapper.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+
+    /* Reply indicator reveal – grid-row collapse */
+    .reply-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition:
+        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
+        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .reply-wrapper > .replying-to-indicator {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .reply-wrapper.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
     }
 
     /* Proofread styles */
@@ -689,6 +839,139 @@ export class PostComposer extends LitElement {
       }
     }
 
+    /* Attachment entrance animation */
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Publish button states */
+    .publish-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.15s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .publish-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: md3-spin 0.8s linear infinite;
+    }
+
+    @keyframes md3-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .publish-success-icon {
+      display: inline-flex;
+      animation: successPop 0.3s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes successPop {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.15);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Character count smooth color transition */
+    .char-count {
+      font-size: var(--md-sys-typescale-label-small-font-size, 11px);
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+      transition: color 0.2s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .char-count.near-limit {
+      color: #f59e0b;
+    }
+
+    .char-count.over-limit {
+      color: var(--md-sys-color-error, #ffb4ab);
+    }
+
+    /* Draft status animations */
+    .draft-status {
+      font-size: var(--md-sys-typescale-label-small-font-size, 11px);
+      color: var(--md-sys-color-on-surface-variant, #cac4d0);
+      animation: draftStatusFadeIn 0.2s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .draft-status.saved {
+      animation: draftSavedFade 3s cubic-bezier(0.2, 0, 0, 1) forwards;
+    }
+
+    @keyframes draftStatusFadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes draftSavedFade {
+      0%,
+      70% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Load draft button – primary color when drafts exist */
+    .draft-action.has-drafts {
+      color: var(--md-sys-color-primary, #d0bcff);
+    }
+
+    /* Draft apply text area highlight pulse */
+    .text-area-wrapper.draft-loaded md-text-area {
+      animation: draftHighlight 0.6s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes draftHighlight {
+      0% {
+        box-shadow: 0 0 0 0
+          color-mix(
+            in srgb,
+            var(--md-sys-color-primary, #d0bcff) 40%,
+            transparent
+          );
+      }
+      40% {
+        box-shadow: 0 0 0 3px
+          color-mix(
+            in srgb,
+            var(--md-sys-color-primary, #d0bcff) 30%,
+            transparent
+          );
+      }
+      100% {
+        box-shadow: 0 0 0 0 transparent;
+      }
+    }
+
     /* Drag and drop styles */
     :host([dragging-over]) .composer-wrapper {
       outline: 2px dashed var(--md-sys-color-primary, #d0bcff);
@@ -702,6 +985,20 @@ export class PostComposer extends LitElement {
     }
 
     @media (max-width: 820px) {
+      .actions-row {
+        flex-wrap: nowrap;
+        overflow-x: visible;
+        gap: 6px;
+      }
+
+      .actions-row > * {
+        flex: 0 0 auto;
+      }
+
+      .schedule-inputs {
+        grid-template-columns: 1fr;
+      }
+
       .footer-actions {
         position: fixed;
         bottom: 16px;
@@ -781,10 +1078,17 @@ export class PostComposer extends LitElement {
         URL.revokeObjectURL(att.preview_url);
       }
     });
+    this._setActiveAttachment(null);
 
     // Stop any active recording
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
+    }
+
+    // Clear draft saved timer
+    if (this.draftSavedTimer) {
+      clearTimeout(this.draftSavedTimer);
+      this.draftSavedTimer = null;
     }
   }
 
@@ -1019,6 +1323,7 @@ export class PostComposer extends LitElement {
     this.statusText = value;
     this.charCount = value.length;
     this.hasStatus = value.length > 0;
+    this.draftDirty = value !== this.lastSavedStatusText;
   }
 
   private _setSpoilerText(value: string) {
@@ -1224,10 +1529,11 @@ export class PostComposer extends LitElement {
           preview_url: result.preview_url,
           description: result.description,
           pending: false,
+          file,
         };
 
         if (this.activeAttachment?.id === tempId) {
-          this.activeAttachment = updatedAttachment;
+          this._setActiveAttachment(updatedAttachment);
         }
 
         this.attachments = this.attachments.map((a) =>
@@ -1279,10 +1585,41 @@ export class PostComposer extends LitElement {
       URL.revokeObjectURL(attachment.preview_url);
     }
     this.attachments = this.attachments.filter((a) => a.id !== id);
+
+    if (this.activeAttachment?.id === id) {
+      this._closeEditDialog();
+    }
+  }
+
+  private _setActiveAttachment(attachment: LocalAttachment | null) {
+    if (this.activeAttachmentBlobUrl) {
+      URL.revokeObjectURL(this.activeAttachmentBlobUrl);
+      this.activeAttachmentBlobUrl = null;
+    }
+
+    this.activeAttachment = attachment;
+
+    if (!attachment) {
+      this.activeAttachmentImageSrc = '';
+      return;
+    }
+
+    if (attachment.file) {
+      this.activeAttachmentBlobUrl = URL.createObjectURL(attachment.file);
+      this.activeAttachmentImageSrc = this.activeAttachmentBlobUrl;
+      return;
+    }
+
+    this.activeAttachmentImageSrc = attachment.preview_url;
+  }
+
+  private _closeEditDialog() {
+    this.editDialogOpen = false;
+    this._setActiveAttachment(null);
   }
 
   openEditDialog(attachment: LocalAttachment) {
-    this.activeAttachment = attachment;
+    this._setActiveAttachment(attachment);
     this.editDialogOpen = true;
   }
 
@@ -1301,6 +1638,14 @@ export class PostComposer extends LitElement {
     if (blobToUpload) {
       try {
         const result = await uploadImageFromBlob(blobToUpload);
+        const fileForLocalEditing =
+          blobToUpload instanceof File
+            ? blobToUpload
+            : new File(
+                [blobToUpload],
+                attachment.file?.name || `edited-${result.id}.jpg`,
+                { type: blobToUpload.type || 'image/jpeg' }
+              );
 
         if (description) {
           await updateMedia(result.id, description);
@@ -1317,12 +1662,13 @@ export class PostComposer extends LitElement {
                 preview_url: result.preview_url,
                 description,
                 pending: false,
+                file: fileForLocalEditing,
               }
             : a
         );
 
         if (this.activeAttachment?.id === id) {
-          this.activeAttachment = null;
+          this._setActiveAttachment(null);
         }
 
         this.mediaEditDialog?.completeUpload(true);
@@ -1338,7 +1684,7 @@ export class PostComposer extends LitElement {
     );
 
     if (this.activeAttachment?.id === id) {
-      this.activeAttachment = null;
+      this._setActiveAttachment(null);
     }
 
     if (!attachment.pending) {
@@ -1439,6 +1785,120 @@ export class PostComposer extends LitElement {
       expiresIn: this.pollDurationSeconds,
       multiple: this.pollMultiple,
     };
+  }
+
+  // Scheduling
+
+  private _toggleSchedule() {
+    this.scheduleEnabled = !this.scheduleEnabled;
+    this.scheduleError = null;
+
+    if (this.scheduleEnabled && (!this.scheduleDate || !this.scheduleTime)) {
+      this._setDefaultScheduleDateTime();
+    }
+  }
+
+  private _setDefaultScheduleDateTime() {
+    const suggestedDate = new Date(Date.now() + 30 * 60 * 1000);
+    suggestedDate.setSeconds(0, 0);
+    const minuteRemainder = suggestedDate.getMinutes() % 5;
+    if (minuteRemainder !== 0) {
+      suggestedDate.setMinutes(
+        suggestedDate.getMinutes() + (5 - minuteRemainder)
+      );
+    }
+
+    this.scheduleDate = this._toInputDateValue(suggestedDate);
+    this.scheduleTime = this._toInputTimeValue(suggestedDate);
+  }
+
+  private _toInputDateValue(value: Date): string {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private _toInputTimeValue(value: Date): string {
+    const hours = String(value.getHours()).padStart(2, '0');
+    const minutes = String(value.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
+  private _setScheduleDate(value: string) {
+    this.scheduleDate = value;
+    this.scheduleError = null;
+  }
+
+  private _setScheduleTime(value: string) {
+    this.scheduleTime = value;
+    this.scheduleError = null;
+  }
+
+  private _getScheduleMinDate(): string {
+    return this._toInputDateValue(new Date(Date.now() + SCHEDULE_MIN_LEAD_MS));
+  }
+
+  private _getScheduleMinTime(): string {
+    if (!this.scheduleDate) return '';
+
+    const minDate = new Date(Date.now() + SCHEDULE_MIN_LEAD_MS);
+    if (this.scheduleDate !== this._toInputDateValue(minDate)) return '';
+
+    return this._toInputTimeValue(minDate);
+  }
+
+  private _parseScheduledDateTime(): Date | null {
+    if (!this.scheduleDate || !this.scheduleTime) return null;
+
+    const hasSeconds = this.scheduleTime.split(':').length > 2;
+    const timeValue = hasSeconds
+      ? this.scheduleTime
+      : `${this.scheduleTime}:00`;
+    const parsed = new Date(`${this.scheduleDate}T${timeValue}`);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed;
+  }
+
+  private _resolveScheduledAtForSubmission(): string | null {
+    if (!this.scheduleEnabled) return null;
+
+    if (!this.scheduleDate || !this.scheduleTime) {
+      this.scheduleError = msg('Choose a date and time.');
+      return null;
+    }
+
+    const parsed = this._parseScheduledDateTime();
+    if (!parsed) {
+      this.scheduleError = msg('Choose a valid date and time.');
+      return null;
+    }
+
+    if (parsed.getTime() < Date.now() + SCHEDULE_MIN_LEAD_MS) {
+      this.scheduleError = msg(
+        'Schedule your post at least 5 minutes in the future.'
+      );
+      return null;
+    }
+
+    this.scheduleError = null;
+    return parsed.toISOString();
+  }
+
+  private _formatScheduledDateTime(value: string): string {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return value;
+    }
+
+    return parsed.toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   }
 
   // AI feature methods
@@ -1604,8 +2064,13 @@ export class PostComposer extends LitElement {
     const status = this.textArea?.value;
     if (!status || status.length === 0) return;
 
+    const scheduledAt = this.compact
+      ? null
+      : this._resolveScheduledAtForSubmission();
+    if (!this.compact && this.scheduleEnabled && !scheduledAt) return;
+
     if (this.autoPublish) {
-      await this._publish();
+      await this._publish(scheduledAt);
     } else {
       const pollPayload = this._getPollPayload();
       if (this.pollEnabled && !pollPayload) return; // Validation failed
@@ -1617,6 +2082,7 @@ export class PostComposer extends LitElement {
         sensitive: this.sensitive,
         spoilerText: this.sensitive ? this.spoilerText : '',
         poll: pollPayload,
+        scheduledAt,
         replyToId: this.replyTo?.id ?? null,
       };
 
@@ -1630,9 +2096,22 @@ export class PostComposer extends LitElement {
     }
   }
 
-  private async _publish() {
+  private async _publish(submitScheduledAt?: string | null) {
     const status = this.textArea?.value;
     if (!status || status.length === 0) return;
+
+    const scheduledAt =
+      submitScheduledAt ??
+      (!this.compact && this.scheduleEnabled
+        ? this._resolveScheduledAtForSubmission()
+        : null);
+
+    if (!this.compact && this.scheduleEnabled && !scheduledAt) return;
+
+    if (scheduledAt && !navigator.onLine) {
+      showInfoToast(msg('Scheduling requires an internet connection.'));
+      return;
+    }
 
     this.isPublishing = true;
 
@@ -1666,7 +2145,8 @@ export class PostComposer extends LitElement {
             status,
             this.attachments.length > 0
               ? this.attachments.map((att) => att.id)
-              : undefined
+              : undefined,
+            scheduledAt ?? undefined
           );
         } else if (this.attachments.length > 0) {
           await publishPost(
@@ -1674,7 +2154,9 @@ export class PostComposer extends LitElement {
             this.attachments.map((att) => att.id),
             this.sensitive,
             spoilerText,
-            this.visibility
+            this.visibility,
+            undefined,
+            scheduledAt ?? undefined
           );
         } else if (pollPayload) {
           await publishPollPost(
@@ -1682,7 +2164,8 @@ export class PostComposer extends LitElement {
             pollPayload,
             this.sensitive,
             spoilerText,
-            this.visibility
+            this.visibility,
+            scheduledAt ?? undefined
           );
         } else {
           await publishPost(
@@ -1690,13 +2173,24 @@ export class PostComposer extends LitElement {
             undefined,
             this.sensitive,
             spoilerText,
-            this.visibility
+            this.visibility,
+            undefined,
+            scheduledAt ?? undefined
           );
         }
       } catch (error) {
         console.error('[PostComposer] Publish error:', error);
 
         if (isOffline) {
+          if (scheduledAt) {
+            showInfoToast(
+              msg('Could not schedule while offline. Reconnect and try again.')
+            );
+            worker.terminate();
+            this.isPublishing = false;
+            return;
+          }
+
           showInfoToast(
             msg("Your post will be published when you're back online")
           );
@@ -1712,18 +2206,31 @@ export class PostComposer extends LitElement {
       }
 
       // Success
-      this._resetState();
+      if (scheduledAt) {
+        showInfoToast(
+          msg(
+            str`Post scheduled for ${this._formatScheduledDateTime(scheduledAt)}.`
+          )
+        );
+      }
+
       worker.terminate();
-
-      this.dispatchEvent(
-        new CustomEvent('published', {
-          bubbles: true,
-          composed: true,
-          detail: { status },
-        })
-      );
-
       this.isPublishing = false;
+      this.publishSuccess = true;
+
+      // Brief success flash, then reset and dispatch
+      setTimeout(() => {
+        this.publishSuccess = false;
+        this._resetState();
+
+        this.dispatchEvent(
+          new CustomEvent('published', {
+            bubbles: true,
+            composed: true,
+            detail: { status, scheduledAt: scheduledAt ?? null },
+          })
+        );
+      }, 600);
     };
 
     worker.postMessage(status);
@@ -1743,16 +2250,25 @@ export class PostComposer extends LitElement {
     this.statusText = '';
     this.draftStatus = 'idle';
     this.draftPickerOpen = false;
+    this.draftDirty = false;
+    this.lastSavedStatusText = '';
     this.proofreadResult = null;
     this.isRecording = false;
     this.isTranscribing = false;
+    this.publishSuccess = false;
     this.replyTo = null;
+    this._setActiveAttachment(null);
+    this.editDialogOpen = false;
 
     this.pollEnabled = false;
     this.pollOptions = ['', ''];
     this.pollDurationSeconds = 60 * 60;
     this.pollMultiple = false;
     this.pollError = null;
+    this.scheduleEnabled = false;
+    this.scheduleDate = '';
+    this.scheduleTime = '';
+    this.scheduleError = null;
 
     this._closeMentionPicker();
 
@@ -1785,6 +2301,7 @@ export class PostComposer extends LitElement {
       this.statusText.trim().length > 0 ||
       this.attachments.length > 0 ||
       this.pollEnabled ||
+      this.scheduleEnabled ||
       this.sensitive ||
       this.spoilerText.trim().length > 0
     );
@@ -1813,6 +2330,11 @@ export class PostComposer extends LitElement {
     this.pollDurationSeconds = draft.poll?.expiresIn ?? 60 * 60;
     this.pollMultiple = !!draft.poll?.multiple;
     this.pollError = null;
+    const draftSchedule = this.compact ? null : draft.schedule;
+    this.scheduleEnabled = !!draftSchedule;
+    this.scheduleDate = draftSchedule?.date ?? '';
+    this.scheduleTime = draftSchedule?.time ?? '';
+    this.scheduleError = null;
 
     this.attachments.forEach((att) => {
       if (att.preview_url.startsWith('blob:')) {
@@ -1853,6 +2375,17 @@ export class PostComposer extends LitElement {
     this.hasStatus = this.statusText.length > 0;
 
     this.draftStatus = 'saved';
+    this.draftDirty = false;
+    this.lastSavedStatusText = this.statusText;
+
+    // Trigger highlight pulse on text area to draw attention
+    this.draftLoaded = false;
+    await this.updateComplete;
+    this.draftLoaded = true;
+    // Remove class after animation completes
+    setTimeout(() => {
+      this.draftLoaded = false;
+    }, 650);
   }
 
   private async _refreshDraftList(keyOverride?: string) {
@@ -1901,7 +2434,7 @@ export class PostComposer extends LitElement {
         : attachment.preview_url,
       description: attachment.description ?? null,
       pending: attachment.pending,
-      file: attachment.file,
+      file: attachment.pending ? attachment.file : undefined,
     }));
 
     const savedDraft = await saveDraftForContext(this.draftKey, {
@@ -1916,12 +2449,21 @@ export class PostComposer extends LitElement {
             multiple: this.pollMultiple,
           }
         : null,
+      schedule:
+        !this.compact && this.scheduleEnabled
+          ? {
+              date: this.scheduleDate,
+              time: this.scheduleTime,
+            }
+          : null,
       replyToId: this.replyTo?.id ?? null,
       attachments,
     });
     await this._refreshDraftList();
     this.selectedDraftId = savedDraft.id;
     this.draftStatus = 'saved';
+    this.draftDirty = false;
+    this.lastSavedStatusText = this.statusText;
 
     this.dispatchEvent(
       new CustomEvent('draft-saved', {
@@ -1946,6 +2488,12 @@ export class PostComposer extends LitElement {
   private _closeDraftPicker() {
     this.draftPickerOpen = false;
   }
+
+  private _handleDraftStatusAnimationEnd = () => {
+    if (this.draftStatus === 'saved') {
+      this.draftStatus = 'idle';
+    }
+  };
 
   private _handleDraftSelectionChange(
     e: CustomEvent<{ value: string; oldValue: string }>
@@ -1975,21 +2523,29 @@ export class PostComposer extends LitElement {
 
     await this._applyDraft(draft);
     this._closeDraftPicker();
+    this.draftDirty = false;
+    this.lastSavedStatusText = this.statusText;
     showInfoToast(msg('Draft loaded'));
   }
 
   // Render methods
 
   private _renderReplyIndicator() {
-    if (!this.replyTo) return nothing;
-
     return html`
-      <div class="replying-to-indicator">
-        <span>${msg(str`Replying to @${this.replyTo.account.acct}`)}</span>
-        <md-icon-button
-          src="/assets/close-outline.svg"
-          @click=${() => this.clearReplyTo()}
-        ></md-icon-button>
+      <div class="reply-wrapper ${this.replyTo ? 'open' : ''}">
+        ${this.replyTo
+          ? html`
+              <div class="replying-to-indicator">
+                <span
+                  >${msg(str`Replying to @${this.replyTo.account.acct}`)}</span
+                >
+                <md-icon-button
+                  src="/assets/close-outline.svg"
+                  @click=${() => this.clearReplyTo()}
+                ></md-icon-button>
+              </div>
+            `
+          : nothing}
       </div>
     `;
   }
@@ -2053,7 +2609,7 @@ export class PostComposer extends LitElement {
         : msg("What's on your mind?"));
 
     return html`
-      <div class="text-area-wrapper">
+      <div class="text-area-wrapper ${this.draftLoaded ? 'draft-loaded' : ''}">
         <md-text-area
           @change="${(e: Event) => this._handleStatusChange(e)}"
           @input="${(e: Event) => this._handleStatusChange(e)}"
@@ -2063,10 +2619,39 @@ export class PostComposer extends LitElement {
           placeholder=${placeholderText}
           rows="${this.rows}"
           maxlength="${this.maxChars}"
+          hide-counter
         ></md-text-area>
         ${this._renderMentionPicker()}
       </div>
     `;
+  }
+
+  private _getVisibilityDisplayLabel(): string {
+    switch (this.visibility) {
+      case 'unlisted':
+        return msg('Unlisted');
+      case 'private':
+        return msg('Followers Only');
+      case 'direct':
+        return msg('Direct');
+      case 'public':
+      default:
+        return msg('Public');
+    }
+  }
+
+  private _getVisibilityIconSrc(): string {
+    switch (this.visibility) {
+      case 'unlisted':
+        return '/assets/eye-outline.svg';
+      case 'private':
+        return '/assets/lock-closed-outline.svg';
+      case 'direct':
+        return '/assets/paper-plane-outline.svg';
+      case 'public':
+      default:
+        return '/assets/globe-outline.svg';
+    }
   }
 
   private _renderActions() {
@@ -2077,16 +2662,29 @@ export class PostComposer extends LitElement {
           ? html`
               <md-select
                 .value=${this.visibility}
+                .placeholder=${msg('Post visibility')}
+                .iconSrc=${this._getVisibilityIconSrc()}
+                .iconLabel=${msg('Post visibility')}
                 @change=${(e: CustomEvent<{ value: string }>) =>
                   (this.visibility = e.detail.value)}
-                style="width: 140px; min-width: 140px;"
-                pill
+                title=${this._getVisibilityDisplayLabel()}
+                variant="filled"
+                icon-only
               >
                 <md-option value="public">${msg('Public')}</md-option>
                 <md-option value="unlisted">${msg('Unlisted')}</md-option>
                 <md-option value="private">${msg('Followers Only')}</md-option>
                 <md-option value="direct">${msg('Direct')}</md-option>
               </md-select>
+
+              <md-icon-button
+                src="/assets/calendar-outline.svg"
+                .label=${this.scheduleEnabled
+                  ? msg('Disable scheduling')
+                  : msg('Enable scheduling')}
+                .variant=${this.scheduleEnabled ? 'filled-tonal' : 'standard'}
+                @click=${() => this._toggleSchedule()}
+              ></md-icon-button>
             `
           : nothing}
 
@@ -2095,6 +2693,7 @@ export class PostComposer extends LitElement {
           class="mobile-icon-button"
           label="${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}"
           src="/assets/chatbox-outline.svg"
+          .variant=${this.pollEnabled ? 'filled-tonal' : 'standard'}
           ?disabled=${this.attachments.length > 0}
           @click="${() => this._togglePoll()}"
         ></md-icon-button>
@@ -2103,6 +2702,7 @@ export class PostComposer extends LitElement {
           class="mobile-icon-button"
           label=${msg('Content Warning')}
           src="/assets/eye-outline.svg"
+          .variant=${this.sensitive ? 'filled-tonal' : 'standard'}
           @click="${() => this.markAsSensitive()}"
         ></md-icon-button>
 
@@ -2213,17 +2813,17 @@ export class PostComposer extends LitElement {
   }
 
   private _renderSensitiveWarning() {
-    if (!this.sensitive) return nothing;
-
     return html`
-      <div id="sensitive-warning">
-        <md-text-field
-          id="sensitive-input"
-          .value=${this.spoilerText}
-          @input=${(e: Event) =>
-            this._setSpoilerText(this._readInputEventValue(e))}
-          placeholder=${msg('Write your warning here')}
-        ></md-text-field>
+      <div class="cw-wrapper ${this.sensitive ? 'open' : ''}">
+        <div id="sensitive-warning">
+          <md-text-field
+            id="sensitive-input"
+            .value=${this.spoilerText}
+            @input=${(e: Event) =>
+              this._setSpoilerText(this._readInputEventValue(e))}
+            placeholder=${msg('Write your content warning here')}
+          ></md-text-field>
+        </div>
       </div>
     `;
   }
@@ -2318,89 +2918,177 @@ export class PostComposer extends LitElement {
     `;
   }
 
-  private _renderAttachments() {
-    if (this.attaching) {
-      return html`
-        <div id="attachment-loading">
-          <md-skeleton></md-skeleton>
-        </div>
-      `;
-    }
+  private _renderSchedule() {
+    if (this.compact) return nothing;
 
-    if (this.attachments.length === 0) return nothing;
+    const parsed = this._parseScheduledDateTime();
+    const preview =
+      parsed && parsed.getTime() >= Date.now() + SCHEDULE_MIN_LEAD_MS
+        ? this._formatScheduledDateTime(parsed.toISOString())
+        : '';
 
     return html`
-      <ul class="attachments-list">
-        ${this.attachments.map(
-          (attachment) => html`
-            <div class="img-preview">
-              <div class="preview-actions">
-                <md-icon-button
-                  size="small"
-                  @click="${() => this.removeImage(attachment.id)}"
-                >
-                  <md-icon src="/assets/close-outline.svg"></md-icon>
-                </md-icon-button>
-                <md-icon-button
-                  size="small"
-                  @click="${() => this.openEditDialog(attachment)}"
-                >
-                  <md-icon src="/assets/brush-outline.svg"></md-icon>
-                </md-icon-button>
+      <div class="schedule-wrapper ${this.scheduleEnabled ? 'open' : ''}">
+        <div class="schedule-composer">
+          <div class="schedule-title">${msg('Schedule post')}</div>
+
+          <div class="schedule-inputs">
+            <md-text-field
+              type="date"
+              .value=${this.scheduleDate}
+              .min=${this._getScheduleMinDate()}
+              @change=${(e: Event) =>
+                this._setScheduleDate(this._readInputEventValue(e))}
+            ></md-text-field>
+            <md-text-field
+              type="time"
+              .value=${this.scheduleTime}
+              .min=${this._getScheduleMinTime()}
+              step="60"
+              @change=${(e: Event) =>
+                this._setScheduleTime(this._readInputEventValue(e))}
+            ></md-text-field>
+          </div>
+
+          ${preview
+            ? html`<div class="schedule-preview">
+                ${msg(str`Will publish on ${preview}`)}
+              </div>`
+            : nothing}
+          ${this.scheduleError
+            ? html`<div class="schedule-error">${this.scheduleError}</div>`
+            : nothing}
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderAttachments() {
+    const hasContent = this.attaching || this.attachments.length > 0;
+
+    return html`
+      <div class="attachments-wrapper ${hasContent ? 'open' : ''}">
+        ${this.attaching
+          ? html`
+              <div id="attachment-loading">
+                <md-skeleton></md-skeleton>
               </div>
-              <img
-                src="${attachment.preview_url}"
-                alt="${attachment.description || ''}"
-              />
-            </div>
-          `
-        )}
-      </ul>
+            `
+          : this.attachments.length > 0
+            ? html`
+                <ul class="attachments-list">
+                  ${this.attachments.map(
+                    (attachment) => html`
+                      <div class="img-preview">
+                        <div class="preview-actions">
+                          <md-icon-button
+                            size="small"
+                            @click="${() => this.removeImage(attachment.id)}"
+                          >
+                            <md-icon src="/assets/close-outline.svg"></md-icon>
+                          </md-icon-button>
+                          <md-icon-button
+                            size="small"
+                            @click="${() => this.openEditDialog(attachment)}"
+                          >
+                            <md-icon src="/assets/brush-outline.svg"></md-icon>
+                          </md-icon-button>
+                        </div>
+                        <img
+                          src="${attachment.preview_url}"
+                          alt="${attachment.description || ''}"
+                        />
+                      </div>
+                    `
+                  )}
+                </ul>
+              `
+            : nothing}
+      </div>
     `;
   }
 
   private _renderFooter() {
-    const canSaveDraft = this._hasDraftContent();
     const hasSavedDrafts = this.availableDrafts.length > 0;
+    const canSaveDraft = this._hasDraftContent() && this.draftDirty;
+    const primaryLabel =
+      !this.compact && this.scheduleEnabled
+        ? this.replyTo
+          ? msg('Schedule reply')
+          : msg('Schedule post')
+        : this.replyTo
+          ? msg('Reply')
+          : msg('Publish');
+
+    const publishButtonLabel = this.publishSuccess
+      ? html`<span class="publish-label"
+          ><span class="publish-success-icon">✓</span> ${msg('Posted!')}</span
+        >`
+      : this.isPublishing
+        ? html`<span class="publish-label"
+            ><span class="publish-spinner"></span> ${msg('Publishing...')}</span
+          >`
+        : primaryLabel;
 
     return html`
       <div class="footer-actions">
         <div class="footer-meta">
-          <md-button
-            size="small"
-            variant="text"
-            class="draft-action"
-            ?disabled=${!hasSavedDrafts}
-            @click="${() => this._openDraftPicker()}"
-          >
-            ${msg('Load draft')}
-          </md-button>
-          <md-button
-            size="small"
-            variant="text"
-            class="draft-action"
-            ?disabled=${!canSaveDraft}
-            @click="${() => this._saveDraft()}"
-          >
-            ${msg('Save draft')}
-          </md-button>
+          ${hasSavedDrafts
+            ? html`
+                <md-button
+                  size="small"
+                  variant="text"
+                  class="draft-action has-drafts"
+                  @click="${() => this._openDraftPicker()}"
+                >
+                  ${msg('Load draft')}
+                </md-button>
+              `
+            : nothing}
+          ${canSaveDraft
+            ? html`
+                <md-button
+                  size="small"
+                  variant="text"
+                  class="draft-action"
+                  @click="${() => this._saveDraft()}"
+                >
+                  ${msg('Save draft')}
+                </md-button>
+              `
+            : nothing}
           ${this.draftStatus === 'saving'
             ? html`<span class="draft-status">${msg('Saving draft...')}</span>`
             : this.draftStatus === 'saved'
-              ? html`<span class="draft-status">${msg('Draft saved')}</span>`
+              ? html`<span
+                  class="draft-status saved"
+                  @animationend=${this._handleDraftStatusAnimationEnd}
+                  >${msg('Draft saved')}</span
+                >`
               : nothing}
         </div>
         <div class="footer-primary">
+          ${this.hasStatus
+            ? html`<span
+                class="char-count ${this.charCount >= this.maxChars
+                  ? 'over-limit'
+                  : this.charCount >= this.maxChars * 0.9
+                    ? 'near-limit'
+                    : ''}"
+                >${this.charCount}/${this.maxChars}</span
+              >`
+            : nothing}
           <md-button
-            ?disabled="${!this.hasStatus ||
+            ?disabled="${(!this.hasStatus && !this.publishSuccess) ||
             this.attaching ||
             this.attachments.some((a) => a.pending) ||
-            this.isPublishing}"
+            this.isPublishing ||
+            this.publishSuccess}"
             pill
             variant="filled"
             @click="${() => this._handleSubmit()}"
           >
-            ${this.replyTo ? msg('Reply') : msg('Publish')}
+            ${publishButtonLabel}
           </md-button>
         </div>
       </div>
@@ -2454,21 +3142,18 @@ export class PostComposer extends LitElement {
       <div class="composer-wrapper">
         ${this._renderReplyIndicator()} ${this._renderTextArea()}
         ${this._renderActions()} ${this._renderSensitiveWarning()}
-        ${this._renderPoll()} ${this._renderAttachments()}
-        ${this._renderFooter()}
+        ${this._renderPoll()} ${this._renderSchedule()}
+        ${this._renderAttachments()} ${this._renderFooter()}
       </div>
 
       ${this._renderDraftPickerDialog()}
 
       <media-edit-dialog
         .open="${this.editDialogOpen}"
-        .imageSrc="${this.activeAttachment?.preview_url || ''}"
+        .imageSrc="${this.activeAttachmentImageSrc}"
         .description="${this.activeAttachment?.description || ''}"
         .mediaId="${this.activeAttachment?.id || ''}"
-        @close="${() => {
-          this.editDialogOpen = false;
-          this.activeAttachment = null;
-        }}"
+        @close="${() => this._closeEditDialog()}"
         @save="${this.handleMediaSave}"
       ></media-edit-dialog>
 

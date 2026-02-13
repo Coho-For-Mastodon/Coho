@@ -16,6 +16,7 @@ export class MdTextArea extends LitElement {
   @property({ type: String }) variant: 'filled' | 'outlined' = 'filled';
   @property({ type: Number }) rows = 4;
   @property({ type: Number }) maxlength?: number;
+  @property({ type: Boolean, attribute: 'hide-counter' }) hideCounter = false;
 
   @query('textarea') private _textarea!: HTMLTextAreaElement;
 
@@ -231,7 +232,7 @@ export class MdTextArea extends LitElement {
           @input="${this._handleInput}"
           @change="${this._handleChange}"
         ></textarea>
-        ${this.maxlength
+        ${this.maxlength && !this.hideCounter
           ? html`
               <div class="char-counter">
                 ${this.value.length} / ${this.maxlength}

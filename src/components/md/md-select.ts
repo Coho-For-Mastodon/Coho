@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { mdSharedStyles } from './md-shared-styles.js';
+import './md-icon.js';
 
 /**
  * Material Design 3 Select Component
@@ -14,6 +15,10 @@ export class MdSelect extends LitElement {
   @property({ type: Boolean }) disabled = false;
   @property({ type: String }) variant: 'filled' | 'outlined' = 'filled';
   @property({ type: Boolean }) pill = false;
+  @property({ type: Boolean, attribute: 'icon-only', reflect: true })
+  iconOnly = false;
+  @property({ type: String, attribute: 'icon-src' }) iconSrc = '';
+  @property({ type: String, attribute: 'icon-label' }) iconLabel = '';
 
   @state() private _open = false;
   @state() private _options: MdOption[] = [];
@@ -25,6 +30,11 @@ export class MdSelect extends LitElement {
         display: block;
         position: relative;
         min-width: 200px;
+      }
+
+      :host([icon-only]) {
+        min-width: 40px;
+        width: 40px;
       }
 
       .select-container {
@@ -94,6 +104,47 @@ export class MdSelect extends LitElement {
         border-radius: 9999px;
       }
 
+      .select-input.icon-only {
+        padding: 8px;
+        border-radius: 50%;
+        border-bottom: none !important;
+        border: none !important;
+        background: transparent !important;
+        color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
+        justify-content: center;
+        gap: 0;
+      }
+
+      .select-input.icon-only.outlined {
+        border-radius: 50%;
+      }
+
+      .select-input.icon-only .select-label,
+      .select-input.icon-only .dropdown-icon {
+        display: none;
+      }
+
+      .icon-only-image {
+        width: 24px;
+        height: 24px;
+      }
+
+      .select-input.icon-only:hover:not(.disabled) {
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, white) 8%,
+          transparent
+        ) !important;
+      }
+
+      .select-input.icon-only:active:not(.disabled) {
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, white) 12%,
+          transparent
+        ) !important;
+      }
+
       .select-input.disabled {
         opacity: 0.38;
         cursor: not-allowed;
@@ -153,6 +204,14 @@ export class MdSelect extends LitElement {
         pointer-events: auto;
       }
 
+      :host([icon-only]) .dropdown {
+        left: 0;
+        right: auto;
+        width: max-content;
+        min-width: 200px;
+        max-width: min(280px, calc(100vw - 24px));
+      }
+
       .backdrop {
         position: fixed;
         top: 0;
@@ -179,6 +238,28 @@ export class MdSelect extends LitElement {
       }
 
       /* Dark mode */
+      @media (prefers-color-scheme: light) {
+        .select-input.icon-only {
+          color: var(--md-sys-color-on-surface-variant, rgba(0, 0, 0, 0.6));
+        }
+
+        .select-input.icon-only:hover:not(.disabled) {
+          background: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface, black) 8%,
+            transparent
+          ) !important;
+        }
+
+        .select-input.icon-only:active:not(.disabled) {
+          background: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface, black) 12%,
+            transparent
+          ) !important;
+        }
+      }
+
       @media (prefers-color-scheme: dark) {
         .select-input {
           background-color: var(
@@ -208,6 +289,13 @@ export class MdSelect extends LitElement {
 
         .select-label.placeholder {
           color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        }
+
+        .select-input.icon-only {
+          color: var(
+            --md-sys-color-on-surface-variant,
+            rgba(255, 255, 255, 0.7)
+          );
         }
 
         .dropdown {
@@ -309,6 +397,7 @@ export class MdSelect extends LitElement {
   render() {
     const displayLabel = this._getDisplayLabel();
     const isPlaceholder = !this.value;
+    const ariaLabel = this.iconLabel || this.placeholder || displayLabel;
 
     return html`
       <div class="select-container">
@@ -316,25 +405,37 @@ export class MdSelect extends LitElement {
           class="select-input ${this.variant} ${this._open ? 'open' : ''} ${this
             .disabled
             ? 'disabled'
-            : ''} ${this.pill ? 'pill' : ''}"
+            : ''} ${this.pill ? 'pill' : ''} ${this.iconOnly
+            ? 'icon-only'
+            : ''}"
           @click=${this._handleInputClick}
           tabindex="${this.disabled ? -1 : 0}"
           role="combobox"
           aria-expanded="${this._open ? 'true' : 'false'}"
           aria-haspopup="listbox"
-          aria-label="${this.placeholder}"
+          aria-label="${ariaLabel}"
         >
-          <span class="select-label ${isPlaceholder ? 'placeholder' : ''}">
-            ${displayLabel}
-          </span>
-          <svg
-            class="dropdown-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M7 10l5 5 5-5z" fill="currentColor" />
-          </svg>
+          ${this.iconOnly && this.iconSrc
+            ? html`<md-icon
+                class="icon-only-image"
+                src="${this.iconSrc}"
+                label="${ariaLabel}"
+              ></md-icon>`
+            : html`
+                <span
+                  class="select-label ${isPlaceholder ? 'placeholder' : ''}"
+                >
+                  ${displayLabel}
+                </span>
+                <svg
+                  class="dropdown-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M7 10l5 5 5-5z" fill="currentColor" />
+                </svg>
+              `}
         </div>
 
         <div

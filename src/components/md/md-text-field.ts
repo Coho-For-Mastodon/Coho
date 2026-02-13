@@ -21,7 +21,13 @@ export class MdTextField extends LitElement {
     | 'password'
     | 'search'
     | 'tel'
-    | 'url' = 'text';
+    | 'url'
+    | 'date'
+    | 'time'
+    | 'datetime-local' = 'text';
+  @property({ type: String }) min = '';
+  @property({ type: String }) max = '';
+  @property({ type: String }) step = '';
 
   @query('input') private _input!: HTMLInputElement;
 
@@ -218,6 +224,9 @@ export class MdTextField extends LitElement {
           type="${this.type}"
           .value="${this.value}"
           placeholder="${this.placeholder}"
+          min="${this.min}"
+          max="${this.max}"
+          step="${this.step}"
           ?disabled="${this.disabled}"
           class="${this.variant} ${this.pill ? 'pill' : ''}"
           @input="${this._handleInput}"

@@ -96,6 +96,28 @@ export interface StatusContext {
   descendants: Status[];
 }
 
+export interface ScheduledStatusParams {
+  text?: string;
+  warning_text?: string;
+  visibility?: StatusVisibility;
+  sensitive?: string;
+  language?: string;
+  media_ids?: string[];
+  scheduled_at?: string;
+  poll?: {
+    options?: string[];
+    expires_in?: string;
+    multiple?: string;
+  };
+}
+
+export interface ScheduledStatus {
+  id: string;
+  scheduled_at: string;
+  params?: ScheduledStatusParams;
+  media_attachments?: MediaAttachment[];
+}
+
 /**
  * @deprecated Use Status instead - this alias exists for backwards compatibility
  */

@@ -72,3 +72,26 @@ export interface Post {
   ancestors?: Post[];
   thread_continuation?: Post[]; // Posts that continue this thread
 }
+
+export interface ScheduledPostParams {
+  text?: string;
+  warning_text?: string;
+  visibility?: string;
+  sensitive?: string;
+  media_ids?: string[];
+  poll?: {
+    options?: string[];
+    expires_in?: string;
+    multiple?: string;
+  };
+  scheduled_at?: string;
+}
+
+export interface ScheduledPost {
+  id: string;
+  scheduled_at: string;
+  params?: ScheduledPostParams;
+  media_attachments?: MediaAttachment[];
+}
+
+export type PostPublishResult = Post | ScheduledPost;

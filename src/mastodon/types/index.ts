@@ -23,6 +23,8 @@ export type {
   Poll,
   PollOption,
   StatusContext,
+  ScheduledStatus,
+  ScheduledStatusParams,
 } from './status';
 
 // Media types

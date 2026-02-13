@@ -15,6 +15,7 @@ export class AppLogin extends LitElement {
   @state() instances: AutocompleteOption[] = [];
   @state() chosenServer: string = '';
   @state() loadingInstances: boolean = false;
+  @state() loggingIn: boolean = false;
 
   private _searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -196,16 +197,21 @@ export class AppLogin extends LitElement {
   }
 
   private login = async () => {
+    if (this.loggingIn) return;
+
     let serverURL = this.chosenServer;
     if (serverURL.length > 0) {
       if (serverURL.includes('https://')) {
         serverURL = serverURL.replace('https://', '');
       }
+      this.loggingIn = true;
       try {
         const { initAuth } = await import('../services/account');
         await initAuth(serverURL);
       } catch (err) {
         console.error(err);
+      } finally {
+        this.loggingIn = false;
       }
     }
   };
@@ -294,8 +300,9 @@ export class AppLogin extends LitElement {
               @click="${this.login}"
               variant="filled"
               class="login-button"
+              ?disabled="${this.loggingIn}"
             >
-              ${msg('Login')}
+              ${this.loggingIn ? msg('Logging in...') : msg('Login')}
             </md-button>
           </div>
 

@@ -335,8 +335,8 @@
   <target>Spracheingabe</target>
 </trans-unit>
 <trans-unit id="s4fa317f81c22728b">
-  <source>Write your warning here</source>
-  <target>Schreibe deine Warnung hier</target>
+  <source>Write your content warning here</source>
+  <target>Schreibe deine Inhaltswarnung hier</target>
 </trans-unit>
 <trans-unit id="sddba42e047ca1c93">
   <source>Add 2–4 options</source>

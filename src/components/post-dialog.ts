@@ -219,6 +219,9 @@ export class PostDialog extends LitElement {
           id: data.id,
           preview_url: data.preview_url,
           description: data.description,
+          file: new File([blob], decodedName, {
+            type: blob.type || 'application/octet-stream',
+          }),
         });
       }
 
@@ -274,6 +277,9 @@ export class PostDialog extends LitElement {
           id: attachmentData.id,
           preview_url: attachmentData.preview_url,
           description: attachmentData.description,
+          file: new File([this.aiBlob], 'ai-generated.png', {
+            type: this.aiBlob.type || 'image/png',
+          }),
         });
       }
 
