@@ -30,8 +30,15 @@ export class SearchPage extends LitElement {
   @state() trending: Post[] | undefined;
   @state() trendingLinks: TrendingLink[] | undefined;
   @state() activeSegment: string = 'accounts';
+  @state() private trendingLoading = false;
+  @state() private newsLoading = false;
+  @state() private trendingError: string | undefined;
+  @state() private newsError: string | undefined;
 
   @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
+  private trendingPromise: Promise<void> | null = null;
+  private newsPromise: Promise<void> | null = null;
+  private prefetchScheduled = false;
 
   static styles = [
     css`
@@ -574,24 +581,96 @@ export class SearchPage extends LitElement {
     `,
   ];
 
+  private async loadTrendingIfNeeded(): Promise<void> {
+    if (this.trending || this.trendingPromise) {
+      return this.trendingPromise ?? Promise.resolve();
+    }
+
+    this.trendingLoading = true;
+    this.trendingError = undefined;
+    this.trendingPromise = (async () => {
+      const { getTrendingStatuses } = await import('../services/timeline');
+      this.trending = await getTrendingStatuses();
+    })()
+      .catch((error: unknown) => {
+        console.error('Error fetching trending statuses', error);
+        this.trendingError = msg('Unable to load trending posts right now.');
+      })
+      .finally(() => {
+        this.trendingLoading = false;
+        this.trendingPromise = null;
+      });
+
+    return this.trendingPromise;
+  }
+
+  private async loadNewsIfNeeded(): Promise<void> {
+    if (this.trendingLinks || this.newsPromise) {
+      return this.newsPromise ?? Promise.resolve();
+    }
+
+    this.newsLoading = true;
+    this.newsError = undefined;
+    this.newsPromise = (async () => {
+      const { getTrendingLinks } = await import('../services/timeline');
+      this.trendingLinks = await getTrendingLinks();
+    })()
+      .catch((error: unknown) => {
+        console.error('Error fetching trending links', error);
+        this.newsError = msg('Unable to load news right now.');
+      })
+      .finally(() => {
+        this.newsLoading = false;
+        this.newsPromise = null;
+      });
+
+    return this.newsPromise;
+  }
+
+  private scheduleIdlePrefetch() {
+    if (this.prefetchScheduled || !this.searchData) return;
+    this.prefetchScheduled = true;
+
+    const runPrefetch = async () => {
+      try {
+        await this.loadTrendingIfNeeded();
+        await this.loadNewsIfNeeded();
+      } finally {
+        // Keep the scheduling guard active until the prefetch work finishes.
+        this.prefetchScheduled = false;
+      }
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(
+        () => {
+          void runPrefetch();
+        },
+        { timeout: 1000 }
+      );
+      return;
+    }
+
+    globalThis.setTimeout(() => {
+      void runPrefetch();
+    }, 250);
+  }
+
+  private handleSegmentChange(e: CustomEvent<{ value: string }>) {
+    this.activeSegment = e.detail.value;
+
+    if (this.activeSegment === 'trending') {
+      void this.loadTrendingIfNeeded();
+    }
+
+    if (this.activeSegment === 'news') {
+      void this.loadNewsIfNeeded();
+    }
+  }
+
   async handleSearch(search: { searchData: SearchData }) {
     this.searchData = search.searchData;
-
-    const [{ getTrendingStatuses }, { getTrendingLinks }] = await Promise.all([
-      import('../services/timeline'),
-      import('../services/timeline'),
-    ]);
-
-    const [trendingStatuses, trendingLinks] = await Promise.all([
-      getTrendingStatuses(),
-      getTrendingLinks(),
-    ]);
-
-    console.log('trendingStatuses', trendingStatuses);
-    this.trending = trendingStatuses;
-
-    console.log('trendingLinks', trendingLinks);
-    this.trendingLinks = trendingLinks;
+    this.scheduleIdlePrefetch();
   }
 
   openAccount(id: string) {
@@ -640,8 +719,7 @@ export class SearchPage extends LitElement {
 
         <md-segmented-button
           .value="${this.activeSegment}"
-          @segment-change="${(e: CustomEvent) =>
-            (this.activeSegment = e.detail.value)}"
+          @segment-change="${this.handleSegmentChange}"
         >
           <md-segment value="accounts">${msg('Accounts')}</md-segment>
           <md-segment value="statuses">${msg('Posts')}</md-segment>
@@ -773,32 +851,40 @@ export class SearchPage extends LitElement {
 
         <div class="panel ${this.activeSegment === 'trending' ? 'active' : ''}">
           <ul>
-            ${this.trending
-              ? this.trending.map((status) => {
-                  return html`<timeline-item
-                    .tweet="${status}"
-                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                      this.handleOpenPost(e.detail.tweet)}"
-                  ></timeline-item>`;
-                })
-              : null}
+            ${this.trendingLoading
+              ? html`<li><md-skeleton></md-skeleton></li>`
+              : this.trendingError
+                ? html`<li>${this.trendingError}</li>`
+                : this.trending
+                  ? this.trending.map((status) => {
+                      return html`<timeline-item
+                        .tweet="${status}"
+                        @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.handleOpenPost(e.detail.tweet)}"
+                      ></timeline-item>`;
+                    })
+                  : null}
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'news' ? 'active' : ''}">
           <ul id="newsList">
-            ${this.trendingLinks
-              ? this.trendingLinks.map((link) => {
-                  return html` <li>
-                    <img src="${link.image}" alt="${link.description}" />
+            ${this.newsLoading
+              ? html`<li><md-skeleton></md-skeleton></li>`
+              : this.newsError
+                ? html`<li>${this.newsError}</li>`
+                : this.trendingLinks
+                  ? this.trendingLinks.map((link) => {
+                      return html` <li>
+                        <img src="${link.image}" alt="${link.description}" />
 
-                    <h3>${link.title}</h3>
-                    <a href="${link.url}" target="_blank">${link.url}</a>
+                        <h3>${link.title}</h3>
+                        <a href="${link.url}" target="_blank">${link.url}</a>
 
-                    <p>${link.description}</p>
-                  </li>`;
-                })
-              : null}
+                        <p>${link.description}</p>
+                      </li>`;
+                    })
+                  : null}
           </ul>
         </div>
 
