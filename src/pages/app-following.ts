@@ -4,6 +4,7 @@ import { localized, msg } from '@lit/localize';
 import { getFollowing } from '../services/account';
 import { router } from '../router/routes';
 
+import '../components/md/md-skeleton';
 import '../components/user-profile';
 import type { Account } from '../mastodon/types';
 
@@ -11,6 +12,7 @@ import type { Account } from '../mastodon/types';
 @customElement('app-following')
 export class Appfollowing extends LitElement {
   @state() following: Account[] = [];
+  @state() loading = false;
   private _currentAccountId: string | null = null;
   private _boundRouteChanged = () => {
     void this.handleRouteChange();
@@ -59,6 +61,25 @@ export class Appfollowing extends LitElement {
         cursor: pointer;
       }
 
+      .skeleton-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .skeleton-lines {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      ul li.empty-state {
+        background: transparent;
+        text-align: center;
+        cursor: default;
+        color: var(--md-sys-color-on-surface-variant, var(--sl-color-gray-500));
+      }
+
       @media (max-width: 820px) {
         ul {
           padding: 12px;
@@ -98,8 +119,15 @@ export class Appfollowing extends LitElement {
     if (!id || id === this._currentAccountId) return;
 
     this._currentAccountId = id;
-    const followingData = await getFollowing(id);
-    this.following = Array.isArray(followingData) ? [...followingData] : [];
+    this.loading = true;
+    this.following = [];
+
+    try {
+      const followingData = await getFollowing(id);
+      this.following = Array.isArray(followingData) ? [...followingData] : [];
+    } finally {
+      this.loading = false;
+    }
   }
 
   render() {
@@ -109,15 +137,39 @@ export class Appfollowing extends LitElement {
       <main>
         <h2>${msg('You are Following')}</h2>
         <ul class="scrollbar-hidden">
-          ${this.following.map((follower) => {
-            return html`
-              ${follower && follower.id
-                ? html`<li>
-                    <user-profile .account=${follower}></user-profile>
-                  </li>`
-                : null}
-            `;
-          })}
+          ${this.loading && this.following.length === 0
+            ? Array.from({ length: 6 }, () => {
+                return html`
+                  <li class="skeleton-row">
+                    <md-skeleton
+                      shape="circle"
+                      width="50px"
+                      height="50px"
+                    ></md-skeleton>
+                    <div class="skeleton-lines">
+                      <md-skeleton width="160px" height="16px"></md-skeleton>
+                      <md-skeleton
+                        width="120px"
+                        height="12px"
+                        style="margin-top: 6px;"
+                      ></md-skeleton>
+                    </div>
+                  </li>
+                `;
+              })
+            : this.following.length === 0
+              ? html`<li class="empty-state">
+                  ${msg('Not following anyone yet.')}
+                </li>`
+              : this.following.map((follower) => {
+                  return html`
+                    ${follower && follower.id
+                      ? html`<li>
+                          <user-profile .account=${follower}></user-profile>
+                        </li>`
+                      : null}
+                  `;
+                })}
         </ul>
       </main>
     `;

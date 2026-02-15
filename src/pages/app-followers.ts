@@ -4,6 +4,7 @@ import { localized, msg } from '@lit/localize';
 import { getUsersFollowers } from '../services/account';
 import { router } from '../router/routes';
 
+import '../components/md/md-skeleton';
 import '../components/user-profile';
 import type { Account } from '../mastodon/types';
 
@@ -11,6 +12,7 @@ import type { Account } from '../mastodon/types';
 @customElement('app-followers')
 export class AppFollowers extends LitElement {
   @state() followers: Account[] = [];
+  @state() loading = false;
   private _currentAccountId: string | null = null;
   private _boundRouteChanged = () => {
     void this.handleRouteChange();
@@ -60,6 +62,25 @@ export class AppFollowers extends LitElement {
         cursor: pointer;
 
         animation: slideUp 0.3s ease-in-out;
+      }
+
+      .skeleton-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .skeleton-lines {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      ul li.empty-state {
+        background: transparent;
+        text-align: center;
+        cursor: default;
+        color: var(--md-sys-color-on-surface-variant, var(--sl-color-gray-500));
       }
 
       @media (max-width: 820px) {
@@ -123,8 +144,15 @@ export class AppFollowers extends LitElement {
     if (!id || id === this._currentAccountId) return;
 
     this._currentAccountId = id;
-    const followersData = await getUsersFollowers(id);
-    this.followers = Array.isArray(followersData) ? [...followersData] : [];
+    this.loading = true;
+    this.followers = [];
+
+    try {
+      const followersData = await getUsersFollowers(id);
+      this.followers = Array.isArray(followersData) ? [...followersData] : [];
+    } finally {
+      this.loading = false;
+    }
   }
 
   render() {
@@ -134,15 +162,37 @@ export class AppFollowers extends LitElement {
       <main>
         <h2>${msg('Your Followers')}</h2>
         <ul class="scrollbar-hidden">
-          ${this.followers.map((follower) => {
-            return html`
-              ${follower && follower.id
-                ? html`<li>
-                    <user-profile .account=${follower}></user-profile>
-                  </li>`
-                : null}
-            `;
-          })}
+          ${this.loading && this.followers.length === 0
+            ? Array.from({ length: 6 }, () => {
+                return html`
+                  <li class="skeleton-row">
+                    <md-skeleton
+                      shape="circle"
+                      width="50px"
+                      height="50px"
+                    ></md-skeleton>
+                    <div class="skeleton-lines">
+                      <md-skeleton width="160px" height="16px"></md-skeleton>
+                      <md-skeleton
+                        width="120px"
+                        height="12px"
+                        style="margin-top: 6px;"
+                      ></md-skeleton>
+                    </div>
+                  </li>
+                `;
+              })
+            : this.followers.length === 0
+              ? html`<li class="empty-state">${msg('No followers yet.')}</li>`
+              : this.followers.map((follower) => {
+                  return html`
+                    ${follower && follower.id
+                      ? html`<li>
+                          <user-profile .account=${follower}></user-profile>
+                        </li>`
+                      : null}
+                  `;
+                })}
         </ul>
       </main>
     `;
