@@ -777,6 +777,7 @@ export class AppHome extends LitElement {
         @open-install="${() => this.openInstallDialog()}"
         .showInstall="${this.showInstallPrompt}"
         .guestMode="${this.isGuestMode}"
+        .showMessages="${!this.isGuestMode}"
       >
       </app-header>
 

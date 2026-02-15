@@ -6,7 +6,7 @@ import {
   Router,
 } from './nav-router.js';
 import type { Post } from '../interfaces/Post.js';
-import type { Account } from '../mastodon/types/index.js';
+import type { Account, Conversation } from '../mastodon/types/index.js';
 
 /**
  * App-specific navigation state that can be passed during navigation.
@@ -15,6 +15,8 @@ import type { Account } from '../mastodon/types/index.js';
 export interface AppNavigationState extends NavigationState {
   post?: Post;
   account?: Account;
+  conversation?: Conversation;
+  newRecipient?: Account;
 }
 
 /**
@@ -74,6 +76,12 @@ const routes: Route[] = [
     title: 'messages',
     plugins: [lazy(() => import('../pages/app-messages.js'))],
     render: () => html`<app-messages></app-messages>`,
+  },
+  {
+    path: '/messages/:id',
+    title: 'conversation',
+    plugins: [lazy(() => import('../pages/conversation-thread.js'))],
+    render: () => html`<conversation-thread></conversation-thread>`,
   },
   {
     path: '/following',

@@ -111,6 +111,17 @@ export class PostComposer extends LitElement {
   @property({ type: Boolean }) autoPublish = true;
 
   /**
+   * Hide the "Replying to @..." indicator while still using replyTo for the API.
+   * Useful for DM thread views where the reply context is implicit.
+   */
+  @property({ type: Boolean }) hideReplyIndicator = false;
+
+  /**
+   * Hide draft save/load UI. Useful for ephemeral contexts like DM threads.
+   */
+  @property({ type: Boolean }) hideDrafts = false;
+
+  /**
    * Number of rows for the textarea.
    */
   @property({ type: Number }) rows = 6;
@@ -2139,13 +2150,14 @@ export class PostComposer extends LitElement {
 
         // Handle reply vs new post
         if (this.replyTo?.id) {
-          // Reply mode - use replyToPost which accepts mediaIds
+          // Reply mode - use replyToPost which accepts mediaIds and visibility
           await replyToPost(
             this.replyTo.id,
             status,
             this.attachments.length > 0
               ? this.attachments.map((att) => att.id)
               : undefined,
+            this.visibility,
             scheduledAt ?? undefined
           );
         } else if (this.attachments.length > 0) {
@@ -2531,6 +2543,8 @@ export class PostComposer extends LitElement {
   // Render methods
 
   private _renderReplyIndicator() {
+    if (this.hideReplyIndicator) return nothing;
+
     return html`
       <div class="reply-wrapper ${this.replyTo ? 'open' : ''}">
         ${this.replyTo
@@ -3009,8 +3023,9 @@ export class PostComposer extends LitElement {
   }
 
   private _renderFooter() {
-    const hasSavedDrafts = this.availableDrafts.length > 0;
-    const canSaveDraft = this._hasDraftContent() && this.draftDirty;
+    const hasSavedDrafts = !this.hideDrafts && this.availableDrafts.length > 0;
+    const canSaveDraft =
+      !this.hideDrafts && this._hasDraftContent() && this.draftDirty;
     const primaryLabel =
       !this.compact && this.scheduleEnabled
         ? this.replyTo

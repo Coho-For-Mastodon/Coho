@@ -23,6 +23,8 @@ export class AppHeader extends LitElement {
 
   @property({ type: Boolean }) guestMode: boolean = false;
 
+  @property({ type: Boolean }) showMessages: boolean = false;
+
   static get styles() {
     return css`
       header {
@@ -151,6 +153,10 @@ export class AppHeader extends LitElement {
     }
   }
 
+  private _openMessages() {
+    import('../router/routes').then((m) => m.router.navigate('/messages'));
+  }
+
   render() {
     return html`
       <header>
@@ -195,6 +201,15 @@ export class AppHeader extends LitElement {
                       @click="${() => this.openInstall()}"
                     >
                       <md-icon src="/assets/download-outline.svg"></md-icon>
+                    </md-icon-button>`
+                  : nothing}
+                ${this.showMessages
+                  ? html`<md-icon-button
+                      title=${msg('Messages')}
+                      id="messages-button"
+                      @click="${() => this._openMessages()}"
+                    >
+                      <md-icon src="/assets/chatbox-outline.svg"></md-icon>
                     </md-icon-button>`
                   : nothing}
 

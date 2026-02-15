@@ -229,6 +229,7 @@ export async function replyToPost(
   id: string,
   content: string,
   mediaIds?: string[],
+  visibility?: string,
   scheduledAt?: string
 ): Promise<PostPublishResult> {
   const server = getServer();
@@ -239,15 +240,19 @@ export async function replyToPost(
 
   formData.append('status', content && content.length > 0 ? content : '');
 
+  if (visibility) {
+    formData.append('visibility', visibility);
+  }
+
+  if (scheduledAt) {
+    formData.append('scheduled_at', scheduledAt);
+  }
+
   // Attach media IDs if provided
   if (mediaIds && mediaIds.length > 0) {
     for (const mediaId of mediaIds) {
       formData.append('media_ids[]', mediaId);
     }
-  }
-
-  if (scheduledAt) {
-    formData.append('scheduled_at', scheduledAt);
   }
 
   // make a fetch request to post a status using the mastodon api

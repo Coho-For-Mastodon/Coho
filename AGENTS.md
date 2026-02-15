@@ -8,6 +8,7 @@ Coho is a fast, offline-first PWA Mastodon client built with Lit, Vite, TypeScri
 - Offline-first: user actions should not block on the network; use optimistic UI and background sync where possible.
 - Performance-first: keep the main thread light, use lazy loading, and defer non-critical work.
 - Design consistency: prefer the in-repo MD3 components and shared styles instead of third-party UI libraries.
+- No polling: never use setInterval/setTimeout polling to check for updates. Use event-driven approaches (WebSockets, push notifications, user-initiated refresh) instead.
 
 ## Quickstart
 - Dev server: `npm run dev` (Vite on port 3000)
