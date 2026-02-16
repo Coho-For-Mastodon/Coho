@@ -11,7 +11,7 @@ import '../components/header';
 import '../components/md/md-icon-button';
 import '../components/md/md-button';
 import '../components/md/md-text-field';
-import '../components/md/md-skeleton-card';
+import '../components/md/md-dialog';
 
 @localized()
 @customElement('app-messages')
@@ -149,12 +149,6 @@ export class AppMessages extends LitElement {
         gap: 2px;
       }
 
-      .conversation-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
       .display-names {
         flex: 1;
         min-width: 0;
@@ -166,9 +160,16 @@ export class AppMessages extends LitElement {
       }
 
       .timestamp {
-        flex-shrink: 0;
-        font-size: var(--md-sys-typescale-label-small-font-size, 11px);
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        font-size: 9px;
         color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        background: var(--md-sys-color-background, #1c1b1f);
+        padding: 1px 4px;
+        border-radius: 6px;
+        line-height: 1.3;
+        z-index: 2;
       }
 
       .preview {
@@ -182,13 +183,14 @@ export class AppMessages extends LitElement {
 
       .unread-dot {
         position: absolute;
-        top: 50%;
-        right: 8px;
-        transform: translateY(-50%);
-        width: 8px;
-        height: 8px;
+        top: -2px;
+        right: -2px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
         background: var(--md-sys-color-primary, #d0bcff);
+        border: 2px solid var(--md-sys-color-background, #1c1b1f);
+        z-index: 3;
       }
 
       .conversation-card.unread .display-names {
@@ -202,7 +204,7 @@ export class AppMessages extends LitElement {
 
       .delete-btn {
         flex-shrink: 0;
-        opacity: 0;
+        opacity: 0.5;
         transition: opacity 0.15s;
       }
 
@@ -210,33 +212,32 @@ export class AppMessages extends LitElement {
         opacity: 1;
       }
 
-      /* New-message overlay */
-      .new-message-overlay {
-        position: absolute;
-        inset: 0;
-        z-index: 10;
-        background: var(--md-sys-color-background, #1c1b1f);
+      /* New-message dialog sizing to match post dialog */
+      md-dialog::part(dialog) {
+        min-width: 60vw;
+        min-height: 70vh;
+      }
+
+      @media (min-width: 1250px) {
+        md-dialog::part(dialog) {
+          min-width: 50vw;
+          min-height: 60vh;
+        }
+      }
+
+      @media (max-width: 820px) {
+        md-dialog::part(dialog) {
+          min-width: 100vw;
+          min-height: 100vh;
+        }
+      }
+
+      /* New-message dialog content */
+      .new-message-body {
         display: flex;
         flex-direction: column;
-        padding-top: 60px;
-        max-width: 720px;
-        margin: 0 auto;
-      }
-
-      .new-message-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 16px;
-        border-bottom: 1px solid
-          var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
-      }
-
-      .new-message-header h2 {
-        flex: 1;
-        margin: 0;
-        font-size: var(--md-sys-typescale-title-medium-font-size, 16px);
-        font-weight: 600;
+        min-height: 300px;
+        max-height: 70vh;
       }
 
       .search-row {
@@ -368,6 +369,57 @@ export class AppMessages extends LitElement {
         bottom: 24px;
         right: 24px;
         z-index: 5;
+      }
+
+      /* Skeleton loading rows */
+      .skeleton-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 12px;
+      }
+
+      .skeleton-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(
+          --md-sys-color-outline-variant,
+          rgba(255, 255, 255, 0.08)
+        );
+        flex-shrink: 0;
+        animation: skeletonPulse 1.5s ease-in-out infinite;
+      }
+
+      .skeleton-lines {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .skeleton-line {
+        height: 12px;
+        border-radius: 6px;
+        background: var(
+          --md-sys-color-outline-variant,
+          rgba(255, 255, 255, 0.08)
+        );
+        animation: skeletonPulse 1.5s ease-in-out infinite;
+      }
+
+      .skeleton-line.short {
+        width: 60%;
+      }
+
+      @keyframes skeletonPulse {
+        0%,
+        100% {
+          opacity: 0.4;
+        }
+        50% {
+          opacity: 1;
+        }
       }
 
       .loading-more {
@@ -603,18 +655,23 @@ export class AppMessages extends LitElement {
       <main>
         <div class="title-bar">
           <h1>${msg('Messages')}</h1>
-          <md-icon-button
-            src="/assets/create-outline.svg"
-            label=${msg('New message')}
-            @click=${this._openNewMessage}
-          ></md-icon-button>
         </div>
 
         <div class="scroller scrollbar-hidden">
           ${this.loading
             ? html`
                 <div class="conversation-list">
-                  <md-skeleton-card count="6"></md-skeleton-card>
+                  ${[1, 2, 3, 4, 5, 6].map(
+                    () => html`
+                      <div class="skeleton-row">
+                        <div class="skeleton-avatar"></div>
+                        <div class="skeleton-lines">
+                          <div class="skeleton-line short"></div>
+                          <div class="skeleton-line"></div>
+                        </div>
+                      </div>
+                    `
+                  )}
                 </div>
               `
             : this.error
@@ -673,76 +730,86 @@ export class AppMessages extends LitElement {
                   `}
         </div>
 
-        ${this.showNewMessage ? this._renderNewMessageOverlay() : nothing}
+        <div class="fab">
+          <md-button
+            variant="fab"
+            @click=${this._openNewMessage}
+            title=${msg('New message')}
+          >
+            <md-icon src="/assets/create-outline.svg"></md-icon>
+          </md-button>
+        </div>
+
+        ${this._renderNewMessageDialog()}
       </main>
     `;
   }
 
-  private _renderNewMessageOverlay() {
+  private _renderNewMessageDialog() {
     return html`
-      <div class="new-message-overlay">
-        <div class="new-message-header">
-          <md-icon-button
-            src="/assets/close-outline.svg"
-            label=${msg('Cancel')}
-            @click=${this._closeNewMessage}
-          ></md-icon-button>
-          <h2>${msg('New message')}</h2>
-        </div>
+      <md-dialog
+        label=${msg('New message')}
+        .open=${this.showNewMessage}
+        ?fullscreen=${window.innerWidth <= 820}
+        @md-dialog-hide=${this._closeNewMessage}
+      >
+        <div class="new-message-body">
+          <div class="search-row">
+            <label>${msg('To:')}</label>
+            <md-text-field
+              id="recipient-search"
+              placeholder=${msg('Search people')}
+              .value=${this.searchQuery}
+              @input=${this._handleSearchInput}
+              type="search"
+            ></md-text-field>
+          </div>
 
-        <div class="search-row">
-          <label>${msg('To:')}</label>
-          <md-text-field
-            id="recipient-search"
-            placeholder=${msg('Search people')}
-            .value=${this.searchQuery}
-            @input=${this._handleSearchInput}
-            type="search"
-          ></md-text-field>
-        </div>
-
-        <div class="search-results scrollbar-hidden">
-          ${this.searching
-            ? html`<div class="search-hint">
-                <div class="loading-spinner" style="margin: 0 auto;"></div>
-              </div>`
-            : this.searchQuery.trim().length < 2
+          <div class="search-results scrollbar-hidden">
+            ${this.searching
               ? html`<div class="search-hint">
-                  ${msg('Search for a user to message')}
+                  <div class="loading-spinner" style="margin: 0 auto;"></div>
                 </div>`
-              : this.searchResults.length === 0
-                ? html`<div class="search-hint">${msg('No users found')}</div>`
-                : this.searchResults.map(
-                    (account) => html`
-                      <div
-                        class="account-row"
-                        @click=${() => this._selectRecipient(account)}
-                        role="button"
-                        tabindex="0"
-                        @keydown=${(e: KeyboardEvent) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            this._selectRecipient(account);
-                          }
-                        }}
-                      >
-                        <img
-                          class="account-avatar"
-                          src="${account.avatar}"
-                          alt=""
-                          loading="lazy"
-                        />
-                        <div class="account-info">
-                          <div class="account-display-name">
-                            ${account.display_name || account.username}
+              : this.searchQuery.trim().length < 2
+                ? html`<div class="search-hint">
+                    ${msg('Search for a user to message')}
+                  </div>`
+                : this.searchResults.length === 0
+                  ? html`<div class="search-hint">
+                      ${msg('No users found')}
+                    </div>`
+                  : this.searchResults.map(
+                      (account) => html`
+                        <div
+                          class="account-row"
+                          @click=${() => this._selectRecipient(account)}
+                          role="button"
+                          tabindex="0"
+                          @keydown=${(e: KeyboardEvent) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              this._selectRecipient(account);
+                            }
+                          }}
+                        >
+                          <img
+                            class="account-avatar"
+                            src="${account.avatar}"
+                            alt=""
+                            loading="lazy"
+                          />
+                          <div class="account-info">
+                            <div class="account-display-name">
+                              ${account.display_name || account.username}
+                            </div>
+                            <div class="account-handle">@${account.acct}</div>
                           </div>
-                          <div class="account-handle">@${account.acct}</div>
                         </div>
-                      </div>
-                    `
-                  )}
+                      `
+                    )}
+          </div>
         </div>
-      </div>
+      </md-dialog>
     `;
   }
 
@@ -782,17 +849,14 @@ export class AppMessages extends LitElement {
                 />
               `
             )}
+          ${conv.unread ? html`<span class="unread-dot"></span>` : nothing}
+          ${time ? html`<span class="timestamp">${time}</span>` : nothing}
         </div>
 
         <div class="conversation-content">
-          <div class="conversation-header">
-            <span class="display-names">${names}</span>
-            ${time ? html`<span class="timestamp">${time}</span>` : nothing}
-          </div>
+          <span class="display-names">${names}</span>
           ${preview ? html`<span class="preview">${preview}</span>` : nothing}
         </div>
-
-        ${conv.unread ? html`<span class="unread-dot"></span>` : nothing}
 
         <md-icon-button
           class="delete-btn"

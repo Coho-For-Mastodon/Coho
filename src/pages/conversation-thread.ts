@@ -6,7 +6,6 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import '../components/header';
 import '../components/post-composer';
 import '../components/md/md-button';
-import '../components/md/md-skeleton-card';
 import '../components/md/md-icon';
 
 import { router, type AppNavigationState } from '../router/routes';
@@ -71,7 +70,7 @@ export class ConversationThread extends LitElement {
         display: flex;
         gap: 8px;
         max-width: 85%;
-        animation: fadeIn 0.2s cubic-bezier(0.2, 0, 0, 1);
+        animation: messageFadeIn 0.3s cubic-bezier(0.2, 0, 0, 1) both;
       }
 
       .message.theirs {
@@ -257,6 +256,74 @@ export class ConversationThread extends LitElement {
         opacity: 0.7;
       }
 
+      /* Skeleton loading bubbles */
+      .skeleton-bubble {
+        display: flex;
+        gap: 8px;
+        max-width: 65%;
+      }
+
+      .skeleton-bubble.left {
+        align-self: flex-start;
+      }
+
+      .skeleton-bubble.right {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+      }
+
+      .skeleton-avatar-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(
+          --md-sys-color-outline-variant,
+          rgba(255, 255, 255, 0.08)
+        );
+        flex-shrink: 0;
+        animation: skeletonPulse 1.5s ease-in-out infinite;
+      }
+
+      .skeleton-bubble.right .skeleton-avatar-sm {
+        display: none;
+      }
+
+      .skeleton-content {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .skeleton-bar {
+        height: 10px;
+        border-radius: 5px;
+        background: var(
+          --md-sys-color-outline-variant,
+          rgba(255, 255, 255, 0.08)
+        );
+        animation: skeletonPulse 1.5s ease-in-out infinite;
+      }
+
+      .skeleton-bar.w1 {
+        width: 140px;
+      }
+      .skeleton-bar.w2 {
+        width: 200px;
+      }
+      .skeleton-bar.w3 {
+        width: 100px;
+      }
+
+      @keyframes skeletonPulse {
+        0%,
+        100% {
+          opacity: 0.4;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -265,6 +332,17 @@ export class ConversationThread extends LitElement {
         to {
           opacity: 1;
           transform: translateY(0);
+        }
+      }
+
+      @keyframes messageFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
         }
       }
 
@@ -560,7 +638,7 @@ export class ConversationThread extends LitElement {
           ${this.loading
             ? html`
                 <div class="messages-container">
-                  <md-skeleton-card count="4"></md-skeleton-card>
+                  ${this._renderSkeletonBubbles()}
                 </div>
               `
             : this.error
@@ -575,7 +653,7 @@ export class ConversationThread extends LitElement {
               : html`
                   <div class="messages-container">
                     ${this.loadingThread
-                      ? html`<md-skeleton-card count="3"></md-skeleton-card>`
+                      ? this._renderSkeletonBubbles()
                       : nothing}
                     ${this.messages.map((message, index) =>
                       this._renderMessage(
@@ -633,6 +711,35 @@ export class ConversationThread extends LitElement {
       console.error('[ConversationThread] Refresh failed:', err);
       this.loadingThread = false;
     }
+  }
+
+  private _renderSkeletonBubbles() {
+    return html`
+      <div class="skeleton-bubble left">
+        <div class="skeleton-avatar-sm"></div>
+        <div class="skeleton-content">
+          <div class="skeleton-bar w2"></div>
+          <div class="skeleton-bar w3"></div>
+        </div>
+      </div>
+      <div class="skeleton-bubble right">
+        <div class="skeleton-content">
+          <div class="skeleton-bar w1"></div>
+        </div>
+      </div>
+      <div class="skeleton-bubble left">
+        <div class="skeleton-avatar-sm"></div>
+        <div class="skeleton-content">
+          <div class="skeleton-bar w1"></div>
+          <div class="skeleton-bar w2"></div>
+        </div>
+      </div>
+      <div class="skeleton-bubble right">
+        <div class="skeleton-content">
+          <div class="skeleton-bar w2"></div>
+        </div>
+      </div>
+    `;
   }
 
   private _renderParticipantsBar() {
