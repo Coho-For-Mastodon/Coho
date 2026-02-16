@@ -1,5 +1,6 @@
 import { Account, Emoji } from '../types/interfaces/Account';
 import { MediaAttachment } from '../types/interfaces/MediaAttachment';
+import type { FilterResult } from '../mastodon/types/filter';
 
 // create an interface for a post in the mastodon api
 export interface Post {
@@ -68,6 +69,7 @@ export interface Post {
     voted?: boolean;
     own_votes?: number[];
   } | null;
+  filtered?: FilterResult[];
   reply_to?: Post;
   ancestors?: Post[];
   thread_continuation?: Post[]; // Posts that continue this thread

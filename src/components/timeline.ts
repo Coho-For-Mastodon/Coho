@@ -16,6 +16,8 @@ import {
   updateCacheScrollPosition,
   clearTimelineCache,
 } from '../services/timeline-cache';
+import { filterTimelinePosts } from '../services/filters';
+import type { FilterContext } from '../mastodon/types';
 
 import type {
   RepliesDetail,
@@ -109,6 +111,8 @@ export class Timeline extends LitElement {
     index: number
   ) => {
     const isLastItem = index === this.timeline.length - 1;
+    const filterTitles = (tweet as Post & { _filterTitles?: string[] })
+      ._filterTitles;
     return html`<div class="timeline-list-item">
       <timeline-item
         @open="${($event: CustomEvent) => this.handleOpen($event.detail.tweet)}"
@@ -133,6 +137,7 @@ export class Timeline extends LitElement {
         @replies="${($event: CustomEvent<RepliesDetail>) =>
           this.handleReplies($event.detail.data)}"
         .tweet="${tweet}"
+        .filterTitles="${filterTitles ?? []}"
       ></timeline-item>
       ${isLastItem
         ? html`<div id="load-more-indicator">
@@ -166,6 +171,22 @@ export class Timeline extends LitElement {
   @property({ type: Boolean }) header: boolean = true;
   @property({ type: Boolean }) autoLoad: boolean = true;
   @property({ type: Array }) lists: Array<{ id: string; title: string }> = [];
+
+  private get _filterContext(): FilterContext {
+    switch (this.timelineType) {
+      case 'home':
+      case 'for you':
+      case 'home and some trending':
+      case 'media':
+        return 'home';
+      case 'local':
+      case 'federated':
+        return 'public';
+      default:
+        if (this.timelineType.startsWith('list:')) return 'home';
+        return 'home';
+    }
+  }
 
   get timelineTitle() {
     if (this.timelineType.startsWith('list:')) {
@@ -1151,7 +1172,10 @@ export class Timeline extends LitElement {
             new Map(listTimeline.map((post: Post) => [post.id, post])).values()
           ) as Post[];
 
-          this.timeline = await enrichPostsWithReplyContext(uniqueList);
+          this.timeline = filterTimelinePosts(
+            await enrichPostsWithReplyContext(uniqueList),
+            this._filterContext
+          );
 
           saveTimelineCache(this.timelineType, this.timeline, 0);
 
@@ -1171,8 +1195,11 @@ export class Timeline extends LitElement {
           new Map(timelineDataMix.map((post: Post) => [post.id, post])).values()
         ) as Post[];
 
-        // Enrich posts with reply context
-        this.timeline = await enrichPostsWithReplyContext(uniqueMix);
+        // Enrich posts with reply context and apply filters
+        this.timeline = filterTimelinePosts(
+          await enrichPostsWithReplyContext(uniqueMix),
+          this._filterContext
+        );
 
         // Save to cache after successful fetch
         saveTimelineCache(this.timelineType, this.timeline, 0);
@@ -1194,8 +1221,11 @@ export class Timeline extends LitElement {
           ).values()
         ) as Post[];
 
-        // Enrich posts with reply context
-        this.timeline = await enrichPostsWithReplyContext(uniqueMix2);
+        // Enrich posts with reply context and apply filters
+        this.timeline = filterTimelinePosts(
+          await enrichPostsWithReplyContext(uniqueMix2),
+          this._filterContext
+        );
 
         // Save to cache after successful fetch
         saveTimelineCache(this.timelineType, this.timeline, 0);
@@ -1219,8 +1249,11 @@ export class Timeline extends LitElement {
               ).values()
             ) as Post[];
 
-            // Enrich posts with reply context
-            this.timeline = await enrichPostsWithReplyContext(uniqueLastPlace);
+            // Enrich posts with reply context and apply filters
+            this.timeline = filterTimelinePosts(
+              await enrichPostsWithReplyContext(uniqueLastPlace),
+              this._filterContext
+            );
           }
 
           // Save to cache after successful fetch
@@ -1242,8 +1275,11 @@ export class Timeline extends LitElement {
           new Map(timelineData.map((post: Post) => [post.id, post])).values()
         ) as Post[];
 
-        // Enrich posts with reply context
-        this.timeline = await enrichPostsWithReplyContext(uniqueHome);
+        // Enrich posts with reply context and apply filters
+        this.timeline = filterTimelinePosts(
+          await enrichPostsWithReplyContext(uniqueHome),
+          this._filterContext
+        );
 
         // Save to cache after successful fetch
         saveTimelineCache(this.timelineType, this.timeline, 0);
@@ -1266,8 +1302,11 @@ export class Timeline extends LitElement {
           ).values()
         ) as Post[];
 
-        // Enrich posts with reply context
-        this.timeline = await enrichPostsWithReplyContext(uniquePub);
+        // Enrich posts with reply context and apply filters
+        this.timeline = filterTimelinePosts(
+          await enrichPostsWithReplyContext(uniquePub),
+          this._filterContext
+        );
 
         // Save to cache after successful fetch
         saveTimelineCache(this.timelineType, this.timeline, 0);
@@ -1292,8 +1331,11 @@ export class Timeline extends LitElement {
           new Map(timelineDataFed.map((post: Post) => [post.id, post])).values()
         ) as Post[];
 
-        // Enrich posts with reply context
-        this.timeline = await enrichPostsWithReplyContext(uniqueFed);
+        // Enrich posts with reply context and apply filters
+        this.timeline = filterTimelinePosts(
+          await enrichPostsWithReplyContext(uniqueFed),
+          this._filterContext
+        );
 
         // Save to cache after successful fetch
         saveTimelineCache(this.timelineType, this.timeline, 0);
@@ -1316,8 +1358,11 @@ export class Timeline extends LitElement {
           new Map(mediaFiltered.map((post: Post) => [post.id, post])).values()
         ) as Post[];
 
-        // Enrich posts with reply context
-        this.timeline = await enrichPostsWithReplyContext(uniqueMedia);
+        // Enrich posts with reply context and apply filters
+        this.timeline = filterTimelinePosts(
+          await enrichPostsWithReplyContext(uniqueMedia),
+          this._filterContext
+        );
 
         // Save to cache after successful fetch
         saveTimelineCache(this.timelineType, this.timeline, 0);
@@ -1380,8 +1425,11 @@ export class Timeline extends LitElement {
       return;
     }
 
-    // Enrich new posts with reply context
-    const enrichedNewPosts = await enrichPostsWithReplyContext(newPosts);
+    // Enrich new posts with reply context and apply filters
+    const enrichedNewPosts = filterTimelinePosts(
+      await enrichPostsWithReplyContext(newPosts),
+      this._filterContext
+    );
 
     this.timeline = [...this.timeline, ...enrichedNewPosts];
 

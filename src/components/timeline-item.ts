@@ -1,5 +1,6 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { msg, str } from '@lit/localize';
 
 import { getSettings, Settings } from '../services/settings';
 import {
@@ -30,7 +31,9 @@ export class TimelineItem extends LitElement {
   @property({ type: Boolean }) guestMode: boolean = false;
   @property({ type: Boolean, reflect: true }) focused: boolean = false;
   @property({ type: Boolean }) allowPin: boolean = false;
+  @property({ type: Array }) filterTitles: string[] = [];
 
+  @state() private _filterRevealed: boolean = false;
   @state() isBoosted: boolean = false;
   @state() isReblogged: boolean = false;
   @state() isBookmarked: boolean = false;
@@ -210,6 +213,26 @@ export class TimelineItem extends LitElement {
 
       .sensitive p {
         text-align: center;
+      }
+
+      .filter-warning {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 16px 22px;
+        background: var(--md-sys-color-surface-container, rgb(32, 32, 35));
+        border-radius: var(--md-sys-shape-corner-small);
+        color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        font-size: var(--md-sys-typescale-body-medium-font-size, 14px);
+        cursor: default;
+      }
+
+      .filter-warning-label {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .link-card {
@@ -536,6 +559,12 @@ export class TimelineItem extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeydown);
+  }
+
+  updated(changed: PropertyValues) {
+    if (changed.has('tweet')) {
+      this._filterRevealed = false;
+    }
   }
 
   private _handleKeydown = (event: KeyboardEvent) => {
@@ -1171,8 +1200,26 @@ export class TimelineItem extends LitElement {
     };
   }
 
+  private _revealFiltered() {
+    this._filterRevealed = true;
+  }
+
   render() {
     if (!this.tweet) return html``;
+
+    if (this.filterTitles.length > 0 && !this._filterRevealed) {
+      const label = this.filterTitles.join(', ');
+      return html`
+        <div class="filter-warning">
+          <span class="filter-warning-label">
+            ${msg(str`Filtered: ${label}`)}
+          </span>
+          <md-button variant="text" size="small" @click=${this._revealFiltered}>
+            ${msg('Show')}
+          </md-button>
+        </div>
+      `;
+    }
 
     const state = this.getState();
     const handlers = this.getHandlers();

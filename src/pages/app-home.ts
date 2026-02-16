@@ -37,6 +37,7 @@ import type { PwaInstall } from '../components/pwa-install';
 import type { PostDetailDialog } from '../components/post-detail-dialog';
 import type { ListsDialog } from '../components/lists-dialog';
 import type { ListMembershipDialog } from '../components/list-membership-dialog';
+import type { FiltersDialog } from '../components/filters-dialog';
 
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
@@ -124,6 +125,7 @@ export class AppHome extends LitElement {
     'post-detail-dialog',
     'lists-dialog',
     'list-membership-dialog',
+    'filters-dialog',
   ]);
 
   // DOM element references using @query for type safety
@@ -142,6 +144,7 @@ export class AppHome extends LitElement {
   @query('lists-dialog') private listsDialog!: ListsDialog;
   @query('list-membership-dialog')
   private listMembershipDialog!: ListMembershipDialog;
+  @query('filters-dialog') private filtersDialog!: FiltersDialog;
 
   static get styles() {
     return [styles, homeStyles];
@@ -477,6 +480,23 @@ export class AppHome extends LitElement {
   private async _handleOpenManageListsFromMembership() {
     this.overlays.hideImmediately('list-membership-dialog');
     await this.openListsDialog();
+  }
+
+  private async openFiltersDialog() {
+    if (this.isGuestMode) return;
+
+    await import('../components/filters-dialog');
+
+    await this.overlays.show('filters-dialog');
+    await customElements.whenDefined('filters-dialog');
+    await this.updateComplete;
+    this.filtersDialog?.show();
+  }
+
+  private async _handleFiltersChanged() {
+    const { clearTimelineCache } = await import('../services/timeline-cache');
+    clearTimelineCache();
+    this.homeTimeline?.refreshTimeline(true);
   }
 
   openBotDrawer() {
@@ -876,6 +896,17 @@ export class AppHome extends LitElement {
         `
       )}
 
+      <!-- Filters Dialog - only in DOM when needed -->
+      ${this.overlays.render(
+        'filters-dialog',
+        () => html`
+          <filters-dialog
+            @md-dialog-hide="${() => this.overlays.hide('filters-dialog')}"
+            @filters-changed="${() => this._handleFiltersChanged()}"
+          ></filters-dialog>
+        `
+      )}
+
       <!-- Settings Drawer - only in DOM when needed -->
       ${this.overlays.render(
         'settings-drawer',
@@ -896,6 +927,7 @@ export class AppHome extends LitElement {
                 this.handleWellnessMode(e.detail.checked)}"
               @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleDataSaverMode(e.detail.checked)}"
+              @open-filters="${() => this.openFiltersDialog()}"
             ></settings-drawer-content>
           </otter-drawer>
         `

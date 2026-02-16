@@ -169,6 +169,15 @@ export class SettingsDrawerContent extends LitElement {
     );
   }
 
+  private _openFilters() {
+    this.dispatchEvent(
+      new CustomEvent('open-filters', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   private handleDataSaverToggle(e: Event) {
     const checked = (e.target as HTMLInputElement).checked;
     this.dispatchEvent(
@@ -280,6 +289,18 @@ export class SettingsDrawerContent extends LitElement {
         <p>
           ${msg('Data Saver Mode reduces the amount of data used by Coho.')}
         </p>
+      </div>
+
+      <div class="setting">
+        <div>
+          <h4>${msg('Content Filters')}</h4>
+
+          <md-button variant="text" @click="${() => this._openFilters()}">
+            ${msg('Manage')}
+          </md-button>
+        </div>
+
+        <p>${msg('Filter unwanted content from your timelines by keyword.')}</p>
       </div>
 
       <div class="setting">

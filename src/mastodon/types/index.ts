@@ -63,3 +63,16 @@ export type { Conversation } from './conversation';
 
 // List types
 export type { List, ListRepliesPolicy } from './list';
+
+// Filter types
+export type {
+  Filter,
+  FilterAction,
+  FilterContext,
+  FilterKeyword,
+  FilterStatus,
+  FilterResult,
+  CreateFilterParams,
+  UpdateFilterParams,
+  KeywordAttribute,
+} from './filter';

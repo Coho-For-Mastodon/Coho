@@ -5,6 +5,7 @@
 
 import { Account, Emoji } from './account';
 import { MediaAttachment } from './media';
+import type { FilterResult } from './filter';
 
 export interface Status {
   id: string;
@@ -34,6 +35,7 @@ export interface Status {
   emojis: Emoji[];
   card: Card | null;
   poll: Poll | null;
+  filtered?: FilterResult[];
   reply_to?: Status;
   ancestors?: Status[];
   thread_continuation?: Status[];
