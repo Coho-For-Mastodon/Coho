@@ -334,10 +334,6 @@
   <source>Voice input</source>
   <target>Spracheingabe</target>
 </trans-unit>
-<trans-unit id="s4fa317f81c22728b">
-  <source>Write your content warning here</source>
-  <target>Schreibe deine Inhaltswarnung hier</target>
-</trans-unit>
 <trans-unit id="sddba42e047ca1c93">
   <source>Add 2–4 options</source>
   <target>Füge 2–4 Optionen hinzu</target>
@@ -549,10 +545,6 @@
 <trans-unit id="s70178e04a3b691b6">
   <source>Open Settings</source>
   <target>Einstellungen öffnen</target>
-</trans-unit>
-<trans-unit id="s94e12cd85415427d">
-  <source>Coming soon...</source>
-  <target>Demnächst...</target>
 </trans-unit>
 <trans-unit id="sc565503c7584ed60">
   <source>Interests</source>
@@ -1315,6 +1307,267 @@
 </trans-unit>
 <trans-unit id="s127804f48e0e56ef">
   <source>Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Coho and login to start using Coho as your Mastodon client.</source>
+</trans-unit>
+<trans-unit id="seed275e54b072145">
+  <source>Home &amp; lists</source>
+</trans-unit>
+<trans-unit id="seafd0d15887a3170">
+  <source>Public timelines</source>
+</trans-unit>
+<trans-unit id="s8b60bf2db1580306">
+  <source>Threads</source>
+</trans-unit>
+<trans-unit id="s30ae03472b93dc47">
+  <source>Profiles</source>
+</trans-unit>
+<trans-unit id="s8b97ea84af17c029">
+  <source>Never</source>
+</trans-unit>
+<trans-unit id="sa6ab28c69299397d">
+  <source>12 hours</source>
+</trans-unit>
+<trans-unit id="sd8bbc6ae6b1e90b8">
+  <source>1 week</source>
+</trans-unit>
+<trans-unit id="s35548ecd94abc693">
+  <source>Unable to load filters. Please try again.</source>
+</trans-unit>
+<trans-unit id="scbad3f6f316c1142">
+  <source>Filter title is required.</source>
+</trans-unit>
+<trans-unit id="s42f7d990e73b313f">
+  <source>At least one keyword is required.</source>
+</trans-unit>
+<trans-unit id="sda70d73c1d4d38ba">
+  <source>Unable to create filter. Please try again.</source>
+</trans-unit>
+<trans-unit id="s1c8cfe44d04e3577">
+  <source>Unable to update filter. Please try again.</source>
+</trans-unit>
+<trans-unit id="sca4196b945294645">
+  <source>Unable to delete filter. Please try again.</source>
+</trans-unit>
+<trans-unit id="s9df212d89cab196d">
+  <source>Hide</source>
+</trans-unit>
+<trans-unit id="s88c7a2022d5aa211">
+  <source>Warn</source>
+</trans-unit>
+<trans-unit id="sa840b1fe69f52d1c">
+  <source>Blur media</source>
+</trans-unit>
+<trans-unit id="s7266c575062a3595">
+  <source>Never expires</source>
+</trans-unit>
+<trans-unit id="sd923f95605fed7b2">
+  <source>Expired</source>
+</trans-unit>
+<trans-unit id="s0f68a515d412cf25">
+  <source>Expires <x id="0" equiv-text="${date.toLocaleDateString()}"/></source>
+</trans-unit>
+<trans-unit id="s64cef5563313bce1">
+  <source>Create filter</source>
+</trans-unit>
+<trans-unit id="sf3bb69f8289e05b2">
+  <source>Loading filters...</source>
+</trans-unit>
+<trans-unit id="s5a9756b9e0d36e14">
+  <source>No filters yet. Create one to curate your timeline.</source>
+</trans-unit>
+<trans-unit id="s99f110d27e30b289">
+  <source>Title</source>
+</trans-unit>
+<trans-unit id="s964cc49338d74d16">
+  <source>Filter name</source>
+</trans-unit>
+<trans-unit id="sc85d3dd11b7caecf">
+  <source>Filter action</source>
+</trans-unit>
+<trans-unit id="s06c257737a06d908">
+  <source>Show warning</source>
+</trans-unit>
+<trans-unit id="sb0620df0802cf543">
+  <source>Hide completely</source>
+</trans-unit>
+<trans-unit id="se6720b21211c7d20">
+  <source>Apply to</source>
+</trans-unit>
+<trans-unit id="sf679b7a62808287e">
+  <source>Expiry</source>
+</trans-unit>
+<trans-unit id="sef73fe18e351eb35">
+  <source>Keywords</source>
+</trans-unit>
+<trans-unit id="sa47a38d2d759248e">
+  <source>Keyword or phrase</source>
+</trans-unit>
+<trans-unit id="s8262adc8a3f1aff4">
+  <source>Whole word</source>
+</trans-unit>
+<trans-unit id="sea4f08110bb8f15d">
+  <source>Remove</source>
+</trans-unit>
+<trans-unit id="s43593aa0cb0fded7">
+  <source>Add keyword</source>
+</trans-unit>
+<trans-unit id="s870f7b2f8c27e219">
+  <source>Save changes</source>
+</trans-unit>
+<trans-unit id="s180b42a7fa44fe69">
+  <source>Content filters</source>
+</trans-unit>
+<trans-unit id="s426ec97ed84f926d">
+  <source>Edit filter</source>
+</trans-unit>
+<trans-unit id="sd7696e2a2bbf110d">
+  <source>Choose a date and time.</source>
+</trans-unit>
+<trans-unit id="s071f2ef194fbba5b">
+  <source>Choose a valid date and time.</source>
+</trans-unit>
+<trans-unit id="sc31ddacdbf2a7142">
+  <source>Schedule your post at least 5 minutes in the future.</source>
+</trans-unit>
+<trans-unit id="s02a7120f7347f0af">
+  <source>Scheduling requires an internet connection.</source>
+</trans-unit>
+<trans-unit id="s3e18b9c7faa624d9">
+  <source>Could not schedule while offline. Reconnect and try again.</source>
+</trans-unit>
+<trans-unit id="sd15851075c069c6d">
+  <source>Post scheduled for <x id="0" equiv-text="${this._formatScheduledDateTime(scheduledAt)}"/>.</source>
+</trans-unit>
+<trans-unit id="s264cd9c6b80ca0fb">
+  <source>Untitled draft</source>
+</trans-unit>
+<trans-unit id="s631e99e3378de0e5">
+  <source>Post visibility</source>
+</trans-unit>
+<trans-unit id="s9cee87877ea38b43">
+  <source>Disable scheduling</source>
+</trans-unit>
+<trans-unit id="s0d2b3ac838c2ee38">
+  <source>Enable scheduling</source>
+</trans-unit>
+<trans-unit id="sb9cb95c3c3e5de68">
+  <source>Write your content warning here</source>
+</trans-unit>
+<trans-unit id="s133ae7a2e42ce76e">
+  <source>Schedule post</source>
+</trans-unit>
+<trans-unit id="s2fa1fff378499ed5">
+  <source>Will publish on <x id="0" equiv-text="${preview}"/></source>
+</trans-unit>
+<trans-unit id="s2859729711f48280">
+  <source>Schedule reply</source>
+</trans-unit>
+<trans-unit id="s3b99edc962b693e5">
+  <source>Posted!</source>
+</trans-unit>
+<trans-unit id="sb6c0ebd56d0e2486">
+  <source>Publishing...</source>
+</trans-unit>
+<trans-unit id="se908c94a86ec0fa9">
+  <source>Choose one of your saved drafts.</source>
+</trans-unit>
+<trans-unit id="s83ab022a1fbb6ba5">
+  <source>Select a draft</source>
+</trans-unit>
+<trans-unit id="s970de9ba0cf07677">
+  <source>Searching</source>
+</trans-unit>
+<trans-unit id="s3d8f0d63cd31d3c9">
+  <source>Content Filters</source>
+</trans-unit>
+<trans-unit id="s2ca7699f7c5a4996">
+  <source>Manage</source>
+</trans-unit>
+<trans-unit id="s6a48e4c1127da443">
+  <source>Filter unwanted content from your timelines by keyword.</source>
+</trans-unit>
+<trans-unit id="sa0c137a0cde3fd36">
+  <source>Filtered: <x id="0" equiv-text="${label}"/></source>
+</trans-unit>
+<trans-unit id="s716a6024e3fe999c">
+  <source>Show</source>
+</trans-unit>
+<trans-unit id="s94257198d8595d43">
+  <source>No followers yet.</source>
+</trans-unit>
+<trans-unit id="sf46ff7d67fce5bc7">
+  <source>Not following anyone yet.</source>
+</trans-unit>
+<trans-unit id="sf5ceb5dad8a27f99">
+  <source>Logging in...</source>
+</trans-unit>
+<trans-unit id="s7e02e628ef928ecf">
+  <source>Failed to load conversations</source>
+</trans-unit>
+<trans-unit id="s215ad519258e9d97">
+  <source>now</source>
+</trans-unit>
+<trans-unit id="sc592307ea80f16b9">
+  <source>Unknown</source>
+</trans-unit>
+<trans-unit id="s2c8189544e3ea679">
+  <source>Retry</source>
+</trans-unit>
+<trans-unit id="sc9e36319670bfb2c">
+  <source>No messages yet</source>
+</trans-unit>
+<trans-unit id="sf170a4da9a67b885">
+  <source>Direct messages will appear here. Tap the compose icon to start a conversation.</source>
+</trans-unit>
+<trans-unit id="s32998ba9d0bc39cb">
+  <source>Start a conversation</source>
+</trans-unit>
+<trans-unit id="s162d73fc5424798a">
+  <source>New message</source>
+</trans-unit>
+<trans-unit id="s6d02a619e21e58da">
+  <source>To:</source>
+</trans-unit>
+<trans-unit id="sa2e87f0e54c2c2e0">
+  <source>Search people</source>
+</trans-unit>
+<trans-unit id="s7135a4322ee70352">
+  <source>Search for a user to message</source>
+</trans-unit>
+<trans-unit id="sb91c6e55736dcb6e">
+  <source>No users found</source>
+</trans-unit>
+<trans-unit id="s2f35f3eca085ba68">
+  <source>Remove conversation</source>
+</trans-unit>
+<trans-unit id="s57b3dd13f0361227">
+  <source>Conversation not found</source>
+</trans-unit>
+<trans-unit id="scee4e59ff7c056ea">
+  <source>No messages in this conversation</source>
+</trans-unit>
+<trans-unit id="sd92f07e924731806">
+  <source>Failed to load conversation</source>
+</trans-unit>
+<trans-unit id="s41b4752c216d0b66">
+  <source>Conversation</source>
+</trans-unit>
+<trans-unit id="s63d040e37887f17e">
+  <source>Today</source>
+</trans-unit>
+<trans-unit id="s5b4abc92ede53bc7">
+  <source>Yesterday</source>
+</trans-unit>
+<trans-unit id="sf900fe612519e672">
+  <source>Write a message...</source>
+</trans-unit>
+<trans-unit id="s7b7163270e57e8b4">
+  <source>Refresh</source>
+</trans-unit>
+<trans-unit id="s10d6467f818462c7">
+  <source>Unable to load trending posts right now.</source>
+</trans-unit>
+<trans-unit id="s22073b297566cab8">
+  <source>Unable to load news right now.</source>
 </trans-unit>
 </body>
 </file>
