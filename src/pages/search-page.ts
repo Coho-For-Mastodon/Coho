@@ -101,7 +101,7 @@ export class SearchPage extends LitElement {
 
       .account-card {
         position: relative;
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
         overflow: visible;
         cursor: pointer;
         transition:
@@ -126,7 +126,8 @@ export class SearchPage extends LitElement {
         min-height: 80px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         overflow: hidden;
-        border-radius: 16px 16px 0 0;
+        border-radius: var(--md-sys-shape-corner-large)
+          var(--md-sys-shape-corner-large) 0 0;
       }
 
       .card-header-image {
@@ -162,7 +163,7 @@ export class SearchPage extends LitElement {
         left: -2px;
         width: 56px;
         height: 56px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         border: 3px solid #1a1a1d;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         z-index: 2;
@@ -177,7 +178,8 @@ export class SearchPage extends LitElement {
         display: flex;
         flex-direction: column;
         background: linear-gradient(145deg, #1a1a1d 0%, #2d2d33 100%);
-        border-radius: 0 0 16px 16px;
+        border-radius: 0 0 var(--md-sys-shape-corner-large)
+          var(--md-sys-shape-corner-large);
       }
 
       /* Hashtags List */
@@ -195,7 +197,7 @@ export class SearchPage extends LitElement {
 
       #hashtagsList li {
         padding: 12px 14px;
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
         background: var(--md-sys-color-surface-container, #2d2d33);
         cursor: pointer;
         transition:
@@ -229,7 +231,7 @@ export class SearchPage extends LitElement {
         text-transform: uppercase;
         letter-spacing: 0.5px;
         padding: 2px 6px;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         background: rgba(102, 126, 234, 0.2);
         color: #667eea;
         border: 1px solid rgba(102, 126, 234, 0.3);
@@ -289,7 +291,7 @@ export class SearchPage extends LitElement {
 
       /* Skeleton loading cards */
       .account-card-skeleton {
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
         overflow: hidden;
         background: linear-gradient(145deg, #1a1a1d 0%, #2d2d33 100%);
         border: 1px solid rgba(255, 255, 255, 0.06);
@@ -306,20 +308,22 @@ export class SearchPage extends LitElement {
         );
         background-size: 200% 100%;
         animation: shimmer 1.5s infinite;
-        border-radius: 16px 16px 0 0;
+        border-radius: var(--md-sys-shape-corner-large)
+          var(--md-sys-shape-corner-large) 0 0;
       }
 
       .skeleton-body {
         padding: 16px;
         position: relative;
         background: linear-gradient(145deg, #1a1a1d 0%, #2d2d33 100%);
-        border-radius: 0 0 16px 16px;
+        border-radius: 0 0 var(--md-sys-shape-corner-large)
+          var(--md-sys-shape-corner-large);
       }
 
       .skeleton-avatar {
         width: 56px;
         height: 56px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         background: linear-gradient(
           90deg,
           #2d2d33 25%,
@@ -340,7 +344,7 @@ export class SearchPage extends LitElement {
 
       .skeleton-line {
         height: 14px;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         background: linear-gradient(
           90deg,
           #2d2d33 25%,
@@ -371,7 +375,7 @@ export class SearchPage extends LitElement {
       .skeleton-stat {
         width: 50px;
         height: 30px;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         background: linear-gradient(
           90deg,
           #2d2d33 25%,
@@ -423,7 +427,7 @@ export class SearchPage extends LitElement {
         flex: 1;
 
         background: #242428;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         padding: 8px;
         padding-top: 0;
       }
@@ -442,12 +446,12 @@ export class SearchPage extends LitElement {
       #newsList li {
         padding: 8px;
         background: #f3f3f3;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
       }
 
       #newsList li img {
         width: 100%;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         margin-bottom: 10px;
       }
 
@@ -575,7 +579,7 @@ export class SearchPage extends LitElement {
 
         #newsList li {
           background: rgb(32 32 35);
-          border-radius: 6px;
+          border-radius: var(--md-sys-shape-corner-small);
         }
       }
     `,

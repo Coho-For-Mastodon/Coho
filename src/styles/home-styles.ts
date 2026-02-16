@@ -76,7 +76,7 @@ export const homeStyles = css`
     width: 8px;
     height: 8px;
     background-color: var(--md-sys-color-primary);
-    border-radius: 50%;
+    border-radius: var(--md-sys-shape-corner-circle);
     z-index: 10;
   }
 
@@ -134,7 +134,7 @@ export const homeStyles = css`
 
   #settings-profile-inner {
     background: rgba(128, 128, 128, 0.14);
-    border-radius: 6px;
+    border-radius: var(--md-sys-shape-corner-small);
     padding: 10px;
     margin-top: 12px;
 
@@ -145,7 +145,7 @@ export const homeStyles = css`
 
   #settings-profile-inner img {
     width: 4em;
-    border-radius: 50%;
+    border-radius: var(--md-sys-shape-corner-circle);
   }
 
   #settings-profile-inner md-skeleton {
@@ -178,13 +178,13 @@ export const homeStyles = css`
     padding: 6px;
     gap: 6px;
 
-    border-radius: 6px;
+    border-radius: var(--md-sys-shape-corner-small);
   }
 
   .img-preview img {
     width: 8em;
     min-height: 6em;
-    border-radius: 6px;
+    border-radius: var(--md-sys-shape-corner-small);
 
     margin-top: 6px;
   }
@@ -193,7 +193,7 @@ export const homeStyles = css`
     z-index: 10000;
     width: 150px;
     background: #1b1a1a;
-    border-radius: 5px;
+    border-radius: var(--md-sys-shape-corner-small);
     position: fixed;
     transform: scale(0.9);
     opacity: 0;
@@ -249,7 +249,7 @@ export const homeStyles = css`
   }
 
   #instanceInfo {
-    border-radius: 6px;
+    border-radius: var(--md-sys-shape-corner-small);
     background: #0000001a;
     padding-left: 12px;
     padding-top: 1px;
@@ -305,7 +305,7 @@ export const homeStyles = css`
   .sidebar-card {
     background: transparent;
     border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: 16px;
+    border-radius: var(--md-sys-shape-corner-large);
     padding: 16px;
 
     animation: fadeIn 0.3s ease-in-out;
@@ -366,7 +366,7 @@ export const homeStyles = css`
   #profile-card-content md-skeleton#profile-avatar {
     height: 80px;
     width: 80px;
-    border-radius: 50%;
+    border-radius: var(--md-sys-shape-corner-circle);
     border: 2px solid var(--md-sys-color-primary);
   }
 
@@ -406,7 +406,7 @@ export const homeStyles = css`
     padding: 8px;
     margin-top: 4px;
     background: #00000024;
-    border-radius: 4px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
   }
 
   sl-radio::part(control) {
@@ -447,7 +447,7 @@ export const homeStyles = css`
   #profile-avatar {
     height: var(--md-sys-size-avatar-large, 88px);
     width: var(--md-sys-size-avatar-large, 88px);
-    border-radius: 50%;
+    border-radius: var(--md-sys-shape-corner-circle);
 
     border: solid var(--sl-color-primary-600)
       var(--md-sys-size-avatar-border-width, 4px);
@@ -460,7 +460,7 @@ export const homeStyles = css`
   #profile md-skeleton#profile-avatar {
     height: var(--md-sys-size-avatar-large, 88px);
     width: var(--md-sys-size-avatar-large, 88px);
-    border-radius: 50%;
+    border-radius: var(--md-sys-shape-corner-circle);
 
     border: solid var(--sl-color-primary-600)
       var(--md-sys-size-avatar-border-width, 4px);
@@ -485,7 +485,7 @@ export const homeStyles = css`
     margin-top: 16px;
     background: #0e0e0e45;
     padding: 5px;
-    border-radius: 6px;
+    border-radius: var(--md-sys-shape-corner-small);
   }
 
   #user-url {

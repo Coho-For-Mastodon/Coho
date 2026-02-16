@@ -47,7 +47,8 @@ export class MdSelect extends LitElement {
         justify-content: space-between;
         min-height: 26px;
         padding: 8px 16px;
-        border-radius: 4px 4px 0 0;
+        border-radius: var(--md-sys-shape-corner-extra-small)
+          var(--md-sys-shape-corner-extra-small) 0 0;
         background-color: var(
           --md-sys-color-surface-container-highest,
           #e6e0e9
@@ -82,7 +83,7 @@ export class MdSelect extends LitElement {
       .select-input.outlined {
         background-color: transparent;
         border: 1px solid var(--md-sys-color-outline, #79747e);
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
       }
 
       .select-input.outlined:hover:not(.disabled) {
@@ -96,17 +97,17 @@ export class MdSelect extends LitElement {
       }
 
       .select-input.pill {
-        border-radius: 9999px;
+        border-radius: var(--md-sys-shape-corner-full);
         border-bottom: none;
       }
 
       .select-input.pill.outlined {
-        border-radius: 9999px;
+        border-radius: var(--md-sys-shape-corner-full);
       }
 
       .select-input.icon-only {
         padding: 8px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         border-bottom: none !important;
         border: none !important;
         background: transparent !important;
@@ -116,7 +117,7 @@ export class MdSelect extends LitElement {
       }
 
       .select-input.icon-only.outlined {
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
       }
 
       .select-input.icon-only .select-label,
@@ -184,7 +185,7 @@ export class MdSelect extends LitElement {
         max-height: 280px;
         overflow-y: auto;
         background: var(--md-sys-color-surface-container, #f3edf7);
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         box-shadow:
           0px 1px 2px rgba(0, 0, 0, 0.3),
           0px 2px 6px 2px rgba(0, 0, 0, 0.15);

@@ -60,7 +60,7 @@ export class HandwritingDialog extends LitElement {
 
     .canvas-container {
       position: relative;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       overflow: hidden;
       background: #fff;
       aspect-ratio: 16/9;
@@ -114,7 +114,7 @@ export class HandwritingDialog extends LitElement {
       height: 18px;
       border: 2px solid transparent;
       border-top-color: currentColor;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       animation: spin 0.8s linear infinite;
     }
 

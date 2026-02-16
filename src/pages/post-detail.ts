@@ -127,7 +127,7 @@ export class PostDetail extends LitElement {
         padding-top: 10px;
         padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.18);
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       .composer-shell {
@@ -137,7 +137,7 @@ export class PostDetail extends LitElement {
         );
         border: 1px solid
           var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
         padding: 10px;
       }
 

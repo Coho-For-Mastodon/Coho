@@ -148,7 +148,7 @@ export class MdTabs extends LitElement {
       align-self: stretch;
       height: calc(100% + 54px);
       margin-top: -74px;
-      border-radius: 0;
+      border-radius: var(--md-sys-shape-corner-none);
       padding-left: 12px;
       padding-right: 12px;
     }

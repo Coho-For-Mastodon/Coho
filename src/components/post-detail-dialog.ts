@@ -26,7 +26,7 @@ export class PostDetailDialog extends LitElement {
 
     dialog {
       border: none;
-      border-radius: 0;
+      border-radius: var(--md-sys-shape-corner-none);
       padding: 0;
       width: 100vw;
       height: 100dvh;
@@ -153,7 +153,7 @@ export class PostDetailDialog extends LitElement {
     /* Desktop: max width for content readability */
     @media (min-width: 820px) {
       dialog {
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
         width: min(720px, calc(100vw - 64px));
         height: min(90vh, 900px);
         max-width: min(720px, calc(100vw - 64px));

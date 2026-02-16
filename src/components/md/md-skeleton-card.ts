@@ -21,7 +21,7 @@ export class MdSkeletonCard extends LitElement {
         --md-sys-color-surface-container,
         var(--sl-panel-background-color)
       );
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       height: 280px;
       margin-bottom: 10px;
       border: 1px solid
@@ -78,7 +78,7 @@ export class MdSkeletonCard extends LitElement {
 
     @media (max-width: 820px) {
       .skeleton-card {
-        border-radius: 0;
+        border-radius: var(--md-sys-shape-corner-none);
         height: 250px;
       }
     }

@@ -49,7 +49,8 @@ export class MdTextField extends LitElement {
         min-height: 40px;
         padding: 12px 16px;
         border: none;
-        border-radius: 4px 4px 0 0;
+        border-radius: var(--md-sys-shape-corner-extra-small)
+          var(--md-sys-shape-corner-extra-small) 0 0;
         background-color: var(
           --md-sys-color-surface-container-highest,
           #e6e0e9
@@ -104,7 +105,7 @@ export class MdTextField extends LitElement {
       input.outlined {
         background-color: transparent;
         border: 1px solid var(--md-sys-color-outline, #79747e);
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
       }
 
       input.outlined:hover:not(:disabled) {
@@ -113,12 +114,12 @@ export class MdTextField extends LitElement {
       }
 
       input.pill {
-        border-radius: 9999px;
+        border-radius: var(--md-sys-shape-corner-full);
         border-bottom: none;
       }
 
       input.pill.outlined {
-        border-radius: 9999px;
+        border-radius: var(--md-sys-shape-corner-full);
       }
 
       input.outlined:focus {

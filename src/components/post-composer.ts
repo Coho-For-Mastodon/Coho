@@ -239,7 +239,7 @@ export class PostComposer extends LitElement {
       z-index: 20;
       max-height: 240px;
       overflow-y: auto;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       background: var(--md-sys-color-surface-container, #f3edf7);
       border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.12));
       box-shadow:
@@ -279,7 +279,7 @@ export class PostComposer extends LitElement {
     .mention-avatar {
       width: 28px;
       height: 28px;
-      border-radius: 999px;
+      border-radius: var(--md-sys-shape-corner-full);
       object-fit: cover;
       flex-shrink: 0;
       background: var(--md-sys-color-surface-container-high, #e6e0e9);
@@ -324,7 +324,7 @@ export class PostComposer extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
       padding: 4px 8px;
       background: var(--md-sys-color-surface-container-high);
-      border-radius: 8px;
+      border-radius: var(--md-sys-shape-corner-small);
     }
 
     /* Poll reveal – grid-row collapse (no height animation) */
@@ -354,7 +354,7 @@ export class PostComposer extends LitElement {
     .poll-composer {
       margin-top: 12px;
       padding: 12px;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       background: color-mix(
         in srgb,
         var(--md-sys-color-on-surface, #ffffff) 6%,
@@ -445,7 +445,7 @@ export class PostComposer extends LitElement {
     .schedule-composer {
       margin-top: 12px;
       padding: 12px;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       background: color-mix(
         in srgb,
         var(--md-sys-color-on-surface, #ffffff) 6%,
@@ -591,14 +591,14 @@ export class PostComposer extends LitElement {
       background: #00000040;
       padding: 6px;
       gap: 6px;
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       animation: fadeSlideIn 0.2s cubic-bezier(0.2, 0, 0, 1) both;
     }
 
     .img-preview img {
       width: 8em;
       height: 8em;
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       object-fit: cover;
     }
 
@@ -700,7 +700,7 @@ export class PostComposer extends LitElement {
       padding: 8px 0;
       background-color: var(--md-sys-color-surface-container, #2b2930);
       color: var(--md-sys-color-on-surface, #e6e1e5);
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       box-shadow:
         0 1px 2px 0 rgba(0, 0, 0, 0.3),
         0 2px 6px 2px rgba(0, 0, 0, 0.15);
@@ -759,7 +759,7 @@ export class PostComposer extends LitElement {
       font-size: var(--md-sys-typescale-label-small-font-size, 11px);
       color: var(--md-sys-color-on-surface-variant, #cac4d0);
       background: var(--md-sys-color-surface-container, #2b2930);
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       white-space: nowrap;
     }
 
@@ -795,7 +795,7 @@ export class PostComposer extends LitElement {
       --md-icon-button-icon-color: #e879f9;
       opacity: 1 !important;
       animation: ai-glow 1.5s ease-in-out infinite;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
     }
 
     .proofread-button[disabled] {
@@ -805,7 +805,7 @@ export class PostComposer extends LitElement {
     .mic-button.recording {
       --md-icon-button-icon-color: #fff;
       background-color: #e53935;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       opacity: 1;
       animation: recording-pulse 1s ease-in-out infinite;
     }
@@ -814,7 +814,7 @@ export class PostComposer extends LitElement {
       --md-icon-button-icon-color: #e879f9;
       opacity: 1 !important;
       animation: ai-glow 1.5s ease-in-out infinite;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
     }
 
     .pen-button {
@@ -876,7 +876,7 @@ export class PostComposer extends LitElement {
       height: 14px;
       border: 2px solid currentColor;
       border-right-color: transparent;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       animation: md3-spin 0.8s linear infinite;
     }
 
@@ -992,7 +992,7 @@ export class PostComposer extends LitElement {
         var(--md-sys-color-primary, #d0bcff) 8%,
         transparent
       );
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
     }
 
     @media (max-width: 820px) {

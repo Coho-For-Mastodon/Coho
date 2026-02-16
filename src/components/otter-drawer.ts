@@ -163,7 +163,7 @@ export class OtterDrawer extends LitElement {
     .handle-bar {
       width: var(--drawer-handle-width);
       height: var(--drawer-handle-height);
-      border-radius: 999px;
+      border-radius: var(--md-sys-shape-corner-full);
       background: var(--drawer-handle-bg);
     }
 
@@ -193,7 +193,7 @@ export class OtterDrawer extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       color: var(--sl-color-neutral-600, #666);
       transition: all 0.2s ease;
     }

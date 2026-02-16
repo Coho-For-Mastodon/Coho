@@ -39,7 +39,7 @@ export class SettingsDrawerContent extends LitElement {
 
     #settings-profile-inner {
       background: rgba(128, 128, 128, 0.14);
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       padding: 10px;
       margin-top: 12px;
       display: flex;
@@ -49,7 +49,7 @@ export class SettingsDrawerContent extends LitElement {
 
     #settings-profile-inner img {
       width: 4em;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
     }
 
     #settings-profile-inner md-skeleton {
@@ -85,7 +85,7 @@ export class SettingsDrawerContent extends LitElement {
     }
 
     #instanceInfo {
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       background: #0000001a;
       padding-left: 12px;
       padding-top: 1px;

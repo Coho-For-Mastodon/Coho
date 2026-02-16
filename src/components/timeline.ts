@@ -226,7 +226,7 @@ export class Timeline extends LitElement {
 
         background: var(--sl-panel-background-color);
         padding: 8px;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
 
         align-items: center;
         justify-content: space-between;
@@ -274,13 +274,13 @@ export class Timeline extends LitElement {
       #img-preview img {
         width: 100%;
         height: max-content;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
       }
 
       lit-virtualizer,
       .scroller-fallback {
         display: block;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         margin: 0;
         padding: 0;
 
@@ -319,7 +319,7 @@ export class Timeline extends LitElement {
 
       .header-block img {
         height: 62px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
       }
 
       .header-block h4 {
@@ -354,7 +354,7 @@ export class Timeline extends LitElement {
         align-items: center;
         margin-bottom: 6px;
         background: var(--primary-color);
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         padding: 8px;
       }
 
@@ -398,7 +398,7 @@ export class Timeline extends LitElement {
       #refresh-indicator .indicator-container {
         width: 48px;
         height: 48px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         background: var(
           --md-sys-color-surface-container-highest,
           rgba(128, 128, 128, 0.15)
@@ -480,7 +480,7 @@ export class Timeline extends LitElement {
         cursor: pointer;
         padding: 4px 8px;
         margin-left: -8px;
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
         transition: background-color 0.2s;
         user-select: none;
         color: var(--md-sys-color-on-surface);
@@ -1636,7 +1636,7 @@ export class Timeline extends LitElement {
           ? html`<img
               src="${this.imgPreview}"
               alt="Image preview"
-              style="width:100%;border-radius:6px;"
+              style="width:100%;border-radius:var(--md-sys-shape-corner-small);"
             />`
           : null}
       </md-dialog>

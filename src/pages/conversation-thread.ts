@@ -85,7 +85,7 @@ export class ConversationThread extends LitElement {
       .message-avatar {
         width: 32px;
         height: 32px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         object-fit: cover;
         flex-shrink: 0;
         align-self: flex-end;
@@ -97,7 +97,7 @@ export class ConversationThread extends LitElement {
 
       .bubble {
         padding: 10px 14px;
-        border-radius: 18px;
+        border-radius: var(--md-sys-shape-corner-large);
         font-size: var(--md-sys-typescale-body-medium-font-size, 14px);
         line-height: 1.5;
         word-break: break-word;
@@ -164,7 +164,7 @@ export class ConversationThread extends LitElement {
         flex-wrap: wrap;
         gap: 4px;
         margin-top: 8px;
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
         overflow: hidden;
       }
 
@@ -172,7 +172,7 @@ export class ConversationThread extends LitElement {
       .bubble-media video {
         max-width: 100%;
         max-height: 300px;
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
         object-fit: cover;
       }
 
@@ -227,7 +227,7 @@ export class ConversationThread extends LitElement {
       .participants-avatars img {
         width: 28px;
         height: 28px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         object-fit: cover;
         margin-left: -8px;
         border: 2px solid var(--md-sys-color-surface, #1c1b1f);
@@ -275,7 +275,7 @@ export class ConversationThread extends LitElement {
       .skeleton-avatar-sm {
         width: 32px;
         height: 32px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         background: var(
           --md-sys-color-outline-variant,
           rgba(255, 255, 255, 0.08)
@@ -296,7 +296,7 @@ export class ConversationThread extends LitElement {
 
       .skeleton-bar {
         height: 10px;
-        border-radius: 5px;
+        border-radius: var(--md-sys-shape-corner-small);
         background: var(
           --md-sys-color-outline-variant,
           rgba(255, 255, 255, 0.08)

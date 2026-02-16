@@ -81,7 +81,7 @@ export class MdToast extends LitElement {
         min-width: 280px;
         max-width: min(560px, calc(100vw - 32px));
         padding: 14px 16px;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         background: #313033;
         color: #f5eff7;
         box-shadow:
@@ -180,7 +180,7 @@ export class MdToast extends LitElement {
         font-weight: 500;
         letter-spacing: 0.1px;
         padding: 8px 12px;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         cursor: pointer;
         text-transform: uppercase;
         transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);

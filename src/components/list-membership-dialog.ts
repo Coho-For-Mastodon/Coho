@@ -57,7 +57,7 @@ export class ListMembershipDialog extends LitElement {
       align-items: center;
       justify-content: space-between;
       padding: 10px 12px;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       background: var(--md-sys-color-surface-container, #f3edf7);
     }
 
@@ -68,7 +68,7 @@ export class ListMembershipDialog extends LitElement {
 
     .empty {
       padding: 16px;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       background: var(--md-sys-color-surface-container-low, #f7f2f8);
       color: var(--md-sys-color-on-surface-variant, #49454f);
       font-size: 14px;

@@ -47,7 +47,7 @@ export class HomeSidebar extends LitElement {
 
     .sidebar-card {
       background: var(--md-sys-color-surface-container, #1e1e24);
-      border-radius: 16px;
+      border-radius: var(--md-sys-shape-corner-medium);
       padding: 16px;
       animation: fadeIn 0.3s ease-in-out;
     }
@@ -71,7 +71,7 @@ export class HomeSidebar extends LitElement {
     #profile-card-content md-skeleton#profile-avatar {
       height: 80px;
       width: 80px;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       border: 2px solid var(--md-sys-color-primary);
     }
 

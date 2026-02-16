@@ -86,7 +86,7 @@ export class AppMessages extends LitElement {
         align-items: center;
         gap: 12px;
         padding: 14px 12px;
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
         cursor: pointer;
         transition: background 0.15s cubic-bezier(0.2, 0, 0, 1);
         position: relative;
@@ -118,7 +118,7 @@ export class AppMessages extends LitElement {
       .avatar-stack img {
         width: 48px;
         height: 48px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         object-fit: cover;
       }
 
@@ -167,7 +167,7 @@ export class AppMessages extends LitElement {
         color: var(--md-sys-color-on-surface-variant, #cac4d0);
         background: var(--md-sys-color-background, #1c1b1f);
         padding: 1px 4px;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         line-height: 1.3;
         z-index: 2;
       }
@@ -187,7 +187,7 @@ export class AppMessages extends LitElement {
         right: -2px;
         width: 10px;
         height: 10px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         background: var(--md-sys-color-primary, #d0bcff);
         border: 2px solid var(--md-sys-color-background, #1c1b1f);
         z-index: 3;
@@ -285,7 +285,7 @@ export class AppMessages extends LitElement {
       .account-avatar {
         width: 40px;
         height: 40px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         object-fit: cover;
         flex-shrink: 0;
       }
@@ -382,7 +382,7 @@ export class AppMessages extends LitElement {
       .skeleton-avatar {
         width: 48px;
         height: 48px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         background: var(
           --md-sys-color-outline-variant,
           rgba(255, 255, 255, 0.08)
@@ -400,7 +400,7 @@ export class AppMessages extends LitElement {
 
       .skeleton-line {
         height: 12px;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         background: var(
           --md-sys-color-outline-variant,
           rgba(255, 255, 255, 0.08)
@@ -434,7 +434,7 @@ export class AppMessages extends LitElement {
         border: 3px solid
           var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
         border-top-color: var(--md-sys-color-primary, #d0bcff);
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         animation: spin 0.8s linear infinite;
       }
 

@@ -42,7 +42,7 @@ export class MdCheckbox extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       flex-shrink: 0;
       margin: -11px; /* Pull back so checkbox doesn't take extra space */
     }
@@ -50,7 +50,7 @@ export class MdCheckbox extends LitElement {
     .state-layer {
       position: absolute;
       inset: 0;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       background: transparent;
       transition: background 0.15s ease;
     }
@@ -60,7 +60,7 @@ export class MdCheckbox extends LitElement {
       width: 18px;
       height: 18px;
       border: 2px solid var(--md-sys-color-on-surface-variant, #938f99);
-      border-radius: 3px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
       background-color: transparent;
       display: flex;

@@ -274,6 +274,7 @@
   --md-sys-shape-corner-large: 16px;
   --md-sys-shape-corner-extra-large: 28px;
   --md-sys-shape-corner-full: 9999px;
+  --md-sys-shape-corner-circle: 50%;
 }
 
 /* Size Tokens (MD3) */

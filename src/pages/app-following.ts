@@ -56,7 +56,7 @@ export class Appfollowing extends LitElement {
 
       ul li {
         background: var(--sl-color-gray-50);
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         padding: 10px;
         cursor: pointer;
       }

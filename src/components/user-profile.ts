@@ -39,7 +39,7 @@ export class UserProfile extends LitElement {
       .headerBlock img#avatar {
         height: 50px;
         width: 50px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         contain: strict;
 
         border: solid var(--sl-color-primary-600) 2px;

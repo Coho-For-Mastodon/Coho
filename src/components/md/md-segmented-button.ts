@@ -36,7 +36,7 @@ export class MdSegmentedButton extends LitElement {
     .container {
       display: flex;
       background: var(--md-sys-color-surface-container, #f3edf7);
-      border-radius: 24px;
+      border-radius: var(--md-sys-shape-corner-extra-large);
       padding: 4px;
       gap: 0;
       overflow-x: auto;
@@ -183,7 +183,7 @@ export class MdSegment extends LitElement {
       font-size: var(--md-sys-typescale-label-large-font-size, 14px);
       font-weight: 500;
       cursor: pointer;
-      border-radius: 20px;
+      border-radius: var(--md-sys-shape-corner-extra-large);
       transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
       white-space: nowrap;
       width: 100%;

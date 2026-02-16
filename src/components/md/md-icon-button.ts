@@ -62,7 +62,7 @@ export class MdIconButton extends LitElement {
       height: 40px;
       padding: 8px;
       border: none;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       background: transparent;
       color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
       cursor: pointer;
@@ -243,7 +243,7 @@ export class MdIconButton extends LitElement {
       font-size: 12px;
       font-weight: 500;
       white-space: nowrap;
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       z-index: 10000;
       pointer-events: none;
       opacity: 1;

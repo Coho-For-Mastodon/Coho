@@ -88,7 +88,7 @@ export class TimelineItem extends LitElement {
 
         cursor: pointer;
 
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
         overflow: hidden;
 
         width: auto;
@@ -147,7 +147,8 @@ export class TimelineItem extends LitElement {
         padding: 8px 12px;
         margin: -10px -10px 10px -10px;
         background: transparent;
-        border-radius: 12px 12px 0 0;
+        border-radius: var(--md-sys-shape-corner-medium)
+          var(--md-sys-shape-corner-medium) 0 0;
         font-size: var(--md-sys-typescale-body-small-font-size);
         color: var(--md-sys-color-on-surface-variant, #c4c4c4);
         cursor: pointer;
@@ -165,7 +166,7 @@ export class TimelineItem extends LitElement {
       .boost-indicator img {
         width: 20px;
         height: 20px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         border: 1px solid var(--md-sys-color-outline-variant, #444);
       }
 
@@ -197,7 +198,7 @@ export class TimelineItem extends LitElement {
         text-align: center;
         justify-content: center;
         flex-direction: column;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         padding: 22px;
       }
 
@@ -215,7 +216,7 @@ export class TimelineItem extends LitElement {
         display: flex;
         align-items: stretch;
         background: #ffffff0d;
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
         overflow: hidden;
         margin-top: 10px;
         cursor: pointer;
@@ -238,7 +239,7 @@ export class TimelineItem extends LitElement {
 
       .link-card img {
         min-width: 80px;
-        border-radius: 0;
+        border-radius: var(--md-sys-shape-corner-none);
         object-fit: cover;
 
         height: 20%;
@@ -310,7 +311,7 @@ export class TimelineItem extends LitElement {
         justify-content: space-around;
         gap: 10px;
         background: rgb(255 255 255 / 11%);
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         padding: 10px;
       }
 
@@ -324,7 +325,7 @@ export class TimelineItem extends LitElement {
       .status-link-card img {
         width: 100%;
         max-width: 300px;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         height: initial;
       }
 
@@ -348,7 +349,8 @@ export class TimelineItem extends LitElement {
 
       md-card img {
         object-fit: cover;
-        border-radius: 6px 6px 0px 0px;
+        border-radius: var(--md-sys-shape-corner-small)
+          var(--md-sys-shape-corner-small) 0 0;
       }
 
       .header-block {
@@ -360,7 +362,7 @@ export class TimelineItem extends LitElement {
 
       .header-block img {
         height: 62px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
       }
 
       .header-block h4 {
@@ -450,7 +452,7 @@ export class TimelineItem extends LitElement {
 
       @media (max-width: 820px) {
         .timeline-item {
-          border-radius: 0;
+          border-radius: var(--md-sys-shape-corner-none);
         }
 
         .actions {

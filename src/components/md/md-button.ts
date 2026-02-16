@@ -83,26 +83,26 @@ export class MdButton extends LitElement {
         height: 32px;
         padding: 0 12px;
         font-size: var(--md-sys-typescale-label-medium-font-size);
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
       }
 
       button.medium {
         height: 40px;
         padding: 0 24px;
         font-size: var(--md-sys-typescale-label-large-font-size);
-        border-radius: 20px;
+        border-radius: var(--md-sys-shape-corner-extra-large);
       }
 
       button.large {
         height: 56px;
         padding: 0 32px;
         font-size: var(--md-sys-typescale-body-large-font-size);
-        border-radius: 28px;
+        border-radius: var(--md-sys-shape-corner-extra-large);
       }
 
       /* Pill shape override */
       button.pill {
-        border-radius: 100px;
+        border-radius: var(--md-sys-shape-corner-full);
       }
 
       /* Filled variant (default) */
@@ -194,20 +194,20 @@ export class MdButton extends LitElement {
           0 4px 8px 3px rgba(0, 0, 0, 0.15);
         width: 56px;
         height: 56px;
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
         padding: 0;
       }
 
       button.fab.small {
         width: 40px;
         height: 40px;
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       button.fab.large {
         width: 96px;
         height: 96px;
-        border-radius: 28px;
+        border-radius: var(--md-sys-shape-corner-extra-large);
       }
 
       button.fab:hover {
@@ -287,7 +287,7 @@ export class MdButton extends LitElement {
         font-size: 12px;
         font-weight: 500;
         white-space: nowrap;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         z-index: 10000;
         pointer-events: none;
         opacity: 1;
@@ -336,7 +336,7 @@ export class MdButton extends LitElement {
       left: ${x}px;
       top: ${y}px;
       background: currentColor;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       opacity: 0.3;
       pointer-events: none;
       animation: ripple 600ms cubic-bezier(0.4, 0, 0.2, 1);

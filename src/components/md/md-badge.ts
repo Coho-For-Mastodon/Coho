@@ -25,7 +25,7 @@ export class MdBadge extends LitElement {
         align-items: center;
         justify-content: center;
         padding: 8px 16px;
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
         font-size: var(--md-sys-typescale-label-large-font-size);
         font-weight: 500;
         line-height: 20px;

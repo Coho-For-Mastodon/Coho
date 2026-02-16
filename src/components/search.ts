@@ -50,7 +50,7 @@ export class Search extends LitElement {
         min-width: 360px;
         max-width: 720px;
         background-color: var(--md-sys-color-surface-container-high, #e6e0e9);
-        border-radius: 28px;
+        border-radius: var(--md-sys-shape-corner-extra-large);
         padding: 0 16px;
         gap: 16px;
         cursor: text;
@@ -107,7 +107,7 @@ export class Search extends LitElement {
       .trailing-avatar {
         width: 30px;
         height: 30px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         flex-shrink: 0;
         object-fit: cover;
       }
@@ -121,7 +121,7 @@ export class Search extends LitElement {
         color: var(--md-sys-color-on-surface-variant, #49454f);
         flex-shrink: 0;
         cursor: pointer;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         padding: 8px;
         margin: -8px;
         transition: background-color 0.2s;
@@ -142,7 +142,7 @@ export class Search extends LitElement {
         height: 20px;
         border: 2px solid currentColor;
         border-right-color: transparent;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         animation: spin 0.8s linear infinite;
       }
 

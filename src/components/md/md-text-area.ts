@@ -38,8 +38,8 @@ export class MdTextArea extends LitElement {
         min-height: var(--md-text-area-min-height, 80px);
         padding: var(--md-text-area-padding, 12px 16px);
         border: none;
-        border-radius: var(--md-text-area-radius, 4px)
-          var(--md-text-area-radius, 4px) 0 0;
+        border-radius: var(--md-sys-shape-corner-extra-small)
+          var(--md-sys-shape-corner-extra-small) 0 0;
         background-color: var(
           --md-sys-color-surface-container-highest,
           #e6e0e9
@@ -96,7 +96,7 @@ export class MdTextArea extends LitElement {
       textarea.outlined {
         background-color: transparent;
         border: 1px solid var(--md-sys-color-outline, #79747e);
-        border-radius: var(--md-text-area-radius, 4px);
+        border-radius: var(--md-sys-shape-corner-extra-small);
       }
 
       textarea.outlined:hover:not(:disabled) {
