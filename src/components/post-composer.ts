@@ -1838,6 +1838,15 @@ export class PostComposer extends LitElement {
     }
   }
 
+  private _openScheduledStatuses() {
+    this.dispatchEvent(
+      new CustomEvent('open-scheduled-statuses', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   private _setDefaultScheduleDateTime() {
     const suggestedDate = new Date(Date.now() + 30 * 60 * 1000);
     suggestedDate.setSeconds(0, 0);
@@ -3038,7 +3047,16 @@ export class PostComposer extends LitElement {
     return html`
       <div class="schedule-wrapper ${this.scheduleEnabled ? 'open' : ''}">
         <div class="schedule-composer">
-          <div class="schedule-title">${msg('Schedule post')}</div>
+          <div class="schedule-header">
+            <div class="schedule-title">${msg('Schedule post')}</div>
+            <md-button
+              variant="text"
+              size="small"
+              @click=${() => this._openScheduledStatuses()}
+            >
+              ${msg('Manage scheduled posts')}
+            </md-button>
+          </div>
 
           <div class="schedule-inputs">
             <md-text-field

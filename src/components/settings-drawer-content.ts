@@ -227,6 +227,15 @@ export class SettingsDrawerContent extends LitElement {
     router.navigate('/blocked');
   }
 
+  private _openScheduledStatuses() {
+    this.dispatchEvent(
+      new CustomEvent('open-scheduled-statuses', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   private handleDataSaverToggle(e: Event) {
     const checked = (e.target as HTMLInputElement).checked;
     this.dispatchEvent(
@@ -386,6 +395,21 @@ export class SettingsDrawerContent extends LitElement {
           </div>
           <p class="setting-description">
             ${msg('Review and manage accounts you have muted or blocked.')}
+          </p>
+
+          <md-divider></md-divider>
+
+          <div class="setting-row">
+            <h4>${msg('Scheduled Posts')}</h4>
+            <md-button
+              variant="text"
+              @click="${() => this._openScheduledStatuses()}"
+            >
+              ${msg('Manage')}
+            </md-button>
+          </div>
+          <p class="setting-description">
+            ${msg('View, reschedule, or cancel queued posts.')}
           </p>
         </md-card>
 

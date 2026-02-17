@@ -38,6 +38,7 @@ import type { PostDetailDialog } from '../components/post-detail-dialog';
 import type { ListsDialog } from '../components/lists-dialog';
 import type { ListMembershipDialog } from '../components/list-membership-dialog';
 import type { FiltersDialog } from '../components/filters-dialog';
+import type { ScheduledStatusesDialog } from '../components/scheduled-statuses-dialog';
 
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
@@ -125,6 +126,7 @@ export class AppHome extends LitElement {
     'lists-dialog',
     'list-membership-dialog',
     'filters-dialog',
+    'scheduled-statuses-dialog',
   ]);
 
   // DOM element references using @query for type safety
@@ -143,6 +145,8 @@ export class AppHome extends LitElement {
   @query('list-membership-dialog')
   private listMembershipDialog!: ListMembershipDialog;
   @query('filters-dialog') private filtersDialog!: FiltersDialog;
+  @query('scheduled-statuses-dialog')
+  private scheduledStatusesDialog!: ScheduledStatusesDialog;
 
   static get styles() {
     return [styles, homeStyles];
@@ -488,6 +492,17 @@ export class AppHome extends LitElement {
     await customElements.whenDefined('filters-dialog');
     await this.updateComplete;
     this.filtersDialog?.show();
+  }
+
+  private async openScheduledStatusesDialog() {
+    if (this.isGuestMode) return;
+
+    await import('../components/scheduled-statuses-dialog');
+
+    await this.overlays.show('scheduled-statuses-dialog');
+    await customElements.whenDefined('scheduled-statuses-dialog');
+    await this.updateComplete;
+    this.scheduledStatusesDialog?.show();
   }
 
   private async _handleFiltersChanged() {
@@ -842,7 +857,11 @@ export class AppHome extends LitElement {
       ${this.overlays.render(
         'post-dialog',
         () => html`
-          <post-dialog @published="${() => this.handleReload()}"></post-dialog>
+          <post-dialog
+            @published="${() => this.handleReload()}"
+            @open-scheduled-statuses="${() =>
+              this.openScheduledStatusesDialog()}"
+          ></post-dialog>
         `
       )}
 
@@ -882,6 +901,17 @@ export class AppHome extends LitElement {
         `
       )}
 
+      <!-- Scheduled Posts Dialog - only in DOM when needed -->
+      ${this.overlays.render(
+        'scheduled-statuses-dialog',
+        () => html`
+          <scheduled-statuses-dialog
+            @md-dialog-hide="${() =>
+              this.overlays.hide('scheduled-statuses-dialog')}"
+          ></scheduled-statuses-dialog>
+        `
+      )}
+
       <!-- Settings Drawer - only in DOM when needed -->
       ${this.overlays.render(
         'settings-drawer',
@@ -904,6 +934,8 @@ export class AppHome extends LitElement {
               @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleDataSaverMode(e.detail.checked)}"
               @open-filters="${() => this.openFiltersDialog()}"
+              @open-scheduled-statuses="${() =>
+                this.openScheduledStatusesDialog()}"
               @color-chosen="${($event: ColorChosenEvent) =>
                 this.handlePrimaryColor($event.detail.color)}"
             ></settings-drawer-content>
