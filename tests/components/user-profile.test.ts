@@ -5,9 +5,6 @@ import { mockAccountProfile } from '../mocks/mock-data';
 const hoisted = vi.hoisted(() => {
   return {
     navigate: vi.fn().mockResolvedValue(undefined),
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
   };
 });
 
@@ -15,15 +12,6 @@ vi.mock('../../src/router/routes', () => ({
   router: {
     navigate: hoisted.navigate,
   },
-}));
-
-vi.mock('../../src/utils/intersection-observer', () => ({
-  createIntersectionObserver: vi.fn(() => ({
-    observe: hoisted.observe,
-    unobserve: hoisted.unobserve,
-    disconnect: hoisted.disconnect,
-  })),
-  disconnectIntersectionObserver: vi.fn(),
 }));
 
 import '../../src/components/user-profile';
@@ -53,7 +41,7 @@ describe('user-profile', () => {
     expect(headerBlock?.classList.contains('boosted')).toBe(true);
   });
 
-  it('loads image from data-src when requested', async () => {
+  it('sets avatar src directly from account', async () => {
     const el = await fixture<UserProfile>(
       html`<user-profile .account=${mockAccountProfile}></user-profile>`
     );
@@ -61,13 +49,7 @@ describe('user-profile', () => {
 
     const img = el.shadowRoot?.querySelector('img') as HTMLImageElement | null;
     expect(img).toBeDefined();
-
-    const dataSrc = img?.getAttribute('data-src');
-    expect(dataSrc).toBeTruthy();
-
-    el.loadImage();
-
-    expect(img?.getAttribute('src')).toBe(dataSrc);
+    expect(img?.getAttribute('src')).toBe(mockAccountProfile.avatar_static);
     expect(img?.hasAttribute('data-src')).toBe(false);
   });
 
@@ -87,12 +69,16 @@ describe('user-profile', () => {
     );
   });
 
-  it('sets up intersection observer for avatar', async () => {
+  it('uses fallback avatar when account has no avatar', async () => {
+    const accountWithoutAvatar = { ...mockAccountProfile, avatar_static: '' };
     const el = await fixture<UserProfile>(
-      html`<user-profile .account=${mockAccountProfile}></user-profile>`
+      html`<user-profile .account=${accountWithoutAvatar}></user-profile>`
     );
     await elementUpdated(el);
 
-    expect(hoisted.observe).toHaveBeenCalledTimes(1);
+    const img = el.shadowRoot?.querySelector('img') as HTMLImageElement | null;
+    expect(img?.getAttribute('src')).toBe(
+      '/assets/icons/new-icons/icon-72x72.png'
+    );
   });
 });
