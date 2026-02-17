@@ -46,10 +46,6 @@ export class AppMessages extends LitElement {
         box-sizing: border-box;
       }
 
-      post-composer {
-        padding: 16px;
-      }
-
       /* Page title bar */
       .title-bar {
         display: flex;
