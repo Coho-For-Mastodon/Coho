@@ -115,7 +115,6 @@ export class AppHome extends LitElement {
   // This keeps overlays out of DOM until they're needed
   private overlays = new LazyOverlayManager(this, [
     'settings-drawer',
-    'theming-drawer',
     'replies-drawer',
     'install-dialog',
     'summary-dialog',
@@ -131,7 +130,6 @@ export class AppHome extends LitElement {
   // DOM element references using @query for type safety
   @query('#settings-drawer') private settingsDrawer!: OtterDrawer;
   @query('#replies-drawer') private repliesDrawer!: OtterDrawer;
-  @query('#theming-drawer') private themingDrawer!: OtterDrawer;
   @query('#bot-drawer') private botDrawer!: OtterDrawer;
   @query('#translation-toast') private translationToast!: MdToast;
   @query('#error-toast') private errorToast!: MdToast;
@@ -190,6 +188,13 @@ export class AppHome extends LitElement {
     import('../services/timeline').then(({ resetLastPageID }) => {
       resetLastPageID();
     });
+
+    // Eagerly fetch and cache the instance's custom emojis
+    if (!this.isGuestMode) {
+      import('../services/custom-emojis').then(({ initCustomEmojis }) => {
+        initCustomEmojis();
+      });
+    }
 
     // Defer trending tags fetch to idle time - not critical for initial render
     window.requestIdleCallback(async () => {
@@ -376,7 +381,7 @@ export class AppHome extends LitElement {
   }
 
   async openSettingsDrawer() {
-    await this.loadUserTerms();
+    await Promise.all([this.loadUserTerms(), this.loadAppTheme()]);
     // Add drawer to DOM first
     await this.overlays.show('settings-drawer');
     // Then show it (triggers animation)
@@ -395,14 +400,6 @@ export class AppHome extends LitElement {
     await this.overlays.show('replies-drawer');
     // Then show it (triggers animation)
     await this.repliesDrawer?.show();
-  }
-
-  async openThemingDrawer() {
-    await this.loadAppTheme();
-    // Add drawer to DOM first
-    await this.overlays.show('theming-drawer');
-    // Then show it (triggers animation)
-    await this.themingDrawer?.show();
   }
 
   async handleWellnessMode(check: boolean) {
@@ -793,7 +790,6 @@ export class AppHome extends LitElement {
       <app-header
         @open-bot-drawer="${() => this.openBotDrawer()}"
         @open-settings="${() => this.openSettingsDrawer()}"
-        @open-theming="${() => this.openThemingDrawer()}"
         @open-install="${() => this.openInstallDialog()}"
         .showInstall="${this.showInstallPrompt}"
         .guestMode="${this.isGuestMode}"
@@ -827,27 +823,6 @@ export class AppHome extends LitElement {
               @pwa-installed="${() => this.handleInstallSuccess()}"
             ></pwa-install>
           `}
-
-      <!-- Theming Drawer - only in DOM when needed -->
-      ${this.overlays.render(
-        'theming-drawer',
-        () => html`
-          <otter-drawer
-            .label="${msg('Theming')}"
-            id="theming-drawer"
-            @otter-hide="${() => this.overlays.hide('theming-drawer')}"
-          >
-            ${this.appThemeLoaded
-              ? html`
-                  <app-theme
-                    @color-chosen="${($event: ColorChosenEvent) =>
-                      this.handlePrimaryColor($event.detail.color)}"
-                  ></app-theme>
-                `
-              : nothing}
-          </otter-drawer>
-        `
-      )}
 
       <!-- Summary Dialog - only in DOM when needed -->
       ${this.overlays.render(
@@ -923,11 +898,14 @@ export class AppHome extends LitElement {
               .wellnessMode="${this.wellnessMode}"
               .dataSaverMode="${this.dataSaverMode}"
               .userTermsLoaded="${this.userTermsLoaded}"
+              .appThemeLoaded="${this.appThemeLoaded}"
               @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleWellnessMode(e.detail.checked)}"
               @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleDataSaverMode(e.detail.checked)}"
               @open-filters="${() => this.openFiltersDialog()}"
+              @color-chosen="${($event: ColorChosenEvent) =>
+                this.handlePrimaryColor($event.detail.color)}"
             ></settings-drawer-content>
           </otter-drawer>
         `

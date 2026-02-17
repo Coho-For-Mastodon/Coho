@@ -43,7 +43,7 @@ export class PostDialog extends LitElement {
     md-dialog::part(dialog) {
       z-index: 99999;
       min-width: 60vw;
-      min-height: 70vh;
+      min-height: 60vh;
     }
 
     #ai-preview-block {

@@ -179,18 +179,24 @@ export class ConversationThread extends LitElement {
       /* Composer footer */
       .composer-footer {
         flex-shrink: 0;
-        border-top: 1px solid
-          var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
-        padding: 10px 16px;
+        padding: 8px 16px 12px;
         max-width: 720px;
         margin: 0 auto;
         width: 100%;
         box-sizing: border-box;
+      }
+
+      .composer-footer post-composer {
+        display: block;
         background: color-mix(
           in srgb,
-          var(--md-sys-color-on-surface, #ffffff) 4%,
-          var(--md-sys-color-background, #1c1b1f)
+          var(--md-sys-color-on-surface, #ffffff) 6%,
+          transparent
         );
+        border-radius: 24px;
+        padding: 16px;
+        border: 1px solid
+          var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
       }
 
       /* Empty / loading / error states */
@@ -672,6 +678,7 @@ export class ConversationThread extends LitElement {
                   compact
                   hideReplyIndicator
                   hideDrafts
+                  hideActions
                   rows="1"
                   .replyTo=${this._getReplyTarget()}
                   .visibility=${'direct'}

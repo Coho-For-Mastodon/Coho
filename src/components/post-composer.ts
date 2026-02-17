@@ -122,6 +122,12 @@ export class PostComposer extends LitElement {
   @property({ type: Boolean }) hideDrafts = false;
 
   /**
+   * Hide the actions toolbar (attach, poll, CW, visibility, etc).
+   * Useful for minimal composer contexts like DM chat input.
+   */
+  @property({ type: Boolean }) hideActions = false;
+
+  /**
    * Number of rows for the textarea.
    */
   @property({ type: Number }) rows = 6;
@@ -176,6 +182,9 @@ export class PostComposer extends LitElement {
   // Handwriting recognition state
   @state() handwritingAvailable: boolean = false;
   @state() handwritingDialogOpen: boolean = false;
+
+  // Emoji picker state
+  @state() emojiPickerOpen: boolean = false;
 
   // Drag and drop state
   @state() isDraggingOver: boolean = false;
@@ -255,6 +264,26 @@ export class PostComposer extends LitElement {
         left: anchor(left);
         right: auto;
         margin-top: 6px;
+      }
+    }
+
+    .emoji-button-anchor {
+      anchor-name: --emoji-button;
+    }
+
+    emoji-picker {
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 0;
+    }
+
+    @supports (position-anchor: --emoji-button) {
+      emoji-picker {
+        position: fixed;
+        position-anchor: --emoji-button;
+        bottom: anchor(top);
+        left: anchor(left);
+        margin-bottom: 6px;
       }
     }
 
@@ -2640,6 +2669,56 @@ export class PostComposer extends LitElement {
     `;
   }
 
+  private _toggleEmojiPicker() {
+    if (!this.emojiPickerOpen) {
+      import('./emoji-picker.js');
+    }
+    this.emojiPickerOpen = !this.emojiPickerOpen;
+  }
+
+  private _onEmojiSelect(e: CustomEvent<{ shortcode: string; url: string }>) {
+    const { shortcode } = e.detail;
+    const insertText = `:${shortcode}: `;
+
+    const nativeTextArea = this._getNativeTextArea();
+    const currentValue = nativeTextArea?.value || this.textArea?.value || '';
+    const cursor = nativeTextArea?.selectionStart ?? currentValue.length;
+
+    const prefix = currentValue.slice(0, cursor);
+    const suffix = currentValue.slice(cursor);
+    const needsLeadingSpace = prefix.length > 0 && !/\s$/.test(prefix);
+    const insert = (needsLeadingSpace ? ' ' : '') + insertText;
+    const nextValue = `${prefix}${insert}${suffix}`;
+
+    if (nativeTextArea) {
+      nativeTextArea.value = nextValue;
+      const nextCursor = prefix.length + insert.length;
+      nativeTextArea.selectionStart = nextCursor;
+      nativeTextArea.selectionEnd = nextCursor;
+      nativeTextArea.focus();
+    }
+
+    if (this.textArea) {
+      this.textArea.value = nextValue;
+    }
+
+    this.charCount = nextValue.length;
+    this.hasStatus = nextValue.length > 0;
+    this.emojiPickerOpen = false;
+  }
+
+  private _renderEmojiPicker() {
+    if (!this.emojiPickerOpen) return nothing;
+
+    return html`
+      <emoji-picker
+        .open=${this.emojiPickerOpen}
+        @emoji-select=${(e: CustomEvent) => this._onEmojiSelect(e)}
+        @emoji-picker-close=${() => (this.emojiPickerOpen = false)}
+      ></emoji-picker>
+    `;
+  }
+
   private _getVisibilityDisplayLabel(): string {
     switch (this.visibility) {
       case 'unlisted':
@@ -2669,6 +2748,8 @@ export class PostComposer extends LitElement {
   }
 
   private _renderActions() {
+    if (this.hideActions) return nothing;
+
     return html`
       <div class="actions-row">
         <!-- Visibility selector -->
@@ -2719,6 +2800,15 @@ export class PostComposer extends LitElement {
           .variant=${this.sensitive ? 'filled-tonal' : 'standard'}
           @click="${() => this.markAsSensitive()}"
         ></md-icon-button>
+
+        <md-icon-button
+          class="mobile-icon-button emoji-button-anchor"
+          label=${msg('Emoji')}
+          src="/assets/happy-outline.svg"
+          .variant=${this.emojiPickerOpen ? 'filled-tonal' : 'standard'}
+          @click="${() => this._toggleEmojiPicker()}"
+        ></md-icon-button>
+        ${this._renderEmojiPicker()}
 
         <md-icon-button
           class="mobile-icon-button"
@@ -2827,6 +2917,8 @@ export class PostComposer extends LitElement {
   }
 
   private _renderSensitiveWarning() {
+    if (this.hideActions) return nothing;
+
     return html`
       <div class="cw-wrapper ${this.sensitive ? 'open' : ''}">
         <div id="sensitive-warning">
@@ -2843,6 +2935,8 @@ export class PostComposer extends LitElement {
   }
 
   private _renderPoll() {
+    if (this.hideActions) return nothing;
+
     return html`
       <div class="poll-wrapper ${this.pollEnabled ? 'open' : ''}">
         <div class="poll-composer">
