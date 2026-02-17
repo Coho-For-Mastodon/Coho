@@ -90,6 +90,18 @@ const routes: Route[] = [
     render: () => html`<app-following></app-following>`,
   },
   {
+    path: '/muted',
+    title: 'muted accounts',
+    plugins: [lazy(() => import('../pages/app-muted.js'))],
+    render: () => html`<app-muted></app-muted>`,
+  },
+  {
+    path: '/blocked',
+    title: 'blocked accounts',
+    plugins: [lazy(() => import('../pages/app-blocked.js'))],
+    render: () => html`<app-blocked></app-blocked>`,
+  },
+  {
     path: '/hashtag',
     title: 'hashtags',
     plugins: [lazy(() => import('../pages/app-hashtags.js'))],

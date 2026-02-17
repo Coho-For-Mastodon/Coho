@@ -25,6 +25,7 @@ export interface Emoji {
   url: string;
   static_url: string;
   visible_in_picker: boolean;
+  category?: string;
 }
 
 export interface Field {

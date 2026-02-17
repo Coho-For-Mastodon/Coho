@@ -181,14 +181,14 @@ export class ConversationThread extends LitElement {
         flex-shrink: 0;
         border-top: 1px solid
           var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
-        padding: 10px 16px;
+        padding: 6px 12px;
         max-width: 720px;
         margin: 0 auto;
         width: 100%;
         box-sizing: border-box;
         background: color-mix(
           in srgb,
-          var(--md-sys-color-on-surface, #ffffff) 4%,
+          var(--md-sys-color-on-surface, #ffffff) 3%,
           var(--md-sys-color-background, #1c1b1f)
         );
       }

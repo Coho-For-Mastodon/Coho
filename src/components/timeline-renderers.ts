@@ -692,7 +692,10 @@ export function renderThread(
               : html`<div
                   @click="${(e: Event) =>
                     handlers.handleContentClick(e, threadPost)}"
-                  .innerHTML="${threadPost.content}"
+                  .innerHTML="${parseEmojis(
+                    threadPost.content || '',
+                    threadPost.emojis || []
+                  )}"
                 ></div>`}
             ${threadPost.poll
               ? html`<timeline-poll .post=${threadPost}></timeline-poll>`

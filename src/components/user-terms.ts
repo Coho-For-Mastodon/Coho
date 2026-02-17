@@ -66,8 +66,6 @@ export class UserTerms extends LitElement {
 
   render() {
     return html`
-      <h4 id="title">${msg('Interests')}</h4>
-
       <div id="interests">
         <ul>
           <li>

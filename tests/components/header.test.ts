@@ -44,27 +44,20 @@ describe('app-header', () => {
     expect(installButton).toBeDefined();
   });
 
-  it('dispatches settings and theming events', async () => {
+  it('dispatches settings event', async () => {
     const el = await fixture<AppHeader>(html`<app-header></app-header>`);
     await elementUpdated(el);
 
     const settingsHandler = vi.fn();
-    const themingHandler = vi.fn();
 
     el.addEventListener('open-settings', settingsHandler);
-    el.addEventListener('open-theming', themingHandler);
 
     const settingsButton = el.shadowRoot?.querySelector('#settings-button');
-    const themingButton = el.shadowRoot?.querySelector('#open-button');
 
     settingsButton?.dispatchEvent(
       new MouseEvent('click', { bubbles: true, composed: true })
     );
-    themingButton?.dispatchEvent(
-      new MouseEvent('click', { bubbles: true, composed: true })
-    );
 
     expect(settingsHandler).toHaveBeenCalledTimes(1);
-    expect(themingHandler).toHaveBeenCalledTimes(1);
   });
 });

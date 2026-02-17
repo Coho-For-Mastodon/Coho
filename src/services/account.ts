@@ -737,3 +737,23 @@ export const reportUser = async (
 export const searchAccounts = async (query: string, limit = 6) => {
   return mastodonSearchAccounts(query, limit);
 };
+
+export const getMutedAccounts = async () => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+  const response = await fetch(`https://${server}/api/v1/mutes`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await response.json();
+  return data;
+};
+
+export const getBlockedAccounts = async () => {
+  const accessToken = getAccessToken();
+  const server = getServer();
+  const response = await fetch(`https://${server}/api/v1/blocks`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await response.json();
+  return data;
+};

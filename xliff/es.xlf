@@ -58,10 +58,6 @@
   <source>Install Coho</source>
   <target>Instalar Coho</target>
 </trans-unit>
-<trans-unit id="s810cea9e8370d035">
-  <source>Theming</source>
-  <target>Temas</target>
-</trans-unit>
 <trans-unit id="s9d8b8aa2b404c2c8">
   <source>Settings</source>
   <target>Configuración</target>
@@ -809,10 +805,6 @@
 <trans-unit id="s1bb6c905f66815eb">
   <source>Install App</source>
   <target>Instalar App</target>
-</trans-unit>
-<trans-unit id="s5fde10c5205e8e41">
-  <source>Open Theme Settings</source>
-  <target>Abrir Configuración de Tema</target>
 </trans-unit>
 <trans-unit id="s70178e04a3b691b6">
   <source>Open Settings</source>
@@ -1568,6 +1560,147 @@
 </trans-unit>
 <trans-unit id="s22073b297566cab8">
   <source>Unable to load news right now.</source>
+</trans-unit>
+<trans-unit id="sc74f792a1a3458cb">
+  <source>Search emoji...</source>
+</trans-unit>
+<trans-unit id="sf50402600c3d5dac">
+  <source>No emoji found</source>
+</trans-unit>
+<trans-unit id="se3ed881a961f14bd">
+  <source>Emoji</source>
+</trans-unit>
+<trans-unit id="sf5952f51e4c2435a">
+  <source>Manage scheduled posts</source>
+</trans-unit>
+<trans-unit id="s0dc1a5ae9a31057a">
+  <source>Unable to load scheduled posts. Please try again.</source>
+</trans-unit>
+<trans-unit id="s0d5cce2c61d7318d">
+  <source>Scheduled post updated.</source>
+</trans-unit>
+<trans-unit id="s77692d89c0787787">
+  <source>Unable to update this scheduled post.</source>
+</trans-unit>
+<trans-unit id="s0f88cae568169469">
+  <source>Cancel this scheduled post?</source>
+</trans-unit>
+<trans-unit id="sf7cdcd4102f616b9">
+  <source>Scheduled post canceled.</source>
+</trans-unit>
+<trans-unit id="sa9da03d25c746d5e">
+  <source>Unable to cancel this scheduled post.</source>
+</trans-unit>
+<trans-unit id="s04318c2fe8b479ae">
+  <source>Followers only</source>
+</trans-unit>
+<trans-unit id="s42208d2d2a45735f">
+  <source>Unknown visibility</source>
+</trans-unit>
+<trans-unit id="s0e1c5cee67a6e3e3">
+  <source>Scheduled posts</source>
+</trans-unit>
+<trans-unit id="s5f77ec8f008cf7ac">
+  <source>Review, reschedule, or cancel posts queued for publishing.</source>
+</trans-unit>
+<trans-unit id="s5ad42257bf59381f">
+  <source>Loading scheduled posts...</source>
+</trans-unit>
+<trans-unit id="s5cf9ab25ed920e8a">
+  <source>No scheduled posts right now.</source>
+</trans-unit>
+<trans-unit id="s752bb40387ef4fcc">
+  <source>(No text in this scheduled post)</source>
+</trans-unit>
+<trans-unit id="sd685c85b245c6e9f">
+  <source>Hide details</source>
+</trans-unit>
+<trans-unit id="s4243b0d0a4ac550e">
+  <source>View details</source>
+</trans-unit>
+<trans-unit id="s31ace312e180469d">
+  <source>Reschedule</source>
+</trans-unit>
+<trans-unit id="s6b89fd1e633e72f1">
+  <source>Canceling...</source>
+</trans-unit>
+<trans-unit id="s459a86150d59dd33">
+  <source>Cancel post</source>
+</trans-unit>
+<trans-unit id="seb414dd9e6fe563a">
+  <source>Content warning</source>
+</trans-unit>
+<trans-unit id="sb3217ad33681cfb7">
+  <source><x id="0" equiv-text="${mediaCount}"/> attachments</source>
+</trans-unit>
+<trans-unit id="s9a37b4c553f89dab">
+  <source>Poll (<x id="0" equiv-text="${pollCount}"/> options)</source>
+</trans-unit>
+<trans-unit id="sac8252732f2edb19">
+  <source>Date</source>
+</trans-unit>
+<trans-unit id="s48e186fb300e5464">
+  <source>Time</source>
+</trans-unit>
+<trans-unit id="s3d346935bf8703d6">
+  <source>Keep current time</source>
+</trans-unit>
+<trans-unit id="s2b5047d39b9baf3d">
+  <source>Preferences</source>
+</trans-unit>
+<trans-unit id="saab875d8cfcfe712">
+  <source>Theme</source>
+</trans-unit>
+<trans-unit id="s0d29a53a04e80406">
+  <source>Content &amp; Safety</source>
+</trans-unit>
+<trans-unit id="s5b73e272683db8de">
+  <source>Muted &amp; Blocked Accounts</source>
+</trans-unit>
+<trans-unit id="s926932a6033194d0">
+  <source>Muted</source>
+</trans-unit>
+<trans-unit id="sf59d9197d2e50c93">
+  <source>Blocked</source>
+</trans-unit>
+<trans-unit id="s85b8c9d502510c46">
+  <source>Review and manage accounts you have muted or blocked.</source>
+</trans-unit>
+<trans-unit id="sf5ea7de31631a983">
+  <source>Scheduled Posts</source>
+</trans-unit>
+<trans-unit id="s6965c9e1827dcb0d">
+  <source>View, reschedule, or cancel queued posts.</source>
+</trans-unit>
+<trans-unit id="s7751724b5f4ebbe7">
+  <source>Failed to unblock account. Please try again.</source>
+</trans-unit>
+<trans-unit id="s64e2c158044febf1">
+  <source>Blocked Accounts</source>
+</trans-unit>
+<trans-unit id="sddf7ac26b9a1c348">
+  <source>No blocked accounts.</source>
+</trans-unit>
+<trans-unit id="s74b85485e9f998fd">
+  <source>Unblocking...</source>
+</trans-unit>
+<trans-unit id="s865b6f4c6920e17f">
+  <source>Unblock</source>
+</trans-unit>
+<trans-unit id="sda6e82996081344f">
+  <source>Failed to unmute account. Please try again.</source>
+</trans-unit>
+<trans-unit id="s8dea2906744bda34">
+  <source>Muted Accounts</source>
+</trans-unit>
+<trans-unit id="sdbb898e02c89c4f3">
+  <source>No muted accounts.</source>
+</trans-unit>
+<trans-unit id="s317475498d85b812">
+  <source>Unmuting...</source>
+</trans-unit>
+<trans-unit id="sc07837c309cc699b">
+  <source>Unmute</source>
 </trans-unit>
 </body>
 </file>

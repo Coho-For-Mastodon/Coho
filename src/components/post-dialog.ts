@@ -43,7 +43,7 @@ export class PostDialog extends LitElement {
     md-dialog::part(dialog) {
       z-index: 99999;
       min-width: 60vw;
-      min-height: 70vh;
+      min-height: 60vh;
     }
 
     #ai-preview-block {
@@ -345,6 +345,17 @@ export class PostDialog extends LitElement {
     this.notifyDialog?.hide();
   }
 
+  private async _handleOpenScheduledStatuses(event: Event) {
+    event.stopPropagation();
+    await this.notifyDialog?.hide();
+    this.dispatchEvent(
+      new CustomEvent('open-scheduled-statuses', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   render() {
     return html`
       <md-dialog
@@ -357,6 +368,8 @@ export class PostDialog extends LitElement {
         <post-composer
           @published=${this._handlePublished}
           @draft-saved=${this._handleDraftSaved}
+          @open-scheduled-statuses=${(event: Event) =>
+            this._handleOpenScheduledStatuses(event)}
           rows="6"
         ></post-composer>
 

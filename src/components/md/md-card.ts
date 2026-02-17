@@ -45,8 +45,6 @@ export class MdCard extends LitElement {
       -webkit-tap-highlight-color: transparent;
       display: flex;
       flex-direction: column;
-      background: transparent;
-      border-bottom: none;
       border-radius: var(--md-sys-shape-corner-medium);
       overflow: hidden;
       transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
@@ -65,16 +63,21 @@ export class MdCard extends LitElement {
 
     /* Variants */
     .card--filled {
-      background: transparent;
+      background: var(--md-sys-color-surface-container-highest, #36343b);
     }
 
     .card--outlined {
-      background: transparent;
+      background: var(--md-sys-color-surface, #1d1b20);
+      border: 1px solid var(--md-sys-color-outline-variant, #49454f);
     }
 
     .card--elevated {
-      background: transparent;
-      box-shadow: none;
+      background: var(--md-sys-color-surface-container-low, #1d1b20);
+      box-shadow: var(
+        --md-sys-elevation-level1,
+        0px 1px 2px 0px rgba(0, 0, 0, 0.3),
+        0px 1px 3px 1px rgba(0, 0, 0, 0.15)
+      );
     }
 
     /* Clickable state */
@@ -82,10 +85,10 @@ export class MdCard extends LitElement {
       cursor: pointer;
     }
 
-    .card--clickable:not(.card--disabled):hover {
+    .card--clickable.card--filled:not(.card--disabled):hover {
       background: color-mix(
         in srgb,
-        transparent 92%,
+        var(--md-sys-color-surface-container-highest, #36343b) 92%,
         var(--md-sys-color-on-surface, white) 8%
       );
     }
@@ -93,24 +96,28 @@ export class MdCard extends LitElement {
     .card--clickable.card--outlined:not(.card--disabled):hover {
       background: color-mix(
         in srgb,
-        transparent 92%,
+        var(--md-sys-color-surface, #1d1b20) 92%,
         var(--md-sys-color-on-surface, white) 8%
-      );
-      border-top-color: var(--md-sys-color-outline, rgba(255, 255, 255, 0.2));
-      border-bottom-color: var(
-        --md-sys-color-outline,
-        rgba(255, 255, 255, 0.2)
       );
     }
 
     .card--clickable.card--elevated:not(.card--disabled):hover {
-      box-shadow: none;
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-surface-container-low, #1d1b20) 92%,
+        var(--md-sys-color-on-surface, white) 8%
+      );
+      box-shadow: var(
+        --md-sys-elevation-level2,
+        0px 1px 2px 0px rgba(0, 0, 0, 0.3),
+        0px 2px 6px 2px rgba(0, 0, 0, 0.15)
+      );
     }
 
     .card--clickable:not(.card--disabled):active {
       background: color-mix(
         in srgb,
-        transparent 88%,
+        var(--md-sys-color-surface-container-highest, #36343b) 88%,
         var(--md-sys-color-on-surface, white) 12%
       );
     }
@@ -166,35 +173,31 @@ export class MdCard extends LitElement {
     /* Light mode */
     @media (prefers-color-scheme: light) {
       .card {
-        background: transparent;
         color: var(--md-sys-color-on-surface, rgba(0, 0, 0, 0.87));
-        border-top-color: var(
-          --md-sys-color-outline-variant,
-          rgba(0, 0, 0, 0.08)
-        );
-        border-bottom-color: var(
-          --md-sys-color-outline-variant,
-          rgba(0, 0, 0, 0.08)
-        );
       }
 
       .card--filled {
-        background: transparent;
+        background: var(--md-sys-color-surface-container-highest, #e6e0e9);
       }
 
       .card--outlined {
-        background: transparent;
+        background: var(--md-sys-color-surface, #ffffff);
+        border-color: var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.12));
       }
 
       .card--elevated {
-        background: transparent;
-        box-shadow: none;
+        background: var(--md-sys-color-surface-container-low, #f7f2f8);
+        box-shadow: var(
+          --md-sys-elevation-level1,
+          0px 1px 2px 0px rgba(0, 0, 0, 0.3),
+          0px 1px 3px 1px rgba(0, 0, 0, 0.15)
+        );
       }
 
-      .card--clickable:not(.card--disabled):hover {
+      .card--clickable.card--filled:not(.card--disabled):hover {
         background: color-mix(
           in srgb,
-          transparent 92%,
+          var(--md-sys-color-surface-container-highest, #e6e0e9) 92%,
           var(--md-sys-color-on-surface, black) 8%
         );
       }
@@ -202,11 +205,22 @@ export class MdCard extends LitElement {
       .card--clickable.card--outlined:not(.card--disabled):hover {
         background: color-mix(
           in srgb,
-          transparent 92%,
+          var(--md-sys-color-surface, #ffffff) 92%,
           var(--md-sys-color-on-surface, black) 8%
         );
-        border-top-color: var(--md-sys-color-outline, rgba(0, 0, 0, 0.2));
-        border-bottom-color: var(--md-sys-color-outline, rgba(0, 0, 0, 0.2));
+      }
+
+      .card--clickable.card--elevated:not(.card--disabled):hover {
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-surface-container-low, #f7f2f8) 92%,
+          var(--md-sys-color-on-surface, black) 8%
+        );
+        box-shadow: var(
+          --md-sys-elevation-level2,
+          0px 1px 2px 0px rgba(0, 0, 0, 0.3),
+          0px 2px 6px 2px rgba(0, 0, 0, 0.15)
+        );
       }
 
       .card__header,

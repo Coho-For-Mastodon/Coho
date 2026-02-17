@@ -8,11 +8,7 @@ import './md/md-icon-button.js';
 import { enableVibrate } from '../utils/handle-vibrate';
 import { setAuthRedirect } from '../utils/auth-redirect';
 
-import type {
-  OpenSettingsEvent,
-  OpenThemingEvent,
-  OpenInstallEvent,
-} from '../types/events';
+import type { OpenSettingsEvent, OpenInstallEvent } from '../types/events';
 
 @localized()
 @customElement('app-header')
@@ -137,11 +133,6 @@ export class AppHeader extends LitElement {
     this.dispatchEvent(new CustomEvent('open-settings') as OpenSettingsEvent);
   }
 
-  handleTheming() {
-    // fire custom event
-    this.dispatchEvent(new CustomEvent('open-theming') as OpenThemingEvent);
-  }
-
   openInstall() {
     // fire custom event
     this.dispatchEvent(new CustomEvent('open-install') as OpenInstallEvent);
@@ -212,18 +203,6 @@ export class AppHeader extends LitElement {
                       <md-icon src="/assets/chatbox-outline.svg"></md-icon>
                     </md-icon-button>`
                   : nothing}
-
-                <md-icon-button
-                  title=${msg('Open Theme Settings')}
-                  id="open-button"
-                  @click="${() => this.handleTheming()}"
-                >
-                  <md-icon
-                    src="/assets/color-palette-outline.svg"
-                    alt="Theme"
-                  ></md-icon>
-                </md-icon-button>
-
                 ${this.guestMode
                   ? html`<md-icon-button
                       id="login-button"
