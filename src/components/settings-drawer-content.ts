@@ -39,7 +39,7 @@ export class SettingsDrawerContent extends LitElement {
 
     #settings-profile-inner {
       background: rgba(128, 128, 128, 0.14);
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       padding: 10px;
       margin-top: 12px;
       display: flex;
@@ -49,7 +49,7 @@ export class SettingsDrawerContent extends LitElement {
 
     #settings-profile-inner img {
       width: 4em;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
     }
 
     #settings-profile-inner md-skeleton {
@@ -85,7 +85,7 @@ export class SettingsDrawerContent extends LitElement {
     }
 
     #instanceInfo {
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       background: #0000001a;
       padding-left: 12px;
       padding-top: 1px;
@@ -163,6 +163,15 @@ export class SettingsDrawerContent extends LitElement {
     this.dispatchEvent(
       new CustomEvent('wellness-change', {
         detail: { checked },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  private _openFilters() {
+    this.dispatchEvent(
+      new CustomEvent('open-filters', {
         bubbles: true,
         composed: true,
       })
@@ -280,6 +289,18 @@ export class SettingsDrawerContent extends LitElement {
         <p>
           ${msg('Data Saver Mode reduces the amount of data used by Coho.')}
         </p>
+      </div>
+
+      <div class="setting">
+        <div>
+          <h4>${msg('Content Filters')}</h4>
+
+          <md-button variant="text" @click="${() => this._openFilters()}">
+            ${msg('Manage')}
+          </md-button>
+        </div>
+
+        <p>${msg('Filter unwanted content from your timelines by keyword.')}</p>
       </div>
 
       <div class="setting">

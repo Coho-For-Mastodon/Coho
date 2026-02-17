@@ -27,7 +27,7 @@ export class MdDialog extends LitElement {
 
       dialog {
         border: none;
-        border-radius: 28px;
+        border-radius: var(--md-sys-shape-corner-extra-large);
         padding: 0;
         max-width: min(560px, calc(100vw - 48px));
         max-height: calc(100vh - 48px);
@@ -52,7 +52,7 @@ export class MdDialog extends LitElement {
         max-height: 100vh;
         width: 100vw;
         height: 100vh;
-        border-radius: 0;
+        border-radius: var(--md-sys-shape-corner-none);
       }
 
       dialog::backdrop {
@@ -105,7 +105,7 @@ export class MdDialog extends LitElement {
         color: inherit;
         width: 40px;
         height: 40px;
-        border-radius: 20px;
+        border-radius: var(--md-sys-shape-corner-extra-large);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -153,7 +153,7 @@ export class MdDialog extends LitElement {
         dialog:not(.fullscreen) {
           max-width: calc(100vw - 32px);
           max-height: calc(100vh - 32px);
-          border-radius: 20px;
+          border-radius: var(--md-sys-shape-corner-extra-large);
         }
 
         .dialog-header {

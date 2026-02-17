@@ -1,7 +1,7 @@
 import { fileOpen } from 'browser-fs-access';
 import { addMedia } from './media';
 import { Account } from '../types/interfaces/Account';
-import { Post } from '../interfaces/Post';
+import { Post, PostPublishResult } from '../interfaces/Post';
 import { MediaAttachment } from '../types/interfaces/MediaAttachment';
 
 // Helper functions to always get fresh values from localStorage
@@ -148,8 +148,9 @@ export async function publishPost(
   sensitive: boolean = false,
   spoilerText: string = '',
   visibility: string = 'public',
-  poll?: { options: string[]; expiresIn: number; multiple: boolean }
-): Promise<Post> {
+  poll?: { options: string[]; expiresIn: number; multiple: boolean },
+  scheduledAt?: string
+): Promise<PostPublishResult> {
   const server = getServer();
   const accessToken = getAccessToken();
   const formData = new FormData();
@@ -174,6 +175,10 @@ export async function publishPost(
     }
     formData.append('poll[expires_in]', String(poll.expiresIn));
     formData.append('poll[multiple]', poll.multiple ? 'true' : 'false');
+  }
+
+  if (scheduledAt) {
+    formData.append('scheduled_at', scheduledAt);
   }
 
   if (sensitive) {
@@ -206,16 +211,27 @@ export async function publishPollPost(
   poll: { options: string[]; expiresIn: number; multiple: boolean },
   sensitive: boolean = false,
   spoilerText: string = '',
-  visibility: string = 'public'
-): Promise<Post> {
-  return publishPost(post, undefined, sensitive, spoilerText, visibility, poll);
+  visibility: string = 'public',
+  scheduledAt?: string
+): Promise<PostPublishResult> {
+  return publishPost(
+    post,
+    undefined,
+    sensitive,
+    spoilerText,
+    visibility,
+    poll,
+    scheduledAt
+  );
 }
 
 export async function replyToPost(
   id: string,
   content: string,
-  mediaIds?: string[]
-): Promise<Post> {
+  mediaIds?: string[],
+  visibility?: string,
+  scheduledAt?: string
+): Promise<PostPublishResult> {
   const server = getServer();
   const accessToken = getAccessToken();
   const formData = new FormData();
@@ -223,6 +239,14 @@ export async function replyToPost(
   formData.append('in_reply_to_id', id);
 
   formData.append('status', content && content.length > 0 ? content : '');
+
+  if (visibility) {
+    formData.append('visibility', visibility);
+  }
+
+  if (scheduledAt) {
+    formData.append('scheduled_at', scheduledAt);
+  }
 
   // Attach media IDs if provided
   if (mediaIds && mediaIds.length > 0) {

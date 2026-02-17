@@ -1,6 +1,6 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
-import { Account, Post } from '../types';
+import { Account, Post, ScheduledStatus } from '../types';
 
 export async function whoBoostedAndFavorited(id: string): Promise<Account[]> {
   const { url } = getClientConfig();
@@ -51,8 +51,9 @@ export async function publishPost(
   ids?: Array<string>,
   sensitive: boolean = false,
   spoilerText: string = '',
-  visibility: string = 'public'
-): Promise<Post> {
+  visibility: string = 'public',
+  scheduledAt?: string
+): Promise<Post | ScheduledStatus> {
   const { url } = getClientConfig();
   const formData = new FormData();
 
@@ -73,6 +74,10 @@ export async function publishPost(
     }
   }
 
+  if (scheduledAt) {
+    formData.append('scheduled_at', scheduledAt);
+  }
+
   const response = await apiFetch(`https://${url}/api/v1/statuses`, {
     method: 'POST',
     body: formData,
@@ -82,12 +87,27 @@ export async function publishPost(
   return data;
 }
 
-export async function replyToPost(id: string, content: string): Promise<Post> {
+export async function replyToPost(
+  id: string,
+  content: string,
+  mediaIds?: string[],
+  scheduledAt?: string
+): Promise<Post | ScheduledStatus> {
   const { url } = getClientConfig();
   const formData = new FormData();
 
   formData.append('in_reply_to_id', id);
   formData.append('status', content && content.length > 0 ? content : '');
+
+  if (mediaIds && mediaIds.length > 0) {
+    for (const mediaId of mediaIds) {
+      formData.append('media_ids[]', mediaId);
+    }
+  }
+
+  if (scheduledAt) {
+    formData.append('scheduled_at', scheduledAt);
+  }
 
   const response = await apiFetch(`https://${url}/api/v1/statuses`, {
     method: 'POST',

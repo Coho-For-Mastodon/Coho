@@ -43,6 +43,19 @@ function createDataTransferWithFiles(files: File[]): DataTransfer {
   return dataTransfer;
 }
 
+function toInputDate(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function toInputTime(value: Date): string {
+  const hours = String(value.getHours()).padStart(2, '0');
+  const minutes = String(value.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
 describe('post-composer multi-image upload', () => {
   beforeEach(() => {
     setupAuth();
@@ -501,6 +514,44 @@ describe('post-composer multi-image upload', () => {
     });
   });
 
+  describe('media edit image source', () => {
+    it('uses a blob URL for edit dialog when attachment has a local file', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      const createSpy = vi
+        .spyOn(URL, 'createObjectURL')
+        .mockReturnValue('blob:edit-local-file');
+      const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+
+      const file = createMockFile('edit.png', 'image/png');
+      const attachment = {
+        id: 'media-1',
+        preview_url: 'https://cdn.example.com/media-1.png',
+        description: null,
+        pending: false,
+        file,
+      };
+
+      (el as any).openEditDialog(attachment);
+      await elementUpdated(el);
+
+      expect((el as any).activeAttachmentImageSrc).toBe('blob:edit-local-file');
+      expect(createSpy).toHaveBeenCalledWith(file);
+
+      (el as any)._closeEditDialog();
+      await elementUpdated(el);
+
+      expect(revokeSpy).toHaveBeenCalledWith('blob:edit-local-file');
+      expect((el as any).activeAttachmentImageSrc).toBe('');
+
+      createSpy.mockRestore();
+      revokeSpy.mockRestore();
+    });
+  });
+
   describe('dialog state reset', () => {
     it('should clear attachments when dialog is reset', async () => {
       const el = await fixture<PostComposer>(
@@ -659,6 +710,59 @@ describe('post-composer multi-image upload', () => {
       expect((el as any).pollOptions).toEqual(['', '']);
       expect((el as any).pollDurationSeconds).toBe(60 * 60);
       expect((el as any).pollMultiple).toBe(false);
+    });
+  });
+
+  describe('scheduling', () => {
+    it('enables scheduling and defaults date/time values', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      (el as any)._toggleSchedule();
+
+      expect((el as any).scheduleEnabled).toBe(true);
+      expect((el as any).scheduleDate).toBeTruthy();
+      expect((el as any).scheduleTime).toBeTruthy();
+    });
+
+    it('rejects schedule times less than 5 minutes in the future', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      const nearFuture = new Date(Date.now() + 60 * 1000);
+      nearFuture.setSeconds(0, 0);
+
+      (el as any).scheduleEnabled = true;
+      (el as any).scheduleDate = toInputDate(nearFuture);
+      (el as any).scheduleTime = toInputTime(nearFuture);
+
+      const scheduledAt = (el as any)._resolveScheduledAtForSubmission();
+
+      expect(scheduledAt).toBeNull();
+      expect((el as any).scheduleError).toBeTruthy();
+    });
+
+    it('builds an ISO scheduled_at value for valid future times', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      const future = new Date(Date.now() + 15 * 60 * 1000);
+      future.setSeconds(0, 0);
+
+      (el as any).scheduleEnabled = true;
+      (el as any).scheduleDate = toInputDate(future);
+      (el as any).scheduleTime = toInputTime(future);
+
+      const scheduledAt = (el as any)._resolveScheduledAtForSubmission();
+
+      expect(typeof scheduledAt).toBe('string');
+      expect((el as any).scheduleError).toBeNull();
     });
   });
 });

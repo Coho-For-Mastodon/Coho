@@ -40,7 +40,7 @@ export class MediaTimeline extends LitElement {
 
         background: var(--sl-panel-background-color);
         padding: 8px;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
 
         align-items: center;
         justify-content: space-between;
@@ -48,7 +48,7 @@ export class MediaTimeline extends LitElement {
 
       lit-virtualizer {
         display: block;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         margin: 0;
         padding: 0;
         height: 90vh;
@@ -58,7 +58,7 @@ export class MediaTimeline extends LitElement {
 
       .scroller-fallback {
         display: block;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         margin: 0;
         padding: 0;
         height: 90vh;
@@ -78,7 +78,7 @@ export class MediaTimeline extends LitElement {
 
       .header-block img {
         height: 62px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
       }
 
       .header-block h4 {

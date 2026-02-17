@@ -96,7 +96,7 @@ export class MdOption extends LitElement {
         left: 50%;
         width: 0;
         height: 0;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         background-color: currentColor;
         opacity: 0;
         transform: translate(-50%, -50%);

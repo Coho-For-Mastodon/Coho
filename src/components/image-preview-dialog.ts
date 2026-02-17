@@ -87,7 +87,7 @@ export class ImagePreviewDialog extends LitElement {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       background:
         radial-gradient(
           120% 120% at 20% 10%,
@@ -108,7 +108,7 @@ export class ImagePreviewDialog extends LitElement {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       cursor: default;
       opacity: 0;
       transition: opacity 0.3s ease-in;
@@ -135,7 +135,7 @@ export class ImagePreviewDialog extends LitElement {
       max-width: 800px;
       background: rgba(0, 0, 0, 0.6);
       padding: 8px 16px;
-      border-radius: 24px;
+      border-radius: var(--md-sys-shape-corner-extra-large);
     }
 
     .close-button {
@@ -146,7 +146,7 @@ export class ImagePreviewDialog extends LitElement {
       color: white;
       --md-sys-color-on-surface-variant: white;
       background: rgba(0, 0, 0, 0.3);
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
     }
 
     .close-button:hover {

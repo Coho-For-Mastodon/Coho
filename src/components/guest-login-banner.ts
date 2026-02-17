@@ -47,7 +47,7 @@ export class GuestLoginBanner extends LitElement {
       cursor: pointer;
       text-decoration: none;
       padding: 4px 8px;
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       transition: background 0.15s ease;
     }
 

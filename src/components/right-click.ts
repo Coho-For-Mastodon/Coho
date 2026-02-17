@@ -31,7 +31,7 @@ export class RightClick extends LitElement {
         width: fit-content;
         overflow-x: hidden;
         background: #1blala;
-        border-radius: 5px;
+        border-radius: var(--md-sys-shape-corner-small);
         display: none;
         pointer-events: none;
         opacity: 0;

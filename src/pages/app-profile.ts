@@ -208,7 +208,7 @@ export class AppProfile extends LitElement {
       #avatar {
         width: 100%;
         height: 100%;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         border: 4px solid
           var(--md-sys-color-surface, var(--md-sys-color-background));
         object-fit: cover;
@@ -236,7 +236,7 @@ export class AppProfile extends LitElement {
       #avatar-skeleton {
         width: 100%;
         height: 100%;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         border: 4px solid
           var(--md-sys-color-surface, var(--md-sys-color-background));
       }
@@ -382,7 +382,7 @@ export class AppProfile extends LitElement {
         right: 6px;
         background: rgba(0, 0, 0, 0.6);
         color: white;
-        border-radius: 4px;
+        border-radius: var(--md-sys-shape-corner-extra-small);
         padding: 4px;
         display: flex;
         align-items: center;
@@ -473,7 +473,7 @@ export class AppProfile extends LitElement {
         background: var(--md-sys-color-primary);
         color: var(--md-sys-color-on-primary);
         padding: 4px 10px;
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
         font-size: 12px;
         font-weight: 600;
         margin-bottom: 12px;

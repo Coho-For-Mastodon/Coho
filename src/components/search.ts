@@ -25,6 +25,7 @@ interface SearchData {
 export class Search extends LitElement {
   @state() searchData: SearchData | undefined;
   @state() private _inputValue: string = '';
+  @state() private _loading = false;
 
   /** Optional avatar URL to display on the right side of the search bar */
   @property({ type: String }) avatar: string = '';
@@ -32,6 +33,7 @@ export class Search extends LitElement {
   @query('input') private _input!: HTMLInputElement;
 
   private _observer: IntersectionObserver | null = null;
+  private _requestId = 0;
 
   static styles = [
     css`
@@ -48,7 +50,7 @@ export class Search extends LitElement {
         min-width: 360px;
         max-width: 720px;
         background-color: var(--md-sys-color-surface-container-high, #e6e0e9);
-        border-radius: 28px;
+        border-radius: var(--md-sys-shape-corner-extra-large);
         padding: 0 16px;
         gap: 16px;
         cursor: text;
@@ -105,7 +107,7 @@ export class Search extends LitElement {
       .trailing-avatar {
         width: 30px;
         height: 30px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         flex-shrink: 0;
         object-fit: cover;
       }
@@ -119,7 +121,7 @@ export class Search extends LitElement {
         color: var(--md-sys-color-on-surface-variant, #49454f);
         flex-shrink: 0;
         cursor: pointer;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         padding: 8px;
         margin: -8px;
         transition: background-color 0.2s;
@@ -133,6 +135,24 @@ export class Search extends LitElement {
       .trailing-icon svg {
         width: 24px;
         height: 24px;
+      }
+
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: var(--md-sys-shape-corner-circle);
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       @media (max-width: 820px) {
@@ -169,19 +189,34 @@ export class Search extends LitElement {
     this._observer = createIntersectionObserver((entries) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
-          const { searchTimeline } = await import('../services/timeline');
-          const searchData = await searchTimeline('Mastodon');
-          console.log('searchData', searchData);
+          const startedAt = performance.now();
+          const requestId = ++this._requestId;
+          this.setLoading(true);
+          try {
+            const { searchTimeline } = await import('../services/timeline');
+            const searchData = await searchTimeline('Mastodon');
+            if (requestId !== this._requestId) return;
+            console.log('searchData', searchData);
+            console.debug(
+              `[perf] explore initial search ${Math.round(performance.now() - startedAt)}ms`
+            );
 
-          this.searchData = searchData;
+            this.searchData = searchData;
 
-          // fire custom event
-          const event = new CustomEvent('search', {
-            detail: {
-              searchData,
-            },
-          });
-          this.dispatchEvent(event);
+            // fire custom event
+            const event = new CustomEvent('search', {
+              detail: {
+                searchData,
+              },
+            });
+            this.dispatchEvent(event);
+          } catch (error) {
+            console.error('Error performing initial search', error);
+          } finally {
+            if (requestId === this._requestId) {
+              this.setLoading(false);
+            }
+          }
 
           disconnectIntersectionObserver(this._observer);
           this._observer = null;
@@ -212,22 +247,44 @@ export class Search extends LitElement {
     this._inputValue = (e.target as HTMLInputElement).value;
   }
 
+  private setLoading(loading: boolean) {
+    this._loading = loading;
+    this.dispatchEvent(
+      new CustomEvent('search-loading', { detail: { loading } })
+    );
+  }
+
   async handleSearch(value: string) {
     console.log(value);
 
-    const { searchTimeline } = await import('../services/timeline');
-    const searchData = await searchTimeline(value);
-    console.log('searchData', searchData);
+    const startedAt = performance.now();
+    const requestId = ++this._requestId;
+    this.setLoading(true);
+    try {
+      const { searchTimeline } = await import('../services/timeline');
+      const searchData = await searchTimeline(value);
+      if (requestId !== this._requestId) return;
+      console.log('searchData', searchData);
+      console.debug(
+        `[perf] explore user search ${Math.round(performance.now() - startedAt)}ms`
+      );
 
-    this.searchData = searchData;
+      this.searchData = searchData;
 
-    // fire custom event
-    const event = new CustomEvent('search', {
-      detail: {
-        searchData,
-      },
-    });
-    this.dispatchEvent(event);
+      // fire custom event
+      const event = new CustomEvent('search', {
+        detail: {
+          searchData,
+        },
+      });
+      this.dispatchEvent(event);
+    } catch (error) {
+      console.error('Error performing search', error);
+    } finally {
+      if (requestId === this._requestId) {
+        this.setLoading(false);
+      }
+    }
   }
 
   openAccount(id: string) {
@@ -257,13 +314,21 @@ export class Search extends LitElement {
           @input="${this._handleInput}"
           @keydown="${this._handleKeyDown}"
         />
-        ${this.avatar
-          ? html`<img
-              class="trailing-avatar"
-              src="${this.avatar}"
-              alt="Profile"
-            />`
-          : html``}
+        ${this._loading
+          ? html`<span
+              class="trailing-icon"
+              aria-live="polite"
+              aria-label=${msg('Searching')}
+            >
+              <span class="spinner"></span>
+            </span>`
+          : this.avatar
+            ? html`<img
+                class="trailing-avatar"
+                src="${this.avatar}"
+                alt="Profile"
+              />`
+            : html``}
       </div>
     `;
   }

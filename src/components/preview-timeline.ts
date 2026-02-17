@@ -26,7 +26,7 @@ export class PreviewTimeline extends LitElement {
 
       lit-virtualizer {
         display: block;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         margin: 0;
         padding: 0;
         width: 100%;
@@ -37,7 +37,7 @@ export class PreviewTimeline extends LitElement {
 
       .scroller-fallback {
         display: block;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         margin: 0;
         padding: 0;
         width: 100%;

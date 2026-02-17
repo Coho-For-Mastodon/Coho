@@ -29,13 +29,13 @@ export class MdSkeleton extends LitElement {
         --md-sys-color-surface-container-highest,
         var(--sl-color-neutral-200)
       );
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
       position: relative;
       overflow: hidden;
     }
 
     .skeleton.circle {
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
     }
 
     /* Shimmer animation */

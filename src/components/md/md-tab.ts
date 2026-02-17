@@ -93,7 +93,7 @@ export class MdTab extends LitElement {
         font-size: 11px;
         line-height: 16px;
         letter-spacing: 0.1px;
-        border-radius: 0;
+        border-radius: var(--md-sys-shape-corner-none);
         background: transparent;
       }
 
@@ -111,7 +111,7 @@ export class MdTab extends LitElement {
         justify-content: center;
         width: 64px;
         height: 32px;
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
         transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
       }
 
@@ -204,7 +204,7 @@ export class MdTab extends LitElement {
         inset: 4px;
         border: 2px solid
           var(--md-sys-color-primary, var(--sl-color-primary-600));
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
         pointer-events: none;
       }
 
@@ -228,7 +228,8 @@ export class MdTab extends LitElement {
         min-width: 24px;
         max-width: 48px;
         height: 3px;
-        border-radius: 3px 3px 0 0;
+        border-radius: var(--md-sys-shape-corner-extra-small)
+          var(--md-sys-shape-corner-extra-small) 0 0;
       }
 
       /* Horizontal bottom placement indicator (top) - Hidden for mobile style pill */
@@ -271,7 +272,7 @@ export class MdTab extends LitElement {
           font-size: 11px;
           line-height: 16px;
           letter-spacing: 0.1px;
-          border-radius: 0;
+          border-radius: var(--md-sys-shape-corner-none);
           background: transparent;
         }
 
@@ -281,7 +282,7 @@ export class MdTab extends LitElement {
           justify-content: center;
           width: 64px;
           height: 32px;
-          border-radius: 16px;
+          border-radius: var(--md-sys-shape-corner-large);
           transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
         }
 
@@ -350,7 +351,7 @@ export class MdTab extends LitElement {
 
       .ripple {
         position: absolute;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         background: currentColor;
         pointer-events: none;
         animation: ripple 0.6s cubic-bezier(0.2, 0, 0, 1);

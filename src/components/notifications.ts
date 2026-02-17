@@ -188,7 +188,7 @@ export class Notifications extends LitElement {
 
       #notify-actions {
         padding: 8px;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         background: transparent;
         display: flex;
         justify-content: space-between;
@@ -203,7 +203,7 @@ export class Notifications extends LitElement {
         gap: 12px;
         cursor: pointer;
         background: var(--sl-panel-background-color);
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
         padding: 16px;
         transition: background 0.2s ease;
       }
@@ -225,7 +225,7 @@ export class Notifications extends LitElement {
       .notification-icon {
         width: 32px;
         height: 32px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -295,7 +295,7 @@ export class Notifications extends LitElement {
       .notification-avatar {
         width: 48px;
         height: 48px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         object-fit: cover;
         border: 2px solid var(--sl-color-primary-600);
         flex-shrink: 0;
@@ -304,7 +304,7 @@ export class Notifications extends LitElement {
       /* Post preview */
       .post-preview {
         background: rgba(0, 0, 0, 0.15);
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
         padding: 12px;
         margin-top: 4px;
         border-left: 3px solid var(--sl-color-primary-600);
@@ -339,7 +339,7 @@ export class Notifications extends LitElement {
 
       .post-preview-media img {
         max-height: 120px;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         object-fit: cover;
       }
 
@@ -348,7 +348,7 @@ export class Notifications extends LitElement {
         display: flex;
         align-items: stretch;
         background: #ffffff0d;
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
         overflow: hidden;
         margin-top: 10px;
         cursor: pointer;
@@ -372,7 +372,7 @@ export class Notifications extends LitElement {
 
       .link-card img {
         min-width: 80px;
-        border-radius: 0;
+        border-radius: var(--md-sys-shape-corner-none);
         object-fit: cover;
 
         height: 20%;
@@ -425,7 +425,7 @@ export class Notifications extends LitElement {
       .follow-avatar {
         width: 56px;
         height: 56px;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         object-fit: cover;
         border: 2px solid var(--sl-color-primary-600);
         flex-shrink: 0;
@@ -524,7 +524,7 @@ export class Notifications extends LitElement {
 
       @media (max-width: 820px) {
         .notification-card {
-          border-radius: 8px;
+          border-radius: var(--md-sys-shape-corner-small);
         }
 
         ul {

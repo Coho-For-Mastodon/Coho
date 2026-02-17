@@ -29,7 +29,7 @@ export class MdSwitch extends LitElement {
       position: relative;
       width: 52px;
       height: 32px;
-      border-radius: 16px;
+      border-radius: var(--md-sys-shape-corner-large);
       transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
       background-color: var(
         --md-switch-track,
@@ -54,7 +54,7 @@ export class MdSwitch extends LitElement {
       left: 4px;
       width: 24px;
       height: 24px;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       background: var(--md-sys-color-surface, #fef7ff);
       box-shadow:
         0 1px 2px rgba(0, 0, 0, 0.3),
@@ -73,7 +73,7 @@ export class MdSwitch extends LitElement {
       outline: 2px solid
         var(--md-sys-color-primary, var(--sl-color-primary-600, #6750a4));
       outline-offset: 3px;
-      border-radius: 18px;
+      border-radius: var(--md-sys-shape-corner-large);
     }
 
     .label {

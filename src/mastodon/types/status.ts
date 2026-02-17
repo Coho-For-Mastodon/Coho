@@ -5,6 +5,7 @@
 
 import { Account, Emoji } from './account';
 import { MediaAttachment } from './media';
+import type { FilterResult } from './filter';
 
 export interface Status {
   id: string;
@@ -34,6 +35,7 @@ export interface Status {
   emojis: Emoji[];
   card: Card | null;
   poll: Poll | null;
+  filtered?: FilterResult[];
   reply_to?: Status;
   ancestors?: Status[];
   thread_continuation?: Status[];
@@ -94,6 +96,28 @@ export interface PollOption {
 export interface StatusContext {
   ancestors: Status[];
   descendants: Status[];
+}
+
+export interface ScheduledStatusParams {
+  text?: string;
+  warning_text?: string;
+  visibility?: StatusVisibility;
+  sensitive?: string;
+  language?: string;
+  media_ids?: string[];
+  scheduled_at?: string;
+  poll?: {
+    options?: string[];
+    expires_in?: string;
+    multiple?: string;
+  };
+}
+
+export interface ScheduledStatus {
+  id: string;
+  scheduled_at: string;
+  params?: ScheduledStatusParams;
+  media_attachments?: MediaAttachment[];
 }
 
 /**

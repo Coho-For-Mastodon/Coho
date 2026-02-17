@@ -23,7 +23,7 @@ export class MdMenu extends LitElement {
         padding: 8px 0;
         background-color: var(--md-sys-color-surface-container, #f3edf7);
         color: var(--md-sys-color-on-surface, #1d1b20);
-        border-radius: 16px;
+        border-radius: var(--md-sys-shape-corner-large);
         box-shadow:
           0 1px 3px 1px rgba(0, 0, 0, 0.15),
           0 1px 2px 0 rgba(0, 0, 0, 0.3);

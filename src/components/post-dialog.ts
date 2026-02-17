@@ -66,14 +66,14 @@ export class PostDialog extends LitElement {
       flex-direction: column-reverse;
       gap: 10px;
       min-height: 370px;
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       animation: fadein 0.5s;
     }
 
     #ai-image img {
       width: 20em;
       height: 320px;
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
     }
 
     #ai-input-block {
@@ -90,7 +90,7 @@ export class PostDialog extends LitElement {
 
     #post-copilot {
       background: rgb(0 0 0 / 6%);
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       padding: 10px;
       margin-top: 12px;
       display: flex;
@@ -219,6 +219,9 @@ export class PostDialog extends LitElement {
           id: data.id,
           preview_url: data.preview_url,
           description: data.description,
+          file: new File([blob], decodedName, {
+            type: blob.type || 'application/octet-stream',
+          }),
         });
       }
 
@@ -274,6 +277,9 @@ export class PostDialog extends LitElement {
           id: attachmentData.id,
           preview_url: attachmentData.preview_url,
           description: attachmentData.description,
+          file: new File([this.aiBlob], 'ai-generated.png', {
+            type: this.aiBlob.type || 'image/png',
+          }),
         });
       }
 

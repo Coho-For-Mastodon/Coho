@@ -41,7 +41,7 @@ export class MediaEditDialog extends LitElement {
       justify-content: center;
       margin-bottom: 1rem;
       background: transparent;
-      border-radius: 8px;
+      border-radius: var(--md-sys-shape-corner-small);
       padding: 1rem;
       min-height: 200px;
       max-height: 300px;
@@ -54,7 +54,7 @@ export class MediaEditDialog extends LitElement {
       max-width: 100%;
       max-height: 280px;
       object-fit: contain;
-      border-radius: 4px;
+      border-radius: var(--md-sys-shape-corner-extra-small);
     }
 
     .actions {
@@ -102,7 +102,7 @@ export class MediaEditDialog extends LitElement {
       width: 70px;
       cursor: pointer;
       text-align: center;
-      border-radius: 8px;
+      border-radius: var(--md-sys-shape-corner-small);
       padding: 4px;
       border: 2px solid transparent;
       transition: all 150ms ease;
@@ -121,7 +121,7 @@ export class MediaEditDialog extends LitElement {
     .filter-preset-image {
       width: 60px;
       height: 60px;
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       object-fit: cover;
       background: var(--md-sys-color-surface-container, #f0f0f0);
     }
@@ -147,7 +147,7 @@ export class MediaEditDialog extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
+      border-radius: var(--md-sys-shape-corner-small);
     }
 
     .processing-text {

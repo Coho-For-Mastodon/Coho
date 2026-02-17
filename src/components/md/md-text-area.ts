@@ -16,6 +16,7 @@ export class MdTextArea extends LitElement {
   @property({ type: String }) variant: 'filled' | 'outlined' = 'filled';
   @property({ type: Number }) rows = 4;
   @property({ type: Number }) maxlength?: number;
+  @property({ type: Boolean, attribute: 'hide-counter' }) hideCounter = false;
 
   @query('textarea') private _textarea!: HTMLTextAreaElement;
 
@@ -37,8 +38,8 @@ export class MdTextArea extends LitElement {
         min-height: var(--md-text-area-min-height, 80px);
         padding: var(--md-text-area-padding, 12px 16px);
         border: none;
-        border-radius: var(--md-text-area-radius, 4px)
-          var(--md-text-area-radius, 4px) 0 0;
+        border-radius: var(--md-sys-shape-corner-extra-small)
+          var(--md-sys-shape-corner-extra-small) 0 0;
         background-color: var(
           --md-sys-color-surface-container-highest,
           #e6e0e9
@@ -95,7 +96,7 @@ export class MdTextArea extends LitElement {
       textarea.outlined {
         background-color: transparent;
         border: 1px solid var(--md-sys-color-outline, #79747e);
-        border-radius: var(--md-text-area-radius, 4px);
+        border-radius: var(--md-sys-shape-corner-extra-small);
       }
 
       textarea.outlined:hover:not(:disabled) {
@@ -231,7 +232,7 @@ export class MdTextArea extends LitElement {
           @input="${this._handleInput}"
           @change="${this._handleChange}"
         ></textarea>
-        ${this.maxlength
+        ${this.maxlength && !this.hideCounter
           ? html`
               <div class="char-counter">
                 ${this.value.length} / ${this.maxlength}

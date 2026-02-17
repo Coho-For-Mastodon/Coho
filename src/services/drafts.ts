@@ -15,6 +15,7 @@ export interface DraftPost {
   sensitive: boolean;
   spoilerText: string;
   poll: { options: string[]; expiresIn: number; multiple: boolean } | null;
+  schedule: { date: string; time: string } | null;
   replyToId: string | null;
   attachments: DraftAttachment[];
   updatedAt: string;
@@ -26,6 +27,7 @@ export interface DraftPostInput {
   sensitive: boolean;
   spoilerText: string;
   poll: { options: string[]; expiresIn: number; multiple: boolean } | null;
+  schedule: { date: string; time: string } | null;
   replyToId: string | null;
   attachments: DraftAttachment[];
 }
@@ -94,6 +96,7 @@ export async function listDraftsForContext(
       return {
         ...value,
         id: value.id?.trim() || key,
+        schedule: value.schedule ?? null,
         updatedAt: value.updatedAt || new Date(0).toISOString(),
       };
     })

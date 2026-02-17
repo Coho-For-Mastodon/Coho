@@ -38,7 +38,7 @@ export class AppMedia extends LitElement {
 
       li img {
         width: 100%;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         height: 100%;
         object-fit: cover;
       }

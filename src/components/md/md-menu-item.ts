@@ -38,7 +38,7 @@ export class MdMenuItem extends LitElement {
         transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
         position: relative;
         overflow: hidden;
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       /* Selected state */
@@ -137,7 +137,7 @@ export class MdMenuItem extends LitElement {
         left: 50%;
         width: 0;
         height: 0;
-        border-radius: 50%;
+        border-radius: var(--md-sys-shape-corner-circle);
         background-color: currentColor;
         opacity: 0;
         transform: translate(-50%, -50%);
@@ -244,7 +244,7 @@ export class MdMenuItem extends LitElement {
         font-size: 10px;
         font-weight: 500;
         white-space: nowrap;
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
         pointer-events: none;
       }
 

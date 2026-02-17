@@ -47,7 +47,7 @@ export class MdCard extends LitElement {
       flex-direction: column;
       background: transparent;
       border-bottom: none;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       overflow: hidden;
       transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
       position: relative;

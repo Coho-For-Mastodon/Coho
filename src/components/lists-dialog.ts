@@ -75,7 +75,7 @@ export class ListsDialog extends LitElement {
       gap: 12px;
       align-items: center;
       padding: 12px;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       background: var(--md-sys-color-surface-container, #f3edf7);
     }
 
@@ -99,7 +99,7 @@ export class ListsDialog extends LitElement {
 
     .empty {
       padding: 16px;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       background: var(--md-sys-color-surface-container-low, #f7f2f8);
       color: var(--md-sys-color-on-surface-variant, #49454f);
       font-size: 14px;
@@ -124,7 +124,7 @@ export class ListsDialog extends LitElement {
 
     .policy-chip {
       padding: 6px 12px;
-      border-radius: 999px;
+      border-radius: var(--md-sys-shape-corner-full);
       border: 1px solid var(--md-sys-color-outline, #79747e);
       font-size: 12px;
       cursor: pointer;

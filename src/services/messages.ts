@@ -1,2 +1,7 @@
 // Re-export from mastodon library
-export { getMessages } from '../mastodon/api/messages';
+export {
+  getConversations,
+  markConversationRead,
+  deleteConversation,
+  getMessages,
+} from '../mastodon/api/messages';

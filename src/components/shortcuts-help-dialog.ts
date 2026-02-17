@@ -72,7 +72,7 @@ export class ShortcutsHelpDialog extends LitElement {
         rgba(0, 0, 0, 0.08)
       );
       border: 1px solid var(--md-sys-color-outline-variant, #cac4d0);
-      border-radius: 6px;
+      border-radius: var(--md-sys-shape-corner-small);
       box-shadow: 0 1px 0 var(--md-sys-color-outline-variant, #cac4d0);
     }
 

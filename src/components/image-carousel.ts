@@ -19,7 +19,7 @@ export class ImageCarousel extends LitElement {
       }
 
       img {
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       .image-container {
@@ -30,7 +30,7 @@ export class ImageCarousel extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       @media (prefers-color-scheme: dark) {
@@ -68,7 +68,7 @@ export class ImageCarousel extends LitElement {
 
       video {
         width: 100%;
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       #list {

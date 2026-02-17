@@ -43,7 +43,7 @@ export class AppExplore extends LitElement {
         padding: 10px;
         height: fit-content;
         background: #202023;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         width: 94%;
         margin-bottom: 22px;
       }

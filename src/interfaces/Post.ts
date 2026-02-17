@@ -1,5 +1,6 @@
 import { Account, Emoji } from '../types/interfaces/Account';
 import { MediaAttachment } from '../types/interfaces/MediaAttachment';
+import type { FilterResult } from '../mastodon/types/filter';
 
 // create an interface for a post in the mastodon api
 export interface Post {
@@ -68,7 +69,31 @@ export interface Post {
     voted?: boolean;
     own_votes?: number[];
   } | null;
+  filtered?: FilterResult[];
   reply_to?: Post;
   ancestors?: Post[];
   thread_continuation?: Post[]; // Posts that continue this thread
 }
+
+export interface ScheduledPostParams {
+  text?: string;
+  warning_text?: string;
+  visibility?: string;
+  sensitive?: string;
+  media_ids?: string[];
+  poll?: {
+    options?: string[];
+    expires_in?: string;
+    multiple?: string;
+  };
+  scheduled_at?: string;
+}
+
+export interface ScheduledPost {
+  id: string;
+  scheduled_at: string;
+  params?: ScheduledPostParams;
+  media_attachments?: MediaAttachment[];
+}
+
+export type PostPublishResult = Post | ScheduledPost;

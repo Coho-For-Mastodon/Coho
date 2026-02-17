@@ -63,13 +63,13 @@ export class CreateAccount extends LitElement {
 
       li {
         background: #ffffff12;
-        border-radius: 10px;
+        border-radius: var(--md-sys-shape-corner-medium);
         padding: 10px;
       }
 
       li img {
         width: 100%;
-        border-radius: 10px;
+        border-radius: var(--md-sys-shape-corner-medium);
         height: 160px;
         object-fit: cover;
         display: block;

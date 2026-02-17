@@ -26,7 +26,7 @@ export class MammothBot extends LitElement {
         flex-direction: column;
         background: #ffffff14;
         padding: 8px;
-        border-radius: 8px;
+        border-radius: var(--md-sys-shape-corner-small);
       }
 
       @media (prefers-color-scheme: light) {
@@ -61,7 +61,7 @@ export class MammothBot extends LitElement {
         width: 24.5vw;
         margin-bottom: 8px;
         max-height: 200px;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         padding: 8px;
         overflow-y: auto;
         overflow-x: hidden;
@@ -74,7 +74,7 @@ export class MammothBot extends LitElement {
         background: #ffffff14;
         backdrop-filter: blur(40px);
         border: none;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
 
         display: flex;
         align-items: center;
@@ -94,7 +94,7 @@ export class MammothBot extends LitElement {
 
       ul li {
         background: #ffffff14;
-        border-radius: 6px;
+        border-radius: var(--md-sys-shape-corner-small);
         padding: 6px;
       }
 

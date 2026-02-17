@@ -782,20 +782,35 @@ self.addEventListener('push', async (event: PushEvent) => {
   payload.body = payload.body?.replace(/<\/?[^>]+(>|$)/g, '');
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'Coho', {
-      body: payload.body || 'You have a new notification',
-      icon: payload.icon || '/assets/icons/new-icons/icon-256x256.png',
-      tag: payload.notification_id || 'coho',
-      badge: '/assets/icons/new-icons/icon-256x256.png',
-      renotify: true,
-      actions: actions,
-      data: {
-        access_token: payload.access_token,
-        notification_id: payload.notification_id,
-        notification_type: payload.notification_type,
-        preferred_locale: payload.preferred_locale,
-      },
-    })
+    (async () => {
+      await self.registration.showNotification(payload.title || 'Coho', {
+        body: payload.body || 'You have a new notification',
+        icon: payload.icon || '/assets/icons/new-icons/icon-256x256.png',
+        tag: payload.notification_id || 'coho',
+        badge: '/assets/icons/new-icons/icon-256x256.png',
+        renotify: true,
+        actions: actions,
+        data: {
+          access_token: payload.access_token,
+          notification_id: payload.notification_id,
+          notification_type: payload.notification_type,
+          preferred_locale: payload.preferred_locale,
+        },
+      });
+
+      // Notify open clients so they can refresh (e.g. DM thread on mention)
+      const clients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      for (const client of clients) {
+        client.postMessage({
+          type: 'push-notification',
+          notificationType: payload.notification_type,
+          notificationId: payload.notification_id,
+        });
+      }
+    })()
   );
 });
 

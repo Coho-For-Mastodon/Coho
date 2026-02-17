@@ -74,7 +74,7 @@ export class PwaInstall extends LitElement {
     .app-icon {
       width: 72px;
       height: 72px;
-      border-radius: 16px;
+      border-radius: var(--md-sys-shape-corner-large);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
@@ -150,7 +150,7 @@ export class PwaInstall extends LitElement {
     .step-number {
       width: 28px;
       height: 28px;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       background: var(--md-sys-color-primary-container, #eaddff);
       color: var(--md-sys-color-on-primary-container, #21005d);
       display: flex;

@@ -68,7 +68,7 @@ export class TimelinePoll extends LitElement {
     .container {
       border: 1px solid
         var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
-      border-radius: 14px;
+      border-radius: var(--md-sys-shape-corner-medium);
       background: var(
         --md-sys-color-surface-container-high,
         rgba(255, 255, 255, 0.06)
@@ -130,7 +130,7 @@ export class TimelinePoll extends LitElement {
     .bar {
       width: 84px;
       height: 8px;
-      border-radius: 999px;
+      border-radius: var(--md-sys-shape-corner-full);
       background: color-mix(
         in srgb,
         var(--md-sys-color-on-surface, white) 10%,
@@ -146,7 +146,7 @@ export class TimelinePoll extends LitElement {
         --md-sys-color-primary,
         var(--sl-color-primary-600, #6750a4)
       );
-      border-radius: 999px;
+      border-radius: var(--md-sys-shape-corner-full);
       transition: width 180ms cubic-bezier(0.2, 0, 0, 1);
     }
 

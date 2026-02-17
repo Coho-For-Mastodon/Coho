@@ -116,7 +116,7 @@ export class EditAccount extends LitElement {
     .skeleton-avatar {
       width: 80px;
       height: 80px;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
     }
 
     .skeleton-info {
@@ -168,7 +168,7 @@ export class EditAccount extends LitElement {
 
     .section-card {
       background: var(--md-sys-color-surface-container, #f3edf7);
-      border-radius: 16px;
+      border-radius: var(--md-sys-shape-corner-large);
       padding: 20px;
       display: flex;
       flex-direction: column;
@@ -210,7 +210,7 @@ export class EditAccount extends LitElement {
     .avatar-preview {
       width: 96px;
       height: 96px;
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
       object-fit: cover;
       border: 3px solid var(--md-sys-color-outline-variant, #cac4d0);
     }
@@ -218,7 +218,7 @@ export class EditAccount extends LitElement {
     .header-preview {
       width: 200px;
       height: 67px;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
       object-fit: cover;
       border: 2px solid var(--md-sys-color-outline-variant, #cac4d0);
     }
@@ -236,11 +236,11 @@ export class EditAccount extends LitElement {
     }
 
     .avatar-preview + .image-change-overlay {
-      border-radius: 50%;
+      border-radius: var(--md-sys-shape-corner-circle);
     }
 
     .header-preview + .image-change-overlay {
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-medium);
     }
 
     .image-preview-container:hover .image-change-overlay {
@@ -397,7 +397,7 @@ export class EditAccount extends LitElement {
 
       .section-card {
         padding: 16px;
-        border-radius: 12px;
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       .images-row {
