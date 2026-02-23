@@ -2751,15 +2751,6 @@ export class PostComposer extends LitElement {
         <!-- Proofreader -->
         ${this.proofreaderAvailable ? this._renderProofreader() : nothing}
 
-        <md-icon-button
-          class="mobile-icon-button emoji-button-anchor"
-          label=${msg('Emoji')}
-          src="/assets/happy-outline.svg"
-          .variant=${this.emojiPickerOpen ? 'filled-tonal' : 'standard'}
-          @click="${() => this._toggleEmojiPicker()}"
-        ></md-icon-button>
-        ${this._renderEmojiPicker()}
-
         <!-- Speech-to-text -->
         ${this.speechToTextAvailable
           ? html`
