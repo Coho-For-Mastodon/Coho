@@ -26,7 +26,13 @@ export class AppTheme extends LitElement {
       md-button::part(button) {
         height: 48px;
         width: 48px;
-        border-radius: var(--md-sys-shape-corner-circle);
+        border-radius: 50%;
+      }
+
+      #open-button {
+        position: fixed;
+        bottom: 20px;
+        left: 16px;
       }
 
       #blue {
@@ -112,7 +118,7 @@ export class AppTheme extends LitElement {
       .color {
         width: 40px;
         height: 40px;
-        border-radius: var(--md-sys-shape-corner-circle);
+        border-radius: 50%;
         cursor: pointer;
         border: 4px solid var(--sl-color-primary-600);
       }
@@ -133,7 +139,7 @@ export class AppTheme extends LitElement {
       #wrapper {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 40px;
       }
     `,
   ];

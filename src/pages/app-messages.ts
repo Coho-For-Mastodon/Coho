@@ -218,10 +218,23 @@ export class AppMessages extends LitElement {
         min-height: 70vh;
       }
 
-      @media (min-width: 1250px) {
+      @media (min-width: 1100px) {
         md-dialog::part(dialog) {
           min-width: 50vw;
           min-height: 60vh;
+        }
+
+        .fab {
+          max-width: 720px;
+          margin: 0 auto;
+          padding: 8px 0;
+          display: flex;
+          justify-content: end;
+          position: absolute;
+          /* top: 9vh; */
+          left: 0;
+          right: 0;
+          bottom: 2em;
         }
       }
 
@@ -728,16 +741,16 @@ export class AppMessages extends LitElement {
                         : nothing}
                     </div>
                   `}
-        </div>
 
-        <div class="fab">
-          <md-button
-            variant="fab"
-            @click=${this._openNewMessage}
-            title=${msg('New message')}
-          >
-            <md-icon src="/assets/create-outline.svg"></md-icon>
-          </md-button>
+          <div class="fab">
+            <md-button
+              variant="fab"
+              @click=${this._openNewMessage}
+              title=${msg('New message')}
+            >
+              <md-icon src="/assets/create-outline.svg"></md-icon>
+            </md-button>
+          </div>
         </div>
 
         ${this._renderNewMessageDialog()}
