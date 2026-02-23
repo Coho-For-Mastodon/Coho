@@ -805,11 +805,19 @@ export class ConversationThread extends LitElement {
                           controls
                           preload="metadata"
                         ></video>`
-                      : html`<img
-                          src="${media.preview_url || media.url}"
-                          alt="${media.description || ''}"
-                          loading="lazy"
-                        />`
+                      : media.type === 'audio'
+                        ? html`<audio
+                            controls
+                            src="${media.url}"
+                            preload="metadata"
+                            style="width: 100%;"
+                            aria-label=${media.description || msg('Audio')}
+                          ></audio>`
+                        : html`<img
+                            src="${media.preview_url || media.url}"
+                            alt="${media.description || ''}"
+                            loading="lazy"
+                          />`
                   )}
                 </div>
               `

@@ -474,10 +474,6 @@
   <source>Push Notifications</source>
   <target>Push-Benachrichtigungen</target>
 </trans-unit>
-<trans-unit id="s76d1628d0e8b9245">
-  <source>Clear All</source>
-  <target>Alle löschen</target>
-</trans-unit>
 <trans-unit id="sf993bb199fefbe04">
   <source>All</source>
   <target>Alle</target>
@@ -501,10 +497,6 @@
 <trans-unit id="s39ac3fc7cccc167d">
   <source>No new followers yet</source>
   <target>Noch keine neuen Follower</target>
-</trans-unit>
-<trans-unit id="se48bd9e6c2a3109d">
-  <source>Accounts</source>
-  <target>Konten</target>
 </trans-unit>
 <trans-unit id="sc15ed31aec49dd18">
   <source>Trending</source>
@@ -1701,6 +1693,102 @@
 </trans-unit>
 <trans-unit id="sc07837c309cc699b">
   <source>Unmute</source>
+</trans-unit>
+<trans-unit id="s08e6bd98452e6bb9">
+  <source>Audio</source>
+</trans-unit>
+<trans-unit id="s86723627c116f82a">
+  <source>Failed to load notification preferences.</source>
+</trans-unit>
+<trans-unit id="sbfdfd594b652f867">
+  <source>Failed to save notification preferences.</source>
+</trans-unit>
+<trans-unit id="s5261000c68eafb43">
+  <source>Push notifications are not enabled.</source>
+</trans-unit>
+<trans-unit id="s8a7ac0256191b086">
+  <source>Turn on push notifications using the toggle above to configure alert preferences.</source>
+</trans-unit>
+<trans-unit id="s16227649db798f83">
+  <source>Notification Types</source>
+</trans-unit>
+<trans-unit id="sb7f6f966350c12d7">
+  <source>Someone mentions you in a post</source>
+</trans-unit>
+<trans-unit id="sf210a41207160956">
+  <source>New Followers</source>
+</trans-unit>
+<trans-unit id="s50d72e1a654b4dfe">
+  <source>Someone follows you</source>
+</trans-unit>
+<trans-unit id="s9910976093f22606">
+  <source>Follow Requests</source>
+</trans-unit>
+<trans-unit id="s36f37570b6d3e012">
+  <source>Someone requests to follow you</source>
+</trans-unit>
+<trans-unit id="s45844294fbfc626d">
+  <source>Boosts</source>
+</trans-unit>
+<trans-unit id="sca02f0552eebeaba">
+  <source>Someone boosts your post</source>
+</trans-unit>
+<trans-unit id="s47d37fbd40733715">
+  <source>Favourites</source>
+</trans-unit>
+<trans-unit id="s29df48917a2bdf0a">
+  <source>Someone favourites your post</source>
+</trans-unit>
+<trans-unit id="sa3890696dcf6e3d1">
+  <source>Polls</source>
+</trans-unit>
+<trans-unit id="sa312088a182fe8d6">
+  <source>A poll you voted in or created has ended</source>
+</trans-unit>
+<trans-unit id="sec596f94d95d3042">
+  <source>New Posts</source>
+</trans-unit>
+<trans-unit id="s9c35f2f477371c16">
+  <source>Someone you subscribed to posts</source>
+</trans-unit>
+<trans-unit id="sad144cb181c9ac06">
+  <source>Post Edits</source>
+</trans-unit>
+<trans-unit id="sf66168cf7970831e">
+  <source>A post you interacted with was edited</source>
+</trans-unit>
+<trans-unit id="s8ac22fc51e88882a">
+  <source>Receive Notifications From</source>
+</trans-unit>
+<trans-unit id="s51a1dec7855d81f8">
+  <source>Everyone</source>
+</trans-unit>
+<trans-unit id="sfa1c4cdb3e5b9ac2">
+  <source>People you follow</source>
+</trans-unit>
+<trans-unit id="sf5474d1649a244a1">
+  <source>Your followers</source>
+</trans-unit>
+<trans-unit id="s05a351a51219b0fe">
+  <source>Nobody</source>
+</trans-unit>
+<trans-unit id="s5ded3d58db157140">
+  <source>Notification Preferences</source>
+</trans-unit>
+<trans-unit id="s5470f559b6b73e57">
+  <source>Notification settings</source>
+</trans-unit>
+<trans-unit id="s92e92a0e6f54832a">
+  <source>Unmute conversation</source>
+</trans-unit>
+<trans-unit id="s4b372c8344c2e55b">
+  <source>Mute conversation</source>
+</trans-unit>
+<trans-unit id="sd94ca8ae60ddd3e0">
+  <source>Unable to load suggestions right now.</source>
+</trans-unit>
+<trans-unit id="se48bd9e6c2a3109d">
+  <source>Accounts</source>
 </trans-unit>
 </body>
 </file>

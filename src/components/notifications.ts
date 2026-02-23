@@ -18,6 +18,7 @@ import './timeline-item';
 import './md/md-dialog';
 import './md/md-switch';
 import './md/md-button';
+import './md/md-icon-button';
 
 import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
@@ -184,6 +185,19 @@ export class Notifications extends LitElement {
         to {
           transform: rotate(360deg);
         }
+      }
+
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      #notify-actions md-icon-button {
+        animation: fade-in 200ms ease-in;
       }
 
       #notify-actions {
@@ -767,6 +781,29 @@ export class Notifications extends LitElement {
     }
   }
 
+  private async _openNotificationPreferences() {
+    const { NotificationPreferencesDialog } =
+      await import('./notification-preferences-dialog.js');
+
+    // Ensure the element is registered
+    void NotificationPreferencesDialog;
+
+    let dialog = this.shadowRoot?.querySelector(
+      'notification-preferences-dialog'
+    ) as
+      | import('./notification-preferences-dialog').NotificationPreferencesDialog
+      | null;
+
+    if (!dialog) {
+      dialog = document.createElement(
+        'notification-preferences-dialog'
+      ) as import('./notification-preferences-dialog').NotificationPreferencesDialog;
+      this.shadowRoot?.appendChild(dialog);
+    }
+
+    await dialog.show();
+  }
+
   async openPost(tweet: Post | undefined) {
     if (!tweet) return;
     // Dispatch event so parent can handle opening in dialog
@@ -1163,13 +1200,13 @@ export class Notifications extends LitElement {
             >${msg('Push Notifications')}</md-switch
           >
         </div>
-        <md-button
-          variant="outlined"
-          pill
-          size="small"
-          @click="${() => this.clear()}"
-          >${msg('Clear All')}</md-button
-        >
+        ${this.subbed
+          ? html`<md-icon-button
+              src="/assets/options-outline.svg"
+              label="${msg('Notification settings')}"
+              @click="${() => this._openNotificationPreferences()}"
+            ></md-icon-button>`
+          : nothing}
       </div>
 
       <md-segmented-button

@@ -41,6 +41,7 @@ export type {
   NotificationType,
   PushSubscription,
   PushAlerts,
+  PushPolicy,
 } from './notification';
 
 // Instance types
@@ -76,3 +77,6 @@ export type {
   UpdateFilterParams,
   KeywordAttribute,
 } from './filter';
+
+// Suggestion types
+export type { Suggestion, SuggestionSource } from './suggestion';

@@ -12,6 +12,7 @@ import '../components/md/md-skeleton';
 
 import '../components/md/md-segmented-button';
 import type { Account } from '../mastodon/types';
+import type { Suggestion } from '../mastodon/types/suggestion';
 import type { TrendingTag, TrendingLink } from '../mastodon/types/instance';
 import type { Post } from '../interfaces/Post';
 import type { PostDetailDialog } from '../components/post-detail-dialog';
@@ -29,21 +30,27 @@ export class SearchPage extends LitElement {
   @state() searchData: SearchData | undefined;
   @state() trending: Post[] | undefined;
   @state() trendingLinks: TrendingLink[] | undefined;
-  @state() activeSegment: string = 'accounts';
+  @state() suggestions: Suggestion[] | undefined;
+  @state() activeSegment: string = 'for-you';
   @state() private trendingLoading = false;
   @state() private newsLoading = false;
+  @state() private suggestionsLoading = false;
   @state() private trendingError: string | undefined;
   @state() private newsError: string | undefined;
+  @state() private suggestionsError: string | undefined;
 
   @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
   private trendingPromise: Promise<void> | null = null;
   private newsPromise: Promise<void> | null = null;
+  private suggestionsPromise: Promise<void> | null = null;
   private prefetchScheduled = false;
 
   static styles = [
     css`
       :host {
         display: block;
+        max-width: 100%;
+        overflow-x: hidden;
 
         content-visibility: auto;
         contain: layout style paint;
@@ -90,6 +97,8 @@ export class SearchPage extends LitElement {
         overflow-y: auto;
         overflow-x: hidden;
         align-content: start;
+        max-width: 100%;
+        box-sizing: border-box;
       }
 
       #accountsList > li {
@@ -97,6 +106,7 @@ export class SearchPage extends LitElement {
         flex-direction: column !important;
         height: auto !important;
         min-height: 240px;
+        min-width: 0;
       }
 
       .account-card {
@@ -109,6 +119,7 @@ export class SearchPage extends LitElement {
           box-shadow 0.2s ease;
         background: linear-gradient(145deg, #1a1a1d 0%, #2d2d33 100%);
         border: 1px solid rgba(255, 255, 255, 0.06);
+        min-width: 0;
       }
 
       .account-card:hover {
@@ -180,6 +191,8 @@ export class SearchPage extends LitElement {
         background: linear-gradient(145deg, #1a1a1d 0%, #2d2d33 100%);
         border-radius: 0 0 var(--md-sys-shape-corner-large)
           var(--md-sys-shape-corner-large);
+        overflow: hidden;
+        min-width: 0;
       }
 
       /* Hashtags List */
@@ -223,6 +236,9 @@ export class SearchPage extends LitElement {
         align-items: center;
         gap: 6px;
         line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .card-display-name .bot-badge {
@@ -242,6 +258,9 @@ export class SearchPage extends LitElement {
         color: #888;
         margin: 0;
         font-weight: 400;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .card-bio {
@@ -585,6 +604,34 @@ export class SearchPage extends LitElement {
     `,
   ];
 
+  connectedCallback() {
+    super.connectedCallback();
+    void this.loadSuggestionsIfNeeded();
+  }
+
+  private async loadSuggestionsIfNeeded(): Promise<void> {
+    if (this.suggestions || this.suggestionsPromise) {
+      return this.suggestionsPromise ?? Promise.resolve();
+    }
+
+    this.suggestionsLoading = true;
+    this.suggestionsError = undefined;
+    this.suggestionsPromise = (async () => {
+      const { getSuggestions } = await import('../mastodon/api/suggestions');
+      this.suggestions = await getSuggestions(40);
+    })()
+      .catch((error: unknown) => {
+        console.error('Error fetching suggestions', error);
+        this.suggestionsError = msg('Unable to load suggestions right now.');
+      })
+      .finally(() => {
+        this.suggestionsLoading = false;
+        this.suggestionsPromise = null;
+      });
+
+    return this.suggestionsPromise;
+  }
+
   private async loadTrendingIfNeeded(): Promise<void> {
     if (this.trending || this.trendingPromise) {
       return this.trendingPromise ?? Promise.resolve();
@@ -637,6 +684,7 @@ export class SearchPage extends LitElement {
 
     const runPrefetch = async () => {
       try {
+        await this.loadSuggestionsIfNeeded();
         await this.loadTrendingIfNeeded();
         await this.loadNewsIfNeeded();
       } finally {
@@ -663,6 +711,10 @@ export class SearchPage extends LitElement {
   private handleSegmentChange(e: CustomEvent<{ value: string }>) {
     this.activeSegment = e.detail.value;
 
+    if (this.activeSegment === 'for-you') {
+      void this.loadSuggestionsIfNeeded();
+    }
+
     if (this.activeSegment === 'trending') {
       void this.loadTrendingIfNeeded();
     }
@@ -674,6 +726,12 @@ export class SearchPage extends LitElement {
 
   async handleSearch(search: { searchData: SearchData }) {
     this.searchData = search.searchData;
+
+    // Switch to For You tab so users see account search results immediately
+    if (this.searchData.accounts && this.searchData.accounts.length > 0) {
+      this.activeSegment = 'for-you';
+    }
+
     this.scheduleIdlePrefetch();
   }
 
@@ -713,6 +771,100 @@ export class SearchPage extends LitElement {
     return num.toString();
   }
 
+  private renderAccountSkeletons() {
+    return html`
+      <ul id="accountsList">
+        ${[1, 2, 3, 4, 5, 6].map(
+          () => html`
+            <li class="account-card-skeleton">
+              <div class="skeleton-header"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton-line medium"></div>
+                  <div class="skeleton-line short"></div>
+                  <div class="skeleton-line"></div>
+                  <div class="skeleton-line medium"></div>
+                  <div class="skeleton-stats">
+                    <div class="skeleton-stat"></div>
+                    <div class="skeleton-stat"></div>
+                    <div class="skeleton-stat"></div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          `
+        )}
+      </ul>
+    `;
+  }
+
+  private renderAccountCards(accounts: Account[]) {
+    return html`
+      <ul id="accountsList">
+        ${accounts.map((account) => {
+          return html`
+            <li
+              class="account-card"
+              @click="${() => this.openAccount(account.id)}"
+            >
+              <div class="card-header">
+                ${account.header && !account.header.includes('missing')
+                  ? html`<img
+                      class="card-header-image"
+                      src="${account.header}"
+                      alt=""
+                      loading="lazy"
+                    />`
+                  : null}
+              </div>
+              <div class="card-body">
+                <div class="card-avatar-wrapper">
+                  <img
+                    class="card-avatar"
+                    src="${account.avatar}"
+                    alt="${account.display_name || account.username}"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="card-identity">
+                  <p class="card-display-name">
+                    ${account.display_name || account.username}
+                    ${account.bot
+                      ? html`<span class="bot-badge">${msg('Bot')}</span>`
+                      : null}
+                  </p>
+                  <p class="card-username">@${account.acct}</p>
+                </div>
+                <p class="card-bio">${this.stripHtml(account.note)}</p>
+                <div class="card-stats">
+                  <div class="stat">
+                    <span class="stat-value"
+                      >${this.formatNumber(account.followers_count)}</span
+                    >
+                    <span class="stat-label">${msg('Followers')}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value"
+                      >${this.formatNumber(account.following_count)}</span
+                    >
+                    <span class="stat-label">${msg('Following')}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value"
+                      >${this.formatNumber(account.statuses_count)}</span
+                    >
+                    <span class="stat-label">${msg('Posts')}</span>
+                  </div>
+                </div>
+              </div>
+            </li>
+          `;
+        })}
+      </ul>
+    `;
+  }
+
   render() {
     return html`
       <main>
@@ -725,118 +877,27 @@ export class SearchPage extends LitElement {
           .value="${this.activeSegment}"
           @segment-change="${this.handleSegmentChange}"
         >
-          <md-segment value="accounts">${msg('Accounts')}</md-segment>
+          <md-segment value="for-you">${msg('Accounts')}</md-segment>
           <md-segment value="statuses">${msg('Posts')}</md-segment>
           <md-segment value="hashtags">${msg('Hashtags')}</md-segment>
           <md-segment value="trending">${msg('Trending')}</md-segment>
           <md-segment value="news">${msg('News')}</md-segment>
         </md-segmented-button>
 
-        <div class="panel ${this.activeSegment === 'accounts' ? 'active' : ''}">
-          ${this.searchData && this.searchData.accounts
-            ? html`
-                <ul id="accountsList">
-                  ${this.searchData.accounts.map((account) => {
-                    return html`
-                      <li
-                        class="account-card"
-                        @click="${() => this.openAccount(account.id)}"
-                      >
-                        <div class="card-header">
-                          ${account.header &&
-                          !account.header.includes('missing')
-                            ? html`<img
-                                class="card-header-image"
-                                src="${account.header}"
-                                alt=""
-                                loading="lazy"
-                              />`
-                            : null}
-                        </div>
-                        <div class="card-body">
-                          <div class="card-avatar-wrapper">
-                            <img
-                              class="card-avatar"
-                              src="${account.avatar}"
-                              alt="${account.display_name || account.username}"
-                              loading="lazy"
-                            />
-                          </div>
-                          <div class="card-identity">
-                            <p class="card-display-name">
-                              ${account.display_name || account.username}
-                              ${account.bot
-                                ? html`<span class="bot-badge"
-                                    >${msg('Bot')}</span
-                                  >`
-                                : null}
-                            </p>
-                            <p class="card-username">@${account.acct}</p>
-                          </div>
-                          <p class="card-bio">
-                            ${this.stripHtml(account.note)}
-                          </p>
-                          <div class="card-stats">
-                            <div class="stat">
-                              <span class="stat-value"
-                                >${this.formatNumber(
-                                  account.followers_count
-                                )}</span
-                              >
-                              <span class="stat-label"
-                                >${msg('Followers')}</span
-                              >
-                            </div>
-                            <div class="stat">
-                              <span class="stat-value"
-                                >${this.formatNumber(
-                                  account.following_count
-                                )}</span
-                              >
-                              <span class="stat-label"
-                                >${msg('Following')}</span
-                              >
-                            </div>
-                            <div class="stat">
-                              <span class="stat-value"
-                                >${this.formatNumber(
-                                  account.statuses_count
-                                )}</span
-                              >
-                              <span class="stat-label">${msg('Posts')}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    `;
-                  })}
-                </ul>
-              `
-            : html`
-                <ul id="accountsList">
-                  ${[1, 2, 3, 4, 5, 6].map(
-                    () => html`
-                      <li class="account-card-skeleton">
-                        <div class="skeleton-header"></div>
-                        <div class="skeleton-body">
-                          <div class="skeleton-avatar"></div>
-                          <div class="skeleton-content">
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-stats">
-                              <div class="skeleton-stat"></div>
-                              <div class="skeleton-stat"></div>
-                              <div class="skeleton-stat"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    `
-                  )}
-                </ul>
-              `}
+        <div class="panel ${this.activeSegment === 'for-you' ? 'active' : ''}">
+          ${this.searchData &&
+          this.searchData.accounts &&
+          this.searchData.accounts.length > 0
+            ? this.renderAccountCards(this.searchData.accounts)
+            : this.suggestionsLoading
+              ? this.renderAccountSkeletons()
+              : this.suggestionsError
+                ? html`<p>${this.suggestionsError}</p>`
+                : this.suggestions && this.suggestions.length > 0
+                  ? this.renderAccountCards(
+                      this.suggestions.map((s) => s.account)
+                    )
+                  : null}
         </div>
 
         <div class="panel ${this.activeSegment === 'statuses' ? 'active' : ''}">

@@ -28,6 +28,7 @@ export interface TimelineItemHandlers {
   favorite: (id: string) => void;
   reblog: (id: string) => void;
   togglePin: () => void;
+  muteConversation: () => void;
   addToList: (account: Account) => void;
   translatePost: (content: string | null, statusId?: string) => void;
   shareStatus: (tweet: Post | null) => void;
@@ -59,6 +60,7 @@ export interface TimelineItemState {
   isBookmarked: boolean;
   isBoosted: boolean;
   isReblogged: boolean;
+  isMuted: boolean;
   canPin: boolean;
   loadingThread: boolean;
   threadExpanded: boolean;
@@ -258,6 +260,25 @@ export function renderRegularTweet(
                         ${state.tweet?.pinned
                           ? msg('Unpin from profile')
                           : msg('Pin to profile')}
+                      </md-menu-item>
+                    `
+                  : null
+              }
+              ${
+                !state.guestMode
+                  ? html`
+                      <md-menu-item
+                        @click="${() => handlers.muteConversation()}"
+                      >
+                        <md-icon
+                          slot="prefix"
+                          name="${state.isMuted || state.tweet?.muted
+                            ? 'notifications'
+                            : 'notifications-off'}"
+                        ></md-icon>
+                        ${state.isMuted || state.tweet?.muted
+                          ? msg('Unmute conversation')
+                          : msg('Mute conversation')}
                       </md-menu-item>
                     `
                   : null
@@ -518,6 +539,21 @@ export function renderReblog(
                     ${state.tweet?.pinned
                       ? msg('Unpin from profile')
                       : msg('Pin to profile')}
+                  </md-menu-item>
+                `
+              : null}
+            ${!state.guestMode
+              ? html`
+                  <md-menu-item @click="${() => handlers.muteConversation()}">
+                    <md-icon
+                      slot="prefix"
+                      name="${state.isMuted || state.tweet?.reblog?.muted
+                        ? 'notifications'
+                        : 'notifications-off'}"
+                    ></md-icon>
+                    ${state.isMuted || state.tweet?.reblog?.muted
+                      ? msg('Unmute conversation')
+                      : msg('Mute conversation')}
                   </md-menu-item>
                 `
               : null}

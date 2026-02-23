@@ -7,6 +7,11 @@ import {
 } from '../mastodon/api/notifications';
 
 import { getClientConfig } from '../mastodon/config/client';
+import type {
+  PushSubscription as MastodonPushSubscription,
+  PushAlerts,
+  PushPolicy,
+} from '../mastodon/types/notification';
 
 // Core notification functions with proper type casting
 export const getNotifications = async (
@@ -187,37 +192,57 @@ export const subToPush = async () => {
   }
 };
 
-export const modifyPush = async (flags?: string[]) => {
-  let data: { alerts: Record<string, boolean> } | undefined;
-  if (flags) {
-    data = {
-      alerts: {
-        follow: flags.includes('follow'),
-        reblog: flags.includes('reblog'),
-        favourite: flags.includes('favourite'),
-        mention: flags.includes('mention'),
-        poll: flags.includes('poll'),
-        follow_request: flags.includes('follow_request'),
-        status: flags.includes('status'),
-        update: flags.includes('update'),
-      },
-    };
-  } else {
-    data = {
-      alerts: {
-        follow: true,
-        reblog: true,
-        favourite: true,
-        mention: true,
-        poll: true,
-        follow_request: true,
-        status: true,
-        update: true,
-      },
-    };
-  }
+/**
+ * Fetch the current push subscription from the Mastodon server.
+ * Returns null if no subscription exists (404).
+ */
+export const getPushSubscription =
+  async (): Promise<MastodonPushSubscription | null> => {
+    const { url, accessToken } = getClientConfig();
 
+    try {
+      const response = await fetch(`https://${url}/api/v1/push/subscription`, {
+        method: 'GET',
+        headers: new Headers({
+          Authorization: `Bearer ${accessToken}`,
+        }),
+      });
+
+      if (response.status === 404) {
+        return null;
+      }
+
+      if (!response.ok) {
+        console.error('getPushSubscription failed:', response.status);
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('getPushSubscription error:', error);
+      return null;
+    }
+  };
+
+/**
+ * Update which notification types trigger push alerts and the push policy.
+ * Uses PUT /api/v1/push/subscription.
+ */
+export const modifyPush = async (options: {
+  alerts: PushAlerts;
+  policy?: PushPolicy;
+}): Promise<MastodonPushSubscription | null> => {
   const { url, accessToken } = getClientConfig();
+
+  const body: { data: { alerts: PushAlerts; policy?: PushPolicy } } = {
+    data: {
+      alerts: options.alerts,
+    },
+  };
+
+  if (options.policy) {
+    body.data.policy = options.policy;
+  }
 
   const response = await fetch(`https://${url}/api/v1/push/subscription`, {
     method: 'PUT',
@@ -225,12 +250,17 @@ export const modifyPush = async (flags?: string[]) => {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     }),
-    body: JSON.stringify({
-      data,
-    }),
+    body: JSON.stringify(body),
   });
+
+  if (!response.ok) {
+    console.error('modifyPush failed:', response.status);
+    return null;
+  }
+
   const res = await response.json();
   console.log('modifyPush', res);
+  return res;
 };
 
 export const unsubToPush = async () => {

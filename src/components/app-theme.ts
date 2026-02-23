@@ -26,7 +26,7 @@ export class AppTheme extends LitElement {
       md-button::part(button) {
         height: 48px;
         width: 48px;
-        border-radius: var(--md-sys-shape-corner-circle);
+        border-radius: 50%;
       }
 
       #blue {
@@ -112,7 +112,7 @@ export class AppTheme extends LitElement {
       .color {
         width: 40px;
         height: 40px;
-        border-radius: var(--md-sys-shape-corner-circle);
+        border-radius: 50%;
         cursor: pointer;
         border: 4px solid var(--sl-color-primary-600);
       }

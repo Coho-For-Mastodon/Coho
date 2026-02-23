@@ -32,6 +32,9 @@ function createHandlers(): TimelineItemHandlers {
     bookmark: vi.fn(),
     favorite: vi.fn(),
     reblog: vi.fn(),
+    togglePin: vi.fn(),
+    muteConversation: vi.fn(),
+    addToList: vi.fn(),
     translatePost: vi.fn(),
     shareStatus: vi.fn(),
     deleteStatus: vi.fn(),
@@ -39,6 +42,7 @@ function createHandlers(): TimelineItemHandlers {
     openPost: vi.fn(),
     openParentPost: vi.fn(),
     openLinkCard: vi.fn(),
+    handleContentClick: vi.fn(),
     showThread: vi.fn(),
     muteUser: vi.fn(),
     blockUser: vi.fn(),
@@ -68,6 +72,8 @@ function createState(
     isBookmarked: false,
     isBoosted: false,
     isReblogged: false,
+    isMuted: false,
+    canPin: false,
     loadingThread: false,
     threadExpanded: false,
     threadPosts: [],
@@ -139,10 +145,10 @@ describe('timeline-renderers', () => {
     expect(handlers.openLinkCard).toHaveBeenCalledWith('https://coho.app');
 
     const menuItems = Array.from(root.querySelectorAll('md-menu-item'));
-    const muteItem = menuItems.find((item) =>
-      item.textContent?.includes('Mute')
+    const muteUserItem = menuItems.find((item) =>
+      item.textContent?.includes('Mute @')
     );
-    muteItem?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    muteUserItem?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(handlers.muteUser).toHaveBeenCalledTimes(1);
   });
 

@@ -71,6 +71,11 @@ export class ImageCarousel extends LitElement {
         border-radius: var(--md-sys-shape-corner-medium);
       }
 
+      audio {
+        width: 100%;
+        border-radius: var(--md-sys-shape-corner-medium);
+      }
+
       #list {
         display: flex;
         scroll-snap-type: x mandatory;
@@ -277,6 +282,17 @@ export class ImageCarousel extends LitElement {
             return html`
               <div>
                 <video autoplay loop src="${image.url}"></video>
+              </div>
+            `;
+          } else if (image.type === 'audio') {
+            return html`
+              <div>
+                <audio
+                  controls
+                  src="${image.url}"
+                  preload="metadata"
+                  aria-label="${image.description || msg('Audio')}"
+                ></audio>
               </div>
             `;
           }

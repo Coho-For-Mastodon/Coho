@@ -37,6 +37,7 @@ export class TimelineItem extends LitElement {
   @state() isBoosted: boolean = false;
   @state() isReblogged: boolean = false;
   @state() isBookmarked: boolean = false;
+  @state() isMuted: boolean = false;
   @state() threadExpanded: boolean = false;
   @state() threadPosts: Post[] = [];
   @state() loadingThread: boolean = false;
@@ -140,7 +141,8 @@ export class TimelineItem extends LitElement {
       }
 
       md-card::part(footer) {
-        padding: 8px 12px;
+        padding-left: 0;
+        padding-bottom: 12px;
       }
 
       .boost-indicator {
@@ -486,6 +488,11 @@ export class TimelineItem extends LitElement {
         .boost-indicator .booster-name {
           max-width: 100px;
         }
+
+        md-card::part(footer) {
+          padding-left: 12px;
+          padding-bottom: 12px;
+        }
       }
 
       @media (prefers-color-scheme: light) {
@@ -614,6 +621,11 @@ export class TimelineItem extends LitElement {
         // Expand thread
         event.preventDefault();
         this.showThread();
+        break;
+      case 'm':
+        // Mute/unmute conversation
+        event.preventDefault();
+        this.muteConversation();
         break;
       default:
         break;
@@ -796,6 +808,68 @@ export class TimelineItem extends LitElement {
         detail: {
           id,
           active: !isActive,
+        },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  async muteConversation() {
+    if (!this.tweet) return;
+
+    if (this.guestMode) {
+      showGuestActionToast('mute conversations');
+      return;
+    }
+
+    const statusId = this.tweet.reblog?.id || this.tweet.id;
+    const currentlyMuted = this.isMuted || this.tweet.muted;
+
+    const originalMuted = this.isMuted;
+    const originalTweetMuted = this.tweet.muted;
+
+    await toggleStatusAction({
+      guestMode: this.guestMode,
+      actionName: 'mute conversations',
+      isActive: currentlyMuted,
+      onOptimisticUpdate: (active) => {
+        this.isMuted = active;
+        if (this.tweet) {
+          this.tweet.muted = active;
+          if (this.tweet.reblog) {
+            this.tweet.reblog.muted = active;
+          }
+        }
+        this.requestUpdate();
+      },
+      doApiCall: async () => {
+        const { muteConversation } = await import('../services/posts');
+        return muteConversation(statusId);
+      },
+      undoApiCall: async () => {
+        const { unmuteConversation } = await import('../services/posts');
+        return unmuteConversation(statusId);
+      },
+      onRollback: () => {
+        this.isMuted = originalMuted;
+        if (this.tweet) {
+          this.tweet.muted = originalTweetMuted;
+          if (this.tweet.reblog) {
+            this.tweet.reblog.muted = originalTweetMuted;
+          }
+        }
+        this.requestUpdate();
+      },
+      errorMessageDo: 'Failed to mute conversation.',
+      errorMessageUndo: 'Failed to unmute conversation.',
+    });
+
+    this.dispatchEvent(
+      new CustomEvent('conversation-mute-change', {
+        detail: {
+          id: statusId,
+          muted: this.isMuted,
         },
         bubbles: true,
         composed: true,
@@ -1160,6 +1234,7 @@ export class TimelineItem extends LitElement {
       favorite: (id: string) => this.favorite(id),
       reblog: (id: string) => this.reblog(id),
       togglePin: () => this.togglePin(),
+      muteConversation: () => this.muteConversation(),
       addToList: (account: Account) => this.addToList(account),
       translatePost: (content: string | null, statusId?: string) =>
         this.translatePost(content, statusId),
@@ -1191,6 +1266,7 @@ export class TimelineItem extends LitElement {
       isBookmarked: this.isBookmarked,
       isBoosted: this.isBoosted,
       isReblogged: this.isReblogged,
+      isMuted: this.isMuted,
       canPin: this.allowPin && !this.guestMode,
       loadingThread: this.loadingThread,
       threadExpanded: this.threadExpanded,
