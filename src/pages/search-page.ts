@@ -726,6 +726,12 @@ export class SearchPage extends LitElement {
 
   async handleSearch(search: { searchData: SearchData }) {
     this.searchData = search.searchData;
+
+    // Switch to For You tab so users see account search results immediately
+    if (this.searchData.accounts && this.searchData.accounts.length > 0) {
+      this.activeSegment = 'for-you';
+    }
+
     this.scheduleIdlePrefetch();
   }
 
@@ -765,6 +771,100 @@ export class SearchPage extends LitElement {
     return num.toString();
   }
 
+  private renderAccountSkeletons() {
+    return html`
+      <ul id="accountsList">
+        ${[1, 2, 3, 4, 5, 6].map(
+          () => html`
+            <li class="account-card-skeleton">
+              <div class="skeleton-header"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-avatar"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton-line medium"></div>
+                  <div class="skeleton-line short"></div>
+                  <div class="skeleton-line"></div>
+                  <div class="skeleton-line medium"></div>
+                  <div class="skeleton-stats">
+                    <div class="skeleton-stat"></div>
+                    <div class="skeleton-stat"></div>
+                    <div class="skeleton-stat"></div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          `
+        )}
+      </ul>
+    `;
+  }
+
+  private renderAccountCards(accounts: Account[]) {
+    return html`
+      <ul id="accountsList">
+        ${accounts.map((account) => {
+          return html`
+            <li
+              class="account-card"
+              @click="${() => this.openAccount(account.id)}"
+            >
+              <div class="card-header">
+                ${account.header && !account.header.includes('missing')
+                  ? html`<img
+                      class="card-header-image"
+                      src="${account.header}"
+                      alt=""
+                      loading="lazy"
+                    />`
+                  : null}
+              </div>
+              <div class="card-body">
+                <div class="card-avatar-wrapper">
+                  <img
+                    class="card-avatar"
+                    src="${account.avatar}"
+                    alt="${account.display_name || account.username}"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="card-identity">
+                  <p class="card-display-name">
+                    ${account.display_name || account.username}
+                    ${account.bot
+                      ? html`<span class="bot-badge">${msg('Bot')}</span>`
+                      : null}
+                  </p>
+                  <p class="card-username">@${account.acct}</p>
+                </div>
+                <p class="card-bio">${this.stripHtml(account.note)}</p>
+                <div class="card-stats">
+                  <div class="stat">
+                    <span class="stat-value"
+                      >${this.formatNumber(account.followers_count)}</span
+                    >
+                    <span class="stat-label">${msg('Followers')}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value"
+                      >${this.formatNumber(account.following_count)}</span
+                    >
+                    <span class="stat-label">${msg('Following')}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value"
+                      >${this.formatNumber(account.statuses_count)}</span
+                    >
+                    <span class="stat-label">${msg('Posts')}</span>
+                  </div>
+                </div>
+              </div>
+            </li>
+          `;
+        })}
+      </ul>
+    `;
+  }
+
   render() {
     return html`
       <main>
@@ -777,7 +877,7 @@ export class SearchPage extends LitElement {
           .value="${this.activeSegment}"
           @segment-change="${this.handleSegmentChange}"
         >
-          <md-segment value="for-you">${msg('For You')}</md-segment>
+          <md-segment value="for-you">${msg('Accounts')}</md-segment>
           <md-segment value="statuses">${msg('Posts')}</md-segment>
           <md-segment value="hashtags">${msg('Hashtags')}</md-segment>
           <md-segment value="trending">${msg('Trending')}</md-segment>
@@ -785,117 +885,19 @@ export class SearchPage extends LitElement {
         </md-segmented-button>
 
         <div class="panel ${this.activeSegment === 'for-you' ? 'active' : ''}">
-          ${this.suggestionsLoading
-            ? html`
-                <ul id="accountsList">
-                  ${[1, 2, 3, 4, 5, 6].map(
-                    () => html`
-                      <li class="account-card-skeleton">
-                        <div class="skeleton-header"></div>
-                        <div class="skeleton-body">
-                          <div class="skeleton-avatar"></div>
-                          <div class="skeleton-content">
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-stats">
-                              <div class="skeleton-stat"></div>
-                              <div class="skeleton-stat"></div>
-                              <div class="skeleton-stat"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    `
-                  )}
-                </ul>
-              `
-            : this.suggestionsError
-              ? html`<p>${this.suggestionsError}</p>`
-              : this.suggestions && this.suggestions.length > 0
-                ? html`
-                    <ul id="accountsList">
-                      ${this.suggestions.map(({ account }) => {
-                        return html`
-                          <li
-                            class="account-card"
-                            @click="${() => this.openAccount(account.id)}"
-                          >
-                            <div class="card-header">
-                              ${account.header &&
-                              !account.header.includes('missing')
-                                ? html`<img
-                                    class="card-header-image"
-                                    src="${account.header}"
-                                    alt=""
-                                    loading="lazy"
-                                  />`
-                                : null}
-                            </div>
-                            <div class="card-body">
-                              <div class="card-avatar-wrapper">
-                                <img
-                                  class="card-avatar"
-                                  src="${account.avatar}"
-                                  alt="${account.display_name ||
-                                  account.username}"
-                                  loading="lazy"
-                                />
-                              </div>
-                              <div class="card-identity">
-                                <p class="card-display-name">
-                                  ${account.display_name || account.username}
-                                  ${account.bot
-                                    ? html`<span class="bot-badge"
-                                        >${msg('Bot')}</span
-                                      >`
-                                    : null}
-                                </p>
-                                <p class="card-username">@${account.acct}</p>
-                              </div>
-                              <p class="card-bio">
-                                ${this.stripHtml(account.note)}
-                              </p>
-                              <div class="card-stats">
-                                <div class="stat">
-                                  <span class="stat-value"
-                                    >${this.formatNumber(
-                                      account.followers_count
-                                    )}</span
-                                  >
-                                  <span class="stat-label"
-                                    >${msg('Followers')}</span
-                                  >
-                                </div>
-                                <div class="stat">
-                                  <span class="stat-value"
-                                    >${this.formatNumber(
-                                      account.following_count
-                                    )}</span
-                                  >
-                                  <span class="stat-label"
-                                    >${msg('Following')}</span
-                                  >
-                                </div>
-                                <div class="stat">
-                                  <span class="stat-value"
-                                    >${this.formatNumber(
-                                      account.statuses_count
-                                    )}</span
-                                  >
-                                  <span class="stat-label"
-                                    >${msg('Posts')}</span
-                                  >
-                                </div>
-                              </div>
-                            </div>
-                          </li>
-                        `;
-                      })}
-                    </ul>
-                  `
-                : null}
+          ${this.searchData &&
+          this.searchData.accounts &&
+          this.searchData.accounts.length > 0
+            ? this.renderAccountCards(this.searchData.accounts)
+            : this.suggestionsLoading
+              ? this.renderAccountSkeletons()
+              : this.suggestionsError
+                ? html`<p>${this.suggestionsError}</p>`
+                : this.suggestions && this.suggestions.length > 0
+                  ? this.renderAccountCards(
+                      this.suggestions.map((s) => s.account)
+                    )
+                  : null}
         </div>
 
         <div class="panel ${this.activeSegment === 'statuses' ? 'active' : ''}">
