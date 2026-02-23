@@ -196,7 +196,7 @@ export class Notifications extends LitElement {
         }
       }
 
-      #notify-inner md-icon-button {
+      #notify-actions md-icon-button {
         animation: fade-in 200ms ease-in;
       }
 
