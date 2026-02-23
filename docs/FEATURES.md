@@ -82,9 +82,9 @@ Medium Priority -- Polish and completeness
 
 No GET /api/v1/announcements or dismissal UI. Instance admins use announcements for important notices (e.g., maintenance, policy changes).
 
-12. Who to Follow / Suggestions
+12. ~~Who to Follow / Suggestions~~
 
-No GET /api/v2/suggestions. The app relies solely on search for user discovery.
+Implemented. The explore page "For You" tab fetches `GET /api/v2/suggestions` and displays suggested accounts to follow.
 
 13. Domain Blocks
 

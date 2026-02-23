@@ -76,3 +76,6 @@ export type {
   UpdateFilterParams,
   KeywordAttribute,
 } from './filter';
+
+// Suggestion types
+export type { Suggestion, SuggestionSource } from './suggestion';

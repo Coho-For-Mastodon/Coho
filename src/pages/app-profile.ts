@@ -1391,18 +1391,38 @@ export class AppProfile extends LitElement {
 
           const isVideo =
             attachment.type === 'video' || attachment.type === 'gifv';
+          const isAudio = attachment.type === 'audio';
 
           return html`
             <div class="media-item" @click=${() => this.handleOpenPost(post)}>
-              <img
-                src="${attachment.preview_url || attachment.url}"
-                alt="${attachment.description || ''}"
-                loading="lazy"
-              />
+              ${isAudio
+                ? html`<div
+                    style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--md-sys-color-surface-container, #1e1e24);"
+                  >
+                    <md-icon
+                      name="musical-notes"
+                      style="font-size: 48px; color: var(--md-sys-color-primary, #c0c7ff);"
+                    ></md-icon>
+                  </div>`
+                : html`<img
+                    src="${attachment.preview_url || attachment.url}"
+                    alt="${attachment.description || ''}"
+                    loading="lazy"
+                  />`}
               ${isVideo
                 ? html`
                     <div class="media-indicator">
                       <md-icon name="play" style="font-size: 16px;"></md-icon>
+                    </div>
+                  `
+                : null}
+              ${isAudio
+                ? html`
+                    <div class="media-indicator">
+                      <md-icon
+                        name="musical-notes"
+                        style="font-size: 16px;"
+                      ></md-icon>
                     </div>
                   `
                 : null}

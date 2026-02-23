@@ -19,6 +19,8 @@ export interface MediaMeta {
   small?: MediaSize;
   original?: MediaSize;
   focus?: MediaFocus;
+  length?: string;
+  duration?: number;
 }
 
 export interface MediaSize {
@@ -26,6 +28,8 @@ export interface MediaSize {
   height: number;
   size: string;
   aspect: number;
+  duration?: number;
+  bitrate?: number;
 }
 
 export interface MediaFocus {

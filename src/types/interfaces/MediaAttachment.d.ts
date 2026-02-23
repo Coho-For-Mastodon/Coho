@@ -11,17 +11,23 @@ export interface MediaAttachment {
       height: number;
       size: string;
       aspect: number;
+      duration?: number;
+      bitrate?: number;
     };
     original?: {
       width: number;
       height: number;
       size: string;
       aspect: number;
+      duration?: number;
+      bitrate?: number;
     };
     focus?: {
       x: number;
       y: number;
     };
+    length?: string;
+    duration?: number;
   };
   description: string | null;
   blurhash: string;
