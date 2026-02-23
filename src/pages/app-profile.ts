@@ -285,6 +285,7 @@ export class AppProfile extends LitElement {
       /* Profile info */
       #profile-info {
         padding: 0 0 16px 0;
+        margin-top: 1.4em;
       }
 
       #display-name {
