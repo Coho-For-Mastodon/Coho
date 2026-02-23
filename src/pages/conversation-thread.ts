@@ -811,6 +811,7 @@ export class ConversationThread extends LitElement {
                             src="${media.url}"
                             preload="metadata"
                             style="width: 100%;"
+                            aria-label=${media.description || msg('Audio')}
                           ></audio>`
                         : html`<img
                             src="${media.preview_url || media.url}"
