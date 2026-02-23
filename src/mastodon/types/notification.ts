@@ -26,11 +26,14 @@ export type NotificationType =
   | 'admin.sign_up'
   | 'admin.report';
 
+export type PushPolicy = 'all' | 'followed' | 'follower' | 'none';
+
 export interface PushSubscription {
   id: string;
   endpoint: string;
   alerts: PushAlerts;
   server_key: string;
+  policy?: PushPolicy;
 }
 
 export interface PushAlerts {

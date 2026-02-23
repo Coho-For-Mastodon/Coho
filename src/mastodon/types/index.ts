@@ -41,6 +41,7 @@ export type {
   NotificationType,
   PushSubscription,
   PushAlerts,
+  PushPolicy,
 } from './notification';
 
 // Instance types
