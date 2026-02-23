@@ -2731,6 +2731,15 @@ export class PostComposer extends LitElement {
         ></md-icon-button>
 
         <md-icon-button
+          class="mobile-icon-button emoji-button-anchor"
+          label=${msg('Emoji')}
+          src="/assets/happy-outline.svg"
+          .variant=${this.emojiPickerOpen ? 'filled-tonal' : 'standard'}
+          @click="${() => this._toggleEmojiPicker()}"
+        ></md-icon-button>
+        ${this._renderEmojiPicker()}
+
+        <md-icon-button
           class="mobile-icon-button"
           label=${msg('Attach Media')}
           src="/assets/attach-outline.svg"

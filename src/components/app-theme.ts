@@ -29,12 +29,6 @@ export class AppTheme extends LitElement {
         border-radius: 50%;
       }
 
-      #open-button {
-        position: fixed;
-        bottom: 20px;
-        left: 16px;
-      }
-
       #blue {
         background-color: #5171a5;
       }
@@ -139,7 +133,7 @@ export class AppTheme extends LitElement {
       #wrapper {
         display: flex;
         flex-direction: column;
-        gap: 40px;
+        gap: 16px;
       }
     `,
   ];
