@@ -274,16 +274,29 @@ export class PostComposer extends LitElement {
     emoji-picker {
       position: absolute;
       bottom: calc(100% + 4px);
-      left: 0;
+      right: 0;
+    }
+
+    /* Flip below when not enough space above */
+    @position-try --flip-below {
+      bottom: auto;
+      top: anchor(bottom);
+      margin-bottom: 0;
+      margin-top: 6px;
     }
 
     @supports (position-anchor: --emoji-button) {
       emoji-picker {
         position: fixed;
         position-anchor: --emoji-button;
+        /* Default: above button, right-aligned */
         bottom: anchor(top);
-        left: anchor(left);
+        right: anchor(right);
+        left: auto;
         margin-bottom: 6px;
+        /* Flip below if needed */
+        position-try-fallbacks: --flip-below;
+        position-try-order: most-height;
       }
     }
 
@@ -356,31 +369,8 @@ export class PostComposer extends LitElement {
       border-radius: var(--md-sys-shape-corner-small);
     }
 
-    /* Poll reveal – grid-row collapse (no height animation) */
-    .poll-wrapper {
-      display: grid;
-      grid-template-rows: 0fr;
-      opacity: 0;
-      transition:
-        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
-        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    .poll-wrapper > .poll-composer {
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .poll-wrapper.open {
-      grid-template-rows: 1fr;
-      opacity: 1;
-    }
-
-    .poll-wrapper.open > .poll-composer {
-      overflow: visible;
-    }
-
     .poll-composer {
+      animation: composerReveal 0.25s cubic-bezier(0.2, 0, 0, 1);
       margin-top: 12px;
       padding: 12px;
       border-radius: var(--md-sys-shape-corner-medium);
@@ -447,31 +437,8 @@ export class PostComposer extends LitElement {
       font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
     }
 
-    /* Schedule reveal – grid-row collapse */
-    .schedule-wrapper {
-      display: grid;
-      grid-template-rows: 0fr;
-      opacity: 0;
-      transition:
-        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
-        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    .schedule-wrapper > .schedule-composer {
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .schedule-wrapper.open {
-      grid-template-rows: 1fr;
-      opacity: 1;
-    }
-
-    .schedule-wrapper.open > .schedule-composer {
-      overflow: visible;
-    }
-
     .schedule-composer {
+      animation: composerReveal 0.25s cubic-bezier(0.2, 0, 0, 1);
       margin-top: 12px;
       padding: 12px;
       border-radius: var(--md-sys-shape-corner-medium);
@@ -647,27 +614,8 @@ export class PostComposer extends LitElement {
       margin-top: 8px;
     }
 
-    /* Content warning reveal – grid-row collapse */
-    .cw-wrapper {
-      display: grid;
-      grid-template-rows: 0fr;
-      opacity: 0;
-      transition:
-        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
-        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    .cw-wrapper > #sensitive-warning {
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .cw-wrapper.open {
-      grid-template-rows: 1fr;
-      opacity: 1;
-    }
-
     #sensitive-warning {
+      animation: composerReveal 0.25s cubic-bezier(0.2, 0, 0, 1);
       margin-top: 8px;
     }
 
@@ -675,44 +623,12 @@ export class PostComposer extends LitElement {
       width: 100%;
     }
 
-    /* Attachments reveal – grid-row collapse */
-    .attachments-wrapper {
-      display: grid;
-      grid-template-rows: 0fr;
-      opacity: 0;
-      transition:
-        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
-        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+    .attachments-reveal {
+      animation: composerReveal 0.25s cubic-bezier(0.2, 0, 0, 1);
     }
 
-    .attachments-wrapper > :first-child {
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .attachments-wrapper.open {
-      grid-template-rows: 1fr;
-      opacity: 1;
-    }
-
-    /* Reply indicator reveal – grid-row collapse */
-    .reply-wrapper {
-      display: grid;
-      grid-template-rows: 0fr;
-      opacity: 0;
-      transition:
-        grid-template-rows 0.3s cubic-bezier(0.2, 0, 0, 1),
-        opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    .reply-wrapper > .replying-to-indicator {
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .reply-wrapper.open {
-      grid-template-rows: 1fr;
-      opacity: 1;
+    .replying-to-indicator {
+      animation: composerReveal 0.25s cubic-bezier(0.2, 0, 0, 1);
     }
 
     /* Proofread styles */
@@ -880,6 +796,17 @@ export class PostComposer extends LitElement {
     }
 
     /* Attachment entrance animation */
+    @keyframes composerReveal {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     @keyframes fadeSlideIn {
       from {
         opacity: 0;
@@ -1029,6 +956,7 @@ export class PostComposer extends LitElement {
         flex-wrap: nowrap;
         overflow-x: visible;
         gap: 6px;
+        justify-content: flex-end;
       }
 
       .actions-row > * {
@@ -2581,23 +2509,15 @@ export class PostComposer extends LitElement {
   // Render methods
 
   private _renderReplyIndicator() {
-    if (this.hideReplyIndicator) return nothing;
+    if (this.hideReplyIndicator || !this.replyTo) return nothing;
 
     return html`
-      <div class="reply-wrapper ${this.replyTo ? 'open' : ''}">
-        ${this.replyTo
-          ? html`
-              <div class="replying-to-indicator">
-                <span
-                  >${msg(str`Replying to @${this.replyTo.account.acct}`)}</span
-                >
-                <md-icon-button
-                  src="/assets/close-outline.svg"
-                  @click=${() => this.clearReplyTo()}
-                ></md-icon-button>
-              </div>
-            `
-          : nothing}
+      <div class="replying-to-indicator">
+        <span>${msg(str`Replying to @${this.replyTo.account.acct}`)}</span>
+        <md-icon-button
+          src="/assets/close-outline.svg"
+          @click=${() => this.clearReplyTo()}
+        ></md-icon-button>
       </div>
     `;
   }
@@ -2811,15 +2731,6 @@ export class PostComposer extends LitElement {
         ></md-icon-button>
 
         <md-icon-button
-          class="mobile-icon-button emoji-button-anchor"
-          label=${msg('Emoji')}
-          src="/assets/happy-outline.svg"
-          .variant=${this.emojiPickerOpen ? 'filled-tonal' : 'standard'}
-          @click="${() => this._toggleEmojiPicker()}"
-        ></md-icon-button>
-        ${this._renderEmojiPicker()}
-
-        <md-icon-button
           class="mobile-icon-button"
           label=${msg('Attach Media')}
           src="/assets/attach-outline.svg"
@@ -2830,6 +2741,15 @@ export class PostComposer extends LitElement {
 
         <!-- Proofreader -->
         ${this.proofreaderAvailable ? this._renderProofreader() : nothing}
+
+        <md-icon-button
+          class="mobile-icon-button emoji-button-anchor"
+          label=${msg('Emoji')}
+          src="/assets/happy-outline.svg"
+          .variant=${this.emojiPickerOpen ? 'filled-tonal' : 'standard'}
+          @click="${() => this._toggleEmojiPicker()}"
+        ></md-icon-button>
+        ${this._renderEmojiPicker()}
 
         <!-- Speech-to-text -->
         ${this.speechToTextAvailable
@@ -2926,117 +2846,111 @@ export class PostComposer extends LitElement {
   }
 
   private _renderSensitiveWarning() {
-    if (this.hideActions) return nothing;
+    if (this.hideActions || !this.sensitive) return nothing;
 
     return html`
-      <div class="cw-wrapper ${this.sensitive ? 'open' : ''}">
-        <div id="sensitive-warning">
-          <md-text-field
-            id="sensitive-input"
-            .value=${this.spoilerText}
-            @input=${(e: Event) =>
-              this._setSpoilerText(this._readInputEventValue(e))}
-            placeholder=${msg('Write your content warning here')}
-          ></md-text-field>
-        </div>
+      <div id="sensitive-warning">
+        <md-text-field
+          id="sensitive-input"
+          .value=${this.spoilerText}
+          @input=${(e: Event) =>
+            this._setSpoilerText(this._readInputEventValue(e))}
+          placeholder=${msg('Write your content warning here')}
+        ></md-text-field>
       </div>
     `;
   }
 
   private _renderPoll() {
-    if (this.hideActions) return nothing;
+    if (this.hideActions || !this.pollEnabled) return nothing;
 
     return html`
-      <div class="poll-wrapper ${this.pollEnabled ? 'open' : ''}">
-        <div class="poll-composer">
-          <div class="poll-header">
-            <div class="poll-title">${msg('Poll')}</div>
-            <div class="poll-subtitle">${msg('Add 2–4 options')}</div>
-          </div>
-
-          <div class="poll-options">
-            ${this.pollOptions.map(
-              (opt, idx) => html`
-                <div class="poll-option-row">
-                  <md-text-field
-                    class="poll-option-input"
-                    placeholder=${msg(str`Option ${idx + 1}`)}
-                    .value=${String(opt ?? '')}
-                    @input=${(e: Event) =>
-                      this._setPollOption(idx, this._readInputEventValue(e))}
-                  ></md-text-field>
-
-                  <md-icon-button
-                    label=${msg('Remove option')}
-                    src="/assets/close-outline.svg"
-                    ?disabled=${this.pollOptions.length <= 2}
-                    @click=${() => this._removePollOption(idx)}
-                  ></md-icon-button>
-                </div>
-              `
-            )}
-
-            <div class="poll-actions-row">
-              <md-button
-                variant="text"
-                size="small"
-                pill
-                ?disabled=${this.pollOptions.length >= 4}
-                @click=${() => this._addPollOption()}
-              >
-                ${msg('Add option')}
-              </md-button>
-            </div>
-          </div>
-
-          <div class="poll-settings">
-            <md-select
-              .value=${String(this.pollDurationSeconds)}
-              @change=${(e: CustomEvent<{ value: string }>) =>
-                (this.pollDurationSeconds = parseInt(e.detail.value, 10))}
-              pill
-              style="width: 180px; min-width: 180px;"
-            >
-              <md-option value="${String(5 * 60)}"
-                >${msg('5 minutes')}</md-option
-              >
-              <md-option value="${String(30 * 60)}"
-                >${msg('30 minutes')}</md-option
-              >
-              <md-option value="${String(60 * 60)}">${msg('1 hour')}</md-option>
-              <md-option value="${String(6 * 60 * 60)}"
-                >${msg('6 hours')}</md-option
-              >
-              <md-option value="${String(24 * 60 * 60)}"
-                >${msg('1 day')}</md-option
-              >
-              <md-option value="${String(3 * 24 * 60 * 60)}"
-                >${msg('3 days')}</md-option
-              >
-              <md-option value="${String(7 * 24 * 60 * 60)}"
-                >${msg('7 days')}</md-option
-              >
-            </md-select>
-
-            <md-checkbox
-              .checked=${this.pollMultiple}
-              @change=${(e: CustomEvent<{ checked: boolean }>) =>
-                (this.pollMultiple = e.detail.checked)}
-            >
-              ${msg('Allow multiple choices')}
-            </md-checkbox>
-          </div>
-
-          ${this.pollError
-            ? html`<div class="poll-error">${this.pollError}</div>`
-            : null}
+      <div class="poll-composer">
+        <div class="poll-header">
+          <div class="poll-title">${msg('Poll')}</div>
+          <div class="poll-subtitle">${msg('Add 2–4 options')}</div>
         </div>
+
+        <div class="poll-options">
+          ${this.pollOptions.map(
+            (opt, idx) => html`
+              <div class="poll-option-row">
+                <md-text-field
+                  class="poll-option-input"
+                  placeholder=${msg(str`Option ${idx + 1}`)}
+                  .value=${String(opt ?? '')}
+                  @input=${(e: Event) =>
+                    this._setPollOption(idx, this._readInputEventValue(e))}
+                ></md-text-field>
+
+                <md-icon-button
+                  label=${msg('Remove option')}
+                  src="/assets/close-outline.svg"
+                  ?disabled=${this.pollOptions.length <= 2}
+                  @click=${() => this._removePollOption(idx)}
+                ></md-icon-button>
+              </div>
+            `
+          )}
+
+          <div class="poll-actions-row">
+            <md-button
+              variant="text"
+              size="small"
+              pill
+              ?disabled=${this.pollOptions.length >= 4}
+              @click=${() => this._addPollOption()}
+            >
+              ${msg('Add option')}
+            </md-button>
+          </div>
+        </div>
+
+        <div class="poll-settings">
+          <md-select
+            .value=${String(this.pollDurationSeconds)}
+            @change=${(e: CustomEvent<{ value: string }>) =>
+              (this.pollDurationSeconds = parseInt(e.detail.value, 10))}
+            pill
+            style="width: 180px; min-width: 180px;"
+          >
+            <md-option value="${String(5 * 60)}">${msg('5 minutes')}</md-option>
+            <md-option value="${String(30 * 60)}"
+              >${msg('30 minutes')}</md-option
+            >
+            <md-option value="${String(60 * 60)}">${msg('1 hour')}</md-option>
+            <md-option value="${String(6 * 60 * 60)}"
+              >${msg('6 hours')}</md-option
+            >
+            <md-option value="${String(24 * 60 * 60)}"
+              >${msg('1 day')}</md-option
+            >
+            <md-option value="${String(3 * 24 * 60 * 60)}"
+              >${msg('3 days')}</md-option
+            >
+            <md-option value="${String(7 * 24 * 60 * 60)}"
+              >${msg('7 days')}</md-option
+            >
+          </md-select>
+
+          <md-checkbox
+            .checked=${this.pollMultiple}
+            @change=${(e: CustomEvent<{ checked: boolean }>) =>
+              (this.pollMultiple = e.detail.checked)}
+          >
+            ${msg('Allow multiple choices')}
+          </md-checkbox>
+        </div>
+
+        ${this.pollError
+          ? html`<div class="poll-error">${this.pollError}</div>`
+          : null}
       </div>
     `;
   }
 
   private _renderSchedule() {
-    if (this.compact) return nothing;
+    if (this.compact || !this.scheduleEnabled) return nothing;
 
     const parsed = this._parseScheduledDateTime();
     const preview =
@@ -3045,55 +2959,54 @@ export class PostComposer extends LitElement {
         : '';
 
     return html`
-      <div class="schedule-wrapper ${this.scheduleEnabled ? 'open' : ''}">
-        <div class="schedule-composer">
-          <div class="schedule-header">
-            <div class="schedule-title">${msg('Schedule post')}</div>
-            <md-button
-              variant="text"
-              size="small"
-              @click=${() => this._openScheduledStatuses()}
-            >
-              ${msg('Manage scheduled posts')}
-            </md-button>
-          </div>
-
-          <div class="schedule-inputs">
-            <md-text-field
-              type="date"
-              .value=${this.scheduleDate}
-              .min=${this._getScheduleMinDate()}
-              @change=${(e: Event) =>
-                this._setScheduleDate(this._readInputEventValue(e))}
-            ></md-text-field>
-            <md-text-field
-              type="time"
-              .value=${this.scheduleTime}
-              .min=${this._getScheduleMinTime()}
-              step="60"
-              @change=${(e: Event) =>
-                this._setScheduleTime(this._readInputEventValue(e))}
-            ></md-text-field>
-          </div>
-
-          ${preview
-            ? html`<div class="schedule-preview">
-                ${msg(str`Will publish on ${preview}`)}
-              </div>`
-            : nothing}
-          ${this.scheduleError
-            ? html`<div class="schedule-error">${this.scheduleError}</div>`
-            : nothing}
+      <div class="schedule-composer">
+        <div class="schedule-header">
+          <div class="schedule-title">${msg('Schedule post')}</div>
+          <md-button
+            variant="text"
+            size="small"
+            @click=${() => this._openScheduledStatuses()}
+          >
+            ${msg('Manage scheduled posts')}
+          </md-button>
         </div>
+
+        <div class="schedule-inputs">
+          <md-text-field
+            type="date"
+            .value=${this.scheduleDate}
+            .min=${this._getScheduleMinDate()}
+            @change=${(e: Event) =>
+              this._setScheduleDate(this._readInputEventValue(e))}
+          ></md-text-field>
+          <md-text-field
+            type="time"
+            .value=${this.scheduleTime}
+            .min=${this._getScheduleMinTime()}
+            step="60"
+            @change=${(e: Event) =>
+              this._setScheduleTime(this._readInputEventValue(e))}
+          ></md-text-field>
+        </div>
+
+        ${preview
+          ? html`<div class="schedule-preview">
+              ${msg(str`Will publish on ${preview}`)}
+            </div>`
+          : nothing}
+        ${this.scheduleError
+          ? html`<div class="schedule-error">${this.scheduleError}</div>`
+          : nothing}
       </div>
     `;
   }
 
   private _renderAttachments() {
     const hasContent = this.attaching || this.attachments.length > 0;
+    if (!hasContent) return nothing;
 
     return html`
-      <div class="attachments-wrapper ${hasContent ? 'open' : ''}">
+      <div class="attachments-reveal">
         ${this.attaching
           ? html`
               <div id="attachment-loading">

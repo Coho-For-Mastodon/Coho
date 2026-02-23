@@ -36,6 +36,7 @@ export class EmojiPicker extends LitElement {
         0 2px 6px rgba(0, 0, 0, 0.15),
         0 8px 24px rgba(0, 0, 0, 0.12);
       width: 320px;
+      max-width: calc(100vw - 32px);
       max-height: 360px;
       display: flex;
       flex-direction: column;

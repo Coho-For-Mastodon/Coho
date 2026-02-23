@@ -140,7 +140,8 @@ export class TimelineItem extends LitElement {
       }
 
       md-card::part(footer) {
-        padding: 8px 12px;
+        padding-left: 0;
+        padding-bottom: 12px;
       }
 
       .boost-indicator {
@@ -485,6 +486,11 @@ export class TimelineItem extends LitElement {
 
         .boost-indicator .booster-name {
           max-width: 100px;
+        }
+
+        md-card::part(footer) {
+          padding-left: 12px;
+          padding-bottom: 12px;
         }
       }
 
