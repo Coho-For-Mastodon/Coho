@@ -39,6 +39,7 @@ export class SearchPage extends LitElement {
   @state() private trendingError: string | undefined;
   @state() private newsError: string | undefined;
   @state() private suggestionsError: string | undefined;
+  @state() private userHasSearched = false;
 
   @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
   private trendingPromise: Promise<void> | null = null;
@@ -719,12 +720,19 @@ export class SearchPage extends LitElement {
     }
   }
 
-  async handleSearch(search: { searchData: SearchData }) {
+  async handleSearch(search: {
+    searchData: SearchData;
+    isAutoSearch?: boolean;
+  }) {
     this.searchData = search.searchData;
 
-    // Switch to For You tab so users see account search results immediately
-    if (this.searchData.accounts && this.searchData.accounts.length > 0) {
-      this.activeSegment = 'for-you';
+    if (!search.isAutoSearch) {
+      this.userHasSearched = true;
+
+      // Switch to For You tab so users see account search results immediately
+      if (this.searchData.accounts && this.searchData.accounts.length > 0) {
+        this.activeSegment = 'for-you';
+      }
     }
 
     this.scheduleIdlePrefetch();
@@ -870,8 +878,12 @@ export class SearchPage extends LitElement {
     return html`
       <main>
         <app-search
-          @search="${(e: CustomEvent<{ searchData: SearchData }>) =>
-            this.handleSearch(e.detail)}"
+          @search="${(
+            e: CustomEvent<{ searchData: SearchData; isAutoSearch?: boolean }>
+          ) => this.handleSearch(e.detail)}"
+          @search-cleared="${() => {
+            this.userHasSearched = false;
+          }}"
         ></app-search>
 
         <md-segmented-button
@@ -886,7 +898,8 @@ export class SearchPage extends LitElement {
         </md-segmented-button>
 
         <div class="panel ${this.activeSegment === 'for-you' ? 'active' : ''}">
-          ${this.searchData &&
+          ${this.userHasSearched &&
+          this.searchData &&
           this.searchData.accounts &&
           this.searchData.accounts.length > 0
             ? this.renderAccountCards(this.searchData.accounts)

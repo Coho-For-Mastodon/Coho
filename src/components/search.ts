@@ -203,10 +203,12 @@ export class Search extends LitElement {
 
             this.searchData = searchData;
 
-            // fire custom event
+            // fire custom event – flag as auto so the page can
+            // keep showing suggestions on the Accounts tab
             const event = new CustomEvent('search', {
               detail: {
                 searchData,
+                isAutoSearch: true,
               },
             });
             this.dispatchEvent(event);
@@ -245,6 +247,12 @@ export class Search extends LitElement {
 
   private _handleInput(e: Event) {
     this._inputValue = (e.target as HTMLInputElement).value;
+
+    // When the user clears the search (via the native ✕ button on type=search),
+    // notify the page so it can revert to suggestions.
+    if (!this._inputValue) {
+      this.dispatchEvent(new CustomEvent('search-cleared'));
+    }
   }
 
   private setLoading(loading: boolean) {
