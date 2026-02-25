@@ -4,10 +4,12 @@ import { fixture, html, elementUpdated, cleanupFixtures } from '../test-utils';
 
 const hoisted = vi.hoisted(() => ({
   showInfoToast: vi.fn(),
+  showErrorToast: vi.fn(),
 }));
 
 vi.mock('../../src/utils/optimistic-updates', () => ({
   showInfoToast: hoisted.showInfoToast,
+  showErrorToast: hoisted.showErrorToast,
 }));
 
 import '../../src/components/post-composer';

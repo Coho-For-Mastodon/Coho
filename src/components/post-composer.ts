@@ -21,7 +21,7 @@ import {
   publishPost,
   publishPollPost,
   replyToPost,
-  uploadImageFromBlob,
+  uploadMediaBlob,
   updateMedia,
   pickMedia,
 } from '../services/posts';
@@ -33,7 +33,7 @@ import {
   transcribeAudio,
   isHandwritingRecognitionAvailable,
 } from '../services/ai';
-import { showInfoToast } from '../utils/optimistic-updates';
+import { showInfoToast, showErrorToast } from '../utils/optimistic-updates';
 import {
   estimateMentionDropdownHeight,
   findMentionMatch,
@@ -59,6 +59,7 @@ export interface LocalAttachment {
   description: string | null;
   pending?: boolean;
   file?: File;
+  type?: 'image' | 'video' | 'gifv' | 'audio' | 'unknown';
 }
 
 export interface ComposerSubmitEvent {
@@ -151,6 +152,10 @@ export class PostComposer extends LitElement {
   @state() maxChars: number = 500;
   @state() maxMediaAttachments: number = 4;
   @state() charCount: number = 0;
+
+  // Instance media limits (fetched in firstUpdated)
+  @state() imageSizeLimit: number = 10 * 1024 * 1024; // 10 MB default
+  @state() videoSizeLimit: number = 40 * 1024 * 1024; // 40 MB default
 
   // Mention picker state
   @state() mentionOpen: boolean = false;
@@ -589,13 +594,41 @@ export class PostComposer extends LitElement {
       gap: 6px;
       border-radius: var(--md-sys-shape-corner-small);
       animation: fadeSlideIn 0.2s cubic-bezier(0.2, 0, 0, 1) both;
+      position: relative;
     }
 
-    .img-preview img {
+    .img-preview img,
+    .img-preview video {
       width: 8em;
       height: 8em;
       border-radius: var(--md-sys-shape-corner-small);
       object-fit: cover;
+    }
+
+    .upload-spinner-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: var(--md-sys-shape-corner-small);
+      pointer-events: none;
+    }
+
+    .upload-spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .preview-actions {
@@ -988,6 +1021,14 @@ export class PostComposer extends LitElement {
       this.maxMediaAttachments =
         instance.configuration.statuses.max_media_attachments;
     }
+    if (instance.configuration?.media_attachments?.image_size_limit) {
+      this.imageSizeLimit =
+        instance.configuration.media_attachments.image_size_limit;
+    }
+    if (instance.configuration?.media_attachments?.video_size_limit) {
+      this.videoSizeLimit =
+        instance.configuration.media_attachments.video_size_limit;
+    }
 
     // Check if AI features are available
     this.proofreaderAvailable = await isProofreaderAvailable();
@@ -1173,7 +1214,7 @@ export class PostComposer extends LitElement {
 
     if (this.pollEnabled) {
       for (const item of items) {
-        if (item.type.startsWith('image/')) {
+        if (item.type.startsWith('image/') || item.type.startsWith('video/')) {
           event.preventDefault();
           showInfoToast(msg('Disable the poll to attach media.'));
           return;
@@ -1183,7 +1224,7 @@ export class PostComposer extends LitElement {
     }
 
     for (const item of items) {
-      if (item.type.startsWith('image/')) {
+      if (item.type.startsWith('image/') || item.type.startsWith('video/')) {
         event.preventDefault();
 
         if (this.attachments.length >= this.maxMediaAttachments) {
@@ -1468,7 +1509,36 @@ export class PostComposer extends LitElement {
 
   // File attachment methods
 
+  private _getMediaType(
+    file: File
+  ): 'image' | 'video' | 'gifv' | 'audio' | 'unknown' {
+    if (file.type.startsWith('video/')) return 'video';
+    if (file.type.startsWith('audio/')) return 'audio';
+    if (file.type.startsWith('image/')) return 'image';
+    return 'unknown';
+  }
+
+  private _formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
   private _addFileAttachment(file: File) {
+    const mediaType = this._getMediaType(file);
+
+    // Validate file size against instance limits
+    const sizeLimit =
+      mediaType === 'video' ? this.videoSizeLimit : this.imageSizeLimit;
+    if (file.size > sizeLimit) {
+      showErrorToast(
+        msg(
+          str`File exceeds the server limit of ${this._formatBytes(sizeLimit)}.`
+        )
+      );
+      return;
+    }
+
     const tempId = `temp-${Date.now()}-${Math.random()}`;
     const previewUrl = URL.createObjectURL(file);
 
@@ -1478,6 +1548,7 @@ export class PostComposer extends LitElement {
       description: null,
       pending: true,
       file,
+      type: mediaType,
     };
 
     this.attachments = [...this.attachments, newAttachment];
@@ -1486,18 +1557,23 @@ export class PostComposer extends LitElement {
 
   private async _uploadFile(file: File, tempId: string) {
     try {
-      const result = await uploadImageFromBlob(file);
+      const result = await uploadMediaBlob(file);
 
       // Find and update the attachment
       const index = this.attachments.findIndex((a) => a.id === tempId);
       if (index !== -1) {
         const oldPreview = this.attachments[index].preview_url;
+        // For video, keep the local blob URL so the <video> element
+        // can still show a real frame; the server preview_url is just
+        // a static thumbnail image.
+        const isVideo = result.type === 'video';
         const updatedAttachment: LocalAttachment = {
           id: result.id,
-          preview_url: result.preview_url,
+          preview_url: isVideo ? oldPreview : result.preview_url,
           description: result.description,
           pending: false,
           file,
+          type: result.type,
         };
 
         if (this.activeAttachment?.id === tempId) {
@@ -1508,7 +1584,7 @@ export class PostComposer extends LitElement {
           a.id === tempId ? updatedAttachment : a
         );
 
-        if (oldPreview.startsWith('blob:')) {
+        if (!isVideo && oldPreview.startsWith('blob:')) {
           URL.revokeObjectURL(oldPreview);
         }
       }
@@ -1605,7 +1681,7 @@ export class PostComposer extends LitElement {
 
     if (blobToUpload) {
       try {
-        const result = await uploadImageFromBlob(blobToUpload);
+        const result = await uploadMediaBlob(blobToUpload);
         const fileForLocalEditing =
           blobToUpload instanceof File
             ? blobToUpload
@@ -1631,6 +1707,7 @@ export class PostComposer extends LitElement {
                 description,
                 pending: false,
                 file: fileForLocalEditing,
+                type: result.type,
               }
             : a
         );
@@ -2040,6 +2117,12 @@ export class PostComposer extends LitElement {
   private async _handleSubmit() {
     const status = this.textArea?.value;
     if (!status || status.length === 0) return;
+
+    // Guard: don't publish while media is still uploading
+    if (this.attachments.some((a) => a.pending)) {
+      showInfoToast(msg('Waiting for media to finish uploading…'));
+      return;
+    }
 
     const scheduledAt = this.compact
       ? null
@@ -3033,10 +3116,22 @@ export class PostComposer extends LitElement {
                             <md-icon src="/assets/brush-outline.svg"></md-icon>
                           </md-icon-button>
                         </div>
-                        <img
-                          src="${attachment.preview_url}"
-                          alt="${attachment.description || ''}"
-                        />
+                        ${attachment.type === 'video'
+                          ? html`<video
+                              muted
+                              preload="metadata"
+                              src="${attachment.preview_url}#t=0.5"
+                              controls
+                            ></video>`
+                          : html`<img
+                              src="${attachment.preview_url}"
+                              alt="${attachment.description || ''}"
+                            />`}
+                        ${attachment.pending
+                          ? html`<div class="upload-spinner-overlay">
+                              <div class="upload-spinner"></div>
+                            </div>`
+                          : nothing}
                       </div>
                     `
                   )}
