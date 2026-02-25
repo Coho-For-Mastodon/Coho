@@ -918,11 +918,13 @@ export class SearchPage extends LitElement {
           <ul>
             ${this.searchData && this.searchData.statuses
               ? this.searchData.statuses.map((status) => {
-                  return html`<timeline-item
-                    .tweet="${status}"
-                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                      this.handleOpenPost(e.detail.tweet)}"
-                  ></timeline-item>`;
+                  return html`<li>
+                    <timeline-item
+                      .tweet="${status}"
+                      @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                        this.handleOpenPost(e.detail.tweet)}"
+                    ></timeline-item>
+                  </li>`;
                 })
               : null}
           </ul>
@@ -936,11 +938,13 @@ export class SearchPage extends LitElement {
                 ? html`<li>${this.trendingError}</li>`
                 : this.trending
                   ? this.trending.map((status) => {
-                      return html`<timeline-item
-                        .tweet="${status}"
-                        @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.handleOpenPost(e.detail.tweet)}"
-                      ></timeline-item>`;
+                      return html`<li>
+                        <timeline-item
+                          .tweet="${status}"
+                          @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleOpenPost(e.detail.tweet)}"
+                        ></timeline-item>
+                      </li>`;
                     })
                   : null}
           </ul>

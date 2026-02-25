@@ -113,7 +113,7 @@ export class Timeline extends LitElement {
     const isLastItem = index === this.timeline.length - 1;
     const filterTitles = (tweet as Post & { _filterTitles?: string[] })
       ._filterTitles;
-    return html`<div class="timeline-list-item">
+    return html`<li class="timeline-list-item">
       <timeline-item
         @open="${($event: CustomEvent) => this.handleOpen($event.detail.tweet)}"
         @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
@@ -145,7 +145,7 @@ export class Timeline extends LitElement {
             <span>Loading more...</span>
           </div>`
         : null}
-    </div>`;
+    </li>`;
   };
 
   // Cached element references for pull-to-refresh performance
@@ -304,6 +304,7 @@ export class Timeline extends LitElement {
         border-radius: var(--md-sys-shape-corner-small);
         margin: 0;
         padding: 0;
+        list-style: none;
 
         height: 100%;
         overflow-y: auto;
@@ -316,6 +317,7 @@ export class Timeline extends LitElement {
         width: 100%;
         max-width: 100%;
         overflow-x: hidden;
+        list-style: none;
       }
 
       #load-more {
@@ -1801,7 +1803,7 @@ export class Timeline extends LitElement {
         ? html`<md-skeleton-card count="5"></md-skeleton-card>`
         : shouldDisableVirtualScroll()
           ? html`
-              <div
+              <ul
                 id="mainList"
                 part="list"
                 class="scroller-fallback scrollbar-hidden"
@@ -1809,20 +1811,24 @@ export class Timeline extends LitElement {
                 ${this.timeline.map((item, index) =>
                   this._renderTimelineItem(item, index)
                 )}
-                <div id="infinite-scroll-trigger" style="height: 1px;"></div>
+                <li
+                  id="infinite-scroll-trigger"
+                  style="height: 1px; list-style: none;"
+                ></li>
                 ${this.loadingData
-                  ? html`<div id="load-more-indicator">
+                  ? html`<li id="load-more-indicator" style="list-style: none;">
                       <md-icon src="/assets/loading-indicator.svg"></md-icon>
                       Loading more...
-                    </div>`
+                    </li>`
                   : null}
-              </div>
+              </ul>
             `
           : html`
               <lit-virtualizer
                 id="mainList"
                 part="list"
                 class="scrollbar-hidden"
+                role="list"
                 scroller
                 .items=${this.timeline}
                 .renderItem=${this._renderTimelineItem}

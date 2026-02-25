@@ -604,6 +604,9 @@ export class AppProfile extends LitElement {
         display: flex;
         flex-direction: column;
         gap: 16px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
       }
 
       #pinned-section md-divider {
@@ -614,16 +617,23 @@ export class AppProfile extends LitElement {
       lit-virtualizer {
         display: block;
         contain: none;
+        list-style: none;
+        margin: 0;
+        padding: 0;
       }
 
       .scroller-fallback {
         display: block;
         contain: none;
+        list-style: none;
+        margin: 0;
+        padding: 0;
       }
 
       .post-item {
         padding-bottom: 16px;
         width: 100%;
+        list-style: none;
       }
 
       ul {
@@ -1743,10 +1753,10 @@ export class AppProfile extends LitElement {
                   <md-icon name="bookmark" size="18px"></md-icon>
                   <span>${msg('Pinned')}</span>
                 </div>
-                <div id="pinned-list">
+                <ul id="pinned-list">
                   ${this.pinnedPosts.map(
                     (post) => html`
-                      <div class="post-item">
+                      <li class="post-item">
                         <timeline-item
                           @open="${(e: CustomEvent<{ tweet: Post }>) =>
                             this.handleOpenPost(e.detail.tweet)}"
@@ -1759,10 +1769,10 @@ export class AppProfile extends LitElement {
                           ?guestMode="${this.isGuestMode}"
                           ?allowPin="${this.isOwnProfile && !this.isGuestMode}"
                         ></timeline-item>
-                      </div>
+                      </li>
                     `
                   )}
-                </div>
+                </ul>
                 <md-divider></md-divider>
               </div>
             `
@@ -1773,14 +1783,14 @@ export class AppProfile extends LitElement {
             ? this.renderMediaGrid()
             : shouldDisableVirtualScroll()
               ? html`
-                  <div
+                  <ul
                     class="scroller-fallback ${this.loadingPosts
                       ? 'posts-loading'
                       : ''}"
                   >
                     ${visiblePosts.map(
                       (post) => html`
-                        <div class="post-item">
+                        <li class="post-item">
                           <timeline-item
                             @open="${(e: CustomEvent<{ tweet: Post }>) =>
                               this.handleOpenPost(e.detail.tweet)}"
@@ -1794,29 +1804,33 @@ export class AppProfile extends LitElement {
                             ?allowPin="${this.isOwnProfile &&
                             !this.isGuestMode}"
                           ></timeline-item>
-                        </div>
+                        </li>
                       `
                     )}
-                    <div
+                    <li
                       id="posts-infinite-scroll-trigger"
-                      style="height: 1px;"
-                    ></div>
+                      style="height: 1px; list-style: none;"
+                    ></li>
                     ${this.loadingMorePosts
-                      ? html`<div class="load-more-indicator">
+                      ? html`<li
+                          class="load-more-indicator"
+                          style="list-style: none;"
+                        >
                           <md-skeleton
                             width="100%"
                             height="120px"
                           ></md-skeleton>
-                        </div>`
+                        </li>`
                       : null}
-                  </div>
+                  </ul>
                 `
               : html`
                   <lit-virtualizer
                     class="${this.loadingPosts ? 'posts-loading' : ''}"
+                    role="list"
                     .items=${visiblePosts}
                     .renderItem=${(post: Post) => html`
-                      <div class="post-item">
+                      <li class="post-item">
                         <timeline-item
                           @open="${(e: CustomEvent<{ tweet: Post }>) =>
                             this.handleOpenPost(e.detail.tweet)}"
@@ -1829,7 +1843,7 @@ export class AppProfile extends LitElement {
                           ?guestMode="${this.isGuestMode}"
                           ?allowPin="${this.isOwnProfile && !this.isGuestMode}"
                         ></timeline-item>
-                      </div>
+                      </li>
                     `}
                     @visibilityChanged=${this._handleVisibilityChanged}
                   ></lit-virtualizer>
