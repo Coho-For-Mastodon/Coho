@@ -11,6 +11,7 @@ import { router } from '../router/routes';
 import '../components/md/md-skeleton';
 
 import '../components/md/md-segmented-button';
+import { parseEmojis } from '../utils/emoji-parser';
 import type { Account } from '../mastodon/types';
 import type { Suggestion } from '../mastodon/types/suggestion';
 import type { TrendingTag, TrendingLink } from '../mastodon/types/instance';
@@ -163,15 +164,10 @@ export class SearchPage extends LitElement {
         pointer-events: none;
       }
 
-      .card-avatar-wrapper {
-        position: relative;
-        height: 0;
-      }
-
       .card-avatar {
         position: absolute;
-        top: -71px;
-        left: -2px;
+        top: 95px;
+        left: 14px;
         width: 56px;
         height: 56px;
         border-radius: var(--md-sys-shape-corner-circle);
@@ -179,7 +175,6 @@ export class SearchPage extends LitElement {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         z-index: 2;
         object-fit: cover;
-        background: #2d2d33;
         background: #2d2d33;
       }
 
@@ -495,7 +490,7 @@ export class SearchPage extends LitElement {
         }
 
         .card-avatar {
-          top: -58px;
+          top: 40px;
           width: 48px;
           height: 48px;
         }
@@ -752,9 +747,11 @@ export class SearchPage extends LitElement {
    */
   private stripHtml(html: string): string {
     if (!html) return '';
+    let processed = html.replace(/<br\s*\/?>/gi, ' ');
+    processed = processed.replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, ' ');
     const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
+    tmp.innerHTML = processed;
+    return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
   }
 
   /**
@@ -818,18 +815,22 @@ export class SearchPage extends LitElement {
                     />`
                   : null}
               </div>
+              <img
+                class="card-avatar"
+                src="${account.avatar}"
+                alt="${account.display_name || account.username}"
+                loading="lazy"
+              />
               <div class="card-body">
-                <div class="card-avatar-wrapper">
-                  <img
-                    class="card-avatar"
-                    src="${account.avatar}"
-                    alt="${account.display_name || account.username}"
-                    loading="lazy"
-                  />
-                </div>
                 <div class="card-identity">
                   <p class="card-display-name">
-                    ${account.display_name || account.username}
+                    <span
+                      .innerHTML="${parseEmojis(
+                        account.display_name || account.username,
+                        account.emojis || [],
+                        true
+                      )}"
+                    ></span>
                     ${account.bot
                       ? html`<span class="bot-badge">${msg('Bot')}</span>`
                       : null}
