@@ -203,14 +203,16 @@ export class AppProfile extends LitElement {
         position: relative;
         width: 128px;
         height: 128px;
+        border-radius: var(--md-sys-shape-corner-circle);
+        overflow: hidden;
       }
 
       #avatar {
         width: 100%;
         height: 100%;
-        border-radius: var(--md-sys-shape-corner-circle);
         border: 4px solid
           var(--md-sys-color-surface, var(--md-sys-color-background));
+        border-radius: var(--md-sys-shape-corner-circle, 50%);
         object-fit: cover;
         background: var(--md-sys-color-surface, var(--md-sys-color-background));
         animation: avatar-scale linear both;
