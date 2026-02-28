@@ -1,7 +1,7 @@
 <div align="center">
   <img src="/public/assets/icons/new-icons/icon-256x256.png" alt="Coho" width="128" height="128" />
 
-# Coho <sup>alpha</sup>
+# Coho <sup>beta</sup>
 
 A fast, offline-first Mastodon client.
 
@@ -66,6 +66,10 @@ Choose your theme color! Coho also supports light and dark mode.
 Take control of your digital well-being by hiding likes, boost counts, and other metrics for a calmer experience.
 
 # Technical
+
+## AI Use Disclaimer
+
+Artificial Intelligence (AI) was employed in the development of this application. AI, primarily the Claude models, contributed to the cleanup process, including the de-duplication of CSS, code reviews, and assistance with certain feature development. While all code undergoes human review (by myself, Justin), some of the code was authored by AI.
 
 ## Intro
 
