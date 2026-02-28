@@ -124,8 +124,8 @@ export class PostDetail extends LitElement {
         width: 100%;
         max-width: var(--post-detail-max-width, 720px);
         margin: 0 auto;
-        padding-top: 10px;
-        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        padding-top: 6px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.18);
         border-radius: var(--md-sys-shape-corner-medium);
       }
@@ -138,7 +138,8 @@ export class PostDetail extends LitElement {
         border: 1px solid
           var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
         border-radius: var(--md-sys-shape-corner-large);
-        padding: 10px;
+        padding: 8px;
+        --md-text-area-min-height: 40px;
       }
 
       @media (min-width: 820px) {
@@ -516,7 +517,7 @@ export class PostDetail extends LitElement {
                 <div class="composer-shell">
                   <post-composer
                     compact
-                    rows="2"
+                    rows="1"
                     .replyTo=${this.replyingTo || this.tweet}
                     placeholder=${msg('Reply to this post...')}
                     @published=${() => this.handleReplyPublished()}
