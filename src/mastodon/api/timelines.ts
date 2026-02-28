@@ -226,19 +226,22 @@ export const getPublicTimeline = async (
 
 /**
  * Get the preview/federated timeline (unauthenticated)
+ * Uses the trending statuses endpoint which does not require authentication,
+ * since many servers (including mastodon.social) now require auth for /api/v1/timelines/public.
  */
-export const getPreviewTimeline = async (maxId?: string): Promise<Post[]> => {
-  let fetchUrl = 'https://mastodon.social/api/v1/timelines/public?limit=10';
-
-  if (maxId) {
-    fetchUrl += `&max_id=${maxId}`;
-  }
+export const getPreviewTimeline = async (_maxId?: string): Promise<Post[]> => {
+  const fetchUrl = 'https://mastodon.social/api/v1/trends/statuses?limit=20';
 
   try {
     const response = await fetch(fetchUrl);
+    if (!response.ok) {
+      console.warn('Preview timeline fetch failed:', response.status);
+      return [];
+    }
     const data = await response.json();
     return Array.isArray(data) ? data : [];
-  } catch {
+  } catch (err) {
+    console.warn('Preview timeline network error:', err);
     return [];
   }
 };

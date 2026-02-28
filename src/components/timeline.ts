@@ -1009,18 +1009,22 @@ export class Timeline extends LitElement {
       return;
     }
 
-    const { get } = await import('idb-keyval');
-    const savedTimelineType = await get('timelineType');
+    // In guest mode, don't override the timeline type set by the parent component
+    // (the parent forces 'federated' which is the only valid type for unauthenticated users)
+    if (!this.guestMode) {
+      const { get } = await import('idb-keyval');
+      const savedTimelineType = await get('timelineType');
 
-    console.log('saved timeline type', savedTimelineType);
+      console.log('saved timeline type', savedTimelineType);
 
-    if (savedTimelineType) {
-      const migratedTimelineType =
-        savedTimelineType === 'public' ? 'federated' : savedTimelineType;
-      this.timelineType = migratedTimelineType;
-      if (migratedTimelineType !== savedTimelineType) {
-        const { set } = await import('idb-keyval');
-        await set('timelineType', migratedTimelineType);
+      if (savedTimelineType) {
+        const migratedTimelineType =
+          savedTimelineType === 'public' ? 'federated' : savedTimelineType;
+        this.timelineType = migratedTimelineType;
+        if (migratedTimelineType !== savedTimelineType) {
+          const { set } = await import('idb-keyval');
+          await set('timelineType', migratedTimelineType);
+        }
       }
     }
 

@@ -8,7 +8,7 @@ export interface Settings {
 }
 
 const defaultSettings = {
-  primary_color: '#5171a5',
+  primary_color: '',
   font_size: '16px',
   data_saver: false,
   wellness: false,
