@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, property, query } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
+import { spinAnimation } from '../styles/animations';
 
 import { router } from '../router/routes';
 import {
@@ -36,6 +37,7 @@ export class Search extends LitElement {
   private _requestId = 0;
 
   static styles = [
+    spinAnimation,
     css`
       :host {
         display: block;
@@ -144,15 +146,6 @@ export class Search extends LitElement {
         border-right-color: transparent;
         border-radius: var(--md-sys-shape-corner-circle);
         animation: spin 0.8s linear infinite;
-      }
-
-      @keyframes spin {
-        from {
-          transform: rotate(0deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
       }
 
       @media (max-width: 820px) {

@@ -1,4 +1,5 @@
 import { css } from 'lit';
+import { fadeInAnimation } from './animations';
 
 /**
  * Styles for the app-home page component.
@@ -651,13 +652,10 @@ export const homeStyles = css`
       margin-right: 64px;
     }
   }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
 `;
+
+/**
+ * Composed home styles including fadeIn animation.
+ * Use this array in the component's static styles.
+ */
+export const homeStylesWithAnimations = [fadeInAnimation, homeStyles];

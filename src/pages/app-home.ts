@@ -42,6 +42,7 @@ import type { ScheduledStatusesDialog } from '../components/scheduled-statuses-d
 
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
+import { fadeInAnimation } from '../styles/animations';
 import { router } from '../router/routes';
 import {
   lazyLoad,
@@ -149,7 +150,7 @@ export class AppHome extends LitElement {
   private scheduledStatusesDialog!: ScheduledStatusesDialog;
 
   static get styles() {
-    return [styles, homeStyles];
+    return [styles, homeStyles, fadeInAnimation];
   }
 
   async firstUpdated() {

@@ -48,6 +48,7 @@ import '../components/md/md-divider';
 
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
+import { fadeInAnimation } from '../styles/animations';
 import { editPost } from '../services/posts';
 import { router, type AppNavigationState } from '../router/routes';
 import {
@@ -96,6 +97,7 @@ export class AppProfile extends LitElement {
   @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
 
   static styles = [
+    fadeInAnimation,
     css`
       :host {
         display: block;
@@ -271,15 +273,6 @@ export class AppProfile extends LitElement {
         font-weight: 700;
         min-width: 100px;
         animation: fadeIn 0.2s ease-in;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
       }
 
       /* Profile info */

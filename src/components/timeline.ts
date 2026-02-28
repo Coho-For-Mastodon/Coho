@@ -18,6 +18,7 @@ import {
   clearTimelineCache,
 } from '../services/timeline-cache';
 import { filterTimelinePosts } from '../services/filters';
+import { spinAnimation } from '../styles/animations';
 import type { FilterContext } from '../mastodon/types';
 
 import type {
@@ -224,6 +225,7 @@ export class Timeline extends LitElement {
   }
 
   static styles = [
+    spinAnimation,
     css`
       :host {
         display: block;
@@ -454,22 +456,7 @@ export class Timeline extends LitElement {
       }
 
       #refresh-indicator.refreshing md-icon {
-        animation: md3-spin 1.4s ease-in-out infinite;
-      }
-
-      @keyframes md3-spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      @keyframes spin {
-        100% {
-          transform: rotate(360deg);
-        }
+        animation: spin 1.4s ease-in-out infinite;
       }
 
       @media (max-width: 820px) {

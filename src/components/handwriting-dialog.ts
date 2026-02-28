@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query, property } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
+import { spinAnimation } from '../styles/animations';
 
 import './md/md-dialog.js';
 import './md/md-button.js';
@@ -48,112 +49,109 @@ export class HandwritingDialog extends LitElement {
   // Lazy-loaded Tesseract worker
   private tesseractWorker: TesseractWorker | null = null;
 
-  static styles = css`
-    :host {
-      display: block;
-    }
-
-    md-dialog::part(dialog) {
-      min-width: 80vw;
-      min-height: 60vh;
-    }
-
-    .canvas-container {
-      position: relative;
-      border-radius: var(--md-sys-shape-corner-medium);
-      overflow: hidden;
-      background: #fff;
-      aspect-ratio: 16/9;
-      min-height: 300px;
-    }
-
-    #handwriting-canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      cursor: crosshair;
-      touch-action: none;
-    }
-
-    .canvas-hint {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #ccc;
-      font-size: 1.25rem;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
-
-    .canvas-hint.hidden {
-      opacity: 0;
-    }
-
-    .dialog-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      gap: 12px;
-    }
-
-    .dialog-actions .left-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .dialog-actions .right-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .recognizing-spinner {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 2px solid transparent;
-      border-top-color: currentColor;
-      border-radius: var(--md-sys-shape-corner-circle);
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
+  static styles = [
+    spinAnimation,
+    css`
+      :host {
+        display: block;
       }
-    }
 
-    md-button.recognizing {
-      --md-button-container-color: #e879f9;
-      animation: ai-glow 1.5s ease-in-out infinite;
-    }
-
-    @keyframes ai-glow {
-      0%,
-      100% {
-        box-shadow: 0 0 2px 1px rgba(232, 121, 249, 0.5);
-      }
-      50% {
-        box-shadow:
-          0 0 6px 2px rgba(232, 121, 249, 0.7),
-          0 0 12px 4px rgba(217, 70, 239, 0.4);
-      }
-    }
-
-    @media (max-width: 820px) {
       md-dialog::part(dialog) {
-        min-width: 100vw;
-        min-height: 100vh;
+        min-width: 80vw;
+        min-height: 60vh;
       }
 
       .canvas-container {
-        aspect-ratio: auto;
-        height: calc(100vh - 200px);
-        min-height: 200px;
+        position: relative;
+        border-radius: var(--md-sys-shape-corner-medium);
+        overflow: hidden;
+        background: #fff;
+        aspect-ratio: 16/9;
+        min-height: 300px;
       }
-    }
-  `;
+
+      #handwriting-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: crosshair;
+        touch-action: none;
+      }
+
+      .canvas-hint {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ccc;
+        font-size: 1.25rem;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+
+      .canvas-hint.hidden {
+        opacity: 0;
+      }
+
+      .dialog-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        gap: 12px;
+      }
+
+      .dialog-actions .left-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .dialog-actions .right-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .recognizing-spinner {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: var(--md-sys-shape-corner-circle);
+        animation: spin 0.8s linear infinite;
+      }
+
+      md-button.recognizing {
+        --md-button-container-color: #e879f9;
+        animation: ai-glow 1.5s ease-in-out infinite;
+      }
+
+      @keyframes ai-glow {
+        0%,
+        100% {
+          box-shadow: 0 0 2px 1px rgba(232, 121, 249, 0.5);
+        }
+        50% {
+          box-shadow:
+            0 0 6px 2px rgba(232, 121, 249, 0.7),
+            0 0 12px 4px rgba(217, 70, 239, 0.4);
+        }
+      }
+
+      @media (max-width: 820px) {
+        md-dialog::part(dialog) {
+          min-width: 100vw;
+          min-height: 100vh;
+        }
+
+        .canvas-container {
+          aspect-ratio: auto;
+          height: calc(100vh - 200px);
+          min-height: 200px;
+        }
+      }
+    `,
+  ];
 
   connectedCallback() {
     super.connectedCallback();

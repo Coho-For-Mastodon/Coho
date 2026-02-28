@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { msg, str } from '@lit/localize';
 import { localized } from '@lit/localize';
+import { fadeInAnimation } from '../styles/animations';
 
 import './md/md-skeleton';
 import './md/md-badge';
@@ -29,143 +30,137 @@ export class HomeSidebar extends LitElement {
   @property({ type: Boolean }) trendingTagsLoading = false;
   @property({ type: Boolean }) isGuestMode = false;
 
-  static styles = css`
-    :host {
-      display: block;
-    }
+  static styles = [
+    fadeInAnimation,
+    css`
+      :host {
+        display: block;
+      }
 
-    #right-sidebar {
-      position: sticky;
-      top: 20px;
-      height: calc(100vh - 40px);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding-right: 16px;
-    }
+      #right-sidebar {
+        position: sticky;
+        top: 20px;
+        height: calc(100vh - 40px);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-right: 16px;
+      }
 
-    .sidebar-card {
-      background: var(--md-sys-color-surface-container, #1e1e24);
-      border-radius: var(--md-sys-shape-corner-medium);
-      padding: 16px;
-      animation: fadeIn 0.3s ease-in-out;
-    }
+      .sidebar-card {
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        border-radius: var(--md-sys-shape-corner-medium);
+        padding: 16px;
+        animation: fadeIn 0.3s ease-in-out;
+      }
 
-    .sidebar-card h3 {
-      margin-top: 0;
-      margin-bottom: 12px;
-      font-size: 1.1rem;
-    }
+      .sidebar-card h3 {
+        margin-top: 0;
+        margin-bottom: 12px;
+        font-size: 1.1rem;
+      }
 
-    #profile-card-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 8px;
-      width: 100%;
-    }
+      #profile-card-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+        width: 100%;
+      }
 
-    #profile-card-content img,
-    #profile-card-content md-skeleton#profile-avatar {
-      height: 80px;
-      width: 80px;
-      border-radius: var(--md-sys-shape-corner-circle);
-      border: 2px solid var(--md-sys-color-primary);
-    }
+      #profile-card-content img,
+      #profile-card-content md-skeleton#profile-avatar {
+        height: 80px;
+        width: 80px;
+        border-radius: var(--md-sys-shape-corner-circle);
+        border: 2px solid var(--md-sys-color-primary);
+      }
 
-    #profile-card-content h3 {
-      margin: 0;
-      font-size: 1.1rem;
-    }
+      #profile-card-content h3 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
 
-    #profile-card-content p {
-      margin: 0;
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: 0.9rem;
-    }
+      #profile-card-content p {
+        margin: 0;
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.9rem;
+      }
 
-    #username-block {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: -webkit-fill-available;
-    }
+      #username-block {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: -webkit-fill-available;
+      }
 
-    #user-url {
-      margin-top: 4px;
-      font-size: var(--md-sys-typescale-body-small-font-size);
-    }
+      #user-url {
+        margin-top: 4px;
+        font-size: var(--md-sys-typescale-body-small-font-size);
+      }
 
-    .profile-stats {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-      justify-content: center;
-      width: -webkit-fill-available;
-    }
+      .profile-stats {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+        justify-content: center;
+        width: -webkit-fill-available;
+      }
 
-    .profile-stats md-badge {
-      cursor: pointer;
-      width: -webkit-fill-available;
-    }
+      .profile-stats md-badge {
+        cursor: pointer;
+        width: -webkit-fill-available;
+      }
 
-    .trending-item {
-      display: flex;
-      flex-direction: column;
-      padding: 8px 0;
-      cursor: pointer;
-    }
+      .trending-item {
+        display: flex;
+        flex-direction: column;
+        padding: 8px 0;
+        cursor: pointer;
+      }
 
-    .trending-item .tag {
-      font-weight: bold;
-      font-size: 1rem;
-    }
+      .trending-item .tag {
+        font-weight: bold;
+        font-size: 1rem;
+      }
 
-    .trending-item .count {
-      font-size: 0.85rem;
-      color: var(--md-sys-color-on-surface-variant);
-    }
-
-    md-menu {
-      background: #ffffff14;
-      backdrop-filter: blur(48px);
-      color: white;
-      z-index: 99;
-    }
-
-    md-menu-item {
-      color: white;
-    }
-
-    @media (prefers-color-scheme: light) {
-      md-menu-item {
-        color: black;
+      .trending-item .count {
+        font-size: 0.85rem;
+        color: var(--md-sys-color-on-surface-variant);
       }
 
       md-menu {
-        background: rgb(235 235 235);
-        backdrop-filter: none;
+        background: #ffffff14;
+        backdrop-filter: blur(48px);
+        color: white;
+        z-index: 99;
       }
-    }
 
-    @media (max-width: 820px) {
-      :host {
-        display: none;
+      md-menu-item {
+        color: white;
       }
-    }
 
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
+      @media (prefers-color-scheme: light) {
+        md-menu-item {
+          color: black;
+        }
+
+        md-menu {
+          background: rgb(235 235 235);
+          backdrop-filter: none;
+        }
       }
-      to {
-        opacity: 1;
+
+      @media (max-width: 820px) {
+        :host {
+          display: none;
+        }
       }
-    }
-  `;
+    `,
+  ];
 
   private goToFollowers() {
     if (!this.user) return;
