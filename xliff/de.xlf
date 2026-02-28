@@ -62,10 +62,6 @@
   <source>View</source>
   <target>Ansehen</target>
 </trans-unit>
-<trans-unit id="s9843eeda70cff191">
-  <source>Thread</source>
-  <target>Thread</target>
-</trans-unit>
 <trans-unit id="sfa847f22cbd9bff5">
   <source>Translate</source>
   <target>Übersetzen</target>
@@ -1795,6 +1791,9 @@
 </trans-unit>
 <trans-unit id="s060f62c250a1042e">
   <source>Waiting for media to finish uploading…</source>
+</trans-unit>
+<trans-unit id="sc6e15730cbfb902c">
+  <source>Show thread</source>
 </trans-unit>
 </body>
 </file>
