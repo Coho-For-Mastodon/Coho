@@ -97,19 +97,11 @@ export function renderReplyContext(
   if (!state.tweet?.reply_to || !state.show) return null;
 
   return html`
-    <div
-      id="reply-to"
-      @click="${() => handlers.openParentPost()}"
-      style="cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; color: var(--md-sys-color-primary);"
-    >
-      <md-icon name="chatbox"></md-icon>
-      ${msg('Thread')}
-    </div>
-
     <md-card
       part="card"
+      class="connected-bottom"
       @click="${() => handlers.openParentPost()}"
-      style="margin-bottom: 16px;"
+      style="cursor: pointer;"
     >
       <user-profile .account="${state.tweet?.reply_to?.account}"></user-profile>
       ${state.tweet?.reply_to?.sensitive
@@ -160,7 +152,10 @@ export function renderReplyContext(
               pill
               size="small"
               style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
-              @click="${() => handlers.replies()}"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                handlers.replies();
+              }}"
             >
               <md-icon slot="suffix" name="chatbox"></md-icon>
             </md-button>`
@@ -174,7 +169,10 @@ export function renderReplyContext(
             : 'var(--md-sys-color-on-surface-variant)'}"
           pill
           size="small"
-          @click="${() => handlers.bookmark(state.tweet?.reply_to?.id || '')}"
+          @click="${(e: Event) => {
+            e.stopPropagation();
+            handlers.bookmark(state.tweet?.reply_to?.id || '');
+          }}"
           ><md-icon slot="suffix" name="bookmark"></md-icon
         ></md-button>
         ${state.settings && state.settings.wellness === false
@@ -186,8 +184,10 @@ export function renderReplyContext(
                 : 'var(--md-sys-color-on-surface-variant)'}"
               pill
               size="small"
-              @click="${() =>
-                handlers.favorite(state.tweet?.reply_to?.id || '')}"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                handlers.favorite(state.tweet?.reply_to?.id || '');
+              }}"
               >${state.tweet?.reply_to?.favourites_count}
               <md-icon slot="suffix" name="heart"></md-icon
             ></md-button>`
@@ -200,13 +200,20 @@ export function renderReplyContext(
                 ? 'var(--sl-color-primary-600)'
                 : 'var(--md-sys-color-on-surface-variant)'}"
               pill
-              @click="${() => handlers.reblog(state.tweet?.reply_to?.id || '')}"
+              size="small"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                handlers.reblog(state.tweet?.reply_to?.id || '');
+              }}"
               >${state.tweet?.reply_to?.reblogs_count}
               <md-icon slot="suffix" name="repeat"></md-icon
             ></md-button>`
           : null}
       </div>
     </md-card>
+    <div class="thread-connector-bar">
+      <div class="thread-connector-line"></div>
+    </div>
   `;
 }
 
@@ -214,13 +221,17 @@ export function renderRegularTweet(
   state: TimelineItemState,
   handlers: TimelineItemHandlers
 ) {
+  const hasReplyTo = !!state.tweet?.reply_to;
+  const hasContinuation = (state.tweet?.thread_continuation?.length ?? 0) > 0;
+
   return html`
     ${renderReplyContext(state, handlers)}
 
     <md-card
       part="card"
       class="${classMap({
-        replyCard: state.tweet?.reply_to ? true : false,
+        'connected-top': hasReplyTo,
+        'connected-bottom': hasContinuation,
       })}"
     >
       <div class="header-actions-block" slot="header">
@@ -448,6 +459,161 @@ export function renderRegularTweet(
         }
       </div>
     </md-card>
+    ${hasContinuation ? html`<div class="thread-connector-bar"><div class="thread-connector-line"></div></div>` : null}
+    ${renderThreadContinuation(state, handlers)}
+  `;
+}
+
+/**
+ * Renders self-thread continuation posts with connector bars between cards.
+ * Shown automatically when thread_continuation is populated by groupSelfThreads().
+ */
+export function renderThreadContinuation(
+  state: TimelineItemState,
+  handlers: TimelineItemHandlers
+) {
+  const continuation = state.tweet?.thread_continuation;
+  if (!continuation || continuation.length === 0) return null;
+
+  return html`
+    ${continuation.map((threadPost: Post, index: number) => {
+      const isLast =
+        index === continuation.length - 1 && !state.tweet?.thread_truncated;
+      const hasMore = !isLast;
+
+      return html`
+        <md-card
+          part="card"
+          class="${classMap({
+            'thread-continuation-card': true,
+            'connected-top': true,
+            'connected-bottom': hasMore,
+          })}"
+          @click="${(e: Event) =>
+            handlers.handleContentClick(e, threadPost, true)}"
+        >
+          <user-profile .account="${threadPost.account}"></user-profile>
+          ${threadPost.sensitive
+            ? html`
+                <div class="sensitive">
+                  <span>${msg('Sensitive Content')}</span>
+                  <p>
+                    ${threadPost.spoiler_text ||
+                    msg('No spoiler text provided')}
+                  </p>
+                  <md-button
+                    variant="text"
+                    pill
+                    @click="${(e: Event) => {
+                      e.stopPropagation();
+                      handlers.viewThreadSensitive(threadPost.id);
+                    }}"
+                  >
+                    ${msg('View')}
+                    <md-icon slot="suffix" name="eye"></md-icon>
+                  </md-button>
+                </div>
+              `
+            : html`<div
+                @click="${(e: Event) =>
+                  handlers.handleContentClick(e, threadPost)}"
+                .innerHTML="${parseEmojis(
+                  threadPost.content || '',
+                  threadPost.emojis || []
+                )}"
+              ></div>`}
+          ${threadPost.poll
+            ? html`<timeline-poll .post=${threadPost}></timeline-poll>`
+            : null}
+          ${threadPost.media_attachments &&
+          threadPost.media_attachments.length > 0
+            ? html`
+                <image-carousel .images="${threadPost.media_attachments}">
+                </image-carousel>
+              `
+            : html``}
+          ${threadPost.card
+            ? html`
+                <div
+                  @click="${() =>
+                    handlers.openLinkCard(threadPost.card?.url || '')}"
+                  class="link-card"
+                >
+                  <img
+                    src="${threadPost.card.image ||
+                    '/assets/bookmark-outline.svg'}"
+                    alt="${threadPost.card.title}"
+                  />
+                  <div class="link-card-content">
+                    <h4>${threadPost.card.title}</h4>
+                    <p>${threadPost.card.description}</p>
+                  </div>
+                </div>
+              `
+            : null}
+          <div class="actions" slot="footer">
+            <md-button
+              variant="text"
+              style="--md-sys-color-primary: ${threadPost.bookmarked
+                ? 'var(--sl-color-primary-600)'
+                : 'var(--md-sys-color-on-surface-variant)'}"
+              pill
+              size="small"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                handlers.bookmark(threadPost.id);
+              }}"
+              ><md-icon slot="suffix" name="bookmark"></md-icon
+            ></md-button>
+            ${state.settings && state.settings.wellness === false
+              ? html`<md-button
+                  variant="text"
+                  style="--md-sys-color-primary: ${threadPost.favourited
+                    ? 'var(--sl-color-primary-600)'
+                    : 'var(--md-sys-color-on-surface-variant)'}"
+                  pill
+                  size="small"
+                  @click="${(e: Event) => {
+                    e.stopPropagation();
+                    handlers.favorite(threadPost.id);
+                  }}"
+                  >${threadPost.favourites_count}
+                  <md-icon slot="suffix" name="heart"></md-icon
+                ></md-button>`
+              : null}
+            ${state.settings && state.settings.wellness === false
+              ? html`<md-button
+                  variant="text"
+                  style="--md-sys-color-primary: ${threadPost.reblogged
+                    ? 'var(--sl-color-primary-600)'
+                    : 'var(--md-sys-color-on-surface-variant)'}"
+                  pill
+                  size="small"
+                  @click="${(e: Event) => {
+                    e.stopPropagation();
+                    handlers.reblog(threadPost.id);
+                  }}"
+                  >${threadPost.reblogs_count}
+                  <md-icon slot="suffix" name="repeat"></md-icon
+                ></md-button>`
+              : null}
+          </div>
+        </md-card>
+        ${hasMore
+          ? html`<div class="thread-connector-bar">
+              <div class="thread-connector-line"></div>
+            </div>`
+          : null}
+      `;
+    })}
+    ${state.tweet?.thread_truncated
+      ? html`
+          <div class="thread-show-more" @click="${() => handlers.openPost()}">
+            <md-icon name="chatbox"></md-icon>
+            ${msg('Show thread')}
+          </div>
+        `
+      : null}
   `;
 }
 

@@ -299,7 +299,48 @@ export async function replyToPost(
   return data;
 }
 
-export async function uploadImageFromURL(
+/**
+ * Polls GET /api/v1/media/:id until the server finishes processing
+ * (video transcoding, etc.). Mastodon returns 206 while processing
+ * and 200 when done. Uses exponential back-off (1 s → 2 s → 4 s …)
+ * and gives up after ~60 s total.
+ */
+export async function waitForMediaProcessing(
+  id: string
+): Promise<MediaAttachment> {
+  const server = getServer();
+  const accessToken = getAccessToken();
+
+  let delay = 1000;
+  const maxDelay = 8000;
+  const maxElapsed = 60_000;
+  const start = Date.now();
+
+  while (Date.now() - start < maxElapsed) {
+    await new Promise((r) => setTimeout(r, delay));
+
+    const res = await fetch(`https://${server}/api/v1/media/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (res.status === 200) {
+      return res.json();
+    }
+
+    if (res.status !== 206) {
+      // Unexpected status — bail out and let the caller handle it
+      throw new Error(
+        `Unexpected status ${res.status} while polling media ${id}`
+      );
+    }
+
+    delay = Math.min(delay * 2, maxDelay);
+  }
+
+  throw new Error(`Media ${id} processing timed out after ${maxElapsed}ms`);
+}
+
+export async function uploadMediaFromURL(
   url: string
 ): Promise<MediaAttachment> {
   const server = getServer();
@@ -314,16 +355,19 @@ export async function uploadImageFromURL(
     }),
   });
 
-  const data = await response.json();
+  const data: MediaAttachment = await response.json();
+
+  if (response.status === 202) {
+    return waitForMediaProcessing(data.id);
+  }
+
   return data;
 }
 
-export async function uploadImageFromBlob(
-  blob: Blob
-): Promise<MediaAttachment> {
-  // const formData = new FormData();
-  // formData.append('file', blob);
+/** @deprecated Use uploadMediaFromURL instead */
+export const uploadImageFromURL = uploadMediaFromURL;
 
+export async function uploadMediaBlob(blob: Blob): Promise<MediaAttachment> {
   const server = getServer();
   const accessToken = getAccessToken();
   const formData = new FormData();
@@ -337,9 +381,17 @@ export async function uploadImageFromBlob(
     body: formData,
   });
 
-  const data = await response.json();
+  const data: MediaAttachment = await response.json();
+
+  if (response.status === 202) {
+    return waitForMediaProcessing(data.id);
+  }
+
   return data;
 }
+
+/** @deprecated Use uploadMediaBlob instead */
+export const uploadImageFromBlob = uploadMediaBlob;
 
 export async function pickMedia(): Promise<File[]> {
   try {
@@ -367,7 +419,12 @@ export async function uploadMediaFile(file: File): Promise<MediaAttachment> {
     body: formData,
   });
 
-  const data = await response.json();
+  let data: MediaAttachment = await response.json();
+
+  if (response.status === 202) {
+    data = await waitForMediaProcessing(data.id);
+  }
+
   await addMedia(file);
   return data;
 }
@@ -397,13 +454,15 @@ export async function uploadImageAsFormData(): Promise<MediaAttachment[]> {
       body: formData,
     });
 
-    const data = await response.json();
+    let data: MediaAttachment = await response.json();
+
+    if (response.status === 202) {
+      data = await waitForMediaProcessing(data.id);
+    }
 
     uploaded = [...uploaded, data];
 
     await addMedia(files[i]);
-
-    console.log('uploaded', uploaded);
   }
 
   return uploaded;

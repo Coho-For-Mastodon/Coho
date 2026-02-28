@@ -11,6 +11,7 @@ import { router } from '../router/routes';
 import '../components/md/md-skeleton';
 
 import '../components/md/md-segmented-button';
+import { parseEmojis } from '../utils/emoji-parser';
 import type { Account } from '../mastodon/types';
 import type { Suggestion } from '../mastodon/types/suggestion';
 import type { TrendingTag, TrendingLink } from '../mastodon/types/instance';
@@ -38,6 +39,7 @@ export class SearchPage extends LitElement {
   @state() private trendingError: string | undefined;
   @state() private newsError: string | undefined;
   @state() private suggestionsError: string | undefined;
+  @state() private userHasSearched = false;
 
   @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
   private trendingPromise: Promise<void> | null = null;
@@ -163,15 +165,10 @@ export class SearchPage extends LitElement {
         pointer-events: none;
       }
 
-      .card-avatar-wrapper {
-        position: relative;
-        height: 0;
-      }
-
       .card-avatar {
         position: absolute;
-        top: -71px;
-        left: -2px;
+        top: 95px;
+        left: 14px;
         width: 56px;
         height: 56px;
         border-radius: var(--md-sys-shape-corner-circle);
@@ -179,7 +176,6 @@ export class SearchPage extends LitElement {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         z-index: 2;
         object-fit: cover;
-        background: #2d2d33;
         background: #2d2d33;
       }
 
@@ -495,7 +491,7 @@ export class SearchPage extends LitElement {
         }
 
         .card-avatar {
-          top: -58px;
+          top: 40px;
           width: 48px;
           height: 48px;
         }
@@ -724,12 +720,19 @@ export class SearchPage extends LitElement {
     }
   }
 
-  async handleSearch(search: { searchData: SearchData }) {
+  async handleSearch(search: {
+    searchData: SearchData;
+    isAutoSearch?: boolean;
+  }) {
     this.searchData = search.searchData;
 
-    // Switch to For You tab so users see account search results immediately
-    if (this.searchData.accounts && this.searchData.accounts.length > 0) {
-      this.activeSegment = 'for-you';
+    if (!search.isAutoSearch) {
+      this.userHasSearched = true;
+
+      // Switch to For You tab so users see account search results immediately
+      if (this.searchData.accounts && this.searchData.accounts.length > 0) {
+        this.activeSegment = 'for-you';
+      }
     }
 
     this.scheduleIdlePrefetch();
@@ -752,9 +755,11 @@ export class SearchPage extends LitElement {
    */
   private stripHtml(html: string): string {
     if (!html) return '';
+    let processed = html.replace(/<br\s*\/?>/gi, ' ');
+    processed = processed.replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, ' ');
     const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
+    tmp.innerHTML = processed;
+    return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
   }
 
   /**
@@ -818,18 +823,22 @@ export class SearchPage extends LitElement {
                     />`
                   : null}
               </div>
+              <img
+                class="card-avatar"
+                src="${account.avatar}"
+                alt="${account.display_name || account.username}"
+                loading="lazy"
+              />
               <div class="card-body">
-                <div class="card-avatar-wrapper">
-                  <img
-                    class="card-avatar"
-                    src="${account.avatar}"
-                    alt="${account.display_name || account.username}"
-                    loading="lazy"
-                  />
-                </div>
                 <div class="card-identity">
                   <p class="card-display-name">
-                    ${account.display_name || account.username}
+                    <span
+                      .innerHTML="${parseEmojis(
+                        account.display_name || account.username,
+                        account.emojis || [],
+                        true
+                      )}"
+                    ></span>
                     ${account.bot
                       ? html`<span class="bot-badge">${msg('Bot')}</span>`
                       : null}
@@ -869,8 +878,12 @@ export class SearchPage extends LitElement {
     return html`
       <main>
         <app-search
-          @search="${(e: CustomEvent<{ searchData: SearchData }>) =>
-            this.handleSearch(e.detail)}"
+          @search="${(
+            e: CustomEvent<{ searchData: SearchData; isAutoSearch?: boolean }>
+          ) => this.handleSearch(e.detail)}"
+          @search-cleared="${() => {
+            this.userHasSearched = false;
+          }}"
         ></app-search>
 
         <md-segmented-button
@@ -885,7 +898,8 @@ export class SearchPage extends LitElement {
         </md-segmented-button>
 
         <div class="panel ${this.activeSegment === 'for-you' ? 'active' : ''}">
-          ${this.searchData &&
+          ${this.userHasSearched &&
+          this.searchData &&
           this.searchData.accounts &&
           this.searchData.accounts.length > 0
             ? this.renderAccountCards(this.searchData.accounts)
@@ -904,11 +918,13 @@ export class SearchPage extends LitElement {
           <ul>
             ${this.searchData && this.searchData.statuses
               ? this.searchData.statuses.map((status) => {
-                  return html`<timeline-item
-                    .tweet="${status}"
-                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                      this.handleOpenPost(e.detail.tweet)}"
-                  ></timeline-item>`;
+                  return html`<li>
+                    <timeline-item
+                      .tweet="${status}"
+                      @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                        this.handleOpenPost(e.detail.tweet)}"
+                    ></timeline-item>
+                  </li>`;
                 })
               : null}
           </ul>
@@ -922,11 +938,13 @@ export class SearchPage extends LitElement {
                 ? html`<li>${this.trendingError}</li>`
                 : this.trending
                   ? this.trending.map((status) => {
-                      return html`<timeline-item
-                        .tweet="${status}"
-                        @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.handleOpenPost(e.detail.tweet)}"
-                      ></timeline-item>`;
+                      return html`<li>
+                        <timeline-item
+                          .tweet="${status}"
+                          @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleOpenPost(e.detail.tweet)}"
+                        ></timeline-item>
+                      </li>`;
                     })
                   : null}
           </ul>

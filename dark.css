@@ -1,18 +1,5 @@
 :host,
 .sl-theme-dark {
-  /* MD3 Color Tokens - Dark Mode */
-  --md-sys-color-background: color-mix(
-    in srgb,
-    var(--md-sys-color-primary) 5%,
-    #141314
-  );
-  --md-sys-color-surface: color-mix(
-    in srgb,
-    var(--md-sys-color-primary) 8%,
-    #202124
-  );
-  --md-sys-color-on-background: #e6e1e5;
-
   /* Gray base colors for neutral mapping */
   --sl-color-gray-50: hsl(240 5.1% 15%);
   --sl-color-gray-100: hsl(240 5.7% 18.2%);
@@ -25,11 +12,6 @@
   --sl-color-gray-800: hsl(240 7.3% 84%);
   --sl-color-gray-900: hsl(240 9.1% 91.8%);
   --sl-color-gray-950: hsl(0 0% 95%);
-
-  /* Primary colors - dynamically set via JS for theming */
-  --sl-color-primary-500: hsl(217 91% 70%);
-  --sl-color-primary-600: hsl(217 91% 70%);
-  --sl-color-primary-700: hsl(217 91% 80%);
 
   /* Neutral colors - mapped from gray, used by components */
   --sl-color-neutral-50: var(--sl-color-gray-50);

@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { shimmerAnimation } from '../../styles/animations';
 
 /**
  * Material Design 3 Skeleton Component
@@ -13,73 +14,70 @@ export class MdSkeleton extends LitElement {
   @property({ type: String }) width = '100%';
   @property({ type: String }) height = '1em';
 
-  static styles = css`
-    :host {
-      display: inline-block;
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      height: 1em;
-    }
-
-    .skeleton {
-      width: 100%;
-      height: 100%;
-      background: var(
-        --md-sys-color-surface-container-highest,
-        var(--sl-color-neutral-200)
-      );
-      border-radius: var(--md-sys-shape-corner-extra-small);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .skeleton.circle {
-      border-radius: var(--md-sys-shape-corner-circle);
-    }
-
-    /* Shimmer animation */
-    @keyframes shimmer {
-      0% {
-        transform: translateX(-100%);
+  static styles = [
+    shimmerAnimation,
+    css`
+      :host {
+        display: inline-block;
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 1em;
       }
-      100% {
-        transform: translateX(100%);
-      }
-    }
 
-    .skeleton::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        var(--md-sys-color-surface-container-highest, rgba(255, 255, 255, 0.4))
-          50%,
-        transparent 100%
-      );
-      animation: shimmer 2s infinite;
-    }
-
-    @media (prefers-color-scheme: dark) {
       .skeleton {
-        background: var(--md-sys-color-surface-container, #2a2d36);
+        width: 100%;
+        height: 100%;
+        background: var(
+          --md-sys-color-surface-container-highest,
+          var(--sl-color-neutral-200)
+        );
+        border-radius: var(--md-sys-shape-corner-extra-small);
+        position: relative;
+        overflow: hidden;
       }
 
+      .skeleton.circle {
+        border-radius: var(--md-sys-shape-corner-circle);
+      }
+
+      /* Shimmer animation */
       .skeleton::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         background: linear-gradient(
           90deg,
           transparent 0%,
-          rgba(255, 255, 255, 0.1) 50%,
+          var(
+              --md-sys-color-surface-container-highest,
+              rgba(255, 255, 255, 0.4)
+            )
+            50%,
           transparent 100%
         );
+        animation: shimmer 2s infinite;
       }
-    }
-  `;
+
+      @media (prefers-color-scheme: dark) {
+        .skeleton {
+          background: var(--md-sys-color-surface-container, #2a2d36);
+        }
+
+        .skeleton::after {
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            transparent 100%
+          );
+        }
+      }
+    `,
+  ];
 
   private _applyInlineSize() {
     // Only apply inline sizing when the author explicitly provided attributes.

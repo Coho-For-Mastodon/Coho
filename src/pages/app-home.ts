@@ -27,6 +27,12 @@ import '../components/header';
 import { getEffectiveParams } from '../utils/launch-params';
 import { TabController } from '../controllers/tab-controller';
 import { shareTarget } from '../services/share-target';
+import {
+  getSidebarUser,
+  getSidebarTrending,
+  saveSidebarUser,
+  saveSidebarTrending,
+} from '../services/sidebar-cache';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -42,6 +48,7 @@ import type { ScheduledStatusesDialog } from '../components/scheduled-statuses-d
 
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
+import { fadeInAnimation } from '../styles/animations';
 import { router } from '../router/routes';
 import {
   lazyLoad,
@@ -149,7 +156,24 @@ export class AppHome extends LitElement {
   private scheduledStatusesDialog!: ScheduledStatusesDialog;
 
   static get styles() {
-    return [styles, homeStyles];
+    return [styles, homeStyles, fadeInAnimation];
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+
+    // Restore sidebar data synchronously from sessionStorage
+    // so the first render already has content — no skeleton flash.
+    const cachedUser = getSidebarUser();
+    if (cachedUser) {
+      this.user = cachedUser;
+    }
+
+    const cachedTrending = getSidebarTrending();
+    if (cachedTrending && cachedTrending.length > 0) {
+      this.trendingTags = cachedTrending;
+      this.trendingTagsLoading = false;
+    }
   }
 
   async firstUpdated() {
@@ -200,11 +224,15 @@ export class AppHome extends LitElement {
       });
     }
 
-    // Defer trending tags fetch to idle time - not critical for initial render
+    // Refresh trending tags in the background (stale-while-revalidate).
+    // If we already restored from cache in connectedCallback the UI is
+    // already populated — this just silently updates the data.
     window.requestIdleCallback(async () => {
       try {
         const { getTrendingTags } = await import('../services/timeline');
-        this.trendingTags = await getTrendingTags();
+        const freshTags = await getTrendingTags();
+        this.trendingTags = freshTags;
+        saveSidebarTrending(freshTags);
       } catch (err) {
         console.error('Error fetching trending tags', err);
       } finally {
@@ -287,11 +315,16 @@ export class AppHome extends LitElement {
       }
     });
 
-    // Only load user for authenticated users
+    // Only load user for authenticated users.
+    // If we already restored from the sidebar cache the avatar is visible
+    // immediately — this background refresh silently picks up changes.
     if (!this.isGuestMode) {
       const { getCurrentUser } = await import('../services/account');
       getCurrentUser().then((user) => {
-        this.user = user ?? null;
+        if (user) {
+          this.user = user;
+          saveSidebarUser(user);
+        }
       });
     }
 
@@ -559,6 +592,14 @@ export class AppHome extends LitElement {
   async disconnectedCallback() {
     super.disconnectedCallback();
     console.log('home disconnected');
+
+    // Persist sidebar data so the next mount restores instantly
+    if (this.user) {
+      saveSidebarUser(this.user);
+    }
+    if (this.trendingTags && this.trendingTags.length > 0) {
+      saveSidebarTrending(this.trendingTags);
+    }
 
     // Remove keyboard shortcut tab switch listener
     window.removeEventListener('switch-tab', this._handleSwitchTab);

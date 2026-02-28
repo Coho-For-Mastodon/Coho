@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import {
   getPreviewTimeline,
   enrichPostsWithReplyContext,
+  groupSelfThreads,
   getPaginatedHomeTimeline,
   mixTimeline,
   getLastPlaceTimeline,
@@ -17,6 +18,7 @@ import {
   clearTimelineCache,
 } from '../services/timeline-cache';
 import { filterTimelinePosts } from '../services/filters';
+import { spinAnimation } from '../styles/animations';
 import type { FilterContext } from '../mastodon/types';
 
 import type {
@@ -113,7 +115,7 @@ export class Timeline extends LitElement {
     const isLastItem = index === this.timeline.length - 1;
     const filterTitles = (tweet as Post & { _filterTitles?: string[] })
       ._filterTitles;
-    return html`<div class="timeline-list-item">
+    return html`<li class="timeline-list-item">
       <timeline-item
         @open="${($event: CustomEvent) => this.handleOpen($event.detail.tweet)}"
         @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
@@ -145,7 +147,7 @@ export class Timeline extends LitElement {
             <span>Loading more...</span>
           </div>`
         : null}
-    </div>`;
+    </li>`;
   };
 
   // Cached element references for pull-to-refresh performance
@@ -223,6 +225,7 @@ export class Timeline extends LitElement {
   }
 
   static styles = [
+    spinAnimation,
     css`
       :host {
         display: block;
@@ -304,6 +307,7 @@ export class Timeline extends LitElement {
         border-radius: var(--md-sys-shape-corner-small);
         margin: 0;
         padding: 0;
+        list-style: none;
 
         height: 100%;
         overflow-y: auto;
@@ -316,6 +320,7 @@ export class Timeline extends LitElement {
         width: 100%;
         max-width: 100%;
         overflow-x: hidden;
+        list-style: none;
       }
 
       #load-more {
@@ -451,22 +456,7 @@ export class Timeline extends LitElement {
       }
 
       #refresh-indicator.refreshing md-icon {
-        animation: md3-spin 1.4s ease-in-out infinite;
-      }
-
-      @keyframes md3-spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      @keyframes spin {
-        100% {
-          transform: rotate(360deg);
-        }
+        animation: spin 1.4s ease-in-out infinite;
       }
 
       @media (max-width: 820px) {
@@ -1006,18 +996,22 @@ export class Timeline extends LitElement {
       return;
     }
 
-    const { get } = await import('idb-keyval');
-    const savedTimelineType = await get('timelineType');
+    // In guest mode, don't override the timeline type set by the parent component
+    // (the parent forces 'federated' which is the only valid type for unauthenticated users)
+    if (!this.guestMode) {
+      const { get } = await import('idb-keyval');
+      const savedTimelineType = await get('timelineType');
 
-    console.log('saved timeline type', savedTimelineType);
+      console.log('saved timeline type', savedTimelineType);
 
-    if (savedTimelineType) {
-      const migratedTimelineType =
-        savedTimelineType === 'public' ? 'federated' : savedTimelineType;
-      this.timelineType = migratedTimelineType;
-      if (migratedTimelineType !== savedTimelineType) {
-        const { set } = await import('idb-keyval');
-        await set('timelineType', migratedTimelineType);
+      if (savedTimelineType) {
+        const migratedTimelineType =
+          savedTimelineType === 'public' ? 'federated' : savedTimelineType;
+        this.timelineType = migratedTimelineType;
+        if (migratedTimelineType !== savedTimelineType) {
+          const { set } = await import('idb-keyval');
+          await set('timelineType', migratedTimelineType);
+        }
       }
     }
 
@@ -1173,7 +1167,7 @@ export class Timeline extends LitElement {
           ) as Post[];
 
           this.timeline = filterTimelinePosts(
-            await enrichPostsWithReplyContext(uniqueList),
+            groupSelfThreads(await enrichPostsWithReplyContext(uniqueList)),
             this._filterContext
           );
 
@@ -1197,7 +1191,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueMix),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueMix)),
           this._filterContext
         );
 
@@ -1223,7 +1217,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueMix2),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueMix2)),
           this._filterContext
         );
 
@@ -1251,7 +1245,9 @@ export class Timeline extends LitElement {
 
             // Enrich posts with reply context and apply filters
             this.timeline = filterTimelinePosts(
-              await enrichPostsWithReplyContext(uniqueLastPlace),
+              groupSelfThreads(
+                await enrichPostsWithReplyContext(uniqueLastPlace)
+              ),
               this._filterContext
             );
           }
@@ -1277,7 +1273,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueHome),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueHome)),
           this._filterContext
         );
 
@@ -1304,7 +1300,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniquePub),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniquePub)),
           this._filterContext
         );
 
@@ -1333,7 +1329,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueFed),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueFed)),
           this._filterContext
         );
 
@@ -1360,7 +1356,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueMedia),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueMedia)),
           this._filterContext
         );
 
@@ -1427,7 +1423,7 @@ export class Timeline extends LitElement {
 
     // Enrich new posts with reply context and apply filters
     const enrichedNewPosts = filterTimelinePosts(
-      await enrichPostsWithReplyContext(newPosts),
+      groupSelfThreads(await enrichPostsWithReplyContext(newPosts)),
       this._filterContext
     );
 
@@ -1521,7 +1517,9 @@ export class Timeline extends LitElement {
 
       if (newPosts.length > 0) {
         // Enrich new posts with reply context
-        const enrichedNewPosts = await enrichPostsWithReplyContext(newPosts);
+        const enrichedNewPosts = groupSelfThreads(
+          await enrichPostsWithReplyContext(newPosts)
+        );
         this.pendingNewPosts = enrichedNewPosts;
         console.log(`Found ${enrichedNewPosts.length} new posts`);
       } else {
@@ -1801,7 +1799,7 @@ export class Timeline extends LitElement {
         ? html`<md-skeleton-card count="5"></md-skeleton-card>`
         : shouldDisableVirtualScroll()
           ? html`
-              <div
+              <ul
                 id="mainList"
                 part="list"
                 class="scroller-fallback scrollbar-hidden"
@@ -1809,20 +1807,24 @@ export class Timeline extends LitElement {
                 ${this.timeline.map((item, index) =>
                   this._renderTimelineItem(item, index)
                 )}
-                <div id="infinite-scroll-trigger" style="height: 1px;"></div>
+                <li
+                  id="infinite-scroll-trigger"
+                  style="height: 1px; list-style: none;"
+                ></li>
                 ${this.loadingData
-                  ? html`<div id="load-more-indicator">
+                  ? html`<li id="load-more-indicator" style="list-style: none;">
                       <md-icon src="/assets/loading-indicator.svg"></md-icon>
                       Loading more...
-                    </div>`
+                    </li>`
                   : null}
-              </div>
+              </ul>
             `
           : html`
               <lit-virtualizer
                 id="mainList"
                 part="list"
                 class="scrollbar-hidden"
+                role="list"
                 scroller
                 .items=${this.timeline}
                 .renderItem=${this._renderTimelineItem}

@@ -64,7 +64,7 @@ export class GuestLoginBanner extends LitElement {
       }
     }
 
-    @media (max-width: 824px) {
+    @media (max-width: 820px) {
       /* Push banner above mobile nav tabs */
       :host {
         bottom: 74px;

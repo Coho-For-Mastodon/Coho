@@ -101,8 +101,8 @@ export class TimelineItem extends LitElement {
       }
 
       md-card::part(base) {
-        border: 1px
-          solidcolor-mix(
+        border: 1px solid
+          color-mix(
             in srgb,
             var(--md-sys-color-outline-variant, #2b2930) 60%,
             transparent
@@ -468,11 +468,110 @@ export class TimelineItem extends LitElement {
         min-width: 0;
       }
 
+      /* === Connected thread card styles === */
+
+      /* Connector bar between connected cards — sits in normal flow */
+      .thread-connector-bar {
+        display: flex;
+        align-items: stretch;
+        padding: 0 11px;
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        border-left: 1px solid
+          color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #2b2930) 60%,
+            transparent
+          );
+        border-right: 1px solid
+          color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #2b2930) 60%,
+            transparent
+          );
+      }
+
+      .thread-connector-line {
+        width: 2px;
+        min-height: 24px;
+        margin-left: 19px;
+        background: var(--md-sys-color-outline, #938f99);
+        border-radius: 1px;
+        flex-shrink: 0;
+      }
+
+      /* Host-level radius + overflow removal for connected cards */
+      md-card.connected-bottom {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+      md-card.connected-top {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+
+      /* Shadow DOM part: flat bottom (more cards follow) */
+      md-card.connected-bottom::part(base) {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-bottom: none;
+      }
+
+      /* Shadow DOM part: flat top (preceded by another card) */
+      md-card.connected-top::part(base) {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        border-top: none;
+      }
+
+      .thread-continuation-card {
+        cursor: pointer;
+      }
+
+      .thread-show-more {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        color: var(--md-sys-color-primary, #6750a4);
+        font-size: var(--md-sys-typescale-body-medium-font-size, 14px);
+        cursor: pointer;
+        background: var(--md-sys-color-surface-container, #1e1e24);
+        border: 1px solid
+          color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #2b2930) 60%,
+            transparent
+          );
+        border-top: none;
+        border-radius: 0 0 var(--md-sys-shape-corner-medium)
+          var(--md-sys-shape-corner-medium);
+      }
+
+      .thread-show-more:hover {
+        background: var(--md-sys-color-surface-container-highest, #353539);
+      }
+
       .thread-line {
         width: 3px;
         background: var(--sl-color-primary-600);
         margin-left: 8px;
         height: 16px;
+      }
+
+      @media (prefers-color-scheme: light) {
+        .thread-show-more {
+          background: var(--md-sys-color-surface-container, #f3f3f3);
+          border-color: color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #cac4d0) 60%,
+            transparent
+          );
+        }
+
+        .thread-show-more:hover {
+          background: var(--md-sys-color-surface-container-highest, #e6e6e6);
+        }
       }
 
       @media (max-width: 820px) {

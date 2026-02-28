@@ -3,6 +3,10 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 import { getBlurhashWorker } from '../services/blurhash-worker';
 import type { MediaAttachment } from '../types/interfaces/MediaAttachment';
+import {
+  createIntersectionObserver,
+  disconnectIntersectionObserver,
+} from '../utils/intersection-observer';
 
 @localized()
 @customElement('image-carousel')
@@ -10,6 +14,8 @@ export class ImageCarousel extends LitElement {
   @property({ type: Array }) images: MediaAttachment[] = [];
   @state() blurhashUrls: Map<string, string> = new Map();
   @state() currentIndex: number = 0;
+
+  private _videoObserver: IntersectionObserver | null = null;
 
   static styles = [
     css`
@@ -105,18 +111,52 @@ export class ImageCarousel extends LitElement {
     this.addEventListener('keydown', this._handleKeydown);
     // Make carousel focusable for keyboard navigation
     this.setAttribute('tabindex', '0');
+
+    // Auto-pause videos when scrolled off-screen, auto-resume gifvs when back
+    this._videoObserver = createIntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const video = entry.target as HTMLVideoElement;
+          if (!entry.isIntersecting) {
+            video.pause();
+          } else if (video.hasAttribute('loop')) {
+            // Resume autoplay gifvs when scrolled back into view
+            video.play().catch(() => {});
+          }
+        }
+      },
+      { threshold: 0 }
+    );
+
+    this._observeVideos();
   }
 
   updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('images') && this.images.length > 0) {
       console.log('Images updated, generating blurhashes');
       this.generateBlurhashes();
+      // Wait for the render to flush so new <video> elements are in the DOM
+      this.updateComplete.then(() => this._observeVideos());
     }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeydown);
+    disconnectIntersectionObserver(this._videoObserver);
+    this._videoObserver = null;
+  }
+
+  /** Observe all <video> elements in this carousel for visibility-based pause/play */
+  private _observeVideos() {
+    if (!this._videoObserver) return;
+    // Reset observer to drop any stale elements before re-observing
+    this._videoObserver.disconnect();
+    const videos = this.shadowRoot?.querySelectorAll('video');
+    if (!videos) return;
+    for (const video of videos) {
+      this._videoObserver.observe(video);
+    }
   }
 
   private _handleKeydown = (event: KeyboardEvent) => {

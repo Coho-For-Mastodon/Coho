@@ -382,10 +382,6 @@
   <source>View</source>
   <target>Ver</target>
 </trans-unit>
-<trans-unit id="s9843eeda70cff191">
-  <source>Thread</source>
-  <target>Hilo</target>
-</trans-unit>
 <trans-unit id="sfa847f22cbd9bff5">
   <source>Translate</source>
   <target>Traducir</target>
@@ -1789,6 +1785,15 @@
 </trans-unit>
 <trans-unit id="se48bd9e6c2a3109d">
   <source>Accounts</source>
+</trans-unit>
+<trans-unit id="s8201c70d584c2910">
+  <source>File exceeds the server limit of <x id="0" equiv-text="${this._formatBytes(sizeLimit)}"/>.</source>
+</trans-unit>
+<trans-unit id="s060f62c250a1042e">
+  <source>Waiting for media to finish uploading…</source>
+</trans-unit>
+<trans-unit id="sc6e15730cbfb902c">
+  <source>Show thread</source>
 </trans-unit>
 </body>
 </file>

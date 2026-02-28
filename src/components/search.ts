@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, property, query } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
+import { spinAnimation } from '../styles/animations';
 
 import { router } from '../router/routes';
 import {
@@ -36,6 +37,7 @@ export class Search extends LitElement {
   private _requestId = 0;
 
   static styles = [
+    spinAnimation,
     css`
       :host {
         display: block;
@@ -146,15 +148,6 @@ export class Search extends LitElement {
         animation: spin 0.8s linear infinite;
       }
 
-      @keyframes spin {
-        from {
-          transform: rotate(0deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
       @media (max-width: 820px) {
         .search-bar {
           min-width: unset;
@@ -203,10 +196,12 @@ export class Search extends LitElement {
 
             this.searchData = searchData;
 
-            // fire custom event
+            // fire custom event – flag as auto so the page can
+            // keep showing suggestions on the Accounts tab
             const event = new CustomEvent('search', {
               detail: {
                 searchData,
+                isAutoSearch: true,
               },
             });
             this.dispatchEvent(event);
@@ -245,6 +240,12 @@ export class Search extends LitElement {
 
   private _handleInput(e: Event) {
     this._inputValue = (e.target as HTMLInputElement).value;
+
+    // When the user clears the search (via the native ✕ button on type=search),
+    // notify the page so it can revert to suggestions.
+    if (!this._inputValue) {
+      this.dispatchEvent(new CustomEvent('search-cleared'));
+    }
   }
 
   private setLoading(loading: boolean) {

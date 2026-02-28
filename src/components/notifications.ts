@@ -8,6 +8,7 @@ import {
   createIntersectionObserver,
   disconnectIntersectionObserver,
 } from '../utils/intersection-observer';
+import { spinAnimation } from '../styles/animations';
 
 import '@lit-labs/virtualizer';
 import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
@@ -78,6 +79,7 @@ export class Notifications extends LitElement {
   }
 
   static styles = [
+    spinAnimation,
     css`
       :host {
         height: 91vh;
@@ -176,15 +178,6 @@ export class Notifications extends LitElement {
         animation: spin 1s linear infinite;
         width: 20px;
         height: 20px;
-      }
-
-      @keyframes spin {
-        from {
-          transform: rotate(0deg);
-        }
-        to {
-          transform: rotate(360deg);
-        }
       }
 
       @keyframes fade-in {
@@ -556,7 +549,9 @@ export class Notifications extends LitElement {
     this._loadObserver = createIntersectionObserver((entries) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
-          await scheduler.yield();
+          if ('scheduler' in window) {
+            await scheduler.yield();
+          }
           // First, check for preloaded data for instant display
           const { getPreloadedNotifications } =
             await import('../services/preload');
@@ -566,24 +561,34 @@ export class Notifications extends LitElement {
 
           if (preloaded && preloaded.length > 0) {
             console.log('[Notifications] Using preloaded data');
-            await scheduler.yield();
+            if ('scheduler' in window) {
+              await scheduler.yield();
+            }
             this.notifications = preloaded;
           } else {
             // Fallback to fetching if no preloaded data
-            await scheduler.yield();
+            if ('scheduler' in window) {
+              await scheduler.yield();
+            }
             const { getNotifications } =
               await import('../services/notifications');
             const notificationsData = await getNotifications();
-            await scheduler.yield();
+            if ('scheduler' in window) {
+              await scheduler.yield();
+            }
             console.log(notificationsData);
             this.notifications = notificationsData;
           }
 
-          await scheduler.yield();
+          if ('scheduler' in window) {
+            await scheduler.yield();
+          }
           // Check follow status for all follow notifications
           await this.checkFollowStatuses();
 
-          await scheduler.yield();
+          if ('scheduler' in window) {
+            await scheduler.yield();
+          }
           // check push reg
           const reg = await navigator.serviceWorker.getRegistration();
           if (reg && reg.pushManager) {
@@ -594,7 +599,9 @@ export class Notifications extends LitElement {
           }
 
           if ('clearAppBadge' in navigator) {
-            await scheduler.yield();
+            if ('scheduler' in window) {
+              await scheduler.yield();
+            }
             navigator.clearAppBadge?.();
           }
 

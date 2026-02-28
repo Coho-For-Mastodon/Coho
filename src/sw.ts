@@ -115,6 +115,23 @@ self.addEventListener('message', (event) => {
 // FETCH STRATEGIES
 // ============================================================================
 
+/**
+ * Safely put a response into cache, catching errors from broken body streams.
+ * On slow/flaky networks, opaque or partially-received responses can have
+ * corrupted body streams that cause cache.put() to throw a NetworkError.
+ */
+async function safeCachePut(
+  cache: Cache,
+  request: Request,
+  response: Response
+): Promise<void> {
+  try {
+    await cache.put(request, response);
+  } catch (err) {
+    console.warn('[SW] cache.put() failed (likely a broken body stream):', err);
+  }
+}
+
 async function networkFirst(
   request: Request,
   cacheName: string
@@ -123,7 +140,7 @@ async function networkFirst(
   try {
     const response = await fetch(request);
     if (shouldCacheResponse(response)) {
-      cache.put(request, response.clone());
+      safeCachePut(cache, request, response.clone());
     }
     return response;
   } catch (error) {
@@ -149,12 +166,14 @@ async function cacheFirst(
   }
   const response = await fetch(request);
   if (shouldCacheResponse(response)) {
-    cache.put(request, response.clone());
+    safeCachePut(cache, request, response.clone());
   }
   return response;
 }
 
 function shouldCacheResponse(response: Response): boolean {
+  // Never cache explicit error responses
+  if (response.type === 'error') return false;
   // Cross-origin <img> requests are often opaque (status 0), but still safe
   // to cache for offline/performance use-cases.
   return response.ok || response.type === 'opaque';
@@ -373,10 +392,10 @@ async function navigationHandler(request: Request): Promise<Response> {
 
   // Start network fetch in parallel (don't await yet)
   const networkPromise = fetch(request)
-    .then((response) => {
+    .then(async (response) => {
       if (response.ok) {
         // Update cache in background
-        cache.put(request, response.clone());
+        await safeCachePut(cache, request, response.clone());
       }
       return response;
     })

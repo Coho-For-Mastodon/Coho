@@ -13,7 +13,7 @@ import type { MdDialog } from './md/md-dialog.js';
 import type { MdTextField } from './md/md-text-field.js';
 import type { PostComposer } from './post-composer.js';
 
-import { uploadImageFromBlob } from '../services/posts';
+import { uploadMediaBlob } from '../services/posts';
 import { createAPost, createImage } from '../services/ai';
 
 import type { Post } from '../interfaces/Post';
@@ -211,7 +211,7 @@ export class PostDialog extends LitElement {
       console.log('[Share Target Dialog] Found cached file, uploading...');
       const blob = await response.blob();
 
-      const data = await uploadImageFromBlob(blob);
+      const data = await uploadMediaBlob(blob);
 
       // Add to composer's attachments
       if (this.composer) {
@@ -270,7 +270,7 @@ export class PostDialog extends LitElement {
     if (this.generatedImage && this.aiBlob) {
       this.showPrompt = false;
 
-      const attachmentData = await uploadImageFromBlob(this.aiBlob);
+      const attachmentData = await uploadMediaBlob(this.aiBlob);
 
       if (this.composer) {
         this.composer.addAttachment({

@@ -83,11 +83,6 @@
         --sl-color-gray-900: hsl(240 5.9% 10%);
         --sl-color-gray-950: hsl(240 7.3% 8%);
 
-        /* Primary colors - dynamically set via JS for theming */
-        --sl-color-primary-500: hsl(217 91% 60%);
-        --sl-color-primary-600: hsl(217 91% 60%);
-        --sl-color-primary-700: hsl(217 91% 50%);
-
         --sl-color-neutral-50: var(--sl-color-gray-50);
         --sl-color-neutral-100: var(--sl-color-gray-100);
         --sl-color-neutral-200: var(--sl-color-gray-200);
@@ -127,8 +122,6 @@
         --font-family:
           system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
           sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-
-        --sl-color-primary-600: rgb(92 134 255);
 
         --sl-font-size-medium: 16px;
       }
@@ -177,46 +170,19 @@
 
       body {
         min-height: 100vh;
+        background-color: var(--md-sys-color-background);
+        color: var(--md-sys-color-on-background);
       }
 
-      /* MD3 Color Tokens */
+      /* Layout Tokens */
       :root {
-        /* Layout constraints for wide screens (like Elk's contained layout) */
         --layout-max-width: 1200px;
         --layout-nav-width: 80px;
         --layout-sidebar-width: 320px;
         --layout-gap: 32px;
         --layout-sidebar-padding: 16px;
 
-        /* Light mode MD3 background colors */
-        --md-sys-color-background: #ffffff;
-        --md-sys-color-surface: color-mix(in srgb, var(--md-sys-color-primary) 10%, white);
-        --md-sys-color-on-background: #1d1b20;
-
         background-color: var(--md-sys-color-background);
-      }
-
-      @media (prefers-color-scheme: dark) {
-        :root {
-          /* Dark mode MD3 background colors */
-          --md-sys-color-background: #141314;
-          --md-sys-color-surface: color-mix(in srgb, var(--md-sys-color-primary) 8%, #141314);
-          --md-sys-color-on-background: #e6e1e5;
-
-          background-color: var(--md-sys-color-background);
-        }
-
-        body {
-          background-color: var(--md-sys-color-background);
-          color: var(--md-sys-color-on-background);
-        }
-      }
-
-      @media (prefers-color-scheme: light) {
-        body {
-          background-color: var(--md-sys-color-background);
-          color: var(--md-sys-color-on-background);
-        }
       }
     </style>
 

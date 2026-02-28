@@ -1,6 +1,7 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
+import { spinAnimation } from '../styles/animations';
 
 import { getConversations, deleteConversation } from '../services/messages';
 import { searchAccounts } from '../services/account';
@@ -32,6 +33,7 @@ export class AppMessages extends LitElement {
   private _searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
   static styles = [
+    spinAnimation,
     css`
       :host {
         display: block;
@@ -449,12 +451,6 @@ export class AppMessages extends LitElement {
         border-top-color: var(--md-sys-color-primary, #d0bcff);
         border-radius: var(--md-sys-shape-corner-circle);
         animation: spin 0.8s linear infinite;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
       }
 
       @media (prefers-color-scheme: light) {
