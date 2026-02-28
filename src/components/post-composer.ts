@@ -999,6 +999,11 @@ export class PostComposer extends LitElement {
           right: 12px;
         }
       }
+
+      /* In compact mode (inline reply), footer stays in normal flow */
+      :host([compact]) .footer-actions {
+        position: static;
+      }
     `,
   ];
 

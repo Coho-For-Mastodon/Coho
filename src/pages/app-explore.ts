@@ -17,8 +17,9 @@ export class AppExplore extends LitElement {
       :host {
         display: block;
 
-        overflow-y: scroll;
+        overflow-y: auto;
         height: 100vh;
+        scrollbar-width: none;
       }
 
       p {

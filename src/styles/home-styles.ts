@@ -582,6 +582,7 @@ export const homeStyles = css`
       margin-left: initial;
       margin-right: initial;
       width: 100%;
+      scrollbar-width: none;
     }
 
     mammoth-bot {
