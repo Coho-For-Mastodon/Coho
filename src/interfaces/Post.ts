@@ -73,6 +73,7 @@ export interface Post {
   reply_to?: Post;
   ancestors?: Post[];
   thread_continuation?: Post[]; // Posts that continue this thread
+  thread_truncated?: boolean; // True when thread_continuation was capped
 }
 
 export interface ScheduledPostParams {

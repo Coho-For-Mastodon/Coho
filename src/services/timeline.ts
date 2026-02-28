@@ -16,6 +16,7 @@ import {
   getMediaTimeline as mastodonGetMediaTimeline,
   saveMarker as mastodonSaveMarker,
   enrichPostsWithReplyContext as mastodonEnrichPostsWithReplyContext,
+  groupSelfThreads as mastodonGroupSelfThreads,
   unfavoritePost as mastodonUnfavoritePost,
   unreblogPost as mastodonUnreblogPost,
 } from '../mastodon/api/timelines';
@@ -34,6 +35,12 @@ export const enrichPostsWithReplyContext = async (
   // Cast to any to avoid type issues between Status and Post
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return mastodonEnrichPostsWithReplyContext(posts as any) as unknown as Post[];
+};
+
+// Re-export groupSelfThreads for thread grouping in timelines
+export const groupSelfThreads = (posts: Post[]): Post[] => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return mastodonGroupSelfThreads(posts as any) as unknown as Post[];
 };
 
 // Re-export type

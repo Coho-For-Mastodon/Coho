@@ -39,6 +39,7 @@ export interface Status {
   reply_to?: Status;
   ancestors?: Status[];
   thread_continuation?: Status[];
+  thread_truncated?: boolean;
 }
 
 export type StatusVisibility = 'public' | 'unlisted' | 'private' | 'direct';

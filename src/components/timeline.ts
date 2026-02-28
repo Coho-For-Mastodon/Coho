@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import {
   getPreviewTimeline,
   enrichPostsWithReplyContext,
+  groupSelfThreads,
   getPaginatedHomeTimeline,
   mixTimeline,
   getLastPlaceTimeline,
@@ -1175,7 +1176,7 @@ export class Timeline extends LitElement {
           ) as Post[];
 
           this.timeline = filterTimelinePosts(
-            await enrichPostsWithReplyContext(uniqueList),
+            groupSelfThreads(await enrichPostsWithReplyContext(uniqueList)),
             this._filterContext
           );
 
@@ -1199,7 +1200,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueMix),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueMix)),
           this._filterContext
         );
 
@@ -1225,7 +1226,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueMix2),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueMix2)),
           this._filterContext
         );
 
@@ -1253,7 +1254,9 @@ export class Timeline extends LitElement {
 
             // Enrich posts with reply context and apply filters
             this.timeline = filterTimelinePosts(
-              await enrichPostsWithReplyContext(uniqueLastPlace),
+              groupSelfThreads(
+                await enrichPostsWithReplyContext(uniqueLastPlace)
+              ),
               this._filterContext
             );
           }
@@ -1279,7 +1282,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueHome),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueHome)),
           this._filterContext
         );
 
@@ -1306,7 +1309,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniquePub),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniquePub)),
           this._filterContext
         );
 
@@ -1335,7 +1338,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueFed),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueFed)),
           this._filterContext
         );
 
@@ -1362,7 +1365,7 @@ export class Timeline extends LitElement {
 
         // Enrich posts with reply context and apply filters
         this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(uniqueMedia),
+          groupSelfThreads(await enrichPostsWithReplyContext(uniqueMedia)),
           this._filterContext
         );
 
@@ -1429,7 +1432,7 @@ export class Timeline extends LitElement {
 
     // Enrich new posts with reply context and apply filters
     const enrichedNewPosts = filterTimelinePosts(
-      await enrichPostsWithReplyContext(newPosts),
+      groupSelfThreads(await enrichPostsWithReplyContext(newPosts)),
       this._filterContext
     );
 
@@ -1523,7 +1526,9 @@ export class Timeline extends LitElement {
 
       if (newPosts.length > 0) {
         // Enrich new posts with reply context
-        const enrichedNewPosts = await enrichPostsWithReplyContext(newPosts);
+        const enrichedNewPosts = groupSelfThreads(
+          await enrichPostsWithReplyContext(newPosts)
+        );
         this.pendingNewPosts = enrichedNewPosts;
         console.log(`Found ${enrichedNewPosts.length} new posts`);
       } else {

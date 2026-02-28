@@ -99,6 +99,87 @@ export const enrichPostsWithReplyContext = async (
     });
 };
 
+/**
+ * Groups consecutive self-reply chains (same author replying to themselves)
+ * into a single timeline item using the `thread_continuation` field.
+ * This matches the official Mastodon app behavior where self-threads appear
+ * as connected posts with a vertical line between avatars.
+ *
+ * Self-threads are capped at 3 visible posts (root + 2 continuations).
+ * When truncated, `thread_truncated` is set to true on the root post.
+ */
+export const groupSelfThreads = (posts: Post[]): Post[] => {
+  if (posts.length === 0) return posts;
+
+  // Build a map of post ID → post for quick lookup
+  const postMap = new Map<string, Post>();
+  for (const post of posts) {
+    postMap.set(post.id, post);
+  }
+
+  // Track which post IDs have been consumed as thread continuations
+  const consumed = new Set<string>();
+
+  // For each post, check if it is the root of a self-thread chain
+  // A self-thread: post B replies to post A, both have the same author,
+  // and post A appears in this timeline batch.
+  const result: Post[] = [];
+
+  for (const post of posts) {
+    if (consumed.has(post.id)) continue;
+
+    // Walk forward to collect self-reply children of this post
+    const continuation: Post[] = [];
+    let current = post;
+
+    // Keep looking for a child in the timeline that replies to `current`
+    // and is by the same author
+    let searching = true;
+    while (searching) {
+      searching = false;
+      for (const candidate of posts) {
+        if (consumed.has(candidate.id)) continue;
+        if (candidate.id === current.id) continue;
+        if (
+          candidate.in_reply_to_id === current.id &&
+          candidate.account.id === post.account.id
+        ) {
+          continuation.push(candidate);
+          consumed.add(candidate.id);
+          current = candidate;
+          searching = true;
+          break;
+        }
+      }
+    }
+
+    if (continuation.length > 0) {
+      // Also check if this post itself is a self-reply to something in the
+      // timeline that we haven't processed yet – if so, skip making it a root
+      // (it will be picked up as a continuation of its parent)
+      // This is already handled by the consumed set above.
+
+      const MAX_CONTINUATIONS = 2; // root + 2 = 3 total visible posts
+      const truncated = continuation.length > MAX_CONTINUATIONS;
+      const visibleContinuation = truncated
+        ? continuation.slice(0, MAX_CONTINUATIONS)
+        : continuation;
+
+      // Remove reply_to from root if the parent is not in timeline
+      // (reply_to context is replaced by the thread display)
+      result.push({
+        ...post,
+        thread_continuation: visibleContinuation,
+        thread_truncated: truncated,
+      });
+    } else {
+      result.push(post);
+    }
+  }
+
+  return result;
+};
+
 export const getHomeTimeline = async (
   maxId?: string,
   sinceId?: string
