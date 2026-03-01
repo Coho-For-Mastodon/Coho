@@ -38,6 +38,7 @@ import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
 import type { MdToast } from '../components/md/md-toast';
 import type { Timeline } from '../components/timeline';
+import type { Notifications } from '../components/notifications';
 import type { PostDialog } from '../components/post-dialog';
 import type { PwaInstall } from '../components/pwa-install';
 import type { PostDetailDialog } from '../components/post-detail-dialog';
@@ -144,6 +145,7 @@ export class AppHome extends LitElement {
   @query('#error-toast') private errorToast!: MdToast;
   @query('#summary-dialog') private summaryDialog!: MdDialog;
   @query('.homeTimeline') private homeTimeline!: Timeline;
+  @query('app-notifications') private notificationsComponent!: Notifications;
   @query('post-dialog') private postDialog!: PostDialog;
   @query('#install-dialog') private installDialog!: MdDialog;
   @query('pwa-install') private pwaInstall!: PwaInstall;
@@ -683,6 +685,9 @@ export class AppHome extends LitElement {
     if (navigator.clearAppBadge) {
       navigator.clearAppBadge();
     }
+
+    // Check for new notifications when re-selecting the tab
+    this.notificationsComponent?.checkForNewNotifications();
   }
 
   reloadHome() {
