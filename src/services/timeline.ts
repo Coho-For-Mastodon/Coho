@@ -51,14 +51,22 @@ const getToken = () => localStorage.getItem('token') || '';
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
 const getServer = () => localStorage.getItem('server') || 'mastodon.social';
 
-// Pagination state - app-specific
-let lastPageID = '';
+// Pagination state - scoped per timeline type to prevent cross-contamination
+const lastPageIDs = new Map<string, string>();
 let lastPreviewPageID = '';
+
+/** Get the lastPageID for a specific timeline type */
+const getLastPageID = (type = 'home'): string => lastPageIDs.get(type) || '';
+
+/** Set the lastPageID for a specific timeline type */
+const setLastPageID = (type: string, id: string): void => {
+  lastPageIDs.set(type, id);
+};
 let savePlaceRunningFlag = true;
 
 // when the app unloads, call savePlace
 window.addEventListener('beforeunload', async () => {
-  await savePlace(lastPageID);
+  await savePlace(getLastPageID('home'));
 });
 
 setInterval(() => {
@@ -76,8 +84,8 @@ export const savePlace = async (id: string) => {
   try {
     const data = (await mastodonSaveMarker(id)) as MarkerResponse;
     if (data && data.home?.last_read_id) {
-      lastPageID = data.home.last_read_id;
-      console.log('saving place ran', lastPageID);
+      setLastPageID('home', data.home.last_read_id);
+      console.log('saving place ran', data.home.last_read_id);
     }
   } catch (err) {
     console.error('Error saving place:', err);
@@ -191,9 +199,13 @@ export const getTrendingLinks = mastodonGetTrendingLinks;
 export const getTrendingStatuses = mastodonGetTrendingStatuses;
 export const getTrendingTags = mastodonGetTrendingTags;
 
-export const resetLastPageID = (): Promise<void> => {
+export const resetLastPageID = (type?: string): Promise<void> => {
   return new Promise((resolve) => {
-    lastPageID = '';
+    if (type) {
+      lastPageIDs.delete(type);
+    } else {
+      lastPageIDs.clear();
+    }
     resolve();
   });
 };
@@ -215,7 +227,7 @@ export const getLastPlaceTimeline = async (): Promise<Post[] | undefined> => {
     }
 
     if (data.length > 0) {
-      lastPageID = data[data.length - 1].id;
+      setLastPageID('home', data[data.length - 1].id);
     }
 
     return data;
@@ -244,8 +256,8 @@ export const getPaginatedHomeTimeline = async (
     type = 'home';
   }
 
-  // Use provided maxId, fall back to lastPageID, or fetch from beginning
-  const effectiveMaxId = maxId || lastPageID;
+  // Use provided maxId, fall back to lastPageID for this type, or fetch from beginning
+  const effectiveMaxId = maxId || getLastPageID(type);
   const fetchUrl =
     effectiveMaxId && effectiveMaxId.length > 0
       ? `https://${server}/api/v1/timelines/${type}?limit=10&max_id=${effectiveMaxId}`
@@ -268,7 +280,7 @@ export const getPaginatedHomeTimeline = async (
   }
 
   if (data.length > 0) {
-    lastPageID = data[data.length - 1].id;
+    setLastPageID(type, data[data.length - 1].id);
   }
 
   return data;
