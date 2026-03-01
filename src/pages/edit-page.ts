@@ -15,13 +15,6 @@ export class EditPage extends LitElement {
         min-height: 100vh;
         height: 100vh;
         overflow-y: auto;
-        background: var(--md-sys-color-surface, #fef7ff);
-      }
-
-      @media (prefers-color-scheme: dark) {
-        :host {
-          background: var(--md-sys-color-surface, #141218);
-        }
       }
 
       main {

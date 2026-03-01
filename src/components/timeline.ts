@@ -947,7 +947,6 @@ export class Timeline extends LitElement {
     }
 
     if (this._pullDistance >= this._threshold) {
-      this.isRefreshing = true;
       if (indicator) indicator.classList.add('refreshing');
 
       // Reset height to fixed loading height
@@ -962,7 +961,6 @@ export class Timeline extends LitElement {
 
       await this.refreshTimeline(true);
 
-      this.isRefreshing = false;
       if (indicator) {
         indicator.classList.remove('refreshing');
         indicator.style.height = '0px';
@@ -1042,9 +1040,7 @@ export class Timeline extends LitElement {
     } else {
       // No cache, fetch fresh data
       console.log('No cache found, fetching fresh timeline');
-      this.loadingData = true;
       await this.refreshTimeline();
-      this.loadingData = false;
     }
 
     // Setup scroll position tracking for caching
@@ -1092,6 +1088,11 @@ export class Timeline extends LitElement {
       return;
     }
 
+    // Skip all pagination work while a refresh is in flight
+    if (this.isRefreshing) {
+      return;
+    }
+
     const { last } = e;
 
     // Prefetch at 15 items from end (home timeline only, skip if data saver enabled)
@@ -1130,6 +1131,19 @@ export class Timeline extends LitElement {
       return;
     }
 
+    // Guard against concurrent loads during refresh
+    this.isRefreshing = true;
+    this.loadingData = true;
+
+    try {
+      await this._doRefreshTimeline(skipCache);
+    } finally {
+      this.isRefreshing = false;
+      this.loadingData = false;
+    }
+  }
+
+  private async _doRefreshTimeline(skipCache: boolean) {
     // Clear any pending new posts since we're doing a full refresh
     this.pendingNewPosts = [];
 
@@ -1138,7 +1152,7 @@ export class Timeline extends LitElement {
     if (skipCache) {
       sessionStorage.removeItem('latest-read');
       clearTimelineCache(this.timelineType);
-      await resetLastPageID();
+      await resetLastPageID(this.timelineType);
     }
 
     console.log('refreshing timeline', this.timelineType);
@@ -1370,11 +1384,13 @@ export class Timeline extends LitElement {
   }
 
   async loadMore() {
+    // Don't attempt pagination during a refresh or with an empty timeline
+    if (this.isRefreshing || this.timeline.length === 0) {
+      return;
+    }
+
     // Get the last post ID to use for pagination
-    const lastPostId =
-      this.timeline.length > 0
-        ? this.timeline[this.timeline.length - 1].id
-        : undefined;
+    const lastPostId = this.timeline[this.timeline.length - 1].id;
 
     let timelineData: Post[] = [];
     switch (this.timelineType) {

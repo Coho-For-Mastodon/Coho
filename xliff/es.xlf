@@ -910,10 +910,6 @@
   <source>Profile Metadata</source>
   <target>Metadatos del Perfil</target>
 </trans-unit>
-<trans-unit id="s8817c5d4e10d15ad">
-  <source>Add up to 4 custom fields to display on your profile. URLs will be verified for link ownership.</source>
-  <target>Agrega hasta 4 campos personalizados para mostrar en tu perfil. Las URLs serán verificadas para la propiedad del enlace.</target>
-</trans-unit>
 <trans-unit id="s5590dbf7e425789d">
   <source>Label</source>
   <target>Etiqueta</target>
@@ -1794,6 +1790,57 @@
 </trans-unit>
 <trans-unit id="sc6e15730cbfb902c">
   <source>Show thread</source>
+</trans-unit>
+<trans-unit id="s7b160218e24ae4b8">
+  <source>Locked Account</source>
+</trans-unit>
+<trans-unit id="sd35b199162dbbb57">
+  <source>Manually approve who can follow you</source>
+</trans-unit>
+<trans-unit id="sd3758479f6049bd5">
+  <source>Bot Account</source>
+</trans-unit>
+<trans-unit id="sf2778fd73b4a15a7">
+  <source>Mark this account as an automated bot</source>
+</trans-unit>
+<trans-unit id="s46aa6a90ce014902">
+  <source>Discoverable</source>
+</trans-unit>
+<trans-unit id="s7e2754b85c67ce0e">
+  <source>Show profile in directory and recommendations</source>
+</trans-unit>
+<trans-unit id="s4ab860c3356705c7">
+  <source>Hide Follower Counts</source>
+</trans-unit>
+<trans-unit id="s4875a50e88d984e8">
+  <source>Don't show follower and following counts publicly</source>
+</trans-unit>
+<trans-unit id="s50177df820346217">
+  <source>Indexable</source>
+</trans-unit>
+<trans-unit id="s070c6e8aba0fd171">
+  <source>Allow public posts to appear in search results</source>
+</trans-unit>
+<trans-unit id="s7dea482ee13292e4">
+  <source>Default Post Privacy</source>
+</trans-unit>
+<trans-unit id="s1b14e129782d270e">
+  <source>Mentioned Only</source>
+</trans-unit>
+<trans-unit id="s58105151eda13674">
+  <source>Mark media as sensitive by default</source>
+</trans-unit>
+<trans-unit id="s70dbcf49cc261e8e">
+  <source>Default Post Language</source>
+</trans-unit>
+<trans-unit id="s64a08ea7e5de1afa">
+  <source>Account &amp; Privacy</source>
+</trans-unit>
+<trans-unit id="sef8b008b85e8d725">
+  <source>Posting Defaults</source>
+</trans-unit>
+<trans-unit id="sd54d5d1c28c310de">
+  <source>Add up to 4 custom fields to display on your profile.</source>
 </trans-unit>
 </body>
 </file>

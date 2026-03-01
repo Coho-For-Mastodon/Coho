@@ -5,11 +5,7 @@ import { localized, msg } from '@lit/localize';
 
 import './md/md-text-field';
 import './md/md-text-area';
-import './md/md-switch';
 import './md/md-button';
-import './md/md-segmented-button';
-import './md/md-select';
-import './md/md-option';
 import './md/md-skeleton';
 import './md/md-icon';
 import './md/md-icon-button';
@@ -28,25 +24,6 @@ const LIMITS = {
   maxFields: 4,
 };
 
-// Common languages for default post language
-const LANGUAGES = [
-  { code: '', label: 'Default (Server)' },
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' },
-  { code: 'fr', label: 'Français' },
-  { code: 'de', label: 'Deutsch' },
-  { code: 'it', label: 'Italiano' },
-  { code: 'pt', label: 'Português' },
-  { code: 'ja', label: '日本語' },
-  { code: 'zh', label: '中文' },
-  { code: 'ko', label: '한국어' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'ar', label: 'العربية' },
-  { code: 'nl', label: 'Nederlands' },
-  { code: 'pl', label: 'Polski' },
-  { code: 'uk', label: 'Українська' },
-];
-
 interface ProfileField {
   name: string;
   value: string;
@@ -59,7 +36,6 @@ export class EditAccount extends LitElement {
   @state() private loading = true;
   @state() private saving = false;
   @state() private error: string | null = null;
-  @state() private activeSection: 'profile' | 'privacy' | 'posting' = 'profile';
 
   // Form values - Profile
   @state() private displayName = '';
@@ -69,22 +45,6 @@ export class EditAccount extends LitElement {
   @state() private newHeader: File | null = null;
   @state() private avatarPreviewUrl = '';
   @state() private headerPreviewUrl = '';
-
-  // Form values - Privacy
-  @state() private locked = false;
-  @state() private bot = false;
-  @state() private discoverable = true;
-  @state() private hideCollections = false;
-  @state() private indexable = true;
-
-  // Form values - Posting defaults
-  @state() private defaultPrivacy:
-    | 'public'
-    | 'unlisted'
-    | 'private'
-    | 'direct' = 'public';
-  @state() private defaultSensitive = false;
-  @state() private defaultLanguage = '';
 
   static styles = css`
     :host {
@@ -135,19 +95,6 @@ export class EditAccount extends LitElement {
     .error-message {
       color: var(--md-sys-color-error, #ba1a1a);
       margin-bottom: 16px;
-    }
-
-    /* Segmented button */
-    md-segmented-button {
-      margin-bottom: 20px;
-    }
-
-    .section-content {
-      display: none;
-    }
-
-    .section-content.active {
-      display: block;
     }
 
     /* Form sections */
@@ -317,46 +264,6 @@ export class EditAccount extends LitElement {
       align-self: flex-start;
     }
 
-    /* Toggle options */
-    .toggle-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant, #cac4d0);
-    }
-
-    .toggle-row:last-child {
-      border-bottom: none;
-    }
-
-    .toggle-info {
-      flex: 1;
-      margin-right: 16px;
-    }
-
-    .toggle-label {
-      font-size: 16px;
-      color: var(--md-sys-color-on-surface, #1d1b20);
-    }
-
-    .toggle-description {
-      font-size: 13px;
-      color: var(--md-sys-color-on-surface-variant, #49454f);
-      margin-top: 2px;
-    }
-
-    /* Select inputs */
-    .select-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    md-select {
-      width: 100%;
-    }
-
     /* Actions - sticky bottom bar */
     .actions {
       position: fixed;
@@ -447,18 +354,6 @@ export class EditAccount extends LitElement {
           name: f.name,
           value: f.value,
         })) || [];
-
-      // Privacy settings
-      this.locked = credentials.locked || false;
-      this.bot = credentials.bot || false;
-      this.discoverable = credentials.discoverable ?? true;
-      this.hideCollections = credentials.hide_collections ?? false;
-      this.indexable = credentials.indexable ?? true;
-
-      // Posting defaults
-      this.defaultPrivacy = credentials.source?.privacy || 'public';
-      this.defaultSensitive = credentials.source?.sensitive || false;
-      this.defaultLanguage = credentials.source?.language || '';
     } catch (err) {
       console.error('[EditAccount] Failed to load credentials:', err);
       this.error =
@@ -527,17 +422,7 @@ export class EditAccount extends LitElement {
         note: this.bio,
         avatar: this.newAvatar || undefined,
         header: this.newHeader || undefined,
-        locked: this.locked,
-        bot: this.bot,
-        discoverable: this.discoverable,
-        hide_collections: this.hideCollections,
-        indexable: this.indexable,
         fields_attributes: this.fields.filter((f) => f.name || f.value),
-        source: {
-          privacy: this.defaultPrivacy,
-          sensitive: this.defaultSensitive,
-          language: this.defaultLanguage || undefined,
-        },
       });
 
       // Show success toast
@@ -598,7 +483,6 @@ export class EditAccount extends LitElement {
 
   private renderProfileTab() {
     const displayNameCount = this.displayName.length;
-    const bioCount = this.bio.length;
 
     return html`
       <div class="form-section">
@@ -673,14 +557,6 @@ export class EditAccount extends LitElement {
             ></md-text-area>
             <div class="input-helper">
               <span>${msg('Supports Markdown and custom emoji')}</span>
-              <span
-                class=${classMap({
-                  'char-count': true,
-                  'warning': bioCount > LIMITS.bio - 50,
-                })}
-              >
-                ${bioCount}/${LIMITS.bio}
-              </span>
             </div>
           </div>
         </div>
@@ -691,9 +567,7 @@ export class EditAccount extends LitElement {
           <p
             style="font-size: 13px; color: var(--md-sys-color-on-surface-variant); margin: 0;"
           >
-            ${msg(
-              'Add up to 4 custom fields to display on your profile. URLs will be verified for link ownership.'
-            )}
+            ${msg('Add up to 4 custom fields to display on your profile.')}
           </p>
 
           <div class="fields-container">
@@ -746,144 +620,6 @@ export class EditAccount extends LitElement {
     `;
   }
 
-  private renderPrivacyTab() {
-    return html`
-      <div class="form-section">
-        <div class="section-card">
-          <span class="section-title">Account Settings</span>
-
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <div class="toggle-label">Locked Account</div>
-              <div class="toggle-description">
-                Manually approve who can follow you
-              </div>
-            </div>
-            <md-switch
-              .checked=${this.locked}
-              @change=${(e: Event) =>
-                (this.locked = (e.target as HTMLInputElement).checked)}
-            ></md-switch>
-          </div>
-
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <div class="toggle-label">Bot Account</div>
-              <div class="toggle-description">
-                Mark this account as an automated bot
-              </div>
-            </div>
-            <md-switch
-              .checked=${this.bot}
-              @change=${(e: Event) =>
-                (this.bot = (e.target as HTMLInputElement).checked)}
-            ></md-switch>
-          </div>
-        </div>
-
-        <div class="section-card">
-          <span class="section-title">Discovery</span>
-
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <div class="toggle-label">Discoverable</div>
-              <div class="toggle-description">
-                Show profile in directory and recommendations
-              </div>
-            </div>
-            <md-switch
-              .checked=${this.discoverable}
-              @change=${(e: Event) =>
-                (this.discoverable = (e.target as HTMLInputElement).checked)}
-            ></md-switch>
-          </div>
-
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <div class="toggle-label">Hide Follower Counts</div>
-              <div class="toggle-description">
-                Don't show follower and following counts publicly
-              </div>
-            </div>
-            <md-switch
-              .checked=${this.hideCollections}
-              @change=${(e: Event) =>
-                (this.hideCollections = (e.target as HTMLInputElement).checked)}
-            ></md-switch>
-          </div>
-
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <div class="toggle-label">Indexable</div>
-              <div class="toggle-description">
-                Allow public posts to appear in search results
-              </div>
-            </div>
-            <md-switch
-              .checked=${this.indexable}
-              @change=${(e: Event) =>
-                (this.indexable = (e.target as HTMLInputElement).checked)}
-            ></md-switch>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderPostingTab() {
-    return html`
-      <div class="form-section">
-        <div class="section-card">
-          <span class="section-title">Posting Defaults</span>
-
-          <div class="select-group">
-            <label class="input-label">Default Post Privacy</label>
-            <md-select
-              .value=${this.defaultPrivacy}
-              @change=${(e: CustomEvent) =>
-                (this.defaultPrivacy = e.detail.value)}
-            >
-              <md-option value="public">Public</md-option>
-              <md-option value="unlisted">Unlisted</md-option>
-              <md-option value="private">Followers Only</md-option>
-              <md-option value="direct">Mentioned Only</md-option>
-            </md-select>
-          </div>
-
-          <div class="toggle-row">
-            <div class="toggle-info">
-              <div class="toggle-label">Sensitive Content</div>
-              <div class="toggle-description">
-                Mark media as sensitive by default
-              </div>
-            </div>
-            <md-switch
-              .checked=${this.defaultSensitive}
-              @change=${(e: Event) =>
-                (this.defaultSensitive = (
-                  e.target as HTMLInputElement
-                ).checked)}
-            ></md-switch>
-          </div>
-
-          <div class="select-group">
-            <label class="input-label">Default Post Language</label>
-            <md-select
-              .value=${this.defaultLanguage}
-              @change=${(e: CustomEvent) =>
-                (this.defaultLanguage = e.detail.value)}
-            >
-              ${LANGUAGES.map(
-                (lang) =>
-                  html`<md-option value=${lang.code}>${lang.label}</md-option>`
-              )}
-            </md-select>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   render() {
     if (this.loading) {
       return this.renderLoading();
@@ -895,37 +631,7 @@ export class EditAccount extends LitElement {
 
     return html`
       <div class="container">
-        <md-segmented-button
-          .value=${this.activeSection}
-          @segment-change=${(e: CustomEvent) =>
-            (this.activeSection = e.detail.value)}
-        >
-          <md-segment value="profile">Profile</md-segment>
-          <md-segment value="privacy">Privacy</md-segment>
-          <md-segment value="posting">Posting</md-segment>
-        </md-segmented-button>
-
-        <div
-          class="section-content ${this.activeSection === 'profile'
-            ? 'active'
-            : ''}"
-        >
-          ${this.renderProfileTab()}
-        </div>
-        <div
-          class="section-content ${this.activeSection === 'privacy'
-            ? 'active'
-            : ''}"
-        >
-          ${this.renderPrivacyTab()}
-        </div>
-        <div
-          class="section-content ${this.activeSection === 'posting'
-            ? 'active'
-            : ''}"
-        >
-          ${this.renderPostingTab()}
-        </div>
+        ${this.renderProfileTab()}
 
         <div class="actions">
           <md-button variant="text" @click=${() => router.navigate('/home')}>

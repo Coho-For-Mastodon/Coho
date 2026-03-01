@@ -38,6 +38,7 @@ export class Notifications extends LitElement {
   @state() loadingFollowMap: Map<string, boolean> = new Map();
   @state() loadingMore: boolean = false;
   @state() hasMoreNotifications: boolean = true;
+  @state() private isCheckingForNew: boolean = false;
 
   private _observer: IntersectionObserver | null = null;
   private _loadObserver: IntersectionObserver | null = null;
@@ -756,6 +757,49 @@ export class Notifications extends LitElement {
       console.error('Failed to load more notifications:', err);
     } finally {
       this.loadingMore = false;
+    }
+  }
+
+  /**
+   * Check for new notifications and prepend any that are newer than the current first.
+   * Called by app-home when the notifications tab is re-selected.
+   */
+  async checkForNewNotifications(): Promise<void> {
+    if (this.isCheckingForNew || this.notifications.length === 0) {
+      return;
+    }
+
+    this.isCheckingForNew = true;
+
+    try {
+      const { getNotifications } = await import('../services/notifications');
+      const freshNotifications = await getNotifications();
+
+      if (freshNotifications.length === 0) {
+        return;
+      }
+
+      const currentFirstId = this.notifications[0]?.id;
+      if (!currentFirstId) {
+        return;
+      }
+
+      // Mastodon IDs are Snowflake-like; lexicographic comparison works for ordering
+      const existingIds = new Set(this.notifications.map((n) => n.id));
+      const newNotifications = freshNotifications.filter(
+        (n) => n.id > currentFirstId && !existingIds.has(n.id)
+      );
+
+      if (newNotifications.length > 0) {
+        this.notifications = [...newNotifications, ...this.notifications];
+        // Check follow statuses for any new follow notifications
+        await this.checkFollowStatuses();
+      }
+    } catch (error) {
+      // Silently fail — user still has cached content
+      console.error('Background check for new notifications failed:', error);
+    } finally {
+      this.isCheckingForNew = false;
     }
   }
 

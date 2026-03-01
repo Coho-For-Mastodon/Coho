@@ -32,7 +32,7 @@ export class SearchPage extends LitElement {
   @state() trending: Post[] | undefined;
   @state() trendingLinks: TrendingLink[] | undefined;
   @state() suggestions: Suggestion[] | undefined;
-  @state() activeSegment: string = 'for-you';
+  @state() activeSegment: string = 'trending';
   @state() private trendingLoading = false;
   @state() private newsLoading = false;
   @state() private suggestionsLoading = false;
@@ -890,10 +890,10 @@ export class SearchPage extends LitElement {
           .value="${this.activeSegment}"
           @segment-change="${this.handleSegmentChange}"
         >
+          <md-segment value="trending">${msg('Trending')}</md-segment>
           <md-segment value="for-you">${msg('Accounts')}</md-segment>
           <md-segment value="statuses">${msg('Posts')}</md-segment>
           <md-segment value="hashtags">${msg('Hashtags')}</md-segment>
-          <md-segment value="trending">${msg('Trending')}</md-segment>
           <md-segment value="news">${msg('News')}</md-segment>
         </md-segmented-button>
 
