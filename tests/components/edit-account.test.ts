@@ -71,13 +71,6 @@ describe('edit-account', () => {
     expect((el as any).bio).toBe('Hello world');
     expect((el as any).avatarPreviewUrl).toBe('/assets/avatar.png');
     expect((el as any).headerPreviewUrl).toBe('/assets/header.png');
-    expect((el as any).locked).toBe(true);
-    expect((el as any).discoverable).toBe(false);
-    expect((el as any).hideCollections).toBe(true);
-    expect((el as any).indexable).toBe(false);
-    expect((el as any).defaultPrivacy).toBe('unlisted');
-    expect((el as any).defaultSensitive).toBe(true);
-    expect((el as any).defaultLanguage).toBe('en');
     expect((el as any).fields.length).toBe(2);
   });
 
@@ -108,9 +101,6 @@ describe('edit-account', () => {
     (el as any).displayName = 'Updated';
     (el as any).bio = 'Bio';
     (el as any).fields = [{ name: 'Site', value: 'https://coho.app' }];
-    (el as any).defaultPrivacy = 'public';
-    (el as any).defaultSensitive = false;
-    (el as any).defaultLanguage = '';
 
     const toast = el.shadowRoot?.querySelector('md-toast') as
       | (HTMLElement & { show: () => void })
@@ -126,11 +116,6 @@ describe('edit-account', () => {
         display_name: 'Updated',
         note: 'Bio',
         fields_attributes: [{ name: 'Site', value: 'https://coho.app' }],
-        source: {
-          privacy: 'public',
-          sensitive: false,
-          language: undefined,
-        },
       })
     );
 
