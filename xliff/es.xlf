@@ -911,8 +911,8 @@
   <target>Metadatos del Perfil</target>
 </trans-unit>
 <trans-unit id="s8817c5d4e10d15ad">
-  <source>Add up to 4 custom fields to display on your profile. URLs will be verified for link ownership.</source>
-  <target>Agrega hasta 4 campos personalizados para mostrar en tu perfil. Las URLs serán verificadas para la propiedad del enlace.</target>
+  <source>Add up to 4 custom fields to display on your profile.</source>
+  <target>Agrega hasta 4 campos personalizados para mostrar en tu perfil.</target>
 </trans-unit>
 <trans-unit id="s5590dbf7e425789d">
   <source>Label</source>

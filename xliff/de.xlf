@@ -843,8 +843,8 @@
   <target>Profil-Metadaten</target>
 </trans-unit>
 <trans-unit id="s8817c5d4e10d15ad">
-  <source>Add up to 4 custom fields to display on your profile. URLs will be verified for link ownership.</source>
-  <target>Füge bis zu 4 benutzerdefinierte Felder hinzu, die in deinem Profil angezeigt werden. URLs werden auf Link-Eigentum überprüft.</target>
+  <source>Add up to 4 custom fields to display on your profile.</source>
+  <target>Füge bis zu 4 benutzerdefinierte Felder hinzu, die in deinem Profil angezeigt werden.</target>
 </trans-unit>
 <trans-unit id="s5590dbf7e425789d">
   <source>Label</source>

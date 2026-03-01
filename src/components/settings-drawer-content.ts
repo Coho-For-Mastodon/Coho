@@ -14,6 +14,7 @@ import './md/md-menu-item';
 import './md/md-button';
 import './md/md-card';
 import './md/md-divider';
+import './account-settings';
 
 import type { Account } from '../mastodon/types/account';
 import type { Instance } from '../mastodon/types/instance';
@@ -358,6 +359,9 @@ export class SettingsDrawerContent extends LitElement {
             ${msg('Data Saver Mode reduces the amount of data used by Coho.')}
           </p>
         </md-card>
+
+        <!-- Account & Privacy / Posting Defaults -->
+        <account-settings></account-settings>
 
         <!-- Theme Card -->
         ${this.appThemeLoaded
