@@ -275,8 +275,15 @@ export class MdAudioPlayer extends LitElement {
         this.dispatchEvent(
           new Event('play', { bubbles: true, composed: true })
         );
-      } catch {
+      } catch (err) {
         // Play was prevented (e.g., autoplay policy)
+        this.dispatchEvent(
+          new CustomEvent('error', {
+            bubbles: true,
+            composed: true,
+            detail: { error: err },
+          })
+        );
       }
     }
   }
