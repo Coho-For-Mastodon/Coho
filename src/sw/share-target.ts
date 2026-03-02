@@ -16,7 +16,7 @@ export async function shareTargetHandler(event: FetchEvent): Promise<Response> {
   try {
     const formData = await event.request.formData();
     const mediaFiles = formData.getAll('image') as File[];
-    const cache = await caches.open('shareTarget');
+    const cache = await caches.open(CACHE_NAMES.share);
 
     console.log('[SW] Share target received', mediaFiles.length, 'files');
 
