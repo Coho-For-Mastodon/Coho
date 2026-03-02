@@ -25,28 +25,27 @@ export async function shareTargetHandler(event: FetchEvent): Promise<Response> {
       return Response.redirect('/home', 303);
     }
 
-    for (const mediaFile of mediaFiles) {
-      const cacheKey = `/_share/${encodeURIComponent(mediaFile.name)}`;
-      console.log(
-        '[SW] Caching file with key:',
-        cacheKey,
-        'size:',
-        mediaFile.size,
-        'type:',
-        mediaFile.type
-      );
-      await cache.put(
-        cacheKey,
-        new Response(mediaFile, {
-          headers: {
-            'content-length': mediaFile.size.toString(),
-            'content-type': mediaFile.type,
-          },
-        })
-      );
-    }
+    const firstMediaFile = mediaFiles[0];
+    const cacheKey = `/_share/${encodeURIComponent(firstMediaFile.name)}`;
+    console.log(
+      '[SW] Caching file with key:',
+      cacheKey,
+      'size:',
+      firstMediaFile.size,
+      'type:',
+      firstMediaFile.type
+    );
+    await cache.put(
+      cacheKey,
+      new Response(firstMediaFile, {
+        headers: {
+          'content-length': firstMediaFile.size.toString(),
+          'content-type': firstMediaFile.type,
+        },
+      })
+    );
 
-    const redirectUrl = `/home?name=${encodeURIComponent(mediaFiles[0].name)}`;
+    const redirectUrl = `/home?name=${encodeURIComponent(firstMediaFile.name)}`;
     console.log('[SW] Redirecting to:', redirectUrl);
     return Response.redirect(redirectUrl, 303);
   } catch (error) {
