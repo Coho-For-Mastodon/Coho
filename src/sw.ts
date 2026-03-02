@@ -10,6 +10,7 @@
  */
 
 import { get, set } from 'idb-keyval';
+import { evaluateCacheResponse } from './utils/sw-cache-policy';
 
 declare const __APP_VERSION__: string;
 const VERSION = __APP_VERSION__;
@@ -122,13 +123,23 @@ self.addEventListener('message', (event) => {
  */
 async function safeCachePut(
   cache: Cache,
-  request: Request,
+  request: RequestInfo,
   response: Response
 ): Promise<void> {
   try {
     await cache.put(request, response);
   } catch (err) {
     console.warn('[SW] cache.put() failed (likely a broken body stream):', err);
+  }
+}
+
+function warnCacheSkip(request: Request, reason: string): void {
+  if (request.destination === 'script' || request.destination === 'style') {
+    console.warn(
+      '[SW][CACHE_GUARD] Skipping cache write:',
+      reason,
+      request.url
+    );
   }
 }
 
@@ -139,8 +150,11 @@ async function networkFirst(
   const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
-    if (shouldCacheResponse(response)) {
+    const cacheDecision = evaluateCacheResponse(request, response);
+    if (cacheDecision.shouldCache) {
       safeCachePut(cache, request, response.clone());
+    } else if (cacheDecision.reason) {
+      warnCacheSkip(request, cacheDecision.reason);
     }
     return response;
   } catch (error) {
@@ -165,18 +179,13 @@ async function cacheFirst(
     return cachedResponse;
   }
   const response = await fetch(request);
-  if (shouldCacheResponse(response)) {
+  const cacheDecision = evaluateCacheResponse(request, response);
+  if (cacheDecision.shouldCache) {
     safeCachePut(cache, request, response.clone());
+  } else if (cacheDecision.reason) {
+    warnCacheSkip(request, cacheDecision.reason);
   }
   return response;
-}
-
-function shouldCacheResponse(response: Response): boolean {
-  // Never cache explicit error responses
-  if (response.type === 'error') return false;
-  // Cross-origin <img> requests are often opaque (status 0), but still safe
-  // to cache for offline/performance use-cases.
-  return response.ok || response.type === 'opaque';
 }
 
 // ============================================================================
@@ -382,46 +391,32 @@ self.addEventListener('sync', (event: Event) => {
 });
 
 // Special handler for navigation to support SPA
-// Uses stale-while-revalidate: serve cached app shell instantly, update in background
+// Uses network-first to minimize stale app-shell/chunk mismatches after deploys.
+// Falls back to cached shell when offline.
 async function navigationHandler(request: Request): Promise<Response> {
+  const APP_SHELL_PATH = '/index.html';
   const cache = await caches.open(CACHE_NAMES.pages);
 
-  // Try to get cached response first (for instant loading)
-  const cachedResponse = await cache.match(request);
-  const cachedIndex = await cache.match('/index.html');
-
-  // Start network fetch in parallel (don't await yet)
-  const networkPromise = fetch(request)
-    .then(async (response) => {
-      if (response.ok) {
-        // Update cache in background
-        await safeCachePut(cache, request, response.clone());
-      }
-      return response;
-    })
-    .catch(() => null);
-
-  // If we have a cached response, return it immediately
-  // The network fetch continues in the background to update the cache
-  if (cachedResponse) {
-    // Fire and forget - update cache for next visit
-    void networkPromise;
-    return cachedResponse;
-  }
-
-  // If we have cached index.html (SPA fallback), return it
-  if (cachedIndex) {
-    void networkPromise;
-    return cachedIndex;
-  }
-
-  // No cache available - must wait for network
-  const networkResponse = await networkPromise;
-  if (networkResponse) {
+  // App shell is stored under one cache key to avoid stale per-route HTML.
+  const cachedIndex = await cache.match(APP_SHELL_PATH);
+  try {
+    const networkResponse = await fetch(APP_SHELL_PATH, { cache: 'no-cache' });
+    if (networkResponse.ok) {
+      await safeCachePut(cache, APP_SHELL_PATH, networkResponse.clone());
+    }
     return networkResponse;
+  } catch {
+    // Offline / transient fetch failure; fall back to cache below.
   }
 
-  // If everything fails
+  if (cachedIndex) return cachedIndex;
+
+  // Final fallback: try the original navigation request.
+  try {
+    return await fetch(request);
+  } catch {
+    // If everything fails
+  }
   return new Response('Offline', { status: 503, statusText: 'Offline' });
 }
 
