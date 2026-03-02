@@ -25,6 +25,14 @@ export async function timelineSync(): Promise<void> {
     }
   );
 
+  if (!timelineResponse.ok) {
+    console.error(
+      '[periodic-sync] timelineSync failed',
+      timelineResponse.status,
+      timelineResponse.statusText
+    );
+    return;
+  }
   const data = await timelineResponse.json();
   await set('timeline-cache', data);
 }
