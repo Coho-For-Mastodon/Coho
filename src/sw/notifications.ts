@@ -40,9 +40,20 @@ export async function getNotifications(): Promise<void> {
     headers,
   });
 
-  const data = (await notifyResponse.json()) as NotificationData[];
-  if (data.length === 0) return;
+  // Only attempt to parse JSON on successful responses.
+  if (!notifyResponse.ok) {
+    // If we are being rate limited, return gracefully so periodic checks continue.
+    if (notifyResponse.status === 429) {
+      // TODO: implement backoff strategy if needed.
+    }
+    return;
+  }
 
+  const raw = await notifyResponse.json().catch(() => null);
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return;
+  }
+  const data = raw as NotificationData[];
   if ('setAppBadge' in navigator) {
     badgingNavigator.setAppBadge?.(data.length);
   }
