@@ -104,7 +104,7 @@ export async function cacheFirst(
   const response = await fetch(request);
   const cacheDecision = evaluateCacheResponse(request, response);
   if (cacheDecision.shouldCache) {
-    safeCachePut(cache, request, response.clone());
+    await safeCachePut(cache, request, response.clone());
   } else if (cacheDecision.reason) {
     warnCacheSkip(request, cacheDecision.reason);
   }
