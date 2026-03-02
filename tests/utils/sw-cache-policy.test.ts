@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateCacheResponse } from '../../src/utils/sw-cache-policy';
+import { evaluateCacheResponse } from '../../src/sw/cache-policy';
 
 describe('sw-cache-policy', () => {
   it('does not cache HTML response for script requests', () => {
