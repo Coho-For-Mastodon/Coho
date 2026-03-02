@@ -1,92 +1,68 @@
 <div align="center">
   <img src="/public/assets/icons/new-icons/icon-256x256.png" alt="Coho" width="128" height="128" />
 
-# Coho <sup>beta</sup>
+# Coho
 
-A fast, offline-first Mastodon client.
+A fast, offline-first Mastodon client built as a progressive web app.
 
-[**Try the App**](https://coho.place)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+
+[**Try the App**](https://coho.place) · [**Wiki**](https://github.com/jgw96/Coho/wiki)
 
   <img src="/public/assets/new-header-graphic.png" alt="Coho For Mastodon" />
 </div>
-
-## Why Coho?
-
-[Check our Wiki for more](https://github.com/jgw96/Coho/wiki)
-
-### Performance
-
-Coho is built for speed. No matter what device you're on or how spotty your network connection is, the app stays fast and responsive. We leverage the best of the modern web platform to deliver a native-quality experience.
-
-### Simple & Intuitive
-
-A clean, focused interface that keeps what matters front and center. No clutter, no confusion—just Mastodon done right with thoughtful UX and the latest in Material Design.
-
-### Best-in-Class Offline Support
-
-This is where Coho shines. While you're online, we keep a fresh cache of your timeline on your device. When you go offline, you can still:
-
-- Scroll through your timeline
-- Like and boost posts
-- Create new posts
-- Everything syncs automatically when you're back online
-
-No other Mastodon client handles offline as well as Coho.
 
 ## Features
 
 ### Offline First
 
-Your timeline is cached locally so you can browse even without connectivity. Actions like likes and new posts queue up and sync seamlessly when you reconnect.
+Your timeline is cached locally so you can browse without connectivity. Likes, boosts, and new posts queue up and sync seamlessly when you reconnect. No other Mastodon client handles offline as well as Coho.
 
-### Seamless Mentions & Hashtags
+### On-Device AI
 
-Stay in Coho when you tap `@mentions` or `#hashtags`—we route to the right profile or tag without bouncing you to a remote server where you then have to log in again etc.
+Fast, private, and no server required — these features run entirely on your device:
 
-### Smart Features, Powered On-Device
-
-Fast, private, and no server required—these features run entirely on your device:
-
-- **Instant translations** — Translate posts without waiting for server round-trips
-- **Auto-generated alt text** — Images missing alt text get descriptions generated automatically
-- **Alt text assistance** — Generate alt text for your own images before posting
+- **Instant translations** — Translate posts without server round-trips
+- **Auto-generated alt text** — Images missing alt text get descriptions automatically
+- **Alt text assistance** — Generate alt text for your images before posting
 - **Voice input** — Compose posts by speaking
-- **Handwriting input** — Write posts with your handwriting, converted to text instantly
+- **Handwriting input** — Write posts with your handwriting, converted to text
 
-### Cross Platform PWA
+### Seamless Navigation
 
-Install Coho on any device—iOS, Android, Windows, macOS, or Linux. It's a progressive web app with full offline support.
+Stay in Coho when you tap `@mentions` or `#hashtags` — we route to the right profile or tag without bouncing you to a remote server.
+
+### Cross Platform
+
+Install Coho on any device — iOS, Android, Windows, macOS, or Linux. It's a PWA with full offline support.
 
 ### Theming
 
-Choose your theme color! Coho also supports light and dark mode.
+Choose your accent color and switch between light and dark mode.
 
 ### Wellness Mode
 
-Take control of your digital well-being by hiding likes, boost counts, and other metrics for a calmer experience.
-
-# Technical
-
-## AI Use Disclaimer
-
-Artificial Intelligence (AI) was employed in the development of this application. AI, primarily the Claude models, contributed to the cleanup process, including the de-duplication of CSS, code reviews, and assistance with certain feature development. While all code undergoes human review (by myself, Justin), some of the code was authored by AI.
-
-## Intro
-
-See [WHY_COHO.md](docs/WHY_COHO.md).
+Hide likes, boost counts, and other metrics for a calmer experience.
 
 ## Getting Started
 
-See [GETTING_STARTED.md](docs/GETTING_STARTED.md).
-
-## Technical Architecture
-
-See [TECHNICAL_ARCHITECTURE.md](docs/TECHNICAL_ARCHITECTURE.md).
+See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for setup instructions.
 
 ## Contributing
 
-Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-# License
+## Technical
 
-This project is licensed under the GNU General Public License v2.0
+- [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)
+- [Why Coho?](docs/WHY_COHO.md)
+
+<details>
+<summary>AI Use Disclaimer</summary>
+
+AI (primarily Claude) was used during development for tasks like CSS cleanup, code reviews, and assistance with certain features. All code undergoes human review.
+</details>
+
+## License
+
+This project is licensed under the [GNU General Public License v2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html).
