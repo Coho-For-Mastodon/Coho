@@ -52,16 +52,39 @@ export class AppIndex extends LitElement {
     `;
   }
 
-  connectedCallback() {
+  private readonly _onRouteChanged = () => this.requestUpdate();
+
+  async connectedCallback() {
     super.connectedCallback();
 
+    // Register route-changed listener BEFORE router.init() to avoid missing the
+    // initial route-changed event in browsers with native Navigation API + URLPattern
+    // support (where init() completes synchronously before firstUpdated() runs).
+    router.addEventListener('route-changed', this._onRouteChanged);
+
+    // Load polyfills for browsers without native Navigation API / URLPattern
+    if (!('navigation' in window)) {
+      await import('@virtualstate/navigation');
+    }
+    if (typeof URLPattern === 'undefined') {
+      await import('urlpattern-polyfill');
+    }
+
     // Initialize router (loads initial route's lazy imports)
-    router.init();
+    await router.init();
+
+    // Ensure the initial route renders after init completes
+    this.requestUpdate();
 
     // Defer PWA update component - not needed immediately, loads on browser idle
     requestIdleCallback(() => import('./components/pwa-update'), {
       timeout: 5000,
     });
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    router.removeEventListener('route-changed', this._onRouteChanged);
   }
 
   async handleInitTheme() {
@@ -110,10 +133,6 @@ export class AppIndex extends LitElement {
       // Lazy-load shortcuts help dialog on first show-shortcuts-help event
       this.initLazyShortcutsHelp();
     }
-
-    router.addEventListener('route-changed', () => {
-      this.requestUpdate();
-    });
   }
 
   /**

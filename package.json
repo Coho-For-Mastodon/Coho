@@ -53,7 +53,8 @@
     "idb-keyval": "^6.2.0",
     "lit": "^3.3.2",
     "marked": "^17.0.1",
-    "urlpattern-polyfill": "^10.1.0"
+    "urlpattern-polyfill": "^10.1.0",
+    "web-router": "^0.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
