@@ -6,6 +6,8 @@
  * and the app redirects to /home with the file info.
  */
 
+import { CACHE_NAMES } from './constants';
+
 /**
  * Handle a share target POST request. Caches shared media files
  * and redirects to the compose view.
