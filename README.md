@@ -9,7 +9,7 @@ A fast, offline-first Mastodon client built as a progressive web app.
 
 [**Try the App**](https://coho.place) · [**Wiki**](https://github.com/jgw96/Coho/wiki)
 
-  <img src="/public/assets/new-header-graphic.png" alt="Coho For Mastodon" />
+  <img src="/public/assets/screenshots/desktop-dark.png" alt="Coho For Mastodon" />
 </div>
 
 ## Features
@@ -61,6 +61,7 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 <summary>AI Use Disclaimer</summary>
 
 AI (primarily Claude) was used during development for tasks like CSS cleanup, code reviews, and assistance with certain features. All code undergoes human review.
+
 </details>
 
 ## License

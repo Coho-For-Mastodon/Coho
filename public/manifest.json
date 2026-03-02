@@ -89,68 +89,56 @@
   ],
   "screenshots": [
     {
-      "src": "assets/screenshots/mobile/fast-reliable.png",
-      "sizes": "1376x3072",
-      "type": "image/png",
-      "form_factor": "narrow"
-    },
-    {
-      "src": "assets/screenshots/mobile/open-source.png",
-      "sizes": "1376x3072",
-      "type": "image/png",
-      "form_factor": "narrow"
-    },
-    {
-      "src": "assets/screenshots/mobile/home-mobile-dark.png",
+      "src": "assets/screenshots/mobile-home-dark.png",
       "sizes": "1082x2402",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "assets/screenshots/mobile/home-mobile-light.png",
+      "src": "assets/screenshots/mobile-home-light.png",
       "sizes": "1082x2402",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "assets/screenshots/mobile/theme-mobile-light.png",
+      "src": "assets/screenshots/mobile-explore-dark.png",
       "sizes": "1082x2402",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "assets/screenshots/mobile/trending-mobile-dark.png",
+      "src": "assets/screenshots/mobile-profile-dark.png",
       "sizes": "1082x2402",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "assets/screenshots/desktop/cross-platform.png",
-      "sizes": "2528x1696",
+      "src": "assets/screenshots/desktop-dark.png",
+      "sizes": "2370x1674",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "assets/screenshots/desktop/home-desktop-dark.png",
-      "sizes": "2736x1824",
+      "src": "assets/screenshots/desktop-light.png",
+      "sizes": "2324x1680",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "assets/screenshots/desktop/home-desktop-light.png",
-      "sizes": "2736x1824",
+      "src": "assets/screenshots/explore-dark.png",
+      "sizes": "2370x1674",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "assets/screenshots/desktop/theme-desktop-dark.png",
-      "sizes": "2736x1824",
+      "src": "assets/screenshots/posting-dark.png",
+      "sizes": "2370x1674",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "assets/screenshots/desktop/trending-desktop-dark.png",
-      "sizes": "2736x1824",
+      "src": "assets/screenshots/profile-dark.png",
+      "sizes": "2370x1674",
       "type": "image/png",
       "form_factor": "wide"
     }
