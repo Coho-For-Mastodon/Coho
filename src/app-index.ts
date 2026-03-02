@@ -52,11 +52,19 @@ export class AppIndex extends LitElement {
     `;
   }
 
-  connectedCallback() {
+  async connectedCallback() {
     super.connectedCallback();
 
+    // Load polyfills for browsers without native Navigation API / URLPattern
+    if (!('navigation' in window)) {
+      await import('@virtualstate/navigation');
+    }
+    if (typeof URLPattern === 'undefined') {
+      await import('urlpattern-polyfill');
+    }
+
     // Initialize router (loads initial route's lazy imports)
-    router.init();
+    await router.init();
 
     // Defer PWA update component - not needed immediately, loads on browser idle
     requestIdleCallback(() => import('./components/pwa-update'), {

@@ -1,10 +1,6 @@
 import { html } from 'lit';
-import {
-  lazy,
-  type Route,
-  type NavigationState,
-  Router,
-} from './nav-router.js';
+import { type Route, type NavigationState, Router, lazy } from 'web-router';
+import type { TemplateResult } from 'lit';
 import type { Post } from '../interfaces/Post.js';
 import type { Account, Conversation } from '../mastodon/types/index.js';
 
@@ -22,11 +18,10 @@ export interface AppNavigationState extends NavigationState {
 /**
  * Route configuration for the application
  */
-const routes: Route[] = [
+const routes: Route<TemplateResult>[] = [
   {
     path: '/',
     title: 'login',
-    skipViewTransition: true,
     render: () => html`<app-login></app-login>`,
   },
   {
@@ -155,4 +150,4 @@ const routes: Route[] = [
  * Router instance using the Navigation API
  * https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API
  */
-export const router = new Router({ routes });
+export const router = new Router<TemplateResult>({ routes });
