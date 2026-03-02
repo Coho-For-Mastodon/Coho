@@ -83,7 +83,7 @@ export async function queueRequest(
   }
 
   const queuedRequest: QueuedRequest = {
-    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
     url: request.url,
     method: request.method,
     headers,
