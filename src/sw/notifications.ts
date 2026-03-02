@@ -44,7 +44,7 @@ export async function getNotifications(): Promise<void> {
   if (!notifyResponse.ok) {
     // If we are being rate limited, return gracefully so periodic checks continue.
     if (notifyResponse.status === 429) {
-      // TODO: implement backoff strategy if needed.
+      console.warn('Rate limited when fetching notifications');
     }
     return;
   }
