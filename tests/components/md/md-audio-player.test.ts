@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   fixture,
   html,
-  elementUpdated,
   cleanupFixtures,
 } from '../../test-utils';
 import '../../../src/components/md/md-audio-player';
