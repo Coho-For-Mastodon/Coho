@@ -210,7 +210,7 @@ describe('md-audio-player', () => {
       expect(playButton.getAttribute('aria-label')).toBe('Play');
     });
 
-    it('dispatches error event when play() rejects', async () => {
+    it('dispatches md-audio-player-error event when play() rejects', async () => {
       const playError = new Error('NotAllowedError');
       mockPlay.mockRejectedValueOnce(playError);
 
@@ -219,7 +219,7 @@ describe('md-audio-player', () => {
       );
 
       const errorHandler = vi.fn();
-      el.addEventListener('error', errorHandler);
+      el.addEventListener('md-audio-player-error', errorHandler);
 
       const playButton = el.shadowRoot?.querySelector(
         '.play-button'

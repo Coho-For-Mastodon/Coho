@@ -14,7 +14,7 @@ import './md-icon';
  * @fires play - Dispatched when playback starts
  * @fires pause - Dispatched when playback is paused
  * @fires ended - Dispatched when playback ends
- * @fires error - Dispatched when playback fails to start; `event.detail` contains the underlying error (for example, the rejected value from `audio.play()`)
+ * @fires md-audio-player-error - Dispatched when playback fails to start; `event.detail` contains the underlying error (for example, the rejected value from `audio.play()`)
  */
 @localized()
 @customElement('md-audio-player')
@@ -288,7 +288,7 @@ export class MdAudioPlayer extends LitElement {
       } catch (err) {
         // Play was prevented (e.g., autoplay policy)
         this.dispatchEvent(
-          new CustomEvent('error', {
+          new CustomEvent('md-audio-player-error', {
             bubbles: true,
             composed: true,
             detail: { error: err },
