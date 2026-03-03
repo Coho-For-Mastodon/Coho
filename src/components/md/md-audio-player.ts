@@ -203,6 +203,15 @@ export class MdAudioPlayer extends LitElement {
       this._duration = 0;
       this._loading = true;
     }
+
+    if (changedProperties.has('preload') && this._audio) {
+      this._audio.preload = this.preload;
+      // If preload has been increased and a source is set, ensure
+      // the browser re-evaluates buffering behavior.
+      if (this.preload !== 'none' && this._audio.src) {
+        this._audio.load();
+      }
+    }
   }
 
   private _createAudio() {
