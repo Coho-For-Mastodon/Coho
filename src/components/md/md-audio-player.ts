@@ -154,6 +154,13 @@ export class MdAudioPlayer extends LitElement {
         appearance: none;
       }
 
+      .progress-container:focus-within .progress-track {
+        outline: 2px solid
+          var(--md-sys-color-primary, var(--sl-color-primary-600));
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
       .time {
         display: flex;
         justify-content: space-between;
