@@ -7,6 +7,7 @@ import {
   createIntersectionObserver,
   disconnectIntersectionObserver,
 } from '../utils/intersection-observer';
+import './md/md-audio-player';
 
 @localized()
 @customElement('image-carousel')
@@ -327,12 +328,11 @@ export class ImageCarousel extends LitElement {
           } else if (image.type === 'audio') {
             return html`
               <div>
-                <audio
-                  controls
+                <md-audio-player
                   src="${image.url}"
+                  label="${image.description || msg('Audio')}"
                   preload="metadata"
-                  aria-label="${image.description || msg('Audio')}"
-                ></audio>
+                ></md-audio-player>
               </div>
             `;
           }
