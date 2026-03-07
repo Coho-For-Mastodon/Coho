@@ -2,6 +2,8 @@
  * Auth state utilities for managing guest mode and authentication state
  */
 
+import { getActiveAccount } from './auth-session';
+
 // Default server for guest mode (unauthenticated browsing)
 const GUEST_SERVER = 'mastodon.social';
 
@@ -9,6 +11,11 @@ const GUEST_SERVER = 'mastodon.social';
  * Check if the user is in guest mode (not authenticated)
  */
 export function isGuestMode(): boolean {
+  const activeAccount = getActiveAccount();
+  if (activeAccount) {
+    return false;
+  }
+
   const accessToken = localStorage.getItem('accessToken');
   return !accessToken || accessToken.length === 0;
 }
@@ -26,6 +33,11 @@ export function getGuestServer(): string {
  * otherwise falls back to guest server
  */
 export function getEffectiveServer(): string {
+  const activeAccount = getActiveAccount();
+  if (activeAccount) {
+    return activeAccount.server;
+  }
+
   const userServer = localStorage.getItem('server');
   if (userServer && !isGuestMode()) {
     return userServer;

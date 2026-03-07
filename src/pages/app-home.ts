@@ -33,6 +33,7 @@ import {
   saveSidebarUser,
   saveSidebarTrending,
 } from '../services/sidebar-cache';
+import { getLatestReadStorageKey } from '../services/account';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -609,7 +610,7 @@ export class AppHome extends LitElement {
     // Remove keyboard shortcut new post dialog listener
     window.removeEventListener('open-post-dialog', this._handleOpenPostDialog);
 
-    const lastPageID = sessionStorage.getItem('latest-read');
+    const lastPageID = sessionStorage.getItem(getLatestReadStorageKey());
     console.log('lastPageID', lastPageID);
     if (lastPageID) {
       const { savePlace } = await import('../services/timeline');

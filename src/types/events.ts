@@ -113,6 +113,18 @@ export type OpenBotDrawerEvent = CustomEvent<void>;
 export type OpenInstallEvent = CustomEvent<void>;
 
 // ============================================================================
+// Account Session Events
+// ============================================================================
+
+export interface AccountChangedDetail {
+  previousActiveAccountKey: string | null;
+  newActiveAccountKey: string | null;
+  reason: string;
+}
+
+export type AccountChangedEvent = CustomEvent<AccountChangedDetail>;
+
+// ============================================================================
 // Menu Events
 // ============================================================================
 

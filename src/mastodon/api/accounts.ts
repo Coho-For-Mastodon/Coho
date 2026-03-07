@@ -3,6 +3,10 @@ import { apiFetch } from '../../utils/api-client';
 import { Account, Post } from '../types';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../../config/firebase';
 import { get, set } from 'idb-keyval';
+import { syncActiveAccountProfile } from '../../services/auth-session';
+import { getAccountScopedIdbKey } from '../../utils/account-scoped-storage';
+
+const getCurrentUserCacheKey = () => getAccountScopedIdbKey('currentUser');
 
 export const editAccount = async (
   display_name: string,
@@ -83,7 +87,13 @@ export const getCurrentUser = async (): Promise<Account> => {
     if (currentUser && currentUser.id) {
       localStorage.setItem('currentUserID', currentUser.id);
       // Persist to IndexedDB for offline access
-      await set('currentUser', currentUser);
+      await set(getCurrentUserCacheKey(), currentUser);
+      await syncActiveAccountProfile({
+        id: currentUser.id,
+        acct: currentUser.acct,
+        display_name: currentUser.display_name,
+        avatar: currentUser.avatar,
+      });
     }
 
     return currentUser;
@@ -92,7 +102,9 @@ export const getCurrentUser = async (): Promise<Account> => {
 
     // Try to get cached user from IndexedDB when offline
     try {
-      const cachedUser = (await get('currentUser')) as Account | undefined;
+      const cachedUser = (await get(getCurrentUserCacheKey())) as
+        | Account
+        | undefined;
       if (cachedUser) {
         console.log('[mastodon/getCurrentUser] Using cached user data');
         currentUser = cachedUser;

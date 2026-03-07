@@ -1,4 +1,5 @@
 import { Post } from '../interfaces/Post';
+import { getAccountScopedSessionStorageKey } from '../utils/account-scoped-storage';
 
 interface TimelineCache {
   data: Post[];
@@ -7,8 +8,10 @@ interface TimelineCache {
   scrollPosition: number;
 }
 
-const CACHE_KEY_PREFIX = 'timeline_cache_';
 const CACHE_DURATION = 1 * 60 * 1000; // 1 minute - short TTL since we use stale-while-revalidate
+
+const getTimelineCacheKey = (timelineType: string) =>
+  getAccountScopedSessionStorageKey(`timeline_cache:${timelineType}`);
 
 /**
  * Save timeline data to sessionStorage
@@ -29,7 +32,7 @@ export function saveTimelineCache(
       scrollPosition,
     };
     sessionStorage.setItem(
-      `${CACHE_KEY_PREFIX}${timelineType}`,
+      getTimelineCacheKey(timelineType),
       JSON.stringify(cache)
     );
     console.log(`Timeline cache saved for ${timelineType}`, {
@@ -48,7 +51,8 @@ export function saveTimelineCache(
  */
 export function getTimelineCache(timelineType: string): TimelineCache | null {
   try {
-    const cached = sessionStorage.getItem(`${CACHE_KEY_PREFIX}${timelineType}`);
+    const cacheKey = getTimelineCacheKey(timelineType);
+    const cached = sessionStorage.getItem(cacheKey);
     if (!cached) {
       return null;
     }
@@ -83,13 +87,13 @@ export function getTimelineCache(timelineType: string): TimelineCache | null {
 export function clearTimelineCache(timelineType?: string): void {
   try {
     if (timelineType) {
-      sessionStorage.removeItem(`${CACHE_KEY_PREFIX}${timelineType}`);
+      sessionStorage.removeItem(getTimelineCacheKey(timelineType));
       console.log(`Timeline cache cleared for ${timelineType}`);
     } else {
       // Clear all timeline caches
       const keys = Object.keys(sessionStorage);
       keys.forEach((key) => {
-        if (key.startsWith(CACHE_KEY_PREFIX)) {
+        if (key.includes(':session:timeline_cache:')) {
           sessionStorage.removeItem(key);
         }
       });
@@ -110,14 +114,12 @@ export function updateCacheScrollPosition(
   scrollPosition: number
 ): void {
   try {
-    const cached = sessionStorage.getItem(`${CACHE_KEY_PREFIX}${timelineType}`);
+    const cacheKey = getTimelineCacheKey(timelineType);
+    const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       const cache: TimelineCache = JSON.parse(cached);
       cache.scrollPosition = scrollPosition;
-      sessionStorage.setItem(
-        `${CACHE_KEY_PREFIX}${timelineType}`,
-        JSON.stringify(cache)
-      );
+      sessionStorage.setItem(cacheKey, JSON.stringify(cache));
     }
   } catch (error) {
     console.error('Failed to update cache scroll position:', error);

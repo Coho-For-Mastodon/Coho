@@ -2,7 +2,7 @@
  * Centralized API Client with error handling and resilience
  *
  * Features:
- * - Automatic 401 (Unauthorized) handling with logout redirect
+ * - Automatic 401 handling with active-account invalidation and fallback
  * - Standardized Mastodon API error parsing
  * - Network timeout handling
  * - Retry logic for transient failures
@@ -10,6 +10,8 @@
 
 import { router } from '../router/routes.js';
 import { setAuthRedirect } from './auth-redirect.js';
+import { invalidateActiveAccount } from '../services/auth-session.js';
+import { reloadWindow } from './reload-window.js';
 
 // Mastodon API error format
 export interface MastodonApiError {
@@ -75,33 +77,35 @@ const DEFAULT_CONFIG: Required<ApiClientConfig> = {
 
 // Helper to get fresh auth values
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
-const getServer = () => localStorage.getItem('server') || '';
+
+let unauthorizedTransition: Promise<void> | null = null;
 
 /**
- * Clear authentication and redirect to login
+ * Invalidate the active account and either reload into a fallback account
+ * or route to login if no authenticated accounts remain.
  */
-export function handleUnauthorized(): void {
-  // Clear all auth-related data
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('token');
-  localStorage.removeItem('server');
-  localStorage.removeItem('account');
+export async function handleUnauthorized(): Promise<void> {
+  if (unauthorizedTransition) {
+    await unauthorizedTransition;
+    return;
+  }
 
-  // Clear from IndexedDB as well (async, fire and forget)
-  import('idb-keyval').then(({ del }) => {
-    del('accessToken').catch(console.error);
-    del('token').catch(console.error);
-    del('server').catch(console.error);
-    del('account').catch(console.error);
+  unauthorizedTransition = (async () => {
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const result = await invalidateActiveAccount();
+
+    if (result.activeAccountKey) {
+      reloadWindow();
+      return;
+    }
+
+    setAuthRedirect(currentUrl);
+    router.navigate('/');
+  })().finally(() => {
+    unauthorizedTransition = null;
   });
 
-  // Store current URL so user returns here after re-authenticating
-  setAuthRedirect(
-    `${window.location.pathname}${window.location.search}${window.location.hash}`
-  );
-
-  // Navigate to login page
-  router.navigate('/');
+  await unauthorizedTransition;
 }
 
 /**
@@ -251,7 +255,7 @@ export async function apiFetch(
 
       // Handle 401 Unauthorized
       if (response.status === 401 && shouldHandleUnauthorized) {
-        handleUnauthorized();
+        await handleUnauthorized();
         throw new ApiError(
           mastodonError?.error || 'Unauthorized',
           401,

@@ -1,5 +1,5 @@
 import { set } from 'idb-keyval';
-import { getUsersPosts } from './account';
+import { getLatestReadStorageKey, getUsersPosts } from './account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 import { Post } from '../interfaces/Post';
 
@@ -211,7 +211,7 @@ export const resetLastPageID = (type?: string): Promise<void> => {
 };
 
 export const getLastPlaceTimeline = async (): Promise<Post[] | undefined> => {
-  const last_read_id = sessionStorage.getItem('latest-read');
+  const last_read_id = sessionStorage.getItem(getLatestReadStorageKey());
   if (last_read_id && last_read_id.length > 0) {
     const data = (await mastodonGetHomeTimeline(
       last_read_id

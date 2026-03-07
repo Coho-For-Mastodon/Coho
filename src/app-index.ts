@@ -7,6 +7,11 @@ import { router } from './router/routes';
 import './config/localization.js';
 
 import './pages/app-login';
+import {
+  bootstrapSession,
+  getActiveAccount,
+  syncActiveToIndexedDb,
+} from './services/auth-session';
 
 @customElement('app-index')
 export class AppIndex extends LitElement {
@@ -56,6 +61,8 @@ export class AppIndex extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
+
+    await bootstrapSession();
 
     // Register route-changed listener BEFORE router.init() to avoid missing the
     // initial route-changed event in browsers with native Navigation API + URLPattern
@@ -233,15 +240,8 @@ export class AppIndex extends LitElement {
    * This ensures the service worker has access to the latest tokens
    */
   private async syncCredentialsToIndexedDB() {
-    const accessToken = localStorage.getItem('accessToken');
-    const server = localStorage.getItem('server');
-
-    if (accessToken && server) {
-      const { set } = await import('idb-keyval');
-      await set('accessToken', accessToken);
-      await set('server', server);
-      console.log('[App] Synced credentials to IndexedDB');
-    }
+    await syncActiveToIndexedDb();
+    console.log('[App] Synced credentials to IndexedDB');
   }
 
   /**
@@ -249,9 +249,10 @@ export class AppIndex extends LitElement {
    * Sets isAuthenticated to true for returning users, false for new users
    */
   private checkAuthenticationState() {
-    const accessToken = localStorage.getItem('accessToken');
-    const server = localStorage.getItem('server');
-    this.isAuthenticated = !!(accessToken && server);
+    this.isAuthenticated = Boolean(
+      getActiveAccount() ||
+      (localStorage.getItem('accessToken') && localStorage.getItem('server'))
+    );
     console.log(
       '[App] Authentication state:',
       this.isAuthenticated ? 'authenticated' : 'new user'
