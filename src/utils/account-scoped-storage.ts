@@ -3,7 +3,16 @@ import { getActiveAccount } from '../services/auth-session';
 const STORAGE_PREFIX = 'coho:account';
 
 function getNamespace(accountKey?: string | null): string {
-  return accountKey || getActiveAccount()?.accountKey || 'guest';
+  if (accountKey) {
+    return accountKey;
+  }
+
+  // In non-window contexts (e.g. service workers), avoid touching auth-session/localStorage.
+  if (typeof window === 'undefined') {
+    return 'guest';
+  }
+
+  return getActiveAccount()?.accountKey || 'guest';
 }
 
 function buildScopedKey(
