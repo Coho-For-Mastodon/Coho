@@ -1,4 +1,5 @@
 import { del, set } from 'idb-keyval';
+import type { AccountChangedDetail } from '../types/events';
 
 const AUTH_SESSION_STORAGE_KEY = 'coho:auth-session';
 const AUTH_SESSION_VERSION = 1;
@@ -23,12 +24,6 @@ export interface AuthSessionStore {
   version: number;
   activeAccountKey: string | null;
   accounts: AuthAccountRecord[];
-}
-
-export interface AccountChangedDetail {
-  previousActiveAccountKey: string | null;
-  newActiveAccountKey: string | null;
-  reason: string;
 }
 
 export interface AccountMutationResult {

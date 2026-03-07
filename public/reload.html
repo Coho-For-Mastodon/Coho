@@ -6,17 +6,8 @@
     <title>Reloading Coho…</title>
   </head>
   <body>
-    <script>
-      (function () {
-        var params = new URLSearchParams(window.location.search);
-        var target = params.get('target') || '/';
-
-        if (!target.startsWith('/') || target.startsWith('//') || target.includes('\n') || target.includes('\r')) {
-          target = '/';
-        }
-
-        window.location.replace(target);
-      })();
-    </script>
+    <p>Reloading Coho…</p>
+    <p>If nothing happens, <a id="reload-link" href="/">return to the app</a>.</p>
+    <script src="/reload.js"></script>
   </body>
 </html>

@@ -62,7 +62,11 @@ export class AppIndex extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
 
-    await bootstrapSession();
+    try {
+      await bootstrapSession();
+    } catch (error) {
+      console.error('[App] Failed to bootstrap auth session', error);
+    }
 
     // Register route-changed listener BEFORE router.init() to avoid missing the
     // initial route-changed event in browsers with native Navigation API + URLPattern

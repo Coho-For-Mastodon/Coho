@@ -536,7 +536,19 @@ export const initAuth = async (serverURL: string) => {
 
 const getServerFromOAuthState = (state: string): string => {
   try {
-    const decoded = JSON.parse(atob(state)) as { server?: string };
+    // URLSearchParams decodes '+' into space, so normalize standard base64
+    // and accept base64url variants before decoding.
+    const normalizedState = state
+      .replace(/ /g, '+')
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const padding = normalizedState.length % 4;
+    const paddedState =
+      padding === 0
+        ? normalizedState
+        : `${normalizedState}${'='.repeat(4 - padding)}`;
+
+    const decoded = JSON.parse(atob(paddedState)) as { server?: string };
     if (!decoded.server) {
       throw new Error('Missing server in OAuth state');
     }

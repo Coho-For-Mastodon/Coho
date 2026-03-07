@@ -90,10 +90,13 @@ export function clearTimelineCache(timelineType?: string): void {
       sessionStorage.removeItem(getTimelineCacheKey(timelineType));
       console.log(`Timeline cache cleared for ${timelineType}`);
     } else {
-      // Clear all timeline caches
+      const timelineCachePrefix =
+        getAccountScopedSessionStorageKey('timeline_cache:');
+
+      // Clear all timeline caches for the active account namespace only.
       const keys = Object.keys(sessionStorage);
       keys.forEach((key) => {
-        if (key.includes(':session:timeline_cache:')) {
+        if (key.startsWith(timelineCachePrefix)) {
           sessionStorage.removeItem(key);
         }
       });

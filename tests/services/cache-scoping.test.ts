@@ -5,6 +5,7 @@ import {
   saveSidebarUser,
 } from '../../src/services/sidebar-cache';
 import {
+  clearTimelineCache,
   getTimelineCache,
   saveTimelineCache,
 } from '../../src/services/timeline-cache';
@@ -78,6 +79,54 @@ describe('account-scoped caches', () => {
 
     setActiveAccount('hachyderm.io::2', 'hachyderm.io', '2');
     expect(getTimelineCache('home')).toBeNull();
+  });
+
+  it('clears only timeline caches for the active account namespace', () => {
+    sessionStorage.setItem(
+      getAccountScopedSessionStorageKey('timeline_cache:home', 'tech.lgbt::1'),
+      JSON.stringify({
+        data: [{ id: 'post-1' }],
+        timestamp: Date.now(),
+        timelineType: 'home',
+        scrollPosition: 0,
+      })
+    );
+    sessionStorage.setItem(
+      getAccountScopedSessionStorageKey(
+        'timeline_cache:home',
+        'hachyderm.io::2'
+      ),
+      JSON.stringify({
+        data: [{ id: 'post-2' }],
+        timestamp: Date.now(),
+        timelineType: 'home',
+        scrollPosition: 0,
+      })
+    );
+    sessionStorage.setItem(
+      'coho:account:tech.lgbt::1:session:not_timeline',
+      '1'
+    );
+
+    setActiveAccount('tech.lgbt::1', 'tech.lgbt', '1');
+    clearTimelineCache();
+
+    expect(
+      sessionStorage.getItem(
+        getAccountScopedSessionStorageKey('timeline_cache:home', 'tech.lgbt::1')
+      )
+    ).toBeNull();
+    expect(
+      sessionStorage.getItem(
+        getAccountScopedSessionStorageKey(
+          'timeline_cache:home',
+          'hachyderm.io::2'
+        )
+      )
+    ).toBeTruthy();
+    expect(
+      sessionStorage.getItem('coho:account:tech.lgbt::1:session:not_timeline')
+    ).toBe('1');
   });
 
   it('reads preloaded notifications from the active account namespace only', () => {
