@@ -1,6 +1,25 @@
-import { getActiveAccount } from '../services/auth-session';
-
 const STORAGE_PREFIX = 'coho:account';
+const AUTH_SESSION_STORAGE_KEY = 'coho:auth-session';
+
+interface AuthSessionStoreShape {
+  activeAccountKey?: string | null;
+}
+
+function getActiveAccountKeyFromSessionStore(): string | null {
+  try {
+    const raw = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as AuthSessionStoreShape;
+    return typeof parsed.activeAccountKey === 'string'
+      ? parsed.activeAccountKey
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function getNamespace(accountKey?: string | null): string {
   if (accountKey) {
@@ -12,7 +31,7 @@ function getNamespace(accountKey?: string | null): string {
     return 'guest';
   }
 
-  return getActiveAccount()?.accountKey || 'guest';
+  return getActiveAccountKeyFromSessionStore() || 'guest';
 }
 
 function buildScopedKey(
