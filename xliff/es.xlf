@@ -1842,6 +1842,39 @@
 <trans-unit id="sd54d5d1c28c310de">
   <source>Add up to 4 custom fields to display on your profile.</source>
 </trans-unit>
+<trans-unit id="sa45a194b58837e4f">
+  <source>Active</source>
+</trans-unit>
+<trans-unit id="s8e114dd98aeedf91">
+  <source>Switch</source>
+</trans-unit>
+<trans-unit id="s6e2ab159a07b1f2f">
+  <source>Switch the active account, add another one, or remove a saved account.</source>
+</trans-unit>
+<trans-unit id="sb61732bec9606086">
+  <source>No saved accounts yet. Add one below to sign in.</source>
+</trans-unit>
+<trans-unit id="s9a11da2be3993dd3">
+  <source>Add account</source>
+</trans-unit>
+<trans-unit id="s626c98f49c83a793">
+  <source>Search for a Mastodon server</source>
+</trans-unit>
+<trans-unit id="s6d83773bf37278f8">
+  <source>Starting OAuth...</source>
+</trans-unit>
+<trans-unit id="sddd265e80aabafea">
+  <source>Audio player</source>
+</trans-unit>
+<trans-unit id="s061cc20e3432dead">
+  <source>Pause</source>
+</trans-unit>
+<trans-unit id="scd105819b5a10243">
+  <source>Play</source>
+</trans-unit>
+<trans-unit id="s5788d924d55d3ff1">
+  <source>Seek</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
