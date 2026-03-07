@@ -77,6 +77,7 @@ const DEFAULT_CONFIG: Required<ApiClientConfig> = {
 
 // Helper to get fresh auth values
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
+const getServer = () => localStorage.getItem('server') || '';
 
 let unauthorizedTransition: Promise<void> | null = null;
 
