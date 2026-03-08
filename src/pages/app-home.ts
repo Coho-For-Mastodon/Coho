@@ -52,7 +52,6 @@ import type { ScheduledStatusesDialog } from '../components/scheduled-statuses-d
 import { styles } from '../styles/shared-styles';
 import { homeStyles } from '../styles/home-styles';
 import { fadeInAnimation } from '../styles/animations';
-import { router } from '../router/routes';
 import {
   lazyLoad,
   componentLoaders,
@@ -812,9 +811,7 @@ export class AppHome extends LitElement {
         ? html`
             <right-click>
               <md-menu>
-                <md-menu-item
-                  @menu-item-click=${() => router.navigate('/new-post')}
-                >
+                <md-menu-item @menu-item-click=${() => this.openNewDialog()}>
                   <md-icon slot="prefix" name="add"></md-icon>
                   ${msg('New Post')}
                 </md-menu-item>
