@@ -1881,6 +1881,24 @@
 <trans-unit id="s1dbc50b9bbfadfcf">
   <source>Switch accounts</source>
 </trans-unit>
+<trans-unit id="s73e2a28a396e8a06">
+  <source>requested to follow you</source>
+</trans-unit>
+<trans-unit id="sf7d93e17ec4b1219">
+  <source>...</source>
+</trans-unit>
+<trans-unit id="s13be1af9766661e9">
+  <source>Accept</source>
+</trans-unit>
+<trans-unit id="s123da0f92f97dd86">
+  <source>Reject</source>
+</trans-unit>
+<trans-unit id="s8f83b5cb52f62fd3">
+  <source>Requests</source>
+</trans-unit>
+<trans-unit id="s9093a095ac3a73b4">
+  <source>No pending follow requests</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
