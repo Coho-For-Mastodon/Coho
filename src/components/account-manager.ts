@@ -3,10 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 
 import './md/md-autocomplete';
-import './md/md-badge';
 import './md/md-button';
-import './md/md-card';
-import './md/md-divider';
 
 import type { AutocompleteOption } from './md/md-autocomplete';
 import {
@@ -43,23 +40,84 @@ export class AccountManager extends LitElement {
       display: block;
     }
 
+    .section-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .saved-accounts,
+    .add-account {
+      padding: 16px;
+      border-radius: var(--md-sys-shape-corner-large);
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-surface-container-high) 82%,
+        transparent
+      );
+      border: 1px solid
+        color-mix(in srgb, var(--md-sys-color-outline) 24%, transparent);
+    }
+
     .accounts {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
+    }
+
+    .section-description {
+      margin: 0;
     }
 
     .account-row {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       gap: 12px;
+      padding: 14px;
+      border-radius: var(--md-sys-shape-corner-medium);
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-surface-container-highest) 74%,
+        transparent
+      );
+      border: 1px solid
+        color-mix(in srgb, var(--md-sys-color-outline) 16%, transparent);
+      transition:
+        border-color 180ms ease,
+        background 180ms ease,
+        transform 180ms ease;
+    }
+
+    .account-row.active {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-primary) 10%,
+        var(--md-sys-color-surface-container-highest)
+      );
+      border-color: color-mix(
+        in srgb,
+        var(--md-sys-color-primary) 30%,
+        transparent
+      );
+    }
+
+    .account-row:hover {
+      transform: translateY(-1px);
+    }
+
+    .account-main {
+      display: contents;
+    }
+
+    .account-avatar {
+      display: flex;
       align-items: center;
     }
 
-    .account-row img,
+    .account-avatar img,
     .avatar-placeholder {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       border-radius: 999px;
       object-fit: cover;
       background: var(--md-sys-color-surface-container-high);
@@ -79,6 +137,13 @@ export class AccountManager extends LitElement {
       min-width: 0;
     }
 
+    .account-meta-top {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      margin-bottom: 2px;
+    }
+
     .account-name,
     .account-acct,
     .account-server {
@@ -89,7 +154,10 @@ export class AccountManager extends LitElement {
 
     .account-name {
       font-size: var(--md-sys-typescale-body-large-font-size);
+      font-weight: 600;
       color: var(--md-sys-color-on-surface);
+      min-width: 0;
+      flex: 1;
     }
 
     .account-acct,
@@ -99,21 +167,55 @@ export class AccountManager extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
     }
 
+    .account-server {
+      margin-top: 2px;
+    }
+
     .account-actions {
       display: flex;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       justify-content: flex-end;
+      align-items: center;
     }
 
-    .section-description {
-      margin: 8px 0 0;
+    .account-actions md-button[variant='text'] {
+      opacity: 0.82;
     }
 
     .add-account {
       display: flex;
       flex-direction: column;
       gap: 12px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: var(--md-sys-typescale-title-medium-font-size);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .section-header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .section-label {
+      margin: 0;
+      font-size: var(--md-sys-typescale-label-medium-font-size);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--md-sys-color-on-surface-variant);
+
+      margin-bottom: 10px;
+      margin-left: 2px;
+    }
+
+    .add-description {
+      margin: 0;
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      color: var(--md-sys-color-on-surface-variant);
     }
 
     .add-actions {
@@ -124,6 +226,46 @@ export class AccountManager extends LitElement {
     .empty-state {
       color: var(--md-sys-color-on-surface-variant);
       font-size: var(--md-sys-typescale-body-medium-font-size);
+    }
+
+    @media (max-width: 640px) {
+      .saved-accounts,
+      .add-account {
+        padding: 14px;
+      }
+
+      .account-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      .account-main {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+      }
+
+      .account-meta-top {
+        flex-wrap: nowrap;
+      }
+
+      .account-name {
+        white-space: nowrap;
+      }
+
+      .account-acct,
+      .account-server {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .account-actions {
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: flex-end;
+        flex-wrap: nowrap;
+      }
     }
   `;
 
@@ -254,20 +396,26 @@ export class AccountManager extends LitElement {
   private renderAccount(account: AuthAccountRecord) {
     const isActive = account.accountKey === this.activeAccountKey;
     return html`
-      <div class="account-row">
-        ${account.avatar
-          ? html`<img src="${account.avatar}" alt="${account.displayName}" />`
-          : html`<div class="avatar-placeholder">
-              ${this.getInitials(account)}
-            </div>`}
+      <div class="account-row ${isActive ? 'active' : ''}">
+        <div class="account-main">
+          <div class="account-avatar">
+            ${account.avatar
+              ? html`<img
+                  src="${account.avatar}"
+                  alt="${account.displayName}"
+                />`
+              : html`<div class="avatar-placeholder">
+                  ${this.getInitials(account)}
+                </div>`}
+          </div>
 
-        <div class="account-meta">
-          <div class="account-name">${account.displayName}</div>
-          <div class="account-acct">@${account.acct}</div>
-          <div class="account-server">${account.server}</div>
-          ${isActive
-            ? html`<md-badge variant="filled">${msg('Active')}</md-badge>`
-            : nothing}
+          <div class="account-meta">
+            <div class="account-meta-top">
+              <div class="account-name">${account.displayName}</div>
+            </div>
+            <div class="account-acct">@${account.acct}</div>
+            <div class="account-server">${account.server}</div>
+          </div>
         </div>
 
         <div class="account-actions">
@@ -275,7 +423,7 @@ export class AccountManager extends LitElement {
             ? nothing
             : html`
                 <md-button
-                  variant="text"
+                  variant="tonal"
                   ?disabled=${this.mutating}
                   @click=${() => this.switchToAccount(account.accountKey)}
                 >
@@ -296,33 +444,39 @@ export class AccountManager extends LitElement {
 
   render() {
     return html`
-      <md-card variant="filled">
-        <h3 slot="header">${msg('Accounts')}</h3>
+      <div class="section-shell">
         <p class="section-description">
           ${msg(
             'Switch the active account, add another one, or remove a saved account.'
           )}
         </p>
 
-        <div class="accounts">
-          ${this.accounts.length > 0
-            ? this.accounts.map(
-                (account, index) => html`
-                  ${index > 0 ? html`<md-divider></md-divider>` : nothing}
-                  ${this.renderAccount(account)}
-                `
-              )
-            : html`
-                <p class="empty-state">
-                  ${msg('No saved accounts yet. Add one below to sign in.')}
-                </p>
-              `}
-        </div>
+        <section class="saved-accounts" aria-label=${msg('Saved accounts')}>
+          <div class="section-header">
+            <p class="section-label">${msg('Saved accounts')}</p>
+          </div>
 
-        <md-divider></md-divider>
+          <div class="accounts">
+            ${this.accounts.length > 0
+              ? this.accounts.map((account) => this.renderAccount(account))
+              : html`
+                  <p class="empty-state">
+                    ${msg('No saved accounts yet. Add one below to sign in.')}
+                  </p>
+                `}
+          </div>
+        </section>
 
-        <div class="add-account">
-          <h4>${msg('Add account')}</h4>
+        <section class="add-account" aria-label=${msg('Add account')}>
+          <div class="section-header">
+            <h4 class="section-title">${msg('Add account')}</h4>
+            <p class="add-description">
+              ${msg(
+                'Search for your server to connect another Mastodon account.'
+              )}
+            </p>
+          </div>
+
           <md-autocomplete
             .placeholder=${msg('Search for a Mastodon server')}
             .value=${this.chosenServer}
@@ -344,8 +498,8 @@ export class AccountManager extends LitElement {
                 : msg('Add account')}
             </md-button>
           </div>
-        </div>
-      </md-card>
+        </section>
+      </div>
     `;
   }
 }

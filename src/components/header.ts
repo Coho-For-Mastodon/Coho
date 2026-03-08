@@ -8,7 +8,11 @@ import './md/md-icon-button.js';
 import { enableVibrate } from '../utils/handle-vibrate';
 import { setAuthRedirect } from '../utils/auth-redirect';
 
-import type { OpenSettingsEvent, OpenInstallEvent } from '../types/events';
+import type {
+  OpenAccountSwitcherEvent,
+  OpenSettingsEvent,
+  OpenInstallEvent,
+} from '../types/events';
 
 @localized()
 @customElement('app-header')
@@ -20,6 +24,8 @@ export class AppHeader extends LitElement {
   @property({ type: Boolean }) guestMode: boolean = false;
 
   @property({ type: Boolean }) showMessages: boolean = false;
+
+  @property({ type: Boolean }) showAccountSwitcher: boolean = false;
 
   static get styles() {
     return css`
@@ -138,6 +144,20 @@ export class AppHeader extends LitElement {
     this.dispatchEvent(new CustomEvent('open-install') as OpenInstallEvent);
   }
 
+  openAccountSwitcher(event: Event) {
+    const target = event.currentTarget as HTMLElement | null;
+    const rect = target?.getBoundingClientRect();
+    const origin = rect
+      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+      : undefined;
+
+    this.dispatchEvent(
+      new CustomEvent('open-account-switcher', {
+        detail: { origin },
+      }) as OpenAccountSwitcherEvent
+    );
+  }
+
   async goBack() {
     if (window.navigation.canGoBack) {
       window.navigation.back();
@@ -201,6 +221,16 @@ export class AppHeader extends LitElement {
                       @click="${() => this._openMessages()}"
                     >
                       <md-icon src="/assets/chatbox-outline.svg"></md-icon>
+                    </md-icon-button>`
+                  : nothing}
+                ${this.showAccountSwitcher
+                  ? html`<md-icon-button
+                      title=${msg('Switch accounts')}
+                      id="account-switcher-button"
+                      @click="${(event: Event) =>
+                        this.openAccountSwitcher(event)}"
+                    >
+                      <md-icon src="/assets/repeat-outline.svg"></md-icon>
                     </md-icon-button>`
                   : nothing}
                 ${this.guestMode

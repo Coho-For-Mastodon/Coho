@@ -15,6 +15,7 @@ import './md/md-menu-item';
 
 import type { Account } from '../mastodon/types/account';
 import type { TrendingTag } from '../mastodon/types/instance';
+import type { OpenAccountSwitcherEvent } from '../types/events';
 import { router } from '../router/routes';
 import { setAuthRedirect } from '../utils/auth-redirect';
 
@@ -55,6 +56,10 @@ export class HomeSidebar extends LitElement {
         animation: fadeIn 0.3s ease-in-out;
       }
 
+      .profile-card {
+        position: relative;
+      }
+
       .sidebar-card h3 {
         margin-top: 0;
         margin-bottom: 12px;
@@ -93,7 +98,6 @@ export class HomeSidebar extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
         width: -webkit-fill-available;
       }
 
@@ -102,12 +106,29 @@ export class HomeSidebar extends LitElement {
         font-size: var(--md-sys-typescale-body-small-font-size);
       }
 
+      .profile-card-top {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+      }
+
       .profile-stats {
         display: flex;
         gap: 12px;
         margin-top: 8px;
         justify-content: center;
         width: -webkit-fill-available;
+      }
+
+      #user-actions {
+        display: flex;
+        align-items: center;
+        gap: 0;
+      }
+
+      #user-actions md-icon-button {
+        transform: scale(0.88);
+        transform-origin: top right;
       }
 
       .profile-stats md-badge {
@@ -196,6 +217,22 @@ export class HomeSidebar extends LitElement {
     router.navigate(`/editaccount`);
   }
 
+  private openAccountSwitcher(event: Event) {
+    const target = event.currentTarget as HTMLElement | null;
+    const rect = target?.getBoundingClientRect();
+    const origin = rect
+      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+      : undefined;
+
+    this.dispatchEvent(
+      new CustomEvent('open-account-switcher', {
+        detail: { origin },
+        bubbles: true,
+        composed: true,
+      }) as OpenAccountSwitcherEvent
+    );
+  }
+
   private navigateToTag(tagName: string) {
     router.navigate(`/hashtag?tag=${tagName}`);
   }
@@ -240,28 +277,16 @@ export class HomeSidebar extends LitElement {
 
   private renderProfileCard() {
     return html`
-      <div class="sidebar-card">
+      <div class="sidebar-card profile-card">
         <div id="profile-card-content">
-          ${this.user && this.user.avatar
-            ? html`<img
-                src="${this.user.avatar}"
-                alt="${this.user.display_name}"
-              />`
-            : html`<md-skeleton
-                id="profile-avatar"
-                shape="circle"
-                width="80px"
-                height="80px"
-              ></md-skeleton>`}
-
-          <div id="username-block">
-            <h3>
-              ${this.user
-                ? this.user.display_name
-                : html`<md-skeleton width="100px" height="25px"></md-skeleton>`}
-            </h3>
-
+          <div class="profile-card-top">
             <div id="user-actions">
+              <md-icon-button
+                title=${msg('Switch accounts')}
+                @click="${(event: Event) => this.openAccountSwitcher(event)}"
+              >
+                <md-icon src="/assets/repeat-outline.svg"></md-icon>
+              </md-icon-button>
               <md-dropdown>
                 <md-icon-button
                   slot="trigger"
@@ -288,6 +313,26 @@ export class HomeSidebar extends LitElement {
                 </md-menu>
               </md-dropdown>
             </div>
+          </div>
+
+          ${this.user && this.user.avatar
+            ? html`<img
+                src="${this.user.avatar}"
+                alt="${this.user.display_name}"
+              />`
+            : html`<md-skeleton
+                id="profile-avatar"
+                shape="circle"
+                width="80px"
+                height="80px"
+              ></md-skeleton>`}
+
+          <div id="username-block">
+            <h3>
+              ${this.user
+                ? this.user.display_name
+                : html`<md-skeleton width="100px" height="25px"></md-skeleton>`}
+            </h3>
           </div>
 
           <p id="user-url">
