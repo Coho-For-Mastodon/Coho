@@ -155,19 +155,22 @@ export class AppLogin extends LitElement {
   }
 
   private async init() {
+    const { bootstrapSession, getActiveAccount } =
+      await import('../services/auth-session');
+    await bootstrapSession();
+
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const state = urlParams.get('state');
 
-    const accessToken = localStorage.getItem('accessToken');
-    const server = localStorage.getItem('server');
+    const activeAccount = getActiveAccount();
 
     if (code && state) {
       const { authToClient } = await import('../services/account');
       await authToClient(code, state);
       const router = await getRouter();
       await router.navigate(await this.getPostAuthRedirect());
-    } else if (accessToken && server) {
+    } else if (activeAccount) {
       const router = await getRouter();
       await router.navigate(await this.getPostAuthRedirect());
     }

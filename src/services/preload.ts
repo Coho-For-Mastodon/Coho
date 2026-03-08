@@ -13,12 +13,15 @@
 
 import type { Post } from '../interfaces/Post';
 import type { Notification as MastodonNotification } from '../interfaces/Notification';
+import { getAccountScopedSessionStorageKey } from '../utils/account-scoped-storage';
 
 // Cache keys for preloaded data
-const PRELOAD_CACHE_PREFIX = 'preload_';
-const PRELOAD_NOTIFICATIONS_KEY = `${PRELOAD_CACHE_PREFIX}notifications`;
-const PRELOAD_BOOKMARKS_KEY = `${PRELOAD_CACHE_PREFIX}bookmarks`;
-const PRELOAD_FAVORITES_KEY = `${PRELOAD_CACHE_PREFIX}favorites`;
+const getPreloadNotificationsKey = () =>
+  getAccountScopedSessionStorageKey('preload:notifications');
+const getPreloadBookmarksKey = () =>
+  getAccountScopedSessionStorageKey('preload:bookmarks');
+const getPreloadFavoritesKey = () =>
+  getAccountScopedSessionStorageKey('preload:favorites');
 
 // How long preloaded data is considered fresh (5 minutes)
 const PRELOAD_TTL = 5 * 60 * 1000;
@@ -103,13 +106,14 @@ function requestIdleCallbackPolyfill(
  */
 export function getPreloadedNotifications(): MastodonNotification[] | null {
   try {
-    const cached = sessionStorage.getItem(PRELOAD_NOTIFICATIONS_KEY);
+    const cacheKey = getPreloadNotificationsKey();
+    const cached = sessionStorage.getItem(cacheKey);
     if (!cached) return null;
 
     const { data, timestamp }: PreloadCache<MastodonNotification[]> =
       JSON.parse(cached);
     if (Date.now() - timestamp > PRELOAD_TTL) {
-      sessionStorage.removeItem(PRELOAD_NOTIFICATIONS_KEY);
+      sessionStorage.removeItem(cacheKey);
       return null;
     }
 
@@ -125,12 +129,13 @@ export function getPreloadedNotifications(): MastodonNotification[] | null {
  */
 export function getPreloadedBookmarks(): Post[] | null {
   try {
-    const cached = sessionStorage.getItem(PRELOAD_BOOKMARKS_KEY);
+    const cacheKey = getPreloadBookmarksKey();
+    const cached = sessionStorage.getItem(cacheKey);
     if (!cached) return null;
 
     const { data, timestamp }: PreloadCache<Post[]> = JSON.parse(cached);
     if (Date.now() - timestamp > PRELOAD_TTL) {
-      sessionStorage.removeItem(PRELOAD_BOOKMARKS_KEY);
+      sessionStorage.removeItem(cacheKey);
       return null;
     }
 
@@ -146,12 +151,13 @@ export function getPreloadedBookmarks(): Post[] | null {
  */
 export function getPreloadedFavorites(): Post[] | null {
   try {
-    const cached = sessionStorage.getItem(PRELOAD_FAVORITES_KEY);
+    const cacheKey = getPreloadFavoritesKey();
+    const cached = sessionStorage.getItem(cacheKey);
     if (!cached) return null;
 
     const { data, timestamp }: PreloadCache<Post[]> = JSON.parse(cached);
     if (Date.now() - timestamp > PRELOAD_TTL) {
-      sessionStorage.removeItem(PRELOAD_FAVORITES_KEY);
+      sessionStorage.removeItem(cacheKey);
       return null;
     }
 
@@ -191,7 +197,7 @@ async function preloadNotifications(): Promise<void> {
   try {
     const { getNotifications } = await import('./notifications');
     const data = await getNotifications();
-    saveToCache(PRELOAD_NOTIFICATIONS_KEY, data);
+    saveToCache(getPreloadNotificationsKey(), data);
     console.log('[Preload] Notifications preloaded', { count: data.length });
   } catch (error) {
     console.warn('[Preload] Failed to preload notifications:', error);
@@ -211,7 +217,7 @@ async function preloadBookmarks(): Promise<void> {
   try {
     const { getBookmarks } = await import('./bookmarks');
     const data = await getBookmarks();
-    saveToCache(PRELOAD_BOOKMARKS_KEY, data);
+    saveToCache(getPreloadBookmarksKey(), data);
     console.log('[Preload] Bookmarks preloaded', { count: data.length });
   } catch (error) {
     console.warn('[Preload] Failed to preload bookmarks:', error);
@@ -231,7 +237,7 @@ async function preloadFavorites(): Promise<void> {
   try {
     const { getFavorites } = await import('./favorites');
     const data = await getFavorites();
-    saveToCache(PRELOAD_FAVORITES_KEY, data);
+    saveToCache(getPreloadFavoritesKey(), data);
     console.log('[Preload] Favorites preloaded', { count: data.length });
   } catch (error) {
     console.warn('[Preload] Failed to preload favorites:', error);
@@ -288,9 +294,9 @@ export function schedulePreload(): void {
  * Call this when user logs out or when data should be refreshed
  */
 export function clearPreloadCache(): void {
-  sessionStorage.removeItem(PRELOAD_NOTIFICATIONS_KEY);
-  sessionStorage.removeItem(PRELOAD_BOOKMARKS_KEY);
-  sessionStorage.removeItem(PRELOAD_FAVORITES_KEY);
+  sessionStorage.removeItem(getPreloadNotificationsKey());
+  sessionStorage.removeItem(getPreloadBookmarksKey());
+  sessionStorage.removeItem(getPreloadFavoritesKey());
   console.log('[Preload] Cache cleared');
 }
 
@@ -302,9 +308,9 @@ export function invalidatePreloadCache(
   type: 'notifications' | 'bookmarks' | 'favorites'
 ): void {
   const keyMap = {
-    notifications: PRELOAD_NOTIFICATIONS_KEY,
-    bookmarks: PRELOAD_BOOKMARKS_KEY,
-    favorites: PRELOAD_FAVORITES_KEY,
+    notifications: getPreloadNotificationsKey(),
+    bookmarks: getPreloadBookmarksKey(),
+    favorites: getPreloadFavoritesKey(),
   };
   sessionStorage.removeItem(keyMap[type]);
   console.log(`[Preload] ${type} cache invalidated`);

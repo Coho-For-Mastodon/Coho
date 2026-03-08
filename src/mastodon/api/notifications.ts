@@ -1,6 +1,10 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
 import { Notification } from '../types';
+import { getAccountScopedLocalStorageKey } from '../../utils/account-scoped-storage';
+
+const getLastReadNotificationKey = () =>
+  getAccountScopedLocalStorageKey('lastReadNotificationId');
 
 export const getNotifications = async (
   maxId?: string,
@@ -61,11 +65,11 @@ export const checkNewNotifications = async (): Promise<boolean> => {
     const data = await response.json();
     if (data && data.length > 0) {
       const latestId = data[0].id;
-      const lastReadId = localStorage.getItem('lastReadNotificationId');
+      const lastReadId = localStorage.getItem(getLastReadNotificationKey());
 
       if (!lastReadId) {
         // First run, mark as read to avoid initial badge
-        localStorage.setItem('lastReadNotificationId', latestId);
+        localStorage.setItem(getLastReadNotificationKey(), latestId);
         return false;
       }
 
@@ -92,7 +96,7 @@ export const markNotificationsRead = async () => {
 
     const data = await response.json();
     if (data && data.length > 0) {
-      localStorage.setItem('lastReadNotificationId', data[0].id);
+      localStorage.setItem(getLastReadNotificationKey(), data[0].id);
     }
   } catch (e) {
     console.error('Error marking notifications as read', e);

@@ -21,6 +21,7 @@ import '../components/pwa-install';
 import '../components/guest-login-banner';
 import '../components/home-sidebar';
 import '../components/settings-drawer-content';
+import '../components/account-manager';
 import '../components/home-tabs-nav';
 import '../components/header';
 
@@ -33,6 +34,7 @@ import {
   saveSidebarUser,
   saveSidebarTrending,
 } from '../services/sidebar-cache';
+import { getLatestReadStorageKey } from '../services/account';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -76,6 +78,7 @@ import type {
   HandleTranslatingEvent,
   RepliesEvent,
   ColorChosenEvent,
+  OpenAccountSwitcherEvent,
 } from '../types/events';
 
 @localized()
@@ -126,6 +129,7 @@ export class AppHome extends LitElement {
     'settings-drawer',
     'replies-drawer',
     'install-dialog',
+    'account-switcher-dialog',
     'summary-dialog',
     'translation-toast',
     'error-toast',
@@ -144,6 +148,8 @@ export class AppHome extends LitElement {
   @query('#translation-toast') private translationToast!: MdToast;
   @query('#error-toast') private errorToast!: MdToast;
   @query('#summary-dialog') private summaryDialog!: MdDialog;
+  @query('#account-switcher-dialog')
+  private accountSwitcherDialog!: MdDialog;
   @query('.homeTimeline') private homeTimeline!: Timeline;
   @query('app-notifications') private notificationsComponent!: Notifications;
   @query('post-dialog') private postDialog!: PostDialog;
@@ -432,6 +438,21 @@ export class AppHome extends LitElement {
     console.log('instanceInfo', this.instanceInfo);
   }
 
+  async openAccountSwitcherDialog(origin?: { x: number; y: number }) {
+    if (this.isGuestMode) {
+      return;
+    }
+
+    await this.overlays.show('account-switcher-dialog');
+    await customElements.whenDefined('account-manager');
+    await this.updateComplete;
+
+    if (this.accountSwitcherDialog) {
+      this.accountSwitcherDialog.setOpenOrigin(origin);
+      this.accountSwitcherDialog.show();
+    }
+  }
+
   async handleReplies(replies: Post[], _id: string) {
     this.replies = replies;
 
@@ -609,7 +630,7 @@ export class AppHome extends LitElement {
     // Remove keyboard shortcut new post dialog listener
     window.removeEventListener('open-post-dialog', this._handleOpenPostDialog);
 
-    const lastPageID = sessionStorage.getItem('latest-read');
+    const lastPageID = sessionStorage.getItem(getLatestReadStorageKey());
     console.log('lastPageID', lastPageID);
     if (lastPageID) {
       const { savePlace } = await import('../services/timeline');
@@ -851,10 +872,13 @@ export class AppHome extends LitElement {
       <app-header
         @open-bot-drawer="${() => this.openBotDrawer()}"
         @open-settings="${() => this.openSettingsDrawer()}"
+        @open-account-switcher="${(event: OpenAccountSwitcherEvent) =>
+          this.openAccountSwitcherDialog(event.detail?.origin)}"
         @open-install="${() => this.openInstallDialog()}"
         .showInstall="${this.showInstallPrompt}"
         .guestMode="${this.isGuestMode}"
         .showMessages="${!this.isGuestMode}"
+        .showAccountSwitcher="${this.isMobile && !this.isGuestMode}"
       >
       </app-header>
 
@@ -886,6 +910,19 @@ export class AppHome extends LitElement {
           `}
 
       <!-- Summary Dialog - only in DOM when needed -->
+      ${this.overlays.render(
+        'account-switcher-dialog',
+        () => html`
+          <md-dialog
+            id="account-switcher-dialog"
+            .label="${msg('Switch accounts')}"
+            @md-dialog-hide="${() =>
+              this.overlays.hide('account-switcher-dialog')}"
+          >
+            <account-manager></account-manager>
+          </md-dialog>
+        `
+      )}
       ${this.overlays.render(
         'summary-dialog',
         () => html`
@@ -1117,6 +1154,8 @@ export class AppHome extends LitElement {
                 .trendingTags="${this.trendingTags}"
                 .trendingTagsLoading="${this.trendingTagsLoading}"
                 .isGuestMode="${this.isGuestMode}"
+                @open-account-switcher="${(event: OpenAccountSwitcherEvent) =>
+                  this.openAccountSwitcherDialog(event.detail?.origin)}"
               ></home-sidebar>
             `
           : nothing}

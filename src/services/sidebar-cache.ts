@@ -1,13 +1,15 @@
 import type { Account } from '../mastodon/types/account';
 import type { TrendingTag } from '../mastodon/types/instance';
+import { getAccountScopedSessionStorageKey } from '../utils/account-scoped-storage';
 
 interface SidebarCache<T> {
   data: T;
   timestamp: number;
 }
 
-const USER_CACHE_KEY = 'coho:sidebar_user';
-const TRENDING_CACHE_KEY = 'coho:sidebar_trending';
+const getUserCacheKey = () => getAccountScopedSessionStorageKey('sidebar:user');
+const getTrendingCacheKey = () =>
+  getAccountScopedSessionStorageKey('sidebar:trending');
 
 // Trending tags change frequently — keep a short TTL
 const TRENDING_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -23,7 +25,7 @@ export function saveSidebarUser(user: Account): void {
       data: user,
       timestamp: Date.now(),
     };
-    sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(cache));
+    sessionStorage.setItem(getUserCacheKey(), JSON.stringify(cache));
   } catch {
     // sessionStorage may be full or unavailable — ignore
   }
@@ -35,12 +37,12 @@ export function saveSidebarUser(user: Account): void {
  */
 export function getSidebarUser(): Account | null {
   try {
-    const raw = sessionStorage.getItem(USER_CACHE_KEY);
+    const raw = sessionStorage.getItem(getUserCacheKey());
     if (!raw) return null;
 
     const cache: SidebarCache<Account> = JSON.parse(raw);
     if (Date.now() - cache.timestamp > USER_CACHE_DURATION) {
-      sessionStorage.removeItem(USER_CACHE_KEY);
+      sessionStorage.removeItem(getUserCacheKey());
       return null;
     }
     return cache.data;
@@ -58,7 +60,7 @@ export function saveSidebarTrending(tags: TrendingTag[]): void {
       data: tags,
       timestamp: Date.now(),
     };
-    sessionStorage.setItem(TRENDING_CACHE_KEY, JSON.stringify(cache));
+    sessionStorage.setItem(getTrendingCacheKey(), JSON.stringify(cache));
   } catch {
     // sessionStorage may be full or unavailable — ignore
   }
@@ -70,12 +72,12 @@ export function saveSidebarTrending(tags: TrendingTag[]): void {
  */
 export function getSidebarTrending(): TrendingTag[] | null {
   try {
-    const raw = sessionStorage.getItem(TRENDING_CACHE_KEY);
+    const raw = sessionStorage.getItem(getTrendingCacheKey());
     if (!raw) return null;
 
     const cache: SidebarCache<TrendingTag[]> = JSON.parse(raw);
     if (Date.now() - cache.timestamp > TRENDING_CACHE_DURATION) {
-      sessionStorage.removeItem(TRENDING_CACHE_KEY);
+      sessionStorage.removeItem(getTrendingCacheKey());
       return null;
     }
     return cache.data;

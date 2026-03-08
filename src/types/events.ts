@@ -112,6 +112,25 @@ export type OpenBotDrawerEvent = CustomEvent<void>;
 /** Typed CustomEvent for open-install (no detail) */
 export type OpenInstallEvent = CustomEvent<void>;
 
+export interface OpenAccountSwitcherDetail {
+  origin?: { x: number; y: number };
+}
+
+/** Typed CustomEvent for open-account-switcher */
+export type OpenAccountSwitcherEvent = CustomEvent<OpenAccountSwitcherDetail>;
+
+// ============================================================================
+// Account Session Events
+// ============================================================================
+
+export interface AccountChangedDetail {
+  previousActiveAccountKey: string | null;
+  newActiveAccountKey: string | null;
+  reason: string;
+}
+
+export type AccountChangedEvent = CustomEvent<AccountChangedDetail>;
+
 // ============================================================================
 // Menu Events
 // ============================================================================

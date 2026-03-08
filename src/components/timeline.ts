@@ -17,6 +17,7 @@ import {
   updateCacheScrollPosition,
   clearTimelineCache,
 } from '../services/timeline-cache';
+import { getLatestReadStorageKey } from '../services/account';
 import { filterTimelinePosts } from '../services/filters';
 import { spinAnimation } from '../styles/animations';
 import type { FilterContext } from '../mastodon/types';
@@ -1150,7 +1151,7 @@ export class Timeline extends LitElement {
     // When doing a pull-to-refresh, clear the "last read" marker, pagination state,
     // and session cache so we fetch completely fresh posts from the top
     if (skipCache) {
-      sessionStorage.removeItem('latest-read');
+      sessionStorage.removeItem(getLatestReadStorageKey());
       clearTimelineCache(this.timelineType);
       await resetLastPageID(this.timelineType);
     }
@@ -1242,7 +1243,7 @@ export class Timeline extends LitElement {
         break;
       }
       case 'home': {
-        const last_read_id = sessionStorage.getItem('latest-read');
+        const last_read_id = sessionStorage.getItem(getLatestReadStorageKey());
         if (last_read_id) {
           const timelineData = await getLastPlaceTimeline();
 

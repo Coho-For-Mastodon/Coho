@@ -9,6 +9,7 @@ import { set } from 'idb-keyval';
 import type { PeriodicSyncEvent } from './types';
 import { getAuthHeaders } from './helpers';
 import { getNotifications } from './notifications';
+import { getPeriodicTimelineCacheKey } from '../utils/account-scoped-storage';
 
 /**
  * Sync the home timeline in the background. Fetches the latest
@@ -16,6 +17,8 @@ import { getNotifications } from './notifications';
  */
 export async function timelineSync(): Promise<void> {
   const { server, headers } = await getAuthHeaders();
+  const { get } = await import('idb-keyval');
+  const activeAccountKey = (await get('activeAccountKey')) as string | null;
 
   const timelineResponse = await fetch(
     `https://${server}/api/v1/timelines/home`,
@@ -34,7 +37,7 @@ export async function timelineSync(): Promise<void> {
     return;
   }
   const data = await timelineResponse.json();
-  await set('timeline-cache', data);
+  await set(getPeriodicTimelineCacheKey(activeAccountKey), data);
 }
 
 /**

@@ -76,7 +76,28 @@ export function setupAuth(
   server = 'tech.lgbt',
   accessToken = 'mock-access-token'
 ) {
+  const accountId = localStorage.getItem('currentUserID') || 'self';
   localStorage.setItem('server', server);
   localStorage.setItem('accessToken', accessToken);
   localStorage.setItem('token', accessToken);
+  localStorage.setItem('currentUserID', accountId);
+  localStorage.setItem(
+    'coho:auth-session',
+    JSON.stringify({
+      version: 1,
+      activeAccountKey: `${server}::${accountId}`,
+      accounts: [
+        {
+          accountKey: `${server}::${accountId}`,
+          server,
+          accountId,
+          accessToken,
+          acct: 'self',
+          displayName: 'Self',
+          avatar: '',
+          lastUsedAt: Date.now(),
+        },
+      ],
+    })
+  );
 }

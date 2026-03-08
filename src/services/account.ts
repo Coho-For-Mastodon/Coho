@@ -6,10 +6,30 @@ import type {
   UpdateCredentialsParams,
 } from '../mastodon/types/account';
 import { searchAccounts as mastodonSearchAccounts } from '../mastodon/api/accounts';
+import {
+  syncActiveAccountProfile,
+  upsertAccountFromOAuth,
+} from './auth-session';
+import {
+  getAccountScopedIdbKey,
+  getAccountScopedSessionStorageKey,
+} from '../utils/account-scoped-storage';
 
 // Helper functions to always get fresh values from localStorage
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
 const getServer = () => localStorage.getItem('server') || '';
+const normalizeServer = (server: string) =>
+  server.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+const getCurrentUserCacheKey = () => getAccountScopedIdbKey('currentUser');
+const getProfileCacheKey = (id: string) =>
+  getAccountScopedIdbKey(`profile:${id}`);
+const getUserPostsCacheKey = (id: string, filter: ProfilePostsFilter) =>
+  getAccountScopedIdbKey(`user_posts:${id}:${filter}`);
+const getPinnedPostsCacheKey = (server: string, id: string) =>
+  getAccountScopedIdbKey(`user_pinned_posts:${server}:${id}`);
+export const getLatestReadStorageKey = () =>
+  getAccountScopedSessionStorageKey('latest-read');
 
 // Note: IndexedDB is updated in authToClient() after successful login
 // We don't update it here at module load to avoid overwriting with empty values
@@ -216,7 +236,13 @@ export const getCurrentUser = async (): Promise<Account | undefined> => {
 
     // Persist to localStorage and IndexedDB for offline access
     localStorage.setItem('currentUserID', currentUser.id);
-    await set('currentUser', currentUser);
+    await set(getCurrentUserCacheKey(), currentUser);
+    await syncActiveAccountProfile({
+      id: currentUser.id,
+      acct: currentUser.acct,
+      display_name: currentUser.display_name,
+      avatar: currentUser.avatar,
+    });
 
     return currentUser;
   } catch (err) {
@@ -224,7 +250,9 @@ export const getCurrentUser = async (): Promise<Account | undefined> => {
 
     // Try to get cached user from IndexedDB when offline
     try {
-      const cachedUser = (await get('currentUser')) as Account | undefined;
+      const cachedUser = (await get(getCurrentUserCacheKey())) as
+        | Account
+        | undefined;
       if (cachedUser) {
         console.log('[getCurrentUser] Using cached user data');
         currentUser = cachedUser;
@@ -257,12 +285,10 @@ export const unfollowUser = async (id: string) => {
   return data;
 };
 
-// Cache key prefix for profile data
-const PROFILE_CACHE_PREFIX = 'profile_';
-
 export const getAccount = async (id: string): Promise<Account | undefined> => {
   const accessToken = getAccessToken();
   const server = getServer();
+  const cacheKey = getProfileCacheKey(id);
 
   try {
     const response = await fetch(
@@ -278,7 +304,7 @@ export const getAccount = async (id: string): Promise<Account | undefined> => {
 
     // Cache the profile to IndexedDB for offline access
     if (data && data.id) {
-      await set(`${PROFILE_CACHE_PREFIX}${id}`, data);
+      await set(cacheKey, data);
       console.log('[getAccount] Profile cached for offline access');
     }
 
@@ -288,9 +314,7 @@ export const getAccount = async (id: string): Promise<Account | undefined> => {
 
     // Try to get cached profile from IndexedDB when offline
     try {
-      const cachedProfile = (await get(`${PROFILE_CACHE_PREFIX}${id}`)) as
-        | Account
-        | undefined;
+      const cachedProfile = (await get(cacheKey)) as Account | undefined;
       if (cachedProfile) {
         console.log('[getAccount] Using cached profile data');
         return cachedProfile;
@@ -306,10 +330,6 @@ export const getAccount = async (id: string): Promise<Account | undefined> => {
 
 export type ProfilePostsFilter = 'posts' | 'posts_replies' | 'media';
 
-// Cache key prefix for user posts
-const USER_POSTS_CACHE_PREFIX = 'user_posts_';
-const USER_PINNED_POSTS_CACHE_PREFIX = 'user_pinned_posts_';
-
 export const getUsersPosts = async (
   id: string,
   filter: ProfilePostsFilter = 'posts',
@@ -318,7 +338,7 @@ export const getUsersPosts = async (
   const accessToken = getAccessToken();
   const server = getServer();
   // Only use cache for initial load (no maxId)
-  const cacheKey = `${USER_POSTS_CACHE_PREFIX}${id}_${filter}`;
+  const cacheKey = getUserPostsCacheKey(id, filter);
 
   let url = `${FIREBASE_FUNCTIONS_BASE_URL}/getUserPosts?id=${id}&code=${accessToken}&server=${server}`;
 
@@ -373,7 +393,7 @@ export const getUsersPosts = async (
 export const getPinnedPosts = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const cacheKey = `${USER_PINNED_POSTS_CACHE_PREFIX}${server}_${id}`;
+  const cacheKey = getPinnedPostsCacheKey(server, id);
 
   const url = `${FIREBASE_FUNCTIONS_BASE_URL}/getPinnedPosts?id=${encodeURIComponent(
     id
@@ -496,9 +516,10 @@ export const getInstanceInfo = async () => {
 };
 
 export const initAuth = async (serverURL: string) => {
+  const normalizedServer = normalizeServer(serverURL);
   const redirect_uri = location.origin;
   const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/authenticate?server=${serverURL}&redirect_uri=${redirect_uri}`,
+    `${FIREBASE_FUNCTIONS_BASE_URL}/authenticate?server=${normalizedServer}&redirect_uri=${redirect_uri}`,
     {
       method: 'POST',
     }
@@ -510,14 +531,37 @@ export const initAuth = async (serverURL: string) => {
   // Firebase function returns {url: "..."}
   window.location.href = data.url || data;
 
-  localStorage.setItem('server', serverURL);
-
   return;
+};
+
+const getServerFromOAuthState = (state: string): string => {
+  try {
+    // URLSearchParams decodes '+' into space, so normalize standard base64
+    // and accept base64url variants before decoding.
+    const normalizedState = state
+      .replace(/ /g, '+')
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const padding = normalizedState.length % 4;
+    const paddedState =
+      padding === 0
+        ? normalizedState
+        : `${normalizedState}${'='.repeat(4 - padding)}`;
+
+    const decoded = JSON.parse(atob(paddedState)) as { server?: string };
+    if (!decoded.server) {
+      throw new Error('Missing server in OAuth state');
+    }
+    return normalizeServer(decoded.server);
+  } catch (error) {
+    console.error('Failed to decode OAuth state', error);
+    throw new Error('Invalid OAuth state');
+  }
 };
 
 export const authToClient = async (code: string, state: string) => {
   try {
-    localStorage.setItem('token', code);
+    const server = getServerFromOAuthState(state);
     const redirect_uri = location.origin;
 
     const response = await fetch(
@@ -543,11 +587,7 @@ export const authToClient = async (code: string, state: string) => {
     }
 
     const tokenData = data.access_token;
-
-    // Update both localStorage and IndexedDB
-    localStorage.setItem('accessToken', tokenData);
-    await set('accessToken', tokenData);
-    await set('server', getServer());
+    await upsertAccountFromOAuth(server, tokenData);
 
     // Exit guest mode since user is now logged in
     const { exitGuestMode } = await import('./auth-state');
@@ -555,16 +595,7 @@ export const authToClient = async (code: string, state: string) => {
 
     // Clear cached currentUser to force re-fetch with new token
     currentUser = null;
-
-    // try to get user info
-    try {
-      const userData = await getCurrentUser();
-      console.log('user data', userData);
-      return tokenData;
-    } catch (err) {
-      console.error('Error getting user info', err);
-      return tokenData;
-    }
+    return tokenData;
   } catch (err) {
     console.error('Auth to client error', err);
     throw err;
