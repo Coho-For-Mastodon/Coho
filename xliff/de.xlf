@@ -934,22 +934,6 @@
   <source>Reload</source>
   <target>Neu laden</target>
 </trans-unit>
-<trans-unit id="s8ac625bb85ed202b">
-  <source>alpha</source>
-  <target>Alpha</target>
-</trans-unit>
-<trans-unit id="sd7e63207a8918d92">
-  <source>Hello, I am MammothBot. I can help you with Mastodon, such as by generating posts etc, summarizing posts and more. You can chat with me like you would anyone else, no need to talk like a robot 😊</source>
-  <target>Hallo, ich bin MammothBot. Ich kann dir bei Mastodon helfen, z. B. beim Generieren von Beiträgen usw., beim Zusammenfassen von Beiträgen und mehr. Du kannst mit mir chatten wie mit jedem anderen auch, du musst nicht wie ein Roboter sprechen 😊</target>
-</trans-unit>
-<trans-unit id="s57adf424d57c8a0f">
-  <source>Send</source>
-  <target>Senden</target>
-</trans-unit>
-<trans-unit id="s3687049d1af562c4">
-  <source>Copy</source>
-  <target>Kopieren</target>
-</trans-unit>
 <trans-unit id="s5eee3dd2675292f6">
   <source>Loading more...</source>
   <target>Mehr laden...</target>
