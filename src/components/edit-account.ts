@@ -495,7 +495,8 @@ export class EditAccount extends LitElement {
               <div class="image-preview-container">
                 <img
                   class="avatar-preview"
-                  src=${this.avatarPreviewUrl || '/assets/icons/256-icon.png'}
+                  src=${this.avatarPreviewUrl ||
+                  '/assets/icons/new-icons/icon-256x256.png'}
                   alt=${msg('Avatar preview')}
                 />
                 <div class="image-change-overlay" @click=${this.changeAvatar}>
@@ -509,7 +510,8 @@ export class EditAccount extends LitElement {
               <div class="image-preview-container">
                 <img
                   class="header-preview"
-                  src=${this.headerPreviewUrl || '/assets/icons/256-icon.png'}
+                  src=${this.headerPreviewUrl ||
+                  '/assets/icons/new-icons/icon-256x256.png'}
                   alt=${msg('Header preview')}
                 />
                 <div class="image-change-overlay" @click=${this.changeHeader}>

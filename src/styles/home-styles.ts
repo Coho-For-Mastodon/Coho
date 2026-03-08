@@ -100,17 +100,6 @@ export const homeStyles = css`
     padding: 0;
   }
 
-  mammoth-bot {
-    position: fixed;
-    bottom: 12px;
-    right: 12px;
-  }
-
-  #bot-drawer mammoth-bot {
-    display: flex;
-    position: unset;
-  }
-
   md-menu {
     background: #ffffff14;
     backdrop-filter: blur(48px);
@@ -583,10 +572,6 @@ export const homeStyles = css`
       margin-right: initial;
       width: 100%;
       scrollbar-width: none;
-    }
-
-    mammoth-bot {
-      display: none;
     }
 
     md-toolbar {
