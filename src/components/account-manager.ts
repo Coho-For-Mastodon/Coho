@@ -202,7 +202,7 @@ export class AccountManager extends LitElement {
     }
 
     .section-label {
-      margin: 0;
+      margin: 0 0 10px 2px;
       font-size: var(--md-sys-typescale-label-medium-font-size);
       text-transform: uppercase;
       letter-spacing: 0.08em;

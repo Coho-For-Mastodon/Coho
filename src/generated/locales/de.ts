@@ -329,7 +329,6 @@ export const templates = {
   s85b8c9d502510c46: `Review and manage accounts you have muted or blocked.`,
   sf5ea7de31631a983: `Scheduled Posts`,
   s6965c9e1827dcb0d: `View, reschedule, or cancel queued posts.`,
-  sa45a194b58837e4f: `Active`,
   s8e114dd98aeedf91: `Switch`,
   sea4f08110bb8f15d: `Remove`,
   s6e2ab159a07b1f2f: `Switch the active account, add another one, or remove a saved account.`,
