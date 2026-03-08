@@ -36,6 +36,9 @@ export class Notifications extends LitElement {
   @state() activeSegment: string = 'all';
   @state() followingMap: Map<string, boolean> = new Map();
   @state() loadingFollowMap: Map<string, boolean> = new Map();
+  @state() loadingRequestMap: Map<string, boolean> = new Map();
+  @state() private handledRequests: Set<string> = new Set();
+  @state() followRequests: Account[] = [];
   @state() loadingMore: boolean = false;
   @state() hasMoreNotifications: boolean = true;
   @state() private isCheckingForNew: boolean = false;
@@ -587,6 +590,9 @@ export class Notifications extends LitElement {
           // Check follow status for all follow notifications
           await this.checkFollowStatuses();
 
+          // Fire-and-forget: loads in parallel, updates state reactively when ready
+          void this._loadFollowRequests();
+
           if ('scheduler' in window) {
             await scheduler.yield();
           }
@@ -996,6 +1002,8 @@ export class Notifications extends LitElement {
         return msg('mentioned you');
       case 'follow':
         return msg('followed you');
+      case 'follow_request':
+        return msg('requested to follow you');
       case 'update':
         return msg('edited a post');
       default:
@@ -1051,6 +1059,143 @@ export class Notifications extends LitElement {
             `
           : nothing}
       </div>
+    `;
+  }
+
+  private async _loadFollowRequests() {
+    try {
+      const { getFollowRequests } =
+        await import('../mastodon/api/follow-requests');
+      this.followRequests = await getFollowRequests();
+    } catch (err) {
+      console.error('Failed to load follow requests:', err);
+    }
+  }
+
+  private async _handleFollowRequest(
+    accountId: string,
+    e: Event,
+    action: 'authorize' | 'reject'
+  ) {
+    e.stopPropagation();
+
+    const newLoadingMap = new Map(this.loadingRequestMap);
+    newLoadingMap.set(accountId, true);
+    this.loadingRequestMap = newLoadingMap;
+
+    try {
+      const { authorizeFollowRequest, rejectFollowRequest } =
+        await import('../mastodon/api/follow-requests');
+
+      if (action === 'authorize') {
+        await authorizeFollowRequest(accountId);
+      } else {
+        await rejectFollowRequest(accountId);
+      }
+
+      const newHandled = new Set(this.handledRequests);
+      newHandled.add(accountId);
+      this.handledRequests = newHandled;
+      this.followRequests = this.followRequests.filter(
+        (a) => a.id !== accountId
+      );
+    } catch (err) {
+      console.error(`Failed to ${action} follow request:`, err);
+    } finally {
+      const finalLoadingMap = new Map(this.loadingRequestMap);
+      finalLoadingMap.set(accountId, false);
+      this.loadingRequestMap = finalLoadingMap;
+    }
+  }
+
+  renderFollowRequestCard(account: Account) {
+    const isLoading = this.loadingRequestMap.get(account.id) ?? false;
+    const bioText = account.note?.replace(/<[^>]*>/g, '') || '';
+
+    return html`
+      <li
+        class="notification-card follow"
+        @click="${() => this.openProfile(account)}"
+      >
+        <div class="notification-header">
+          <div class="notification-icon follow">
+            ${this.getNotificationIcon('follow')}
+          </div>
+          <div class="notification-meta">
+            <div class="notification-meta-top">
+              <span class="notification-action"
+                >${this.getNotificationActionText('follow_request')}</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="follow-card">
+          <div class="follow-user-info">
+            <img
+              class="follow-avatar"
+              src="${account.avatar}"
+              alt="${account.display_name}'s avatar"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                this.openProfile(account);
+              }}"
+            />
+            <div class="follow-details">
+              <p
+                class="follow-name"
+                .innerHTML="${parseEmojis(
+                  account.display_name || account.username,
+                  account.emojis || []
+                )}"
+                @click="${(e: Event) => {
+                  e.stopPropagation();
+                  this.openProfile(account);
+                }}"
+              ></p>
+              <p class="follow-handle">@${account.acct}</p>
+              ${bioText ? html`<p class="follow-bio">${bioText}</p>` : nothing}
+              <div class="follow-stats">
+                <span class="follow-stat">
+                  <strong
+                    >${account.followers_count?.toLocaleString() || 0}</strong
+                  >
+                  ${msg('followers')}
+                </span>
+                <span class="follow-stat">
+                  <strong
+                    >${account.following_count?.toLocaleString() || 0}</strong
+                  >
+                  ${msg('following')}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="follow-actions">
+            <md-button
+              variant="filled"
+              pill
+              size="small"
+              ?disabled="${isLoading}"
+              @click="${(e: Event) =>
+                this._handleFollowRequest(account.id, e, 'authorize')}"
+            >
+              ${isLoading ? msg('...') : msg('Accept')}
+            </md-button>
+            <md-button
+              variant="outlined"
+              pill
+              size="small"
+              ?disabled="${isLoading}"
+              @click="${(e: Event) =>
+                this._handleFollowRequest(account.id, e, 'reject')}"
+            >
+              ${msg('Reject')}
+            </md-button>
+          </div>
+        </div>
+      </li>
     `;
   }
 
@@ -1207,6 +1352,12 @@ export class Notifications extends LitElement {
     if (notification.type === 'follow') {
       return this.renderFollowNotification(notification);
     }
+    if (notification.type === 'follow_request') {
+      if (this.handledRequests.has(notification.account.id)) {
+        return nothing;
+      }
+      return this.renderFollowRequestCard(notification.account);
+    }
     return this.renderStatusNotification(notification);
   }
 
@@ -1268,6 +1419,11 @@ export class Notifications extends LitElement {
         <md-segment value="all">${msg('All')}</md-segment>
         <md-segment value="mentions">${msg('Mentions')}</md-segment>
         <md-segment value="follows">${msg('Follows')}</md-segment>
+        <md-segment value="requests"
+          >${msg('Requests')}${this.followRequests.length > 0
+            ? html` (${this.followRequests.length})`
+            : nothing}</md-segment
+        >
       </md-segmented-button>
 
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
@@ -1341,6 +1497,24 @@ export class Notifications extends LitElement {
               <div id="no">
                 <img src="/assets/notify-done.svg" alt="no followers" />
                 <p>${msg('No new followers yet')}</p>
+              </div>
+            `}
+      </div>
+
+      <div class="panel ${this.activeSegment === 'requests' ? 'active' : ''}">
+        ${this.followRequests.length > 0
+          ? html`<div class="scroller-fallback">
+              ${this.followRequests.map(
+                (account) =>
+                  html`<div class="notification-wrapper">
+                    ${this.renderFollowRequestCard(account)}
+                  </div>`
+              )}
+            </div>`
+          : html`
+              <div id="no">
+                <img src="/assets/notify-done.svg" alt="no follow requests" />
+                <p>${msg('No pending follow requests')}</p>
               </div>
             `}
       </div>
