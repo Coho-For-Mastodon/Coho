@@ -92,7 +92,7 @@ describe('account-manager', () => {
     hoisted.getActiveAccount.mockImplementation(() => hoisted.accounts[0]);
   });
 
-  it('renders saved accounts and marks the active account', async () => {
+  it('renders saved accounts and styles the active account', async () => {
     const el = await fixture<AccountManager>(
       html`<account-manager></account-manager>`
     );
@@ -101,8 +101,9 @@ describe('account-manager', () => {
     const rows = el.shadowRoot?.querySelectorAll('.account-row');
     expect(rows?.length).toBe(2);
     expect(el.shadowRoot?.textContent).toContain('Alice');
-    expect(el.shadowRoot?.textContent).toContain('Active');
     expect(el.shadowRoot?.textContent).toContain('Bob');
+    expect(rows?.[0].classList.contains('active')).toBe(true);
+    expect(rows?.[1].classList.contains('active')).toBe(false);
   });
 
   it('switches accounts and triggers a reload', async () => {

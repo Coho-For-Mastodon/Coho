@@ -8,6 +8,7 @@ const hoisted = vi.hoisted(() => {
     navigate: vi.fn(),
     set: vi.fn(),
     get: vi.fn().mockResolvedValue(null),
+    del: vi.fn(),
   };
 });
 
@@ -20,6 +21,7 @@ vi.mock('../../src/router/routes', () => ({
 vi.mock('idb-keyval', () => ({
   set: hoisted.set,
   get: hoisted.get,
+  del: hoisted.del,
 }));
 
 import '../../src/components/timeline';
