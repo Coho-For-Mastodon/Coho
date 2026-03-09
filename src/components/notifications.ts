@@ -426,7 +426,6 @@ export class Notifications extends LitElement {
         font-size: 11px;
         color: var(--md-sys-color-on-surface-variant, #938f99);
         margin-top: 4px;
-        text-transform: lowercase;
       }
 
       /* === Link card: large vertical (with image) === */
