@@ -237,6 +237,7 @@ export class TimelineItem extends LitElement {
         white-space: nowrap;
       }
 
+      /* === Link card: compact horizontal (no image) === */
       .link-card {
         display: flex;
         align-items: stretch;
@@ -247,6 +248,12 @@ export class TimelineItem extends LitElement {
         cursor: pointer;
         height: auto;
         gap: 10px;
+        border: 1px solid
+          color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #2b2930) 60%,
+            transparent
+          );
       }
 
       .link-card:hover {
@@ -254,36 +261,42 @@ export class TimelineItem extends LitElement {
       }
 
       .link-card h4 {
-        margin-bottom: 8px;
+        margin-bottom: 4px;
         margin-top: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        font-size: 0.9em;
+        font-size: 18px;
       }
 
-      .link-card img {
-        min-width: 80px;
-        border-radius: var(--md-sys-shape-corner-none);
-        object-fit: cover;
+      .link-card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 60px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.04);
+      }
 
-        height: 20%;
-        width: 20%;
-        padding: 8px;
+      .link-card-icon img {
+        width: 24px;
+        height: 24px;
+        opacity: 0.6;
+        background: transparent;
       }
 
       .link-card-content {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding: 8px 10px;
+        padding: 10px 12px;
         flex: 1;
         min-width: 0;
       }
 
       .link-card p {
         margin: 0;
-        font-size: 11px;
+        font-size: 12px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -291,13 +304,59 @@ export class TimelineItem extends LitElement {
         color: var(--md-sys-color-on-surface-variant);
       }
 
+      .link-card-provider {
+        font-size: 11px;
+        color: var(--md-sys-color-on-surface-variant, #938f99);
+        margin-top: 4px;
+        text-transform: lowercase;
+      }
+
+      /* === Link card: large vertical (with image) === */
+      .link-card--large {
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .link-card--large .link-card-hero {
+        width: 100%;
+        height: auto;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 0;
+        padding: 0;
+        min-width: unset;
+        display: block;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .link-card--large .link-card-content {
+        padding: 12px 14px;
+      }
+
+      .link-card--large h4 {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
       @media (prefers-color-scheme: light) {
         .link-card {
           background: rgba(0, 0, 0, 0.05);
+          border-color: color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #cac4d0) 60%,
+            transparent
+          );
         }
 
         .link-card:hover {
           background: rgba(0, 0, 0, 0.08);
+        }
+
+        .link-card-icon {
+          background: rgba(0, 0, 0, 0.04);
         }
 
         .sensitive {
