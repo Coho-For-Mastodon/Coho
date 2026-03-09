@@ -134,9 +134,10 @@ export class AppIndex extends LitElement {
     if (this.isAuthenticated) {
       this.handleInitTheme();
 
-      // Preload data during idle time if conditions are good
-      // This is lazy-imported to avoid impacting first load bundle size
-      this.initIdlePreload();
+      // Preload data during idle time, then precache critical components.
+      // Component precaching waits for data preload to finish to avoid
+      // competing for network/CPU during user interactions.
+      this.initIdlePreload().then(() => this.initComponentPrecache());
 
       // Lazy-load image preview dialog on first preview-image event
       this.initLazyImagePreview();
@@ -236,6 +237,20 @@ export class AppIndex extends LitElement {
       await initPreload();
     } catch (error) {
       console.warn('[App] Preload initialization failed:', error);
+    }
+  }
+
+  /**
+   * Precache critical components for offline use.
+   * Network-aware: precaches more on fast connections, less on slow ones.
+   */
+  private async initComponentPrecache() {
+    try {
+      const { initComponentPrecache } =
+        await import('./services/precache-components');
+      await initComponentPrecache();
+    } catch (error) {
+      console.warn('[App] Component precache failed:', error);
     }
   }
 
