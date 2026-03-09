@@ -20,7 +20,9 @@ import '../components/md/md-menu-item';
 import '../components/timeline-poll';
 
 /**
- * Extracts the hostname from a URL for display as a provider label.
+ * Returns a provider label for display, preferring the explicit providerName
+ * when available and otherwise deriving it from the URL hostname (without a
+ * leading "www.").
  */
 function getProviderDomain(url: string, providerName?: string): string {
   if (providerName) return providerName;
