@@ -27,7 +27,9 @@ type PrecacheTask = () => Promise<unknown>;
  * - 'critical' : slow/unknown connection — only post dialog
  * - 'extended' : fast connection — post dialog + more pages
  */
-async function getPrecacheTier(): Promise<'none' | 'critical' | 'extended'> {
+export async function getPrecacheTier(): Promise<
+  'none' | 'critical' | 'extended'
+> {
   // Respect the app's data saver setting
   const { getSettings } = await import('./settings');
   const settings = await getSettings();
