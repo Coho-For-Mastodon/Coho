@@ -1,4 +1,4 @@
-import { html } from 'lit';
+import { html, nothing, type TemplateResult } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { msg, str } from '@lit/localize';
@@ -18,6 +18,89 @@ import '../components/md/md-dropdown';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
 import '../components/timeline-poll';
+
+/**
+ * Returns a provider label for display, preferring the explicit providerName
+ * when available and otherwise deriving it from the URL hostname (without a
+ * leading "www.").
+ */
+function getProviderDomain(url: string, providerName?: string): string {
+  if (providerName) return providerName;
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Renders a link preview card for a post.
+ * Shows a vertical layout with large image when an image is present,
+ * or a compact horizontal layout when there is no image.
+ */
+export function renderLinkCard(
+  card: Post['card'] | null | undefined,
+  openLinkCard: (url: string) => void,
+  hasMediaAttachments: boolean = false
+): TemplateResult | typeof nothing {
+  // Don't render card if there's no card data
+  if (!card) return nothing;
+
+  // Suppress card when media attachments already exist (avoids redundancy)
+  if (hasMediaAttachments) return nothing;
+
+  const provider = getProviderDomain(card.url, card.provider_name);
+  const hasImage = !!card.image;
+
+  if (hasImage) {
+    // Vertical "large" card layout: image on top, content below
+    return html`
+      <div
+        @click="${(e: Event) => {
+          e.stopPropagation();
+          openLinkCard(card.url || '');
+        }}"
+        class="link-card link-card--large"
+      >
+        <img
+          class="link-card-hero"
+          src="${card.image}"
+          alt="${card.title}"
+          loading="lazy"
+        />
+        <div class="link-card-content">
+          <h4>${card.title}</h4>
+          ${card.description ? html`<p>${card.description}</p>` : nothing}
+          ${provider
+            ? html`<span class="link-card-provider">${provider}</span>`
+            : nothing}
+        </div>
+      </div>
+    `;
+  }
+
+  // Compact horizontal layout: no image
+  return html`
+    <div
+      @click="${(e: Event) => {
+        e.stopPropagation();
+        openLinkCard(card.url || '');
+      }}"
+      class="link-card"
+    >
+      <div class="link-card-icon">
+        <img src="/assets/bookmark-outline.svg" alt="" />
+      </div>
+      <div class="link-card-content">
+        <h4>${card.title}</h4>
+        ${card.description ? html`<p>${card.description}</p>` : nothing}
+        ${provider
+          ? html`<span class="link-card-provider">${provider}</span>`
+          : nothing}
+      </div>
+    </div>
+  `;
+}
 
 export interface TimelineItemHandlers {
   viewSensitive: () => void;
@@ -373,28 +456,11 @@ export function renderRegularTweet(
             `
           : html``
       }
-      ${
-        state.tweet && state.tweet.card
-          ? html`
-              <div
-                @click="${() =>
-                  handlers.openLinkCard(state.tweet?.card?.url || '')}"
-                class="link-card"
-              >
-                <img
-                  src="${state.tweet.card.image ||
-                  '/assets/bookmark-outline.svg'}"
-                  alt="${state.tweet.card.title}"
-                />
-
-                <div class="link-card-content">
-                  <h4>${state.tweet.card.title}</h4>
-                  <p>${state.tweet.card.description}</p>
-                </div>
-              </div>
-            `
-          : null
-      }
+      ${renderLinkCard(
+        state.tweet?.card,
+        handlers.openLinkCard,
+        (state.tweet?.media_attachments?.length ?? 0) > 0
+      )}
 
       <div class="actions" slot="footer">
         ${
@@ -532,25 +598,11 @@ export function renderThreadContinuation(
                 </image-carousel>
               `
             : html``}
-          ${threadPost.card
-            ? html`
-                <div
-                  @click="${() =>
-                    handlers.openLinkCard(threadPost.card?.url || '')}"
-                  class="link-card"
-                >
-                  <img
-                    src="${threadPost.card.image ||
-                    '/assets/bookmark-outline.svg'}"
-                    alt="${threadPost.card.title}"
-                  />
-                  <div class="link-card-content">
-                    <h4>${threadPost.card.title}</h4>
-                    <p>${threadPost.card.description}</p>
-                  </div>
-                </div>
-              `
-            : null}
+          ${renderLinkCard(
+            threadPost.card,
+            handlers.openLinkCard,
+            (threadPost.media_attachments?.length ?? 0) > 0
+          )}
           <div class="actions" slot="footer">
             <md-button
               variant="text"
@@ -777,26 +829,11 @@ export function renderReblog(
             </image-carousel>
           `
         : html``}
-      ${state.tweet.reblog.card
-        ? html`
-            <div
-              @click="${() =>
-                handlers.openLinkCard(state.tweet?.reblog?.card?.url || '')}"
-              class="link-card"
-            >
-              <img
-                src="${state.tweet.reblog.card.image ||
-                '/assets/bookmark-outline.svg'}"
-                alt="${state.tweet.reblog.card.title}"
-              />
-
-              <div class="link-card-content">
-                <h4>${state.tweet.reblog.card.title}</h4>
-                <p>${state.tweet.reblog.card.description}</p>
-              </div>
-            </div>
-          `
-        : null}
+      ${renderLinkCard(
+        state.tweet.reblog.card,
+        handlers.openLinkCard,
+        (state.tweet.reblog.media_attachments?.length ?? 0) > 0
+      )}
 
       <div class="actions" slot="footer">
         ${state.show === true
@@ -909,26 +946,11 @@ export function renderThread(
                   </image-carousel>
                 `
               : html``}
-            ${threadPost.card
-              ? html`
-                  <div
-                    @click="${() =>
-                      handlers.openLinkCard(threadPost.card?.url || '')}"
-                    class="link-card"
-                  >
-                    <img
-                      src="${threadPost.card.image ||
-                      '/assets/bookmark-outline.svg'}"
-                      alt="${threadPost.card.title}"
-                    />
-
-                    <div class="link-card-content">
-                      <h4>${threadPost.card.title}</h4>
-                      <p>${threadPost.card.description}</p>
-                    </div>
-                  </div>
-                `
-              : null}
+            ${renderLinkCard(
+              threadPost.card,
+              handlers.openLinkCard,
+              (threadPost.media_attachments?.length ?? 0) > 0
+            )}
             <div class="actions" slot="footer">
               <md-button
                 variant="text"
