@@ -247,9 +247,10 @@ async function preloadFavorites(): Promise<void> {
 /**
  * Schedule preloading during idle time
  * Uses requestIdleCallback to avoid blocking the main thread
- * and processes one item per idle period to remain non-blocking
+ * and processes one item per idle period to remain non-blocking.
+ * Returns a promise that resolves when all tasks have completed.
  */
-export function schedulePreload(): void {
+export function schedulePreload(): Promise<void> {
   // Queue of preload tasks
   const preloadQueue = [
     preloadNotifications,
@@ -258,35 +259,42 @@ export function schedulePreload(): void {
   ];
 
   let queueIndex = 0;
+  const taskPromises: Promise<void>[] = [];
 
-  const processNextItem = (deadline: IdleDeadline): void => {
-    // Check if we have time remaining in this idle period
-    // and there are still items to process
-    while (queueIndex < preloadQueue.length && deadline.timeRemaining() > 0) {
-      const task = preloadQueue[queueIndex];
-      queueIndex++;
+  return new Promise<void>((resolve) => {
+    const processNextItem = (deadline: IdleDeadline): void => {
+      // Check if we have time remaining in this idle period
+      // and there are still items to process
+      while (queueIndex < preloadQueue.length && deadline.timeRemaining() > 0) {
+        const task = preloadQueue[queueIndex];
+        queueIndex++;
 
-      // Start the async task (it will complete after this idle callback)
-      task().catch((err) => {
-        console.warn('[Preload] Task failed:', err);
-      });
+        // Start the async task and track its completion
+        taskPromises.push(
+          task().catch((err) => {
+            console.warn('[Preload] Task failed:', err);
+          })
+        );
 
-      // Only do one task per idle callback to stay responsive
-      // The next task will be picked up in the next idle period
-      break;
-    }
+        // Only do one task per idle callback to stay responsive
+        // The next task will be picked up in the next idle period
+        break;
+      }
 
-    // If there are more items, schedule another idle callback
-    if (queueIndex < preloadQueue.length) {
-      requestIdleCallbackPolyfill(processNextItem, { timeout: 5000 });
-    } else {
-      console.log('[Preload] All preload tasks scheduled');
-    }
-  };
+      // If there are more items, schedule another idle callback
+      if (queueIndex < preloadQueue.length) {
+        requestIdleCallbackPolyfill(processNextItem, { timeout: 5000 });
+      } else {
+        console.log('[Preload] All preload tasks scheduled');
+        // Wait for all tasks to actually finish, then resolve
+        Promise.all(taskPromises).then(() => resolve());
+      }
+    };
 
-  // Start processing during idle time with a 5 second timeout
-  // The timeout ensures preloading eventually happens even on busy pages
-  requestIdleCallbackPolyfill(processNextItem, { timeout: 5000 });
+    // Start processing during idle time with a 5 second timeout
+    // The timeout ensures preloading eventually happens even on busy pages
+    requestIdleCallbackPolyfill(processNextItem, { timeout: 5000 });
+  });
 }
 
 /**
@@ -338,5 +346,5 @@ export async function initPreload(): Promise<void> {
   }
 
   console.log('[Preload] Starting idle-time preload...');
-  schedulePreload();
+  await schedulePreload();
 }
