@@ -1,8 +1,9 @@
 import { del, set } from 'idb-keyval';
 import type { AccountChangedDetail } from '../types/events';
+import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 
 const AUTH_SESSION_STORAGE_KEY = 'coho:auth-session';
-const AUTH_SESSION_VERSION = 1;
+const AUTH_SESSION_VERSION = 2;
 const GUEST_SERVER = 'mastodon.social';
 const ACTIVE_ACCOUNT_IDB_KEY = 'activeAccountKey';
 const LEGACY_ACCOUNT_ID = '__legacy__';
@@ -14,10 +15,17 @@ export interface AuthAccountRecord {
   server: string;
   accountId: string;
   accessToken: string;
+  clientId?: string;
+  clientSecret?: string;
   acct: string;
   displayName: string;
   avatar: string;
   lastUsedAt: number;
+}
+
+export interface OAuthClientCredentials {
+  clientId: string;
+  clientSecret: string;
 }
 
 export interface AuthSessionStore {
@@ -69,7 +77,7 @@ function readStore(): AuthSessionStore {
 
     const parsed = JSON.parse(raw) as Partial<AuthSessionStore>;
     if (
-      parsed.version !== AUTH_SESSION_VERSION ||
+      (parsed.version !== AUTH_SESSION_VERSION && parsed.version !== 1) ||
       !Array.isArray(parsed.accounts)
     ) {
       return defaultStore();
@@ -178,7 +186,6 @@ function projectActiveAccountToLegacyKeys(store: AuthSessionStore): void {
 
   if (activeAccount) {
     localStorage.setItem('accessToken', activeAccount.accessToken);
-    localStorage.setItem('token', activeAccount.accessToken);
     localStorage.setItem('server', activeAccount.server);
     localStorage.setItem('currentUserID', activeAccount.accountId);
     localStorage.removeItem('guestMode');
@@ -186,7 +193,6 @@ function projectActiveAccountToLegacyKeys(store: AuthSessionStore): void {
   }
 
   localStorage.removeItem('accessToken');
-  localStorage.removeItem('token');
   localStorage.removeItem('currentUserID');
 
   if (localStorage.getItem('guestMode') === 'true') {
@@ -335,7 +341,8 @@ export async function syncActiveToIndexedDb(): Promise<void> {
 
 export async function upsertAccountFromOAuth(
   server: string,
-  accessToken: string
+  accessToken: string,
+  clientCredentials?: OAuthClientCredentials
 ): Promise<AuthAccountRecord> {
   const normalizedServer = normalizeServer(server);
   const profile = await fetchOAuthAccountProfile(normalizedServer, accessToken);
@@ -354,6 +361,8 @@ export async function upsertAccountFromOAuth(
     server: normalizedServer,
     accountId: profile.id,
     accessToken,
+    clientId: clientCredentials?.clientId,
+    clientSecret: clientCredentials?.clientSecret,
     acct: profile.acct || profile.username || profile.id,
     displayName:
       profile.display_name || profile.username || profile.acct || profile.id,
@@ -438,6 +447,24 @@ export async function removeAccount(
   const removedActiveAccount = store.activeAccountKey === accountKey;
   if (removedActiveAccount) {
     await cleanupPreviousAccountPushSubscription();
+  }
+
+  // Revoke the OAuth token on the Mastodon server
+  if (existing.clientId && existing.clientSecret && existing.accessToken) {
+    try {
+      await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/revokeToken`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          server: existing.server,
+          clientId: existing.clientId,
+          clientSecret: existing.clientSecret,
+          token: existing.accessToken,
+        }),
+      });
+    } catch {
+      // Best-effort revocation — don't block account removal on network errors
+    }
   }
 
   const remainingAccounts = sortAccounts(

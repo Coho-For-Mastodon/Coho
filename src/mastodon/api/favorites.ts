@@ -4,9 +4,11 @@ import { Post } from '../types';
 
 export const getFavorites = async (): Promise<Post[]> => {
   const { url, accessToken } = getClientConfig();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getFavorites?code=${accessToken}&server=${url}`
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getFavorites`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accessToken, server: url }),
+  });
   const data = await response.json();
   return data;
 };

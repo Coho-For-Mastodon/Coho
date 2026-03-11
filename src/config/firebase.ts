@@ -1,12 +1,9 @@
 /**
  * Firebase Functions Configuration
  *
- * Switch between local emulator and production based on environment
+ * Switch between local emulator and production based on environment.
+ * Uses the local emulator when running on localhost in dev mode (not during tests).
  */
-
-const isLocal =
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1';
 
 // Firebase project configuration
 const FIREBASE_PROJECT_ID = 'coho-mastodon';
@@ -14,10 +11,14 @@ const FIREBASE_REGION = 'us-central1';
 
 // Base URLs
 const PRODUCTION_BASE_URL = `https://${FIREBASE_REGION}-${FIREBASE_PROJECT_ID}.cloudfunctions.net`;
-const LOCAL_BASE_URL = `https://${FIREBASE_REGION}-${FIREBASE_PROJECT_ID}.cloudfunctions.net`;
+const LOCAL_BASE_URL = `http://127.0.0.1:5001/${FIREBASE_PROJECT_ID}/${FIREBASE_REGION}`;
+
+const isLocal =
+  (window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1') &&
+  import.meta.env.MODE !== 'test';
 
 // Export the appropriate base URL
-// Use local emulator when running on localhost, otherwise use production
 export const FIREBASE_FUNCTIONS_BASE_URL = isLocal
   ? LOCAL_BASE_URL
   : PRODUCTION_BASE_URL;

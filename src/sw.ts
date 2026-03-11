@@ -70,7 +70,14 @@ self.addEventListener('sync', (event: Event) => {
   console.log('[SW] Sync event received:', syncEvent.tag);
 
   if (syncEvent.tag === SYNC_TAG) {
-    syncEvent.waitUntil(replayQueuedRequests(syncConfig));
+    syncEvent.waitUntil(
+      replayQueuedRequests(syncConfig, {
+        refreshAuthHeader: async () => {
+          const accessToken = (await get('accessToken')) as string;
+          return accessToken ? `Bearer ${accessToken}` : null;
+        },
+      })
+    );
   }
 });
 

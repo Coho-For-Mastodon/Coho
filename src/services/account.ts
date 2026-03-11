@@ -161,9 +161,11 @@ export const checkFollowing = async (id: string) => {
   try {
     const accessToken = getAccessToken();
     const server = getServer();
-    const response = await fetch(
-      `${FIREBASE_FUNCTIONS_BASE_URL}/isFollowing?id=${id}&code=${accessToken}&server=${server}`
-    );
+    const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/isFollowing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, server, id }),
+    });
     const data = await response.json();
 
     return data;
@@ -291,16 +293,17 @@ export const getAccount = async (id: string): Promise<Account | undefined> => {
   const cacheKey = getProfileCacheKey(id);
 
   try {
-    const response = await fetch(
-      `${FIREBASE_FUNCTIONS_BASE_URL}/getAccount?id=${id}&code=${accessToken}&server=${server}`
-    );
+    const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getAccount`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, server, id }),
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('account data', data);
 
     // Cache the profile to IndexedDB for offline access
     if (data && data.id) {
@@ -340,23 +343,33 @@ export const getUsersPosts = async (
   // Only use cache for initial load (no maxId)
   const cacheKey = getUserPostsCacheKey(id, filter);
 
-  let url = `${FIREBASE_FUNCTIONS_BASE_URL}/getUserPosts?id=${id}&code=${accessToken}&server=${server}`;
+  const url = `${FIREBASE_FUNCTIONS_BASE_URL}/getUserPosts`;
+
+  const bodyParams: Record<string, string> = {
+    accessToken,
+    server,
+    id,
+  };
 
   // Apply filter parameters based on selected view
   if (filter === 'posts') {
-    url += '&exclude_replies=true';
+    bodyParams.exclude_replies = 'true';
   } else if (filter === 'media') {
-    url += '&only_media=true';
+    bodyParams.only_media = 'true';
   }
   // 'posts_replies' doesn't need any extra params - returns all statuses
 
   // Add pagination parameter
   if (maxId) {
-    url += `&max_id=${maxId}`;
+    bodyParams.max_id = maxId;
   }
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyParams),
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -395,11 +408,7 @@ export const getPinnedPosts = async (id: string) => {
   const server = getServer();
   const cacheKey = getPinnedPostsCacheKey(server, id);
 
-  const url = `${FIREBASE_FUNCTIONS_BASE_URL}/getPinnedPosts?id=${encodeURIComponent(
-    id
-  )}&code=${encodeURIComponent(accessToken)}&server=${encodeURIComponent(
-    server
-  )}`;
+  const url = `${FIREBASE_FUNCTIONS_BASE_URL}/getPinnedPosts`;
 
   const tryCache = async () => {
     try {
@@ -428,7 +437,11 @@ export const getPinnedPosts = async (id: string) => {
   }
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, server, id }),
+    });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -469,9 +482,11 @@ export const getPinnedPosts = async (id: string) => {
 export const getUsersFollowers = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getFollowers?id=${id}&code=${accessToken}&server=${server}`
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getFollowers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accessToken, server, id }),
+  });
   const data = await response.json();
   return data;
 };
@@ -479,9 +494,11 @@ export const getUsersFollowers = async (id: string) => {
 export const getFollowing = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getFollowing?id=${id}&code=${accessToken}&server=${server}`
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getFollowing`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accessToken, server, id }),
+  });
   const data = await response.json();
   return data;
 };
@@ -489,15 +506,13 @@ export const getFollowing = async (id: string) => {
 export const followUser = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/follow?id=${id}&code=${accessToken}&server=${server}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/follow`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ accessToken, server, id }),
+  });
   const data = await response.json();
   return data;
 };
@@ -515,70 +530,44 @@ export const getInstanceInfo = async () => {
   return data;
 };
 
+// ============================================================================
+// Auth Flow
+// ============================================================================
+
 export const initAuth = async (serverURL: string) => {
   const normalizedServer = normalizeServer(serverURL);
   const redirect_uri = location.origin;
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/authenticate?server=${normalizedServer}&redirect_uri=${redirect_uri}`,
-    {
-      method: 'POST',
-    }
-  );
+
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/authenticate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      server: normalizedServer,
+      redirect_uri,
+    }),
+  });
 
   const data = await response.json();
-  console.log('data', data);
 
-  // Firebase function returns {url: "..."}
-  window.location.href = data.url || data;
-
-  return;
-};
-
-const getServerFromOAuthState = (state: string): string => {
-  try {
-    // URLSearchParams decodes '+' into space, so normalize standard base64
-    // and accept base64url variants before decoding.
-    const normalizedState = state
-      .replace(/ /g, '+')
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-    const padding = normalizedState.length % 4;
-    const paddedState =
-      padding === 0
-        ? normalizedState
-        : `${normalizedState}${'='.repeat(4 - padding)}`;
-
-    const decoded = JSON.parse(atob(paddedState)) as { server?: string };
-    if (!decoded.server) {
-      throw new Error('Missing server in OAuth state');
-    }
-    return normalizeServer(decoded.server);
-  } catch (error) {
-    console.error('Failed to decode OAuth state', error);
-    throw new Error('Invalid OAuth state');
-  }
+  window.location.href = data.url;
 };
 
 export const authToClient = async (code: string, state: string) => {
   try {
-    const server = getServerFromOAuthState(state);
-    const redirect_uri = location.origin;
-
-    const response = await fetch(
-      `${FIREBASE_FUNCTIONS_BASE_URL}/getClient?code=${code}&state=${state}&redirect_uri=${redirect_uri}`,
-      {
-        method: 'POST',
-      }
-    );
+    const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getClient`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code,
+        state,
+      }),
+    });
 
     const data = await response.json();
 
-    console.log('tokenData', data);
-
-    // Firebase function returns {access_token: "..."}
-    // Make sure we actually have a string token, not an error object
+    // Firebase function returns {access_token, server, clientId, clientSecret}
     if (!data.access_token || typeof data.access_token !== 'string') {
-      console.error('Invalid token response:', data);
+      console.error('Invalid token response');
       throw new Error(
         data.error ||
           data.details?.error_description ||
@@ -587,7 +576,11 @@ export const authToClient = async (code: string, state: string) => {
     }
 
     const tokenData = data.access_token;
-    await upsertAccountFromOAuth(server, tokenData);
+    const server = normalizeServer(data.server);
+    await upsertAccountFromOAuth(server, tokenData, {
+      clientId: data.clientId,
+      clientSecret: data.clientSecret,
+    });
 
     // Exit guest mode since user is now logged in
     const { exitGuestMode } = await import('./auth-state');

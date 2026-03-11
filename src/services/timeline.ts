@@ -47,7 +47,6 @@ export const groupSelfThreads = (posts: Post[]): Post[] => {
 export type { Post };
 
 // Helper functions to always get fresh values from localStorage
-const getToken = () => localStorage.getItem('token') || '';
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
 const getServer = () => localStorage.getItem('server') || 'mastodon.social';
 
@@ -93,10 +92,15 @@ export const savePlace = async (id: string) => {
 };
 
 export const getHomeTimeline = async (): Promise<Post[]> => {
-  const token = getToken();
+  const accessToken = getAccessToken();
   const server = getServer();
   const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getTimelinePaginated?code=${token}&server=${server}`
+    `${FIREBASE_FUNCTIONS_BASE_URL}/getTimelinePaginated`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, server }),
+    }
   );
   const data = await response.json();
   return data;
@@ -327,15 +331,13 @@ export const boostPost = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
   // Use Firebase function URL so service worker can queue for background sync when offline
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/boost?id=${id}&code=${accessToken}&server=${server}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/boost`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ accessToken, server, id }),
+  });
   const data = await response.json();
   return data;
 };
@@ -348,15 +350,13 @@ export const unboostPost = async (id: string) => {
 export const reblogPost = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/reblog?id=${id}&code=${accessToken}&server=${server}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/reblog`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ accessToken, server, id }),
+  });
   const data = await response.json();
   return data;
 };
@@ -371,9 +371,11 @@ export const getReplies = async (
 ): Promise<{ ancestors: Post[]; descendants: Post[] }> => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getReplies?id=${id}&code=${accessToken}&server=${server}`
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getReplies`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accessToken, server, id }),
+  });
   const data = await response.json();
   return data;
 };
@@ -447,9 +449,11 @@ export const mediaTimeline = mastodonGetMediaTimeline;
 export const searchTimeline = async (query: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/search?query=${query}&code=${accessToken}&server=${server}`
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accessToken, server, query }),
+  });
   const data = await response.json();
   return data;
 };

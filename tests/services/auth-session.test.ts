@@ -107,6 +107,33 @@ describe('auth-session service', () => {
     expect(localStorage.getItem('currentUserID')).toBe('3');
   });
 
+  it('stores client credentials when provided to upsertAccountFromOAuth', async () => {
+    seedStore();
+    vi.spyOn(window, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: '3',
+          username: 'carol',
+          acct: 'carol',
+          display_name: 'Carol',
+          avatar: 'https://cdn.example/avatar.png',
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    );
+
+    const record = await upsertAccountFromOAuth('mastodon.social', 'token-c', {
+      clientId: 'cid-123',
+      clientSecret: 'csec-456',
+    });
+
+    expect(record.clientId).toBe('cid-123');
+    expect(record.clientSecret).toBe('csec-456');
+  });
+
   it('switches the active account, syncs the legacy projection, and emits an event', async () => {
     seedStore();
     const changed = vi.fn();
@@ -133,6 +160,85 @@ describe('auth-session service', () => {
     expect(getActiveAccount()?.accountKey).toBe('hachyderm.io::2');
     expect(localStorage.getItem('accessToken')).toBe('token-b');
     expect(listAccounts()).toHaveLength(1);
+  });
+
+  it('calls revokeToken when removing an account with client credentials', async () => {
+    localStorage.setItem(
+      'coho:auth-session',
+      JSON.stringify({
+        version: 2,
+        activeAccountKey: 'tech.lgbt::1',
+        accounts: [
+          {
+            accountKey: 'tech.lgbt::1',
+            server: 'tech.lgbt',
+            accountId: '1',
+            accessToken: 'token-a',
+            clientId: 'cid-1',
+            clientSecret: 'csec-1',
+            acct: 'alice',
+            displayName: 'Alice',
+            avatar: '',
+            lastUsedAt: 20,
+          },
+          {
+            accountKey: 'hachyderm.io::2',
+            server: 'hachyderm.io',
+            accountId: '2',
+            accessToken: 'token-b',
+            acct: 'bob',
+            displayName: 'Bob',
+            avatar: '',
+            lastUsedAt: 10,
+          },
+        ],
+      })
+    );
+
+    const fetchSpy = vi
+      .spyOn(window, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ success: true }), { status: 200 })
+      );
+
+    await removeAccount('tech.lgbt::1');
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/revokeToken'),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"token":"token-a"'),
+      })
+    );
+  });
+
+  it('reads a version 2 store with clientId and clientSecret fields', async () => {
+    localStorage.setItem(
+      'coho:auth-session',
+      JSON.stringify({
+        version: 2,
+        activeAccountKey: 'tech.lgbt::1',
+        accounts: [
+          {
+            accountKey: 'tech.lgbt::1',
+            server: 'tech.lgbt',
+            accountId: '1',
+            accessToken: 'token-a',
+            clientId: 'cid-1',
+            clientSecret: 'csec-1',
+            acct: 'alice',
+            displayName: 'Alice',
+            avatar: '',
+            lastUsedAt: 20,
+          },
+        ],
+      })
+    );
+
+    const store = await bootstrapSession();
+    expect(store.accounts).toHaveLength(1);
+    expect(store.accounts[0].clientId).toBe('cid-1');
+    expect(store.accounts[0].clientSecret).toBe('csec-1');
   });
 
   it('invalidates the active account on 401 and clears credentials when no accounts remain', async () => {

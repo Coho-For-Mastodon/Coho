@@ -149,12 +149,13 @@ export const translate = async (
 export const createAPost = async (prompt: string) => {
   // Use Firebase Function
   const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/generateStatus?prompt=${prompt}`,
+    `${FIREBASE_FUNCTIONS_BASE_URL}/generateStatus`,
     {
       method: 'POST',
       headers: new Headers({
         'Content-Type': 'application/json',
       }),
+      body: JSON.stringify({ prompt }),
     }
   );
   const data = await response.json();
@@ -164,15 +165,13 @@ export const createAPost = async (prompt: string) => {
 
 export const createImage = async (prompt: string) => {
   // Use Firebase Function
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/generateImage?prompt=${prompt}`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-      }),
-    }
-  );
+  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/generateImage`, {
+    method: 'POST',
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ prompt }),
+  });
   const data = await response.json();
 
   return data;
