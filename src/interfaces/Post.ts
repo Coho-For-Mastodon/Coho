@@ -69,12 +69,15 @@ export interface Post {
     voted?: boolean;
     own_votes?: number[];
   } | null;
+  edited_at?: string | null;
   filtered?: FilterResult[];
   reply_to?: Post;
   ancestors?: Post[];
   thread_continuation?: Post[]; // Posts that continue this thread
   thread_truncated?: boolean; // True when thread_continuation was capped
 }
+
+export type { StatusSource } from '../mastodon/types/status';
 
 export interface ScheduledPostParams {
   text?: string;

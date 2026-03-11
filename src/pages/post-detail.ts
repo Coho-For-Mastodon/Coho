@@ -13,6 +13,7 @@ import { getReplies } from '../services/timeline';
 
 import { getPostDetail } from '../services/posts';
 import type { PostComposer } from '../components/post-composer';
+import type { PostDialog } from '../components/post-dialog';
 import { router, type AppNavigationState } from '../router/routes';
 import { getNotificationById } from '../mastodon/api/notifications';
 
@@ -31,6 +32,7 @@ export class PostDetail extends LitElement {
   @property({ type: Object }) passed_tweet: Post | null = null;
 
   @query('post-composer') private replyComposer!: PostComposer;
+  @query('post-dialog') private postDialog!: PostDialog;
 
   static styles = [
     css`
@@ -398,6 +400,17 @@ export class PostDetail extends LitElement {
     router.navigate(`/home/post/${tweet.id}`, { state: { post: tweet } });
   }
 
+  async handleEditPost(tweet: Post) {
+    if (!customElements.get('post-dialog')) {
+      await import('../components/post-dialog.js');
+      await this.updateComplete;
+    }
+    if (this.postDialog) {
+      await this.postDialog.updateComplete;
+      this.postDialog.openEditDialog(tweet);
+    }
+  }
+
   render() {
     const embedded = this.passed_tweet !== null;
 
@@ -468,6 +481,8 @@ export class PostDetail extends LitElement {
                       this.handleOpenPost(e)}"
                     @reply-clicked="${(e: CustomEvent) =>
                       this.handleReplyClick(e)}"
+                    @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                      this.handleEditPost(e.detail.tweet)}"
                   ></timeline-item>
                 `
               )}
@@ -481,6 +496,8 @@ export class PostDetail extends LitElement {
               ?guestMode="${this.isGuestMode}"
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"
+              @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                this.handleEditPost(e.detail.tweet)}"
             ></timeline-item>
           </section>
 
@@ -503,6 +520,8 @@ export class PostDetail extends LitElement {
                       this.handleOpenPost(e)}"
                     @reply-clicked="${(e: CustomEvent) =>
                       this.handleReplyClick(e)}"
+                    @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                      this.handleEditPost(e.detail.tweet)}"
                   ></timeline-item>
                 `
               )}
@@ -531,6 +550,10 @@ export class PostDetail extends LitElement {
                 </div>
               </footer>
             `}
+
+        <post-dialog
+          @published=${() => this.handleReplyPublished()}
+        ></post-dialog>
       </main>
     `;
   }

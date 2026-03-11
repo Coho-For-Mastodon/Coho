@@ -611,6 +611,24 @@ export class AppHome extends LitElement {
     this.postDetailDialog?.open(tweet);
   }
 
+  async handleEditPost(tweet: Post) {
+    // Lazy load post-dialog component
+    if (!this.postDialogLoaded) {
+      if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
+        this.postDialogLoaded = true;
+      }
+    }
+
+    await this.overlays.show('post-dialog');
+    await customElements.whenDefined('post-dialog');
+    await this.updateComplete;
+
+    if (this.postDialog) {
+      await this.postDialog.updateComplete;
+      this.postDialog.openEditDialog(tweet);
+    }
+  }
+
   async disconnectedCallback() {
     super.disconnectedCallback();
     console.log('home disconnected');
@@ -1075,6 +1093,8 @@ export class AppHome extends LitElement {
             <app-timeline
               @open="${($event: CustomEvent) =>
                 this.handleOpenTweet($event.detail.tweet)}"
+              @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+                this.handleEditPost($event.detail.tweet)}"
               @handle-summary="${($event: HandleSummaryEvent) =>
                 this.showSummary($event)}"
               @handle-translating="${($event: HandleTranslatingEvent) =>
@@ -1118,6 +1138,8 @@ export class AppHome extends LitElement {
               ? html`<app-bookmarks
                   @open="${($event: CustomEvent) =>
                     this.handleOpenTweet($event.detail.tweet)}"
+                  @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+                    this.handleEditPost($event.detail.tweet)}"
                 ></app-bookmarks>`
               : nothing}
           </md-tab-panel>
@@ -1126,6 +1148,8 @@ export class AppHome extends LitElement {
               ? html`<app-favorites
                   @open="${($event: CustomEvent) =>
                     this.handleOpenTweet($event.detail.tweet)}"
+                  @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+                    this.handleEditPost($event.detail.tweet)}"
                 ></app-favorites>`
               : nothing}
           </md-tab-panel>
@@ -1134,6 +1158,8 @@ export class AppHome extends LitElement {
               ? html`<app-notifications
                   @open="${($event: CustomEvent) =>
                     this.handleOpenTweet($event.detail.tweet)}"
+                  @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+                    this.handleEditPost($event.detail.tweet)}"
                 ></app-notifications>`
               : nothing}
           </md-tab-panel>

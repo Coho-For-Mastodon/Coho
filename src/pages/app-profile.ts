@@ -27,7 +27,6 @@ import type { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 
 import '../components/timeline-item';
 import '../components/md/md-dialog';
-import '../components/md/md-text-area';
 import '../components/md/md-dropdown';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
@@ -36,8 +35,6 @@ import '../components/md/md-icon-button';
 import '../components/report-dialog';
 import '../components/post-detail-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
-import type { MdDialog } from '../components/md/md-dialog';
-import type { MdTextArea } from '../components/md/md-text-area';
 import type { PostDetailDialog } from '../components/post-detail-dialog';
 import type { Account } from '../mastodon/types';
 
@@ -49,7 +46,8 @@ import '../components/md/md-divider';
 import '../components/md/md-badge';
 import { Post } from '../interfaces/Post';
 import { fadeInAnimation } from '../styles/animations';
-import { editPost } from '../services/posts';
+import '../components/post-dialog';
+import type { PostDialog } from '../components/post-dialog';
 import { router, type AppNavigationState } from '../router/routes';
 import {
   ensureListMembershipDialogLoaded,
@@ -91,10 +89,8 @@ export class AppProfile extends LitElement {
     void this.handleRouteChange();
   };
 
-  @query('#preview-content') private previewContent!: HTMLElement;
-  @query('#edit') private editDialog!: MdDialog;
-  @query('#content') private contentTextArea!: MdTextArea;
   @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
+  @query('post-dialog') private editPostDialog!: PostDialog;
 
   static styles = [
     fadeInAnimation,
@@ -114,12 +110,6 @@ export class AppProfile extends LitElement {
         z-index: 99999;
       }
 
-      #edit-input-block {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
       a {
         color: var(--md-sys-color-primary);
         text-decoration: none;
@@ -127,10 +117,6 @@ export class AppProfile extends LitElement {
 
       a:hover {
         text-decoration: underline;
-      }
-
-      #edit-input-block md-text-area::part(textarea) {
-        height: 200px;
       }
 
       /* Banner section with scroll-driven parallax */
@@ -1348,30 +1334,14 @@ export class AppProfile extends LitElement {
   }
 
   editPost(tweet: Post) {
-    console.log('edit post', tweet);
-
-    this.selectedPost = tweet;
-
-    if (this.previewContent) {
-      this.previewContent.innerHTML = tweet.content;
+    if (this.editPostDialog) {
+      this.editPostDialog.openEditDialog(tweet);
     }
-
-    this.editDialog?.show();
   }
 
   handleOpenPost(tweet: Post) {
     // Open post in a fullscreen dialog instead of navigating to a new page
     this.postDetailDialog?.open(tweet);
-  }
-
-  async confirmEdit() {
-    const newContent = this.contentTextArea?.value;
-
-    if (newContent && this.selectedPost) {
-      await editPost(this.selectedPost.id, newContent);
-    }
-
-    this.editDialog?.hide();
   }
 
   private goToFollowers() {
@@ -1491,17 +1461,7 @@ export class AppProfile extends LitElement {
     return html`
       <app-header ?enableBack="${true}"></app-header>
 
-      <md-dialog id="edit" .label="${msg('Edit Post')}">
-        <span id="preview-content"></span>
-
-        <div id="edit-input-block">
-          <md-text-area id="content"></md-text-area>
-
-          <md-button @click=${() => this.confirmEdit()}
-            >${msg('Save')}</md-button
-          >
-        </div>
-      </md-dialog>
+      <post-dialog @published="${() => this.reloadPosts()}"></post-dialog>
 
       <!-- Banner -->
       <div id="banner">

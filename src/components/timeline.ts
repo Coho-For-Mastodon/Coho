@@ -125,6 +125,8 @@ export class Timeline extends LitElement {
           this.handleTranslating($event)}"
         tweetID="${tweet.id}"
         @delete="${() => this.refreshTimeline()}"
+        @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+          this.handleEdit($event.detail.tweet)}"
         @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
           this.showAnalyze(
             $event.detail.data as AnalyzeData,
@@ -1684,6 +1686,16 @@ export class Timeline extends LitElement {
         detail: {
           tweet,
         },
+      })
+    );
+  }
+
+  handleEdit(tweet: Post) {
+    this.dispatchEvent(
+      new CustomEvent('edit', {
+        detail: { tweet },
+        bubbles: true,
+        composed: true,
       })
     );
   }

@@ -22,6 +22,7 @@ import type { Post } from '../interfaces/Post';
 @customElement('post-dialog')
 export class PostDialog extends LitElement {
   @state() isMobile: boolean = false;
+  @state() isEditing: boolean = false;
 
   // AI image generation state
   @state() showPrompt: boolean = false;
@@ -191,6 +192,16 @@ export class PostDialog extends LitElement {
     });
   }
 
+  public openEditDialog(post: Post) {
+    this.isEditing = true;
+    this.updateComplete.then(() => {
+      if (this.composer) {
+        this.composer.editingPost = post;
+      }
+      this.notifyDialog?.show();
+    });
+  }
+
   // Share target handling
 
   async shareTarget(name: string) {
@@ -336,6 +347,7 @@ export class PostDialog extends LitElement {
     if (this.composer) {
       this.composer.reset();
     }
+    this.isEditing = false;
     this.showPrompt = false;
     this.generatedImage = undefined;
     this.aiBlob = undefined;
@@ -360,7 +372,7 @@ export class PostDialog extends LitElement {
     return html`
       <md-dialog
         id="notify-dialog"
-        label=${msg('New Post')}
+        label=${this.isEditing ? msg('Edit Post') : msg('New Post')}
         ?fullscreen=${this.isMobile}
         ?no-backdrop-close=${this.isMobile}
         @close=${this._handleDialogClose}

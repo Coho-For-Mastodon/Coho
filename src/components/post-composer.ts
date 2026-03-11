@@ -22,6 +22,8 @@ import {
   publishPost,
   publishPollPost,
   replyToPost,
+  editPost,
+  getStatusSource,
   uploadMediaBlob,
   updateMedia,
   pickMedia,
@@ -133,6 +135,12 @@ export class PostComposer extends LitElement {
    * Number of rows for the textarea.
    */
   @property({ type: Number }) rows = 6;
+
+  /**
+   * The post being edited, if any. When set, the composer enters edit mode,
+   * fetches the source text, and pre-populates all fields.
+   */
+  @property({ type: Object }) editingPost: Post | null = null;
 
   @state() attachments: Array<LocalAttachment> = [];
   @state() editDialogOpen = false;
@@ -1061,6 +1069,10 @@ export class PostComposer extends LitElement {
     if (changedProperties.has('replyTo')) {
       this._loadDraftForContext();
     }
+
+    if (changedProperties.has('editingPost') && this.editingPost) {
+      this._initEditMode();
+    }
   }
 
   disconnectedCallback() {
@@ -1131,6 +1143,48 @@ export class PostComposer extends LitElement {
    */
   reset() {
     this._resetState();
+  }
+
+  /**
+   * Initialize edit mode: fetch source text and pre-populate the composer.
+   */
+  private async _initEditMode() {
+    if (!this.editingPost) return;
+
+    this.visibility = this.editingPost.visibility;
+
+    // Pre-populate media attachments (or clear stale ones)
+    if (this.editingPost.media_attachments?.length > 0) {
+      this.attachments = this.editingPost.media_attachments.map((att) => ({
+        id: att.id,
+        preview_url: att.preview_url,
+        description: att.description,
+        type: att.type as LocalAttachment['type'],
+      }));
+    } else {
+      this.attachments = [];
+    }
+
+    try {
+      const source = await getStatusSource(this.editingPost.id);
+      this.value = source.text;
+
+      if (source.spoiler_text) {
+        this.sensitive = true;
+        this.spoilerText = source.spoiler_text;
+      } else {
+        this.sensitive = this.editingPost.sensitive;
+        this.spoilerText = '';
+      }
+    } catch (error) {
+      console.error('[PostComposer] Failed to fetch status source:', error);
+      // Fallback: strip HTML tags from content
+      const div = document.createElement('div');
+      div.innerHTML = this.editingPost.content;
+      this.value = div.textContent || '';
+      this.sensitive = this.editingPost.sensitive;
+      this.spoilerText = this.editingPost.spoiler_text;
+    }
   }
 
   /**
@@ -2195,8 +2249,17 @@ export class PostComposer extends LitElement {
           spoilerText = this.spoilerText;
         }
 
-        // Handle reply vs new post
-        if (this.replyTo?.id) {
+        // Handle edit vs reply vs new post
+        if (this.editingPost?.id) {
+          // Edit mode - use PUT to update existing post
+          await editPost(this.editingPost.id, {
+            status,
+            media_ids: this.attachments.map((att) => att.id),
+            sensitive: this.sensitive,
+            spoiler_text: spoilerText,
+            visibility: this.visibility,
+          });
+        } else if (this.replyTo?.id) {
           // Reply mode - use replyToPost which accepts mediaIds and visibility
           await replyToPost(
             this.replyTo.id,
@@ -2280,13 +2343,18 @@ export class PostComposer extends LitElement {
       // Brief success flash, then reset and dispatch
       setTimeout(() => {
         this.publishSuccess = false;
+        const wasEditing = !!this.editingPost;
         this._resetState();
 
         this.dispatchEvent(
           new CustomEvent('published', {
             bubbles: true,
             composed: true,
-            detail: { status, scheduledAt: scheduledAt ?? null },
+            detail: {
+              status,
+              scheduledAt: scheduledAt ?? null,
+              edited: wasEditing,
+            },
           })
         );
       }, 600);
@@ -2316,6 +2384,7 @@ export class PostComposer extends LitElement {
     this.isTranscribing = false;
     this.publishSuccess = false;
     this.replyTo = null;
+    this.editingPost = null;
     this._setActiveAttachment(null);
     this.editDialogOpen = false;
 
@@ -3031,7 +3100,8 @@ export class PostComposer extends LitElement {
   }
 
   private _renderSchedule() {
-    if (this.compact || !this.scheduleEnabled) return nothing;
+    if (this.compact || !this.scheduleEnabled || this.editingPost)
+      return nothing;
 
     const parsed = this._parseScheduledDateTime();
     const preview =

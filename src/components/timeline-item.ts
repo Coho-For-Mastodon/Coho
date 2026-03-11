@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { msg, str } from '@lit/localize';
 
 import { getSettings, Settings } from '../services/settings';
+import { getCurrentUser } from '../services/account';
 import {
   toggleStatusAction,
   shareStatus as shareStatusAction,
@@ -379,6 +380,13 @@ export class TimelineItem extends LitElement {
         font-size: var(--md-sys-typescale-body-medium-font-size);
       }
 
+      .edited-indicator {
+        display: inline-block;
+        font-size: var(--md-sys-typescale-label-small-font-size, 11px);
+        color: var(--md-sys-color-on-surface-variant, #878792);
+        margin-top: 4px;
+      }
+
       img[data-src] {
         opacity: 0;
       }
@@ -713,6 +721,7 @@ export class TimelineItem extends LitElement {
 
   async firstUpdated() {
     this.settings = await getSettings();
+    this.currentUser = (await getCurrentUser()) ?? null;
     const { isOnDeviceTranslationAvailable } = await import('../services/ai');
     this.isOnDeviceTranslateAvailable = isOnDeviceTranslationAvailable();
 

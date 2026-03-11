@@ -35,11 +35,18 @@ export interface Status {
   emojis: Emoji[];
   card: Card | null;
   poll: Poll | null;
+  edited_at?: string | null;
   filtered?: FilterResult[];
   reply_to?: Status;
   ancestors?: Status[];
   thread_continuation?: Status[];
   thread_truncated?: boolean;
+}
+
+export interface StatusSource {
+  id: string;
+  text: string;
+  spoiler_text: string;
 }
 
 export type StatusVisibility = 'public' | 'unlisted' | 'private' | 'direct';
