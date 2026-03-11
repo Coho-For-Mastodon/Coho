@@ -39,6 +39,7 @@ const hoisted = vi.hoisted(() => {
     unblockUser: vi.fn(),
     reportUser: vi.fn(),
     editPost: vi.fn(),
+    getInstanceInfo: vi.fn(async () => ({})),
   };
 });
 
@@ -64,6 +65,7 @@ vi.mock('../../src/services/account', async (importOriginal) => {
     blockUser: hoisted.blockUser,
     unblockUser: hoisted.unblockUser,
     reportUser: hoisted.reportUser,
+    getInstanceInfo: hoisted.getInstanceInfo,
   };
 });
 
