@@ -1883,6 +1883,9 @@
 <trans-unit id="s9093a095ac3a73b4">
   <source>No pending follow requests</source>
 </trans-unit>
+<trans-unit id="sbaf2dbcb41ca49a9">
+  <source>(edited)</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
