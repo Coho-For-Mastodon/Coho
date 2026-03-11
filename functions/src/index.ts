@@ -37,8 +37,8 @@ const applyCors = (
 // ============================================================================
 
 /**
- * Validate that a server hostname is a legitimate Mastodon instance URL.
- * Rejects private IPs, localhost, and malformed hostnames to prevent SSRF.
+ * Validate that a server hostname looks like a legitimate Mastodon instance host.
+ * Performs basic SSRF mitigation by rejecting localhost-like and malformed hostnames.
  */
 function validateServerUrl(server: string): boolean {
   if (!server || typeof server !== 'string') return false;
@@ -97,7 +97,7 @@ function extractProxyParams(request: Request): {
 }
 
 // ============================================================================
-// OAuth State Nonce Store (in-memory with TTL)
+// OAuth Encrypted State (timestamped with TTL)
 // ============================================================================
 
 interface OAuthStatePayload {
@@ -816,7 +816,11 @@ export const getUserPosts = onRequest(
         url += '&only_media=true';
       }
       if (maxId) {
-        url += `&max_id=${maxId}`;
+        if (!validateResourceId(maxId)) {
+          response.status(400).json({ error: 'Invalid max_id parameter' });
+          return;
+        }
+        url += `&max_id=${encodeURIComponent(maxId)}`;
       }
 
       const apiResponse = await fetch(url, {
@@ -1257,7 +1261,11 @@ export const getTimelinePaginated = onRequest(
 
     let url = `https://${server}/api/v1/timelines/home?limit=40`;
     if (sinceId) {
-      url += `&max_id=${sinceId}`;
+      if (!validateResourceId(sinceId)) {
+        response.status(400).json({ error: 'Invalid since_id parameter' });
+        return;
+      }
+      url += `&max_id=${encodeURIComponent(sinceId)}`;
     }
 
     try {

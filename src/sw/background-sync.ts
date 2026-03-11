@@ -133,8 +133,14 @@ export async function replayQueuedRequests(
   for (const queuedRequest of queue) {
     try {
       const headers = { ...queuedRequest.headers };
-      if (freshAuthHeader && headers['Authorization']) {
-        headers['Authorization'] = freshAuthHeader;
+      if (freshAuthHeader) {
+        // Headers may be lowercase from request.headers.forEach serialization
+        const authKey = Object.keys(headers).find(
+          (k) => k.toLowerCase() === 'authorization'
+        );
+        if (authKey) {
+          headers[authKey] = freshAuthHeader;
+        }
       }
 
       const init: RequestInit = {
