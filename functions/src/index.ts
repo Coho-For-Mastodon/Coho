@@ -97,7 +97,7 @@ function extractProxyParams(request: Request): {
 }
 
 // ============================================================================
-// OAuth State Nonce Store (in-memory with TTL)
+// OAuth Encrypted State (timestamped with TTL, no nonce store)
 // ============================================================================
 
 interface OAuthStatePayload {
