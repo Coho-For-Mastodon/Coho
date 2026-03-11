@@ -13,14 +13,54 @@ export async function whoBoostedAndFavorited(id: string): Promise<Account[]> {
   return data;
 }
 
-export async function editPost(id: string, newContent: string): Promise<Post> {
+export interface EditPostParams {
+  status: string;
+  media_ids?: string[];
+  sensitive?: boolean;
+  spoiler_text?: string;
+  visibility?: string;
+}
+
+export async function editPost(
+  id: string,
+  params: EditPostParams
+): Promise<Post> {
   const { url } = getClientConfig();
   const formData = new FormData();
-  formData.append('status', newContent);
+  formData.append('status', params.status);
+  if (params.media_ids && params.media_ids.length > 0) {
+    for (const mediaId of params.media_ids) {
+      formData.append('media_ids[]', mediaId);
+    }
+  }
+  if (params.sensitive) {
+    formData.append('sensitive', 'true');
+    if (params.spoiler_text) {
+      formData.append('spoiler_text', params.spoiler_text);
+    }
+  }
+  if (params.visibility) {
+    formData.append('visibility', params.visibility);
+  }
   const response = await apiFetch(`https://${url}/api/v1/statuses/${id}`, {
     method: 'PUT',
     body: formData,
   });
+
+  const data = await response.json();
+  return data;
+}
+
+export async function getStatusSource(
+  id: string
+): Promise<{ id: string; text: string; spoiler_text: string }> {
+  const { url } = getClientConfig();
+  const response = await apiFetch(
+    `https://${url}/api/v1/statuses/${id}/source`,
+    {
+      method: 'GET',
+    }
+  );
 
   const data = await response.json();
   return data;

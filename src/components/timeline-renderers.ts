@@ -408,28 +408,22 @@ export function renderRegularTweet(
                     `
                   : null
               }
+              ${
+                state.tweet?.account.acct === state.currentUser?.acct
+                  ? html`
+                      <md-menu-item @click="${() => handlers.initEditStatus()}">
+                        <md-icon slot="prefix" name="brush"></md-icon>
+                        ${msg('Edit')}
+                      </md-menu-item>
+                      <md-menu-item @click="${() => handlers.deleteStatus()}">
+                        <md-icon slot="prefix" name="trash"></md-icon>
+                        ${msg('Delete')}
+                      </md-menu-item>
+                    `
+                  : null
+              }
             </md-menu>
           </md-dropdown>
-
-          ${
-            state.tweet?.account.acct === state.currentUser?.acct
-              ? html`
-                  <md-icon-button
-                    @click="${() => handlers.deleteStatus()}"
-                    name="trash"
-                    label="Delete"
-                  >
-                  </md-icon-button>
-
-                  <md-icon-button
-                    @click="${() => handlers.initEditStatus()}"
-                    name="brush"
-                    label="Edit"
-                  >
-                  </md-icon-button>
-                `
-              : null
-          }
         </div>
         </div>
       </div>
@@ -439,6 +433,12 @@ export function renderRegularTweet(
           handlers.handleContentClick(e, state.tweet, true)}"
         .innerHTML="${parseEmojis(state.tweet?.content || '', state.tweet?.emojis || [])}"
       ></div>
+
+      ${
+        state.tweet?.edited_at
+          ? html`<span class="edited-indicator">${msg('(edited)')}</span>`
+          : null
+      }
 
       ${
         state.tweet?.poll

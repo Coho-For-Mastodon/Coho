@@ -20,6 +20,7 @@ export class AppIndex extends LitElement {
    * True = returning authenticated user, False = brand new user or logged out
    */
   @state() isAuthenticated = false;
+
   static get styles() {
     return css`
       main {
