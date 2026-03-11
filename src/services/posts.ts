@@ -41,16 +41,16 @@ export async function editPost(
   const accessToken = getAccessToken();
   const formData = new FormData();
   formData.append('status', params.status);
-  if (params.media_ids && params.media_ids.length > 0) {
+  if (params.media_ids !== undefined) {
     for (const mediaId of params.media_ids) {
       formData.append('media_ids[]', mediaId);
     }
   }
-  if (params.sensitive) {
-    formData.append('sensitive', 'true');
-    if (params.spoiler_text) {
-      formData.append('spoiler_text', params.spoiler_text);
-    }
+  if (params.sensitive !== undefined) {
+    formData.append('sensitive', params.sensitive ? 'true' : 'false');
+  }
+  if (params.spoiler_text !== undefined) {
+    formData.append('spoiler_text', params.spoiler_text);
   }
   if (params.visibility) {
     formData.append('visibility', params.visibility);
@@ -62,6 +62,10 @@ export async function editPost(
     }),
     body: formData,
   });
+
+  if (!response.ok) {
+    throw new Error(`Failed to edit post: ${response.status}`);
+  }
 
   const data = await response.json();
   return data;
@@ -81,6 +85,10 @@ export async function getStatusSource(
       }),
     }
   );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch status source: ${response.status}`);
+  }
 
   const data = await response.json();
   return data;

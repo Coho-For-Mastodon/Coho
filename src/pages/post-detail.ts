@@ -401,7 +401,7 @@ export class PostDetail extends LitElement {
   }
 
   async handleEditPost(tweet: Post) {
-    if (!this.postDialog) {
+    if (!customElements.get('post-dialog')) {
       await import('../components/post-dialog.js');
       await this.updateComplete;
     }

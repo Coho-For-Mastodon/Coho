@@ -1153,7 +1153,7 @@ export class PostComposer extends LitElement {
 
     this.visibility = this.editingPost.visibility;
 
-    // Pre-populate media attachments
+    // Pre-populate media attachments (or clear stale ones)
     if (this.editingPost.media_attachments?.length > 0) {
       this.attachments = this.editingPost.media_attachments.map((att) => ({
         id: att.id,
@@ -1161,6 +1161,8 @@ export class PostComposer extends LitElement {
         description: att.description,
         type: att.type as LocalAttachment['type'],
       }));
+    } else {
+      this.attachments = [];
     }
 
     try {
@@ -1172,6 +1174,7 @@ export class PostComposer extends LitElement {
         this.spoilerText = source.spoiler_text;
       } else {
         this.sensitive = this.editingPost.sensitive;
+        this.spoilerText = '';
       }
     } catch (error) {
       console.error('[PostComposer] Failed to fetch status source:', error);
@@ -2251,10 +2254,7 @@ export class PostComposer extends LitElement {
           // Edit mode - use PUT to update existing post
           await editPost(this.editingPost.id, {
             status,
-            media_ids:
-              this.attachments.length > 0
-                ? this.attachments.map((att) => att.id)
-                : undefined,
+            media_ids: this.attachments.map((att) => att.id),
             sensitive: this.sensitive,
             spoiler_text: spoilerText,
             visibility: this.visibility,

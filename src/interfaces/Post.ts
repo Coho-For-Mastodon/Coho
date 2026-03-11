@@ -77,11 +77,7 @@ export interface Post {
   thread_truncated?: boolean; // True when thread_continuation was capped
 }
 
-export interface StatusSource {
-  id: string;
-  text: string;
-  spoiler_text: string;
-}
+export type { StatusSource } from '../mastodon/types/status';
 
 export interface ScheduledPostParams {
   text?: string;
