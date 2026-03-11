@@ -8,6 +8,7 @@ import type { Response } from 'express';
 import * as logger from 'firebase-functions/logger';
 import { defineSecret } from 'firebase-functions/params';
 import OpenAI from 'openai';
+import * as crypto from 'crypto';
 
 // Define the secret
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
@@ -31,6 +32,135 @@ const applyCors = (
   response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 };
 
+// ============================================================================
+// Server URL Validation (SSRF Protection)
+// ============================================================================
+
+/**
+ * Validate that a server hostname looks like a legitimate Mastodon instance host.
+ * Performs basic SSRF mitigation by rejecting localhost-like and malformed hostnames.
+ */
+function validateServerUrl(server: string): boolean {
+  if (!server || typeof server !== 'string') return false;
+
+  // Strip any protocol or path that might have slipped through
+  const cleaned = server.replace(/^https?:\/\//, '').split(/[/?#]/)[0];
+  if (cleaned !== server) return false;
+
+  // Reject if contains port numbers
+  if (cleaned.includes(':')) return false;
+
+  // Must look like a valid hostname (alphanumeric, dots, hyphens)
+  const hostnameRegex =
+    /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+  if (!hostnameRegex.test(cleaned)) return false;
+
+  // Reject localhost and loopback
+  const lower = cleaned.toLowerCase();
+  if (lower === 'localhost' || lower.endsWith('.localhost')) return false;
+
+  // Reject common internal/private hostnames
+  if (lower.endsWith('.local') || lower.endsWith('.internal')) return false;
+
+  return true;
+}
+
+/**
+ * Validate that a resource ID is safe for URL interpolation.
+ * Mastodon IDs are typically numeric strings but some forks use alphanumeric.
+ */
+function validateResourceId(id: string): boolean {
+  if (!id || typeof id !== 'string') return false;
+  return /^[a-zA-Z0-9_-]+$/.test(id);
+}
+
+/**
+ * Extract access token and server from request body (POST) with fallback to
+ * query params for backwards compatibility during migration.
+ */
+function extractProxyParams(request: Request): {
+  accessToken: string;
+  server: string;
+  id?: string;
+} {
+  // Prefer body params (secure) over query params (legacy)
+  const accessToken =
+    (request.body?.accessToken as string) ||
+    (request.query.code as string) ||
+    '';
+  const rawServer =
+    (request.body?.server as string) || (request.query.server as string) || '';
+  const id =
+    (request.body?.id as string) || (request.query.id as string) || undefined;
+  const server = rawServer.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  return { accessToken, server, id };
+}
+
+// ============================================================================
+// OAuth Encrypted State (timestamped with TTL)
+// ============================================================================
+
+interface OAuthStatePayload {
+  clientId: string;
+  clientSecret: string;
+  server: string;
+  redirectUri: string;
+  ts: number;
+}
+
+const STATE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Derive a stable encryption key for OAuth state.
+ * Uses FIREBASE_CONFIG (always set in Cloud Functions and emulator) as entropy
+ * so the key is consistent across invocations without requiring a user-managed secret.
+ */
+function getStateEncryptionKey(): Buffer {
+  const seed =
+    process.env.OAUTH_STATE_KEY ||
+    process.env.FIREBASE_CONFIG ||
+    'coho-local-dev-key';
+  return crypto.createHash('sha256').update(seed).digest();
+}
+
+/** Encrypt an OAuth state payload into a URL-safe string */
+function encryptState(payload: OAuthStatePayload): string {
+  const key = getStateEncryptionKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const plaintext = JSON.stringify(payload);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, 'utf8'),
+    cipher.final(),
+  ]);
+  const authTag = cipher.getAuthTag();
+  // iv (12) + authTag (16) + ciphertext
+  const combined = Buffer.concat([iv, authTag, encrypted]);
+  return combined.toString('base64url');
+}
+
+/** Decrypt an OAuth state string back into a payload (returns null if invalid/expired) */
+function decryptState(stateStr: string): OAuthStatePayload | null {
+  try {
+    const key = getStateEncryptionKey();
+    const combined = Buffer.from(stateStr, 'base64url');
+    if (combined.length < 28) return null; // 12 iv + 16 tag minimum
+    const iv = combined.subarray(0, 12);
+    const authTag = combined.subarray(12, 28);
+    const encrypted = combined.subarray(28);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    const decrypted =
+      decipher.update(encrypted, undefined, 'utf8') + decipher.final('utf8');
+    const payload = JSON.parse(decrypted) as OAuthStatePayload;
+    // Check TTL
+    if (Date.now() - payload.ts > STATE_TTL_MS) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 // OpenAI Functions
 
 export const generateImage = onRequest(
@@ -53,7 +183,8 @@ export const generateImage = onRequest(
 
     const openai = new OpenAI({ apiKey });
 
-    const prompt = request.query.prompt as string;
+    const prompt =
+      (request.body?.prompt as string) || (request.query.prompt as string);
     if (!prompt) {
       response.status(400).json({ error: 'Prompt is required' });
       return;
@@ -93,7 +224,8 @@ export const generateStatus = onRequest(
 
     const openai = new OpenAI({ apiKey });
 
-    const prompt = request.query.prompt as string;
+    const prompt =
+      (request.body?.prompt as string) || (request.query.prompt as string);
     if (!prompt) {
       response.status(400).json({ error: 'Prompt is required' });
       return;
@@ -235,18 +367,26 @@ export const bookmark = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/statuses/${id}/bookmark`,
+        `https://${server}/api/v1/statuses/${id}/bookmark`,
         {
           method: 'POST',
           headers: {
@@ -274,18 +414,26 @@ export const reblog = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/statuses/${id}/reblog`,
+        `https://${server}/api/v1/statuses/${id}/reblog`,
         {
           method: 'POST',
           headers: {
@@ -312,18 +460,26 @@ export const boost = onRequest(async (request: Request, response: Response) => {
 
   applyCors(request, response);
 
-  const accessToken = request.query.code as string;
-  const server = `https://${request.query.server}`;
-  const id = request.query.id as string;
+  const { accessToken, server, id } = extractProxyParams(request);
 
   if (!accessToken || !server || !id) {
     response.status(400).json({ error: 'Missing required parameters' });
     return;
   }
 
+  if (!validateServerUrl(server)) {
+    response.status(400).json({ error: 'Invalid server URL' });
+    return;
+  }
+
+  if (!validateResourceId(id)) {
+    response.status(400).json({ error: 'Invalid resource ID' });
+    return;
+  }
+
   try {
     const apiResponse = await fetch(
-      `${server}/api/v1/statuses/${id}/favourite`,
+      `https://${server}/api/v1/statuses/${id}/favourite`,
       {
         method: 'POST',
         headers: {
@@ -350,18 +506,26 @@ export const follow = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/accounts/${id}/follow`,
+        `https://${server}/api/v1/accounts/${id}/follow`,
         {
           method: 'POST',
           headers: {
@@ -389,22 +553,33 @@ export const getStatus = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
-      const apiResponse = await fetch(`${server}/api/v1/statuses/${id}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const apiResponse = await fetch(
+        `https://${server}/api/v1/statuses/${id}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       const data = await apiResponse.json();
       response.json(data);
@@ -425,16 +600,20 @@ export const postStatus = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
+    const { accessToken, server } = extractProxyParams(request);
 
     if (!accessToken || !server) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
-      const apiResponse = await fetch(`${server}/api/v1/statuses`, {
+      const apiResponse = await fetch(`https://${server}/api/v1/statuses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -466,18 +645,26 @@ export const isFollowing = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/accounts/relationships?id=${id}`,
+        `https://${server}/api/v1/accounts/relationships?id=${id}`,
         {
           method: 'GET',
           headers: {
@@ -505,21 +692,28 @@ export const getMessages = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
+    const { accessToken, server } = extractProxyParams(request);
 
     if (!accessToken || !server) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
-      const apiResponse = await fetch(`${server}/api/v1/conversations`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const apiResponse = await fetch(
+        `https://${server}/api/v1/conversations`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       const data = await apiResponse.json();
       response.json(data);
@@ -540,18 +734,26 @@ export const getReplies = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/statuses/${id}/context`,
+        `https://${server}/api/v1/statuses/${id}/context`,
         {
           method: 'GET',
           headers: {
@@ -579,21 +781,34 @@ export const getUserPosts = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
-    const excludeReplies = request.query.exclude_replies as string;
-    const onlyMedia = request.query.only_media as string;
-    const maxId = request.query.max_id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
+    const excludeReplies =
+      (request.body?.exclude_replies as string) ||
+      (request.query.exclude_replies as string);
+    const onlyMedia =
+      (request.body?.only_media as string) ||
+      (request.query.only_media as string);
+    const maxId =
+      (request.body?.max_id as string) || (request.query.max_id as string);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       // Build URL with optional filter parameters
-      let url = `${server}/api/v1/accounts/${id}/statuses?limit=40`;
+      let url = `https://${server}/api/v1/accounts/${id}/statuses?limit=40`;
       if (excludeReplies === 'true') {
         url += '&exclude_replies=true';
       }
@@ -601,7 +816,11 @@ export const getUserPosts = onRequest(
         url += '&only_media=true';
       }
       if (maxId) {
-        url += `&max_id=${maxId}`;
+        if (!validateResourceId(maxId)) {
+          response.status(400).json({ error: 'Invalid max_id parameter' });
+          return;
+        }
+        url += `&max_id=${encodeURIComponent(maxId)}`;
       }
 
       const apiResponse = await fetch(url, {
@@ -630,18 +849,26 @@ export const getPinnedPosts = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/accounts/${id}/statuses?pinned=true&limit=40`,
+        `https://${server}/api/v1/accounts/${id}/statuses?pinned=true&limit=40`,
         {
           method: 'GET',
           headers: {
@@ -669,22 +896,33 @@ export const getAccount = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
-      const apiResponse = await fetch(`${server}/api/v1/accounts/${id}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const apiResponse = await fetch(
+        `https://${server}/api/v1/accounts/${id}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       const data = await apiResponse.json();
       response.json(data);
@@ -705,18 +943,23 @@ export const getHashtags = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const query = request.query.query as string;
+    const { accessToken, server } = extractProxyParams(request);
+    const query =
+      (request.body?.query as string) || (request.query.query as string);
 
     if (!accessToken || !server || !query) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v2/search?q=${query}&type=hashtags`,
+        `https://${server}/api/v2/search?q=${encodeURIComponent(query)}&type=hashtags`,
         {
           method: 'GET',
           headers: {
@@ -744,22 +987,30 @@ export const search = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const query = request.query.query as string;
+    const { accessToken, server } = extractProxyParams(request);
+    const query =
+      (request.body?.query as string) || (request.query.query as string);
 
     if (!accessToken || !server || !query) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
-      const apiResponse = await fetch(`${server}/api/v2/search?q=${query}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const apiResponse = await fetch(
+        `https://${server}/api/v2/search?q=${encodeURIComponent(query)}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       const data = await apiResponse.json();
       response.json(data);
@@ -780,18 +1031,26 @@ export const getFollowing = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/accounts/${id}/following`,
+        `https://${server}/api/v1/accounts/${id}/following`,
         {
           method: 'GET',
           headers: {
@@ -819,18 +1078,26 @@ export const getFollowers = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const id = request.query.id as string;
+    const { accessToken, server, id } = extractProxyParams(request);
 
     if (!accessToken || !server || !id) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    if (!validateResourceId(id)) {
+      response.status(400).json({ error: 'Invalid resource ID' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/accounts/${id}/followers`,
+        `https://${server}/api/v1/accounts/${id}/followers`,
         {
           method: 'GET',
           headers: {
@@ -858,16 +1125,20 @@ export const getFavorites = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
+    const { accessToken, server } = extractProxyParams(request);
 
     if (!accessToken || !server) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
-      const apiResponse = await fetch(`${server}/api/v1/favourites`, {
+      const apiResponse = await fetch(`https://${server}/api/v1/favourites`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -893,16 +1164,20 @@ export const getBookmarks = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
+    const { accessToken, server } = extractProxyParams(request);
 
     if (!accessToken || !server) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
-      const apiResponse = await fetch(`${server}/api/v1/bookmarks`, {
+      const apiResponse = await fetch(`https://${server}/api/v1/bookmarks`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -928,21 +1203,28 @@ export const getNotifications = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
+    const { accessToken, server } = extractProxyParams(request);
 
     if (!accessToken || !server) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
-      const apiResponse = await fetch(`${server}/api/v1/notifications`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const apiResponse = await fetch(
+        `https://${server}/api/v1/notifications`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       const data = await apiResponse.json();
       response.json(data);
@@ -963,18 +1245,27 @@ export const getTimelinePaginated = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
-    const sinceId = request.query.since_id as string;
+    const { accessToken, server } = extractProxyParams(request);
+    const sinceId =
+      (request.body?.since_id as string) || (request.query.since_id as string);
 
     if (!accessToken || !server) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
-    let url = `${server}/api/v1/timelines/home?limit=40`;
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    let url = `https://${server}/api/v1/timelines/home?limit=40`;
     if (sinceId) {
-      url += `&max_id=${sinceId}`;
+      if (!validateResourceId(sinceId)) {
+        response.status(400).json({ error: 'Invalid since_id parameter' });
+        return;
+      }
+      url += `&max_id=${encodeURIComponent(sinceId)}`;
     }
 
     try {
@@ -1004,17 +1295,21 @@ export const getUser = onRequest(
 
     applyCors(request, response);
 
-    const accessToken = request.query.code as string;
-    const server = `https://${request.query.server}`;
+    const { accessToken, server } = extractProxyParams(request);
 
     if (!accessToken || !server) {
       response.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
+    if (!validateServerUrl(server)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
       const apiResponse = await fetch(
-        `${server}/api/v1/accounts/verify_credentials`,
+        `https://${server}/api/v1/accounts/verify_credentials`,
         {
           method: 'GET',
           headers: {
@@ -1044,10 +1339,12 @@ export const authenticate = onRequest(
 
     applyCors(request, response);
 
-    const serverURL = request.query.server as string;
+    const serverURL =
+      (request.body?.server as string) || (request.query.server as string);
     const rawRedirectUri =
+      (request.body?.redirect_uri as string) ||
       (request.query.redirect_uri as string) ||
-      'https://wonderful-glacier-07b022d1e.2.azurestaticapps.net';
+      'https://coho.place';
 
     // Normalize redirect_uri - remove trailing slash for consistency
     const redirectUri = rawRedirectUri.replace(/\/$/, '');
@@ -1057,7 +1354,19 @@ export const authenticate = onRequest(
       return;
     }
 
+    if (!validateServerUrl(serverURL)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
     try {
+      // Note: PKCE (code_challenge) is NOT sent in the authorize URL.
+      // Many Mastodon forks (Glitch-soc, Hometown) crash on unknown OAuth params
+      // even when reporting version >= 4.3.0. Since we use a confidential client
+      // (client_secret stays server-side), PKCE is not required for security.
+      // The code_challenge/code_verifier are still stored in state for future use
+      // when fork support stabilizes.
+
       const apiResponse = await fetch(`https://${serverURL}/api/v1/apps`, {
         method: 'POST',
         headers: {
@@ -1079,17 +1388,22 @@ export const authenticate = onRequest(
       const clientID = data.client_id;
       const clientSecret = data.client_secret;
 
-      // Encode credentials to pass them back through the OAuth flow
-      const encodedState = Buffer.from(
-        JSON.stringify({
-          clientId: clientID,
-          clientSecret: clientSecret,
-          server: serverURL,
-          redirectUri: redirectUri, // Store the exact redirect_uri used
-        })
-      ).toString('base64');
+      // Encrypt OAuth credentials into the state parameter (stateless, works across instances)
+      const encryptedState = encryptState({
+        clientId: clientID,
+        clientSecret: clientSecret,
+        server: serverURL,
+        redirectUri,
+        ts: Date.now(),
+      });
 
-      const authResponseURL = `https://${serverURL}/oauth/authorize?client_id=${clientID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=read+write+follow+push&state=${encodedState}`;
+      // Build authorization URL (no PKCE params — see note above)
+      const authResponseURL =
+        `https://${serverURL}/oauth/authorize?client_id=${clientID}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&response_type=code` +
+        `&scope=read+write+follow+push` +
+        `&state=${encodeURIComponent(encryptedState)}`;
 
       response.json({ url: authResponseURL });
     } catch (error) {
@@ -1109,9 +1423,10 @@ export const getClient = onRequest(
 
     applyCors(request, response);
 
-    const code = request.query.code as string;
-    const state = request.query.state as string;
-    const rawRedirectUri = request.query.redirect_uri as string;
+    const code =
+      (request.body?.code as string) || (request.query.code as string);
+    const state =
+      (request.body?.state as string) || (request.query.state as string);
 
     if (!code || !state) {
       response.status(400).json({ error: 'Missing code or state parameter' });
@@ -1119,27 +1434,22 @@ export const getClient = onRequest(
     }
 
     try {
-      // Decode the state parameter to get client credentials
-      const decodedState = JSON.parse(Buffer.from(state, 'base64').toString());
-      const {
-        clientId,
-        clientSecret,
-        server,
-        redirectUri: storedRedirectUri,
-      } = decodedState;
+      // Decrypt the state parameter to retrieve stored credentials
+      const statePayload = decryptState(state);
 
-      if (!clientId || !clientSecret || !server) {
-        response.status(400).json({ error: 'Invalid state parameter' });
+      if (!statePayload) {
+        response
+          .status(400)
+          .json({ error: 'Invalid or expired state parameter' });
         return;
       }
 
-      // Use the stored redirect_uri from state (which matches what was used in authenticate)
-      // Fall back to the provided redirect_uri (normalized) if not in state
-      const redirectUri =
-        storedRedirectUri ||
-        (rawRedirectUri
-          ? rawRedirectUri.replace(/\/$/, '')
-          : 'https://wonderful-glacier-07b022d1e.2.azurestaticapps.net');
+      const { clientId, clientSecret, server, redirectUri } = statePayload;
+
+      if (!validateServerUrl(server)) {
+        response.status(400).json({ error: 'Invalid server URL in state' });
+        return;
+      }
 
       logger.info('Token exchange attempt', {
         server,
@@ -1147,25 +1457,34 @@ export const getClient = onRequest(
         hasCode: !!code,
       });
 
+      // Build token exchange body
+      const tokenBody: Record<string, string> = {
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+        scope: 'read write follow push',
+      };
+
       const apiResponse = await fetch(`https://${server}/oauth/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
-          code: code,
-          redirect_uri: redirectUri,
-          grant_type: 'authorization_code',
-          scope: 'read write follow push',
-        }),
+        body: JSON.stringify(tokenBody),
       });
 
       const data = (await apiResponse.json()) as { access_token?: string };
 
       if (data.access_token) {
-        response.json({ access_token: data.access_token });
+        // Return server and client credentials so frontend can store them for revocation
+        response.json({
+          access_token: data.access_token,
+          server,
+          clientId,
+          clientSecret,
+        });
       } else {
         logger.error('No access token in response', { data, redirectUri });
         response
@@ -1175,6 +1494,71 @@ export const getClient = onRequest(
     } catch (error) {
       logger.error('Get client token failed', { error });
       response.status(500).json({ error: 'Get client token failed' });
+    }
+  }
+);
+
+// Token Revocation
+
+export const revokeToken = onRequest(
+  async (request: Request, response: Response) => {
+    if (request.method === 'OPTIONS') {
+      applyCors(request, response);
+      response.status(204).send('');
+      return;
+    }
+
+    applyCors(request, response);
+
+    const server = request.body?.server as string;
+    const clientId = request.body?.clientId as string;
+    const clientSecret = request.body?.clientSecret as string;
+    const token = request.body?.token as string;
+
+    if (!server || !clientId || !clientSecret || !token) {
+      response.status(400).json({ error: 'Missing required parameters' });
+      return;
+    }
+
+    const normalizedServer = server
+      .replace(/^https?:\/\//, '')
+      .replace(/\/$/, '');
+    if (!validateServerUrl(normalizedServer)) {
+      response.status(400).json({ error: 'Invalid server URL' });
+      return;
+    }
+
+    try {
+      const apiResponse = await fetch(
+        `https://${normalizedServer}/oauth/revoke`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            client_id: clientId,
+            client_secret: clientSecret,
+            token,
+          }),
+        }
+      );
+
+      if (apiResponse.ok || apiResponse.status === 200) {
+        response.json({ success: true });
+      } else {
+        const data = await apiResponse.json().catch(() => ({}));
+        logger.warn('Token revocation returned non-OK', {
+          status: apiResponse.status,
+          data,
+        });
+        // Still return success — best effort revocation
+        response.json({ success: true });
+      }
+    } catch (error) {
+      logger.error('Token revocation failed', { error });
+      // Return success anyway — we don't want revocation failure to block logout
+      response.json({ success: true });
     }
   }
 );

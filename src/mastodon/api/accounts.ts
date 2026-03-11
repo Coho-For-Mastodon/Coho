@@ -49,9 +49,11 @@ export const getPeers = async () => {
 export const checkFollowing = async (id: string) => {
   try {
     const { url, accessToken } = getClientConfig();
-    const response = await fetch(
-      `${FIREBASE_FUNCTIONS_BASE_URL}/isFollowing?id=${id}&code=${accessToken}&server=${url}`
-    );
+    const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/isFollowing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, server: url, id }),
+    });
     const data = await response.json();
     return data;
   } catch (err) {

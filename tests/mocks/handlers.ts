@@ -227,21 +227,21 @@ export const mastodonHandlers = [
 
 // Firebase Functions handlers
 export const functionsHandlers = [
-  http.get(
+  http.post(
     'https://us-central1-coho-mastodon.cloudfunctions.net/getBookmarks',
     () => {
       return HttpResponse.json(mockBookmarks);
     }
   ),
 
-  http.get(
+  http.post(
     'https://us-central1-coho-mastodon.cloudfunctions.net/getFavorites',
     () => {
       return HttpResponse.json(mockFavorites);
     }
   ),
 
-  http.get(
+  http.post(
     'https://us-central1-coho-mastodon.cloudfunctions.net/search',
     () => {
       return HttpResponse.json(mockSearchResult);

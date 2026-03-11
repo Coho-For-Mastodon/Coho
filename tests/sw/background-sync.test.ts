@@ -203,6 +203,48 @@ describe('background-sync', () => {
       expect(savedQueue).toHaveLength(1);
       expect(savedQueue[0].id).toBe('net-fail');
     });
+
+    it('refreshes the Authorization header when refreshAuthHeader is provided', async () => {
+      const items = [
+        makeQueuedRequest({ headers: { Authorization: 'Bearer stale-token' } }),
+      ];
+      const config = createMockConfig(items);
+
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('ok', { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await replayQueuedRequests(config, {
+        refreshAuthHeader: async () => 'Bearer fresh-token',
+      });
+
+      const calledInit = fetchMock.mock.calls[0][1] as RequestInit;
+      expect((calledInit.headers as Record<string, string>).Authorization).toBe(
+        'Bearer fresh-token'
+      );
+    });
+
+    it('does not overwrite Authorization when refreshAuthHeader returns null', async () => {
+      const items = [
+        makeQueuedRequest({ headers: { Authorization: 'Bearer original' } }),
+      ];
+      const config = createMockConfig(items);
+
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('ok', { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await replayQueuedRequests(config, {
+        refreshAuthHeader: async () => null,
+      });
+
+      const calledInit = fetchMock.mock.calls[0][1] as RequestInit;
+      expect((calledInit.headers as Record<string, string>).Authorization).toBe(
+        'Bearer original'
+      );
+    });
   });
 
   // ==========================================================================

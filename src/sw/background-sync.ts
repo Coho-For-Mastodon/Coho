@@ -111,7 +111,8 @@ export async function queueRequest(
  * are discarded.
  */
 export async function replayQueuedRequests(
-  config: Pick<BackgroundSyncConfig, 'get' | 'set' | 'queueKey'>
+  config: Pick<BackgroundSyncConfig, 'get' | 'set' | 'queueKey'>,
+  options?: { refreshAuthHeader?: () => Promise<string | null> }
 ): Promise<void> {
   const queue = await getSyncQueue(config);
   if (queue.length === 0) {
@@ -121,13 +122,30 @@ export async function replayQueuedRequests(
 
   console.log('[SW] Replaying', queue.length, 'queued requests');
 
+  // Refresh the auth token once before replaying the batch
+  let freshAuthHeader: string | null = null;
+  if (options?.refreshAuthHeader) {
+    freshAuthHeader = await options.refreshAuthHeader();
+  }
+
   const failedRequests: QueuedRequest[] = [];
 
   for (const queuedRequest of queue) {
     try {
+      const headers = { ...queuedRequest.headers };
+      if (freshAuthHeader) {
+        // Headers may be lowercase from request.headers.forEach serialization
+        const authKey = Object.keys(headers).find(
+          (k) => k.toLowerCase() === 'authorization'
+        );
+        if (authKey) {
+          headers[authKey] = freshAuthHeader;
+        }
+      }
+
       const init: RequestInit = {
         method: queuedRequest.method,
-        headers: queuedRequest.headers,
+        headers,
       };
 
       if (queuedRequest.body && queuedRequest.method !== 'GET') {
