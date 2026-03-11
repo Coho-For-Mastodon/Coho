@@ -37,8 +37,8 @@ const applyCors = (
 // ============================================================================
 
 /**
- * Validate that a server hostname is a legitimate Mastodon instance URL.
- * Rejects private IPs, localhost, and malformed hostnames to prevent SSRF.
+ * Validate that a server hostname looks like a legitimate Mastodon instance host.
+ * Performs basic SSRF mitigation by rejecting localhost-like and malformed hostnames.
  */
 function validateServerUrl(server: string): boolean {
   if (!server || typeof server !== 'string') return false;
