@@ -100,13 +100,14 @@ export const enrichPostsWithReplyContext = async (
 };
 
 /**
- * Groups consecutive self-reply chains (same author replying to themselves)
- * into a single timeline item using the `thread_continuation` field.
- * This matches the official Mastodon app behavior where self-threads appear
- * as connected posts with a vertical line between avatars.
+ * Groups self-reply chains (same author replying to themselves) into a single
+ * timeline item using the `thread_continuation` field. This matches the
+ * official Mastodon app behavior where self-threads appear as connected posts
+ * with a vertical line between avatars.
  *
- * Self-threads are capped at 3 visible posts (root + 2 continuations).
- * When truncated, `thread_truncated` is set to true on the root post.
+ * Uses a parent→child map so ordering (reverse-chronological or otherwise)
+ * does not matter. Chains are capped at 3 visible posts (root + 2
+ * continuations). When truncated, `thread_truncated` is set on the root.
  */
 export const groupSelfThreads = (posts: Post[]): Post[] => {
   if (posts.length === 0) return posts;
@@ -117,56 +118,71 @@ export const groupSelfThreads = (posts: Post[]): Post[] => {
     postMap.set(post.id, post);
   }
 
-  // Track which post IDs have been consumed as thread continuations
-  const consumed = new Set<string>();
+  // Build a parent → child map for self-replies within this batch.
+  // A self-reply: child.in_reply_to_id === parent.id, both same author,
+  // and parent exists in this batch.
+  const childOf = new Map<string, string>(); // child id → parent id
+  for (const post of posts) {
+    if (post.in_reply_to_id) {
+      const parent = postMap.get(post.in_reply_to_id);
+      if (parent && parent.account.id === post.account.id) {
+        childOf.set(post.id, parent.id);
+      }
+    }
+  }
 
-  // For each post, check if it is the root of a self-thread chain
-  // A self-thread: post B replies to post A, both have the same author,
-  // and post A appears in this timeline batch.
+  // Identify roots: posts that are NOT a child of another post in the batch
+  // (i.e. they don't appear as a key in childOf, or their parent isn't in batch)
+  const nonRoots = new Set(childOf.keys());
+
+  // Build parent → child reverse map for walking chains forward
+  const parentToChild = new Map<string, string>();
+  for (const [child, parent] of childOf) {
+    parentToChild.set(parent, child);
+  }
+
+  // Track consumed post IDs (posts that became continuations of a root)
+  const consumed = new Set<string>();
   const result: Post[] = [];
 
+  // Walk posts in original order to preserve timeline ordering
   for (const post of posts) {
     if (consumed.has(post.id)) continue;
 
-    // Walk forward to collect self-reply children of this post
-    const continuation: Post[] = [];
-    let current = post;
+    // Only start a chain from a root (a post that is not a child of another
+    // post within this batch)
+    if (nonRoots.has(post.id)) {
+      // Not a root — it will be consumed by its parent's chain.
+      // But only if the parent is actually in the batch and will be processed.
+      // If somehow the parent was already consumed or missing, emit standalone.
+      const parentId = childOf.get(post.id);
+      if (parentId && postMap.has(parentId) && !consumed.has(parentId)) {
+        continue; // will be consumed when parent is processed
+      }
+      // Otherwise treat as standalone / orphan root
+    }
 
-    // Keep looking for a child in the timeline that replies to `current`
-    // and is by the same author
-    let searching = true;
-    while (searching) {
-      searching = false;
-      for (const candidate of posts) {
-        if (consumed.has(candidate.id)) continue;
-        if (candidate.id === current.id) continue;
-        if (
-          candidate.in_reply_to_id === current.id &&
-          candidate.account.id === post.account.id
-        ) {
-          continuation.push(candidate);
-          consumed.add(candidate.id);
-          current = candidate;
-          searching = true;
-          break;
-        }
+    // Walk the chain forward: root → child → grandchild → ...
+    const chain: Post[] = [];
+    let currentId: string | undefined = post.id;
+    while (currentId) {
+      const nextChildId = parentToChild.get(currentId);
+      if (nextChildId && !consumed.has(nextChildId)) {
+        chain.push(postMap.get(nextChildId)!);
+        consumed.add(nextChildId);
+        currentId = nextChildId;
+      } else {
+        currentId = undefined;
       }
     }
 
-    if (continuation.length > 0) {
-      // Also check if this post itself is a self-reply to something in the
-      // timeline that we haven't processed yet – if so, skip making it a root
-      // (it will be picked up as a continuation of its parent)
-      // This is already handled by the consumed set above.
-
+    if (chain.length > 0) {
       const MAX_CONTINUATIONS = 2; // root + 2 = 3 total visible posts
-      const truncated = continuation.length > MAX_CONTINUATIONS;
+      const truncated = chain.length > MAX_CONTINUATIONS;
       const visibleContinuation = truncated
-        ? continuation.slice(0, MAX_CONTINUATIONS)
-        : continuation;
+        ? chain.slice(0, MAX_CONTINUATIONS)
+        : chain;
 
-      // Remove reply_to from root if the parent is not in timeline
-      // (reply_to context is replaced by the thread display)
       result.push({
         ...post,
         thread_continuation: visibleContinuation,

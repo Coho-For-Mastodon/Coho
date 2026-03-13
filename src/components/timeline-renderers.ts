@@ -658,7 +658,7 @@ export function renderThreadContinuation(
           : null}
       `;
     })}
-    ${state.tweet?.thread_truncated
+    ${state.tweet?.thread_truncated && !state.threadExpanded
       ? html`
           <div class="thread-show-more" @click="${() => handlers.openPost()}">
             <md-icon name="chatbox"></md-icon>

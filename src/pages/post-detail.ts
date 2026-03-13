@@ -4,12 +4,14 @@ import { localized, msg } from '@lit/localize';
 
 import '../components/header';
 import '../components/timeline-item';
+import '../components/thread-branch';
 import '../components/md/md-icon';
 import '../components/md/md-icon-button';
 import '../components/md/md-skeleton-card';
 import '../components/post-composer';
 import { Post } from '../interfaces/Post';
 import { getReplies } from '../services/timeline';
+import { buildThreadTree, type ThreadNode } from '../utils/thread-tree';
 
 import { getPostDetail } from '../services/posts';
 import type { PostComposer } from '../components/post-composer';
@@ -22,6 +24,7 @@ import { getNotificationById } from '../mastodon/api/notifications';
 export class PostDetail extends LitElement {
   @state() tweet: Post | null = null;
   @state() replies: Post[] = [];
+  @state() replyTree: ThreadNode[] = [];
   @state() ancestors: Post[] = [];
   @state() replyingTo: Post | null = null;
   @state() loading = false;
@@ -100,7 +103,22 @@ export class PostDetail extends LitElement {
       }
 
       .ancestors-section {
-        margin-bottom: 10px;
+        margin-bottom: 0;
+      }
+
+      .ancestor-connector {
+        display: flex;
+        align-items: stretch;
+        padding: 0 11px;
+      }
+
+      .ancestor-connector-line {
+        width: 2px;
+        min-height: 20px;
+        margin-left: 19px;
+        background: var(--md-sys-color-outline, #938f99);
+        border-radius: 1px;
+        flex-shrink: 0;
       }
 
       .replies-section {
@@ -279,6 +297,7 @@ export class PostDetail extends LitElement {
       if (this.passed_tweet) {
         this.tweet = this.passed_tweet;
         this.replies = [];
+        this.replyTree = [];
         this.ancestors = [];
         // Ensure replies load even if passed_tweet is set after firstUpdated.
         void this.loadReplies();
@@ -304,6 +323,11 @@ export class PostDetail extends LitElement {
         console.log('replies', replies);
 
         this.replies = replies.descendants;
+
+        // Build a tree structure for replies
+        if (this.tweet) {
+          this.replyTree = buildThreadTree(this.tweet.id, replies.descendants);
+        }
 
         // If there are ancestors, we need to adjust scroll position
         // to keep the main post visually stable when ancestors render above it
@@ -386,6 +410,7 @@ export class PostDetail extends LitElement {
       this.tweet = tweet;
       this.replyingTo = null;
       this.replies = [];
+      this.replyTree = [];
       this.ancestors = [];
       await this.loadReplies();
 
@@ -471,28 +496,41 @@ export class PostDetail extends LitElement {
       <main>
         <div class="scroller">
           <section class="ancestors-section">
-            <ul class="replies-list">
-              ${this.ancestors.map(
-                (ancestor) => html`
-                  <timeline-item
-                    .tweet="${ancestor}"
-                    ?guestMode="${this.isGuestMode}"
-                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                      this.handleOpenPost(e)}"
-                    @reply-clicked="${(e: CustomEvent) =>
-                      this.handleReplyClick(e)}"
-                    @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                      this.handleEditPost(e.detail.tweet)}"
-                  ></timeline-item>
-                `
-              )}
-            </ul>
+            ${this.ancestors.map((ancestor, index) => {
+              // Strip timeline thread grouping — detail view shows full thread
+              const {
+                thread_continuation,
+                thread_truncated,
+                ...cleanAncestor
+              } = ancestor;
+              return html`
+                <timeline-item
+                  .tweet="${cleanAncestor as Post}"
+                  ?guestMode="${this.isGuestMode}"
+                  @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                    this.handleOpenPost(e)}"
+                  @reply-clicked="${(e: CustomEvent) =>
+                    this.handleReplyClick(e)}"
+                  @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                    this.handleEditPost(e.detail.tweet)}"
+                ></timeline-item>
+                ${index < this.ancestors.length
+                  ? html`<div class="ancestor-connector">
+                      <div class="ancestor-connector-line"></div>
+                    </div>`
+                  : nothing}
+              `;
+            })}
           </section>
 
           <section class="post-section">
             <timeline-item
               id="main"
-              .tweet="${this.tweet!}"
+              .tweet="${(() => {
+                const { thread_continuation, thread_truncated, ...clean } =
+                  this.tweet!;
+                return clean as Post;
+              })()}"
               ?guestMode="${this.isGuestMode}"
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"
@@ -505,27 +543,19 @@ export class PostDetail extends LitElement {
             ${this.loadingThread
               ? html`<md-skeleton-card count="3"></md-skeleton-card>`
               : nothing}
-            ${this.replies.length > 0
+            ${this.replyTree.length > 0
               ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
               : nothing}
-
-            <ul class="replies-list">
-              ${this.replies.map(
-                (reply) => html`
-                  <timeline-item
-                    .tweet="${reply}"
-                    ?show="${true}"
-                    ?guestMode="${this.isGuestMode}"
-                    @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                      this.handleOpenPost(e)}"
-                    @reply-clicked="${(e: CustomEvent) =>
-                      this.handleReplyClick(e)}"
-                    @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                      this.handleEditPost(e.detail.tweet)}"
-                  ></timeline-item>
-                `
-              )}
-            </ul>
+            ${this.replyTree.map(
+              (node) => html`
+                <thread-branch
+                  .node=${node}
+                  ?guestMode=${this.isGuestMode}
+                  @open=${(e: CustomEvent<{ tweet: Post }>) =>
+                    this.handleOpenPost(e)}
+                ></thread-branch>
+              `
+            )}
           </section>
         </div>
 
