@@ -12,6 +12,9 @@ import './md/md-dialog.js';
 import './md/md-select.js';
 import './md/md-option.js';
 import './md/md-checkbox.js';
+import './md/md-dropdown.js';
+import './md/md-menu.js';
+import './md/md-menu-item.js';
 import './media-edit-dialog.js';
 import './md/md-skeleton.js';
 import './handwriting-dialog.js';
@@ -671,7 +674,7 @@ export class PostComposer extends LitElement {
       }
 
       /* Proofread styles */
-      .proofread-container {
+      .proofread-result-container {
         position: relative;
       }
 
@@ -763,42 +766,17 @@ export class PostComposer extends LitElement {
         }
       }
 
-      /* Speech-to-text styles */
-      .mic-button,
       .proofread-button {
         --md-icon-button-icon-size: 18px;
         transition: opacity 0.2s ease;
       }
 
-      .mic-button:hover,
       .proofread-button:hover {
         opacity: 1;
       }
 
-      .proofread-button.proofreading {
-        --md-icon-button-icon-color: #e879f9;
-        opacity: 1 !important;
-        animation: ai-glow 1.5s ease-in-out infinite;
-        border-radius: var(--md-sys-shape-corner-circle);
-      }
-
       .proofread-button[disabled] {
         opacity: 0.3;
-      }
-
-      .mic-button.recording {
-        --md-icon-button-icon-color: #fff;
-        background-color: #e53935;
-        border-radius: var(--md-sys-shape-corner-circle);
-        opacity: 1;
-        animation: recording-pulse 1s ease-in-out infinite;
-      }
-
-      .mic-button.transcribing {
-        --md-icon-button-icon-color: #e879f9;
-        opacity: 1 !important;
-        animation: ai-glow 1.5s ease-in-out infinite;
-        border-radius: var(--md-sys-shape-corner-circle);
       }
 
       .pen-button {
@@ -2850,27 +2828,8 @@ export class PostComposer extends LitElement {
                 <md-option value="private">${msg('Followers Only')}</md-option>
                 <md-option value="direct">${msg('Direct')}</md-option>
               </md-select>
-
-              <md-icon-button
-                src="/assets/calendar-outline.svg"
-                .label=${this.scheduleEnabled
-                  ? msg('Disable scheduling')
-                  : msg('Enable scheduling')}
-                .variant=${this.scheduleEnabled ? 'filled-tonal' : 'standard'}
-                @click=${() => this._toggleSchedule()}
-              ></md-icon-button>
             `
           : nothing}
-
-        <!-- Mobile icon buttons -->
-        <md-icon-button
-          class="mobile-icon-button"
-          label="${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}"
-          src="/assets/chatbox-outline.svg"
-          .variant=${this.pollEnabled ? 'filled-tonal' : 'standard'}
-          ?disabled=${this.attachments.length > 0}
-          @click="${() => this._togglePoll()}"
-        ></md-icon-button>
 
         <md-icon-button
           class="mobile-icon-button"
@@ -2898,99 +2857,136 @@ export class PostComposer extends LitElement {
           this.attachments.length >= this.maxMediaAttachments}
         ></md-icon-button>
 
-        <!-- Proofreader -->
-        ${this.proofreaderAvailable ? this._renderProofreader() : nothing}
+        <!-- Overflow menu -->
+        <md-dropdown placement="bottom-end">
+          <md-icon-button
+            slot="trigger"
+            name="ellipsis-vertical"
+            .label=${msg('More options')}
+          ></md-icon-button>
+          <md-menu>
+            ${!this.compact
+              ? html`
+                  <md-menu-item
+                    .selected=${this.scheduleEnabled}
+                    @click=${() => this._toggleSchedule()}
+                  >
+                    <md-icon
+                      slot="prefix"
+                      src="/assets/calendar-outline.svg"
+                    ></md-icon>
+                    ${this.scheduleEnabled
+                      ? msg('Disable scheduling')
+                      : msg('Enable scheduling')}
+                  </md-menu-item>
+                `
+              : nothing}
 
-        <!-- Speech-to-text -->
-        ${this.speechToTextAvailable
-          ? html`
-              <md-icon-button
-                class="mic-button ${this.isRecording ? 'recording' : ''} ${this
-                  .isTranscribing
-                  ? 'transcribing'
-                  : ''}"
-                label="${this.isRecording
-                  ? msg('Stop recording')
-                  : this.isTranscribing
-                    ? msg('Transcribing...')
-                    : msg('Voice input')}"
-                src="${this.isRecording
-                  ? '/assets/stop-circle-outline.svg'
-                  : '/assets/mic-outline.svg'}"
-                ?disabled=${this.isTranscribing}
-                @click="${() => this.toggleRecording()}"
-                title="${this.isRecording || this.isTranscribing
-                  ? ''
-                  : 'On-device AI'}"
-              ></md-icon-button>
-            `
-          : nothing}
+            <md-menu-item
+              .selected=${this.pollEnabled}
+              ?disabled=${this.attachments.length > 0}
+              @click=${() => this._togglePoll()}
+            >
+              <md-icon
+                slot="prefix"
+                src="/assets/chatbox-outline.svg"
+              ></md-icon>
+              ${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
+            </md-menu-item>
+
+            ${this.proofreaderAvailable
+              ? html`
+                  <md-menu-item
+                    ?disabled=${!this.hasStatus || this.proofreading}
+                    @click=${() => this.doProofread()}
+                    title=${this.proofreading ? '' : 'On-device AI'}
+                  >
+                    <md-icon
+                      slot="prefix"
+                      src="/assets/sparkles-outline.svg"
+                    ></md-icon>
+                    ${this.proofreading ? msg('Checking...') : msg('Proofread')}
+                  </md-menu-item>
+                `
+              : nothing}
+            ${this.speechToTextAvailable
+              ? html`
+                  <md-menu-item
+                    ?disabled=${this.isTranscribing}
+                    @click=${() => this.toggleRecording()}
+                    title=${this.isRecording || this.isTranscribing
+                      ? ''
+                      : 'On-device AI'}
+                  >
+                    <md-icon
+                      slot="prefix"
+                      src="${this.isRecording
+                        ? '/assets/stop-circle-outline.svg'
+                        : '/assets/mic-outline.svg'}"
+                    ></md-icon>
+                    ${this.isRecording
+                      ? msg('Stop recording')
+                      : this.isTranscribing
+                        ? msg('Transcribing...')
+                        : msg('Voice input')}
+                  </md-menu-item>
+                `
+              : nothing}
+          </md-menu>
+        </md-dropdown>
+
+        <!-- Proofread result (outside overflow menu) -->
+        ${this.proofreaderAvailable ? this._renderProofreadResult() : nothing}
       </div>
     `;
   }
 
-  private _renderProofreader() {
+  private _renderProofreadResult() {
+    if (!this.proofreadResult) return nothing;
+
+    if (this.proofreadResult.corrections.length === 0) {
+      return html`
+        <span class="proofread-success">
+          ✓ ${msg('Looks good!')}
+          <md-icon-button
+            class="proofread-button"
+            label=${msg('Dismiss')}
+            src="/assets/close-outline.svg"
+            @click="${() => this.dismissProofread()}"
+          ></md-icon-button>
+        </span>
+      `;
+    }
+
     return html`
-      <div class="proofread-container">
-        ${this.proofreadResult && this.proofreadResult.corrections.length === 0
-          ? html`
-              <span class="proofread-success">
-                ✓ ${msg('Looks good!')}
-                <md-icon-button
-                  class="proofread-button"
-                  label=${msg('Dismiss')}
-                  src="/assets/close-outline.svg"
-                  @click="${() => this.dismissProofread()}"
-                ></md-icon-button>
-              </span>
-            `
-          : html`
-              <md-icon-button
-                class="proofread-button ${this.proofreading
-                  ? 'proofreading'
-                  : ''}"
-                label="${this.proofreading
-                  ? msg('Checking...')
-                  : msg('Proofread')}"
-                src="/assets/sparkles-outline.svg"
-                ?disabled=${!this.hasStatus || this.proofreading}
-                @click="${() => this.doProofread()}"
-                title="${this.proofreading ? '' : 'On-device AI'}"
-              ></md-icon-button>
-            `}
-        ${this.proofreadResult && this.proofreadResult.corrections.length > 0
-          ? html`
-              <div class="proofread-dropdown">
-                <div class="proofread-dropdown-header">
-                  <span class="proofread-dropdown-label">
-                    ${msg('Suggested revision')}
-                    (${this.proofreadResult.corrections.length}
-                    change${this.proofreadResult.corrections.length > 1
-                      ? 's'
-                      : ''})
-                  </span>
-                  <div class="proofread-dropdown-actions">
-                    <md-button
-                      size="small"
-                      variant="filled"
-                      pill
-                      @click="${() => this.applyCorrections()}"
-                      >${msg('Apply')}</md-button
-                    >
-                    <md-button
-                      size="small"
-                      variant="text"
-                      @click="${() => this.dismissProofread()}"
-                      >${msg('Dismiss')}</md-button
-                    >
-                  </div>
-                </div>
-                <div class="proofread-dropdown-content">
-                  <p>${this.proofreadResult.correctedInput}</p>
-                </div>
-              </div>
-            `
-          : null}
+      <div class="proofread-result-container">
+        <div class="proofread-dropdown">
+          <div class="proofread-dropdown-header">
+            <span class="proofread-dropdown-label">
+              ${msg('Suggested revision')}
+              (${this.proofreadResult.corrections.length}
+              change${this.proofreadResult.corrections.length > 1 ? 's' : ''})
+            </span>
+            <div class="proofread-dropdown-actions">
+              <md-button
+                size="small"
+                variant="filled"
+                pill
+                @click="${() => this.applyCorrections()}"
+                >${msg('Apply')}</md-button
+              >
+              <md-button
+                size="small"
+                variant="text"
+                @click="${() => this.dismissProofread()}"
+                >${msg('Dismiss')}</md-button
+              >
+            </div>
+          </div>
+          <div class="proofread-dropdown-content">
+            <p>${this.proofreadResult.correctedInput}</p>
+          </div>
+        </div>
       </div>
     `;
   }
