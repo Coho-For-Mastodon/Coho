@@ -23,6 +23,7 @@ export class MdDropdown extends LitElement {
   private _popupContainer: HTMLDivElement | null = null;
   private _backdrop: HTMLDivElement | null = null;
   private _movedElements: Element[] = [];
+  private _popupHost: HTMLElement | null = null;
 
   static styles = css`
     :host {
@@ -68,6 +69,12 @@ export class MdDropdown extends LitElement {
   };
 
   private _createPopup() {
+    // Find the nearest open <dialog> ancestor (crossing shadow DOM boundaries)
+    // to stay within the top layer stacking context.
+    // Falls back to document.body when not inside a dialog.
+    const host = this._findAncestorDialog() ?? document.body;
+    this._popupHost = host as HTMLElement;
+
     // Create backdrop
     this._backdrop = document.createElement('div');
     this._backdrop.style.cssText = `
@@ -80,7 +87,7 @@ export class MdDropdown extends LitElement {
       background: transparent;
     `;
     this._backdrop.addEventListener('click', this._handleBackdropClick);
-    document.body.appendChild(this._backdrop);
+    this._popupHost.appendChild(this._backdrop);
 
     // Create popup container
     this._popupContainer = document.createElement('div');
@@ -104,7 +111,7 @@ export class MdDropdown extends LitElement {
     // Listen for clicks inside popup to close dropdown
     this._popupContainer.addEventListener('click', this._handlePopupClick);
 
-    document.body.appendChild(this._popupContainer);
+    this._popupHost.appendChild(this._popupContainer);
 
     // Position and animate in
     requestAnimationFrame(() => {
@@ -149,6 +156,7 @@ export class MdDropdown extends LitElement {
       this._popupContainer.remove();
       this._popupContainer = null;
     }
+    this._popupHost = null;
   }
 
   show() {
@@ -252,6 +260,29 @@ export class MdDropdown extends LitElement {
 
     this._popupContainer.style.top = `${top}px`;
     this._popupContainer.style.left = `${left}px`;
+  }
+
+  /**
+   * Walk up the composed (flat) tree looking for an open `<dialog>` element.
+   * Uses `assignedSlot` to cross into shadow DOMs where content is slotted,
+   * and `ShadowRoot.host` to exit shadow DOMs.
+   */
+  private _findAncestorDialog(): HTMLDialogElement | null {
+    let node: Node | null = this as Node;
+    while (node) {
+      if (node instanceof HTMLDialogElement && node.open) {
+        return node;
+      }
+      if (node instanceof ShadowRoot) {
+        node = node.host;
+      } else if (node instanceof Element && node.assignedSlot) {
+        // Follow the composed tree through slot distribution
+        node = node.assignedSlot;
+      } else {
+        node = node.parentNode;
+      }
+    }
+    return null;
   }
 
   private _handleBackdropClick = () => {
