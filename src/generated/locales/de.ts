@@ -416,6 +416,7 @@ export const templates = {
   s45cb501abd43ba52: `Generate`,
   s798bd37a29caf058: `Continue this thread`,
   sf3a3a78aee5035f1: `1 more reply`,
+  s2c214ff1327cceb6: str`${0} more replies`,
   s31679cf8c4aacbdd: `Unable to load lists. Please try again.`,
   sbf698aa3a40d1d79: `Followed replies`,
   s0e117811880f3942: `No replies`,

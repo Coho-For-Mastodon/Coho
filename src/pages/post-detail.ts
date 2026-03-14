@@ -23,7 +23,6 @@ import { getNotificationById } from '../mastodon/api/notifications';
 @customElement('post-detail')
 export class PostDetail extends LitElement {
   @state() tweet: Post | null = null;
-  @state() replies: Post[] = [];
   @state() replyTree: ThreadNode[] = [];
   @state() ancestors: Post[] = [];
   @state() replyingTo: Post | null = null;
@@ -36,6 +35,18 @@ export class PostDetail extends LitElement {
 
   @query('post-composer') private replyComposer!: PostComposer;
   @query('post-dialog') private postDialog!: PostDialog;
+
+  private stripThreadFields(post: Post): Post {
+    const result = { ...post };
+    delete result.thread_continuation;
+    delete result.thread_truncated;
+    return result;
+  }
+
+  private get cleanMainTweet(): Post | null {
+    if (!this.tweet) return null;
+    return this.stripThreadFields(this.tweet);
+  }
 
   static styles = [
     css`
@@ -296,7 +307,6 @@ export class PostDetail extends LitElement {
       this.toggleAttribute('embedded', this.passed_tweet !== null);
       if (this.passed_tweet) {
         this.tweet = this.passed_tweet;
-        this.replies = [];
         this.replyTree = [];
         this.ancestors = [];
         // Ensure replies load even if passed_tweet is set after firstUpdated.
@@ -321,8 +331,6 @@ export class PostDetail extends LitElement {
         // get post replies
         const replies = await getReplies(this.tweet.id);
         console.log('replies', replies);
-
-        this.replies = replies.descendants;
 
         // Build a tree structure for replies
         if (this.tweet) {
@@ -386,7 +394,6 @@ export class PostDetail extends LitElement {
   async handleReplyPublished() {
     // Reload replies after publishing
     await this.loadReplies();
-    this.replies = [...this.replies];
     this.replyingTo = null;
   }
 
@@ -409,7 +416,6 @@ export class PostDetail extends LitElement {
     if (this.passed_tweet) {
       this.tweet = tweet;
       this.replyingTo = null;
-      this.replies = [];
       this.replyTree = [];
       this.ancestors = [];
       await this.loadReplies();
@@ -498,14 +504,10 @@ export class PostDetail extends LitElement {
           <section class="ancestors-section">
             ${this.ancestors.map((ancestor, index) => {
               // Strip timeline thread grouping — detail view shows full thread
-              const {
-                thread_continuation,
-                thread_truncated,
-                ...cleanAncestor
-              } = ancestor;
+              const cleanAncestor = this.stripThreadFields(ancestor);
               return html`
                 <timeline-item
-                  .tweet="${cleanAncestor as Post}"
+                  .tweet="${cleanAncestor}"
                   ?guestMode="${this.isGuestMode}"
                   @open="${(e: CustomEvent<{ tweet: Post }>) =>
                     this.handleOpenPost(e)}"
@@ -514,7 +516,7 @@ export class PostDetail extends LitElement {
                   @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                     this.handleEditPost(e.detail.tweet)}"
                 ></timeline-item>
-                ${index < this.ancestors.length
+                ${index < this.ancestors.length - 1
                   ? html`<div class="ancestor-connector">
                       <div class="ancestor-connector-line"></div>
                     </div>`
@@ -526,11 +528,7 @@ export class PostDetail extends LitElement {
           <section class="post-section">
             <timeline-item
               id="main"
-              .tweet="${(() => {
-                const { thread_continuation, thread_truncated, ...clean } =
-                  this.tweet!;
-                return clean as Post;
-              })()}"
+              .tweet="${this.cleanMainTweet}"
               ?guestMode="${this.isGuestMode}"
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"

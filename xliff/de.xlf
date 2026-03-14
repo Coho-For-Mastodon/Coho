@@ -1886,6 +1886,15 @@
 <trans-unit id="sbaf2dbcb41ca49a9">
   <source>(edited)</source>
 </trans-unit>
+<trans-unit id="s798bd37a29caf058">
+  <source>Continue this thread</source>
+</trans-unit>
+<trans-unit id="sf3a3a78aee5035f1">
+  <source>1 more reply</source>
+</trans-unit>
+<trans-unit id="s2c214ff1327cceb6">
+  <source><x id="0" equiv-text="${remainingCount}"/> more replies</source>
+</trans-unit>
 </body>
 </file>
 </xliff>

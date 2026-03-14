@@ -1,6 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { msg } from '@lit/localize';
+import { localized, msg, str } from '@lit/localize';
 import type { ThreadNode } from '../utils/thread-tree';
 import { MAX_THREAD_DEPTH } from '../utils/thread-tree';
 import { parseEmojis } from '../utils/emoji-parser';
@@ -21,6 +21,7 @@ import './timeline-poll';
  * At depths >= MAX_THREAD_DEPTH a "Continue this thread" link is
  * shown instead of rendering deeper replies inline.
  */
+@localized()
 @customElement('thread-branch')
 export class ThreadBranch extends LitElement {
   @property({ type: Object }) node!: ThreadNode;
@@ -283,7 +284,7 @@ export class ThreadBranch extends LitElement {
           <md-icon name="chatbubbles"></md-icon>
           ${remainingCount === 1
             ? msg('1 more reply')
-            : msg(`${remainingCount} more replies`)}
+            : msg(str`${remainingCount} more replies`)}
         </div>
       `;
     }
