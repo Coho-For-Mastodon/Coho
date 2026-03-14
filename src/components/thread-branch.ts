@@ -234,10 +234,12 @@ export class ThreadBranch extends LitElement {
             : html`<div
                 .innerHTML=${parseEmojis(post.content || '', post.emojis || [])}
               ></div>`}
-          ${post.poll
+          ${!post.sensitive && post.poll
             ? html`<timeline-poll .post=${post}></timeline-poll>`
             : nothing}
-          ${post.media_attachments && post.media_attachments.length > 0
+          ${!post.sensitive &&
+          post.media_attachments &&
+          post.media_attachments.length > 0
             ? html`<image-carousel
                 .images=${post.media_attachments}
               ></image-carousel>`

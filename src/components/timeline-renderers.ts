@@ -217,10 +217,11 @@ export function renderReplyContext(
               state.tweet?.reply_to?.emojis || []
             )}"
           ></div>`}
-      ${state.tweet?.reply_to?.poll
+      ${!state.tweet?.reply_to?.sensitive && state.tweet?.reply_to?.poll
         ? html`<timeline-poll .post=${state.tweet.reply_to}></timeline-poll>`
         : null}
-      ${state.tweet?.reply_to?.media_attachments &&
+      ${!state.tweet?.reply_to?.sensitive &&
+      state.tweet?.reply_to?.media_attachments &&
       state.tweet.reply_to.media_attachments.length > 0
         ? html`
             <image-carousel .images="${state.tweet.reply_to.media_attachments}">
@@ -441,12 +442,13 @@ export function renderRegularTweet(
       }
 
       ${
-        state.tweet?.poll
+        !state.tweet?.sensitive && state.tweet?.poll
           ? html`<timeline-poll .post=${state.tweet}></timeline-poll>`
           : null
       }
 
       ${
+        !state.tweet?.sensitive &&
         state.tweet &&
         state.tweet.media_attachments &&
         state.tweet.media_attachments.length > 0
@@ -456,11 +458,15 @@ export function renderRegularTweet(
             `
           : html``
       }
-      ${renderLinkCard(
-        state.tweet?.card,
-        handlers.openLinkCard,
-        (state.tweet?.media_attachments?.length ?? 0) > 0
-      )}
+      ${
+        !state.tweet?.sensitive
+          ? renderLinkCard(
+              state.tweet?.card,
+              handlers.openLinkCard,
+              (state.tweet?.media_attachments?.length ?? 0) > 0
+            )
+          : null
+      }
 
       <div class="actions" slot="footer">
         ${
@@ -588,21 +594,24 @@ export function renderThreadContinuation(
                   threadPost.emojis || []
                 )}"
               ></div>`}
-          ${threadPost.poll
+          ${!threadPost.sensitive && threadPost.poll
             ? html`<timeline-poll .post=${threadPost}></timeline-poll>`
             : null}
-          ${threadPost.media_attachments &&
+          ${!threadPost.sensitive &&
+          threadPost.media_attachments &&
           threadPost.media_attachments.length > 0
             ? html`
                 <image-carousel .images="${threadPost.media_attachments}">
                 </image-carousel>
               `
             : html``}
-          ${renderLinkCard(
-            threadPost.card,
-            handlers.openLinkCard,
-            (threadPost.media_attachments?.length ?? 0) > 0
-          )}
+          ${!threadPost.sensitive
+            ? renderLinkCard(
+                threadPost.card,
+                handlers.openLinkCard,
+                (threadPost.media_attachments?.length ?? 0) > 0
+              )
+            : null}
           <div class="actions" slot="footer">
             <md-button
               variant="text"
@@ -819,21 +828,24 @@ export function renderReblog(
         )}"
       ></div>
 
-      ${state.tweet.reblog.poll
+      ${!state.tweet.reblog.sensitive && state.tweet.reblog.poll
         ? html`<timeline-poll .post=${state.tweet.reblog}></timeline-poll>`
         : null}
-      ${state.tweet.reblog.media_attachments &&
+      ${!state.tweet.reblog.sensitive &&
+      state.tweet.reblog.media_attachments &&
       state.tweet.reblog.media_attachments.length > 0
         ? html`
             <image-carousel .images="${state.tweet.reblog.media_attachments}">
             </image-carousel>
           `
         : html``}
-      ${renderLinkCard(
-        state.tweet.reblog.card,
-        handlers.openLinkCard,
-        (state.tweet.reblog.media_attachments?.length ?? 0) > 0
-      )}
+      ${!state.tweet.reblog.sensitive
+        ? renderLinkCard(
+            state.tweet.reblog.card,
+            handlers.openLinkCard,
+            (state.tweet.reblog.media_attachments?.length ?? 0) > 0
+          )
+        : null}
 
       <div class="actions" slot="footer">
         ${state.show === true
@@ -936,21 +948,24 @@ export function renderThread(
                     threadPost.emojis || []
                   )}"
                 ></div>`}
-            ${threadPost.poll
+            ${!threadPost.sensitive && threadPost.poll
               ? html`<timeline-poll .post=${threadPost}></timeline-poll>`
               : null}
-            ${threadPost.media_attachments &&
+            ${!threadPost.sensitive &&
+            threadPost.media_attachments &&
             threadPost.media_attachments.length > 0
               ? html`
                   <image-carousel .images="${threadPost.media_attachments}">
                   </image-carousel>
                 `
               : html``}
-            ${renderLinkCard(
-              threadPost.card,
-              handlers.openLinkCard,
-              (threadPost.media_attachments?.length ?? 0) > 0
-            )}
+            ${!threadPost.sensitive
+              ? renderLinkCard(
+                  threadPost.card,
+                  handlers.openLinkCard,
+                  (threadPost.media_attachments?.length ?? 0) > 0
+                )
+              : null}
             <div class="actions" slot="footer">
               <md-button
                 variant="text"
