@@ -18,6 +18,8 @@ const allowedOrigins = [
   'https://coho.place',
   'https://coho-mastodon.web.app',
   'http://localhost:3000',
+  // Capacitor Android WebView origin (androidScheme: 'https' in capacitor.config.ts)
+  'https://localhost',
 ];
 
 const applyCors = (

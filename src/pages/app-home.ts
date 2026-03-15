@@ -770,6 +770,10 @@ export class AppHome extends LitElement {
 
   // PWA Install methods
   async checkInstallPrompt() {
+    // Skip install prompt entirely when running inside Capacitor native shell
+    const { isNativePlatform } = await import('../utils/platform');
+    if (isNativePlatform()) return;
+
     // Wait a moment for the pwa-install component to initialize
     await this.updateComplete;
 

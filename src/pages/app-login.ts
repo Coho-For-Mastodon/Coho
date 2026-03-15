@@ -209,8 +209,20 @@ export class AppLogin extends LitElement {
       }
       this.loggingIn = true;
       try {
-        const { initAuth } = await import('../services/account');
+        const { initAuth, authToClient } = await import('../services/account');
         await initAuth(serverURL);
+
+        // On native, the OAuth redirect comes back as an appUrlOpen event
+        // instead of a page navigation, so we listen for it here.
+        const { isNativePlatform } = await import('../utils/platform');
+        if (isNativePlatform()) {
+          const { waitForNativeCallback } =
+            await import('../services/auth-platform');
+          const { code, state } = await waitForNativeCallback();
+          await authToClient(code, state);
+          const router = await getRouter();
+          await router.navigate(await this.getPostAuthRedirect());
+        }
       } catch (err) {
         console.error(err);
       } finally {

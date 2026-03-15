@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Coho</string>
+    <string name="title_activity_main">Coho</string>
+    <string name="package_name">place.coho.app</string>
+    <string name="custom_url_scheme">place.coho.app</string>
+</resources>

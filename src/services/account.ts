@@ -536,7 +536,13 @@ export const getInstanceInfo = async () => {
 
 export const initAuth = async (serverURL: string) => {
   const normalizedServer = normalizeServer(serverURL);
-  const redirect_uri = location.origin;
+
+  // On native, location.origin is "https://localhost" (Capacitor WebView).
+  // The redirect must use the real domain so the OS intercepts it as an App Link.
+  const { isNativePlatform } = await import('../utils/platform.js');
+  const redirect_uri = isNativePlatform()
+    ? 'https://coho.place/auth/callback'
+    : `${location.origin}/auth/callback`;
 
   const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/authenticate`, {
     method: 'POST',
@@ -549,7 +555,8 @@ export const initAuth = async (serverURL: string) => {
 
   const data = await response.json();
 
-  window.location.href = data.url;
+  const { openOAuthUrl } = await import('./auth-platform.js');
+  await openOAuthUrl(data.url);
 };
 
 export const authToClient = async (code: string, state: string) => {
