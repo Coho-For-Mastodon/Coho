@@ -597,25 +597,37 @@ export class TimelineItem extends LitElement {
       .thread-show-more {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
-        padding: 10px 16px;
-        color: var(--md-sys-color-primary, #6750a4);
-        font-size: var(--md-sys-typescale-body-medium-font-size, 14px);
+        padding: 12px 16px;
+        color: var(--md-sys-color-on-primary-container, #fff);
+        font-size: var(--md-sys-typescale-label-large-font-size, 14px);
+        font-weight: 600;
+        letter-spacing: 0.02em;
         cursor: pointer;
-        background: var(--md-sys-color-surface-container, #1e1e24);
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-primary, #6750a4) 18%,
+          var(--md-sys-color-surface-container, #1e1e24)
+        );
         border: 1px solid
           color-mix(
             in srgb,
-            var(--md-sys-color-outline-variant, #2b2930) 60%,
+            var(--md-sys-color-primary, #6750a4) 40%,
             transparent
           );
         border-top: none;
         border-radius: 0 0 var(--md-sys-shape-corner-medium)
           var(--md-sys-shape-corner-medium);
+        transition: background 0.15s ease;
       }
 
       .thread-show-more:hover {
-        background: var(--md-sys-color-surface-container-highest, #353539);
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-primary, #6750a4) 28%,
+          var(--md-sys-color-surface-container, #1e1e24)
+        );
       }
 
       .thread-line {
@@ -627,16 +639,25 @@ export class TimelineItem extends LitElement {
 
       @media (prefers-color-scheme: light) {
         .thread-show-more {
-          background: var(--md-sys-color-surface-container, #f3f3f3);
+          background: color-mix(
+            in srgb,
+            var(--md-sys-color-primary, #6750a4) 12%,
+            var(--md-sys-color-surface-container, #f3f3f3)
+          );
+          color: var(--md-sys-color-primary, #6750a4);
           border-color: color-mix(
             in srgb,
-            var(--md-sys-color-outline-variant, #cac4d0) 60%,
+            var(--md-sys-color-primary, #6750a4) 30%,
             transparent
           );
         }
 
         .thread-show-more:hover {
-          background: var(--md-sys-color-surface-container-highest, #e6e6e6);
+          background: color-mix(
+            in srgb,
+            var(--md-sys-color-primary, #6750a4) 22%,
+            var(--md-sys-color-surface-container, #f3f3f3)
+          );
         }
       }
 
@@ -798,12 +819,29 @@ export class TimelineItem extends LitElement {
     }
   };
 
+  /**
+   * Find a post by ID in thread_continuation or threadPosts arrays.
+   * Returns undefined if the id matches the main tweet (callers handle that case).
+   */
+  private findThreadPost(id: string): Post | undefined {
+    if (this.tweet?.thread_continuation) {
+      const found = this.tweet.thread_continuation.find((p) => p.id === id);
+      if (found) return found;
+    }
+    return this.threadPosts.find((p) => p.id === id);
+  }
+
   async favorite(id: string) {
     if (!this.tweet) return;
 
+    const isMainTweet = id === this.tweet.id || id === this.tweet.reblog?.id;
+    const threadPost = !isMainTweet ? this.findThreadPost(id) : undefined;
+
     // Check current state (optimistic or actual)
     // Note: isBoosted here refers to the "favorited" state (legacy naming issue)
-    const currentlyFavorited = this.isBoosted || this.tweet.favourited;
+    const currentlyFavorited = isMainTweet
+      ? this.isBoosted || this.tweet.favourited
+      : !!threadPost?.favourited;
 
     // Store original state for rollback
     const originalFavorited = this.isBoosted;
@@ -811,6 +849,8 @@ export class TimelineItem extends LitElement {
     const originalCount = this.tweet.reblog
       ? this.tweet.reblog.favourites_count
       : this.tweet.favourites_count;
+    const originalThreadFavorited = threadPost?.favourited;
+    const originalThreadCount = threadPost?.favourites_count;
 
     await toggleStatusAction({
       guestMode: this.guestMode,
@@ -820,14 +860,22 @@ export class TimelineItem extends LitElement {
       errorMessageUndo: 'Failed to un-favorite post.',
 
       onOptimisticUpdate: (active) => {
-        this.isBoosted = active;
-        if (this.tweet) {
-          this.tweet.favourited = active;
-          const delta = active ? 1 : -1;
-          const target = this.tweet.reblog || this.tweet;
-          target.favourites_count = Math.max(
+        if (isMainTweet) {
+          this.isBoosted = active;
+          if (this.tweet) {
+            this.tweet.favourited = active;
+            const delta = active ? 1 : -1;
+            const target = this.tweet.reblog || this.tweet;
+            target.favourites_count = Math.max(
+              0,
+              target.favourites_count + delta
+            );
+          }
+        } else if (threadPost) {
+          threadPost.favourited = active;
+          threadPost.favourites_count = Math.max(
             0,
-            target.favourites_count + delta
+            (threadPost.favourites_count || 0) + (active ? 1 : -1)
           );
         }
         this.requestUpdate();
@@ -844,11 +892,16 @@ export class TimelineItem extends LitElement {
       },
 
       onRollback: () => {
-        this.isBoosted = originalFavorited;
-        if (this.tweet) {
-          this.tweet.favourited = originalTweetFavorited;
-          const target = this.tweet.reblog || this.tweet;
-          target.favourites_count = originalCount;
+        if (isMainTweet) {
+          this.isBoosted = originalFavorited;
+          if (this.tweet) {
+            this.tweet.favourited = originalTweetFavorited;
+            const target = this.tweet.reblog || this.tweet;
+            target.favourites_count = originalCount;
+          }
+        } else if (threadPost) {
+          threadPost.favourited = originalThreadFavorited ?? false;
+          threadPost.favourites_count = originalThreadCount ?? 0;
         }
         this.requestUpdate();
       },
@@ -871,8 +924,13 @@ export class TimelineItem extends LitElement {
   async reblog(id: string) {
     if (!this.tweet) return;
 
+    const isMainTweet = id === this.tweet.id || id === this.tweet.reblog?.id;
+    const threadPost = !isMainTweet ? this.findThreadPost(id) : undefined;
+
     // Check current state (optimistic or actual)
-    const currentlyReblogged = this.isReblogged || this.tweet.reblogged;
+    const currentlyReblogged = isMainTweet
+      ? this.isReblogged || this.tweet.reblogged
+      : !!threadPost?.reblogged;
 
     // Store original state for rollback
     const originalReblogged = this.isReblogged;
@@ -880,6 +938,8 @@ export class TimelineItem extends LitElement {
     const originalCount = this.tweet.reblog
       ? this.tweet.reblog.reblogs_count
       : this.tweet.reblogs_count;
+    const originalThreadReblogged = threadPost?.reblogged;
+    const originalThreadCount = threadPost?.reblogs_count;
 
     await toggleStatusAction({
       guestMode: this.guestMode,
@@ -889,12 +949,20 @@ export class TimelineItem extends LitElement {
       errorMessageUndo: 'Failed to un-boost post.',
 
       onOptimisticUpdate: (active) => {
-        this.isReblogged = active;
-        if (this.tweet) {
-          this.tweet.reblogged = active;
-          const delta = active ? 1 : -1;
-          const target = this.tweet.reblog || this.tweet;
-          target.reblogs_count = Math.max(0, target.reblogs_count + delta);
+        if (isMainTweet) {
+          this.isReblogged = active;
+          if (this.tweet) {
+            this.tweet.reblogged = active;
+            const delta = active ? 1 : -1;
+            const target = this.tweet.reblog || this.tweet;
+            target.reblogs_count = Math.max(0, target.reblogs_count + delta);
+          }
+        } else if (threadPost) {
+          threadPost.reblogged = active;
+          threadPost.reblogs_count = Math.max(
+            0,
+            (threadPost.reblogs_count || 0) + (active ? 1 : -1)
+          );
         }
         this.requestUpdate();
       },
@@ -910,11 +978,16 @@ export class TimelineItem extends LitElement {
       },
 
       onRollback: () => {
-        this.isReblogged = originalReblogged;
-        if (this.tweet) {
-          this.tweet.reblogged = originalTweetReblogged;
-          const target = this.tweet.reblog || this.tweet;
-          target.reblogs_count = originalCount;
+        if (isMainTweet) {
+          this.isReblogged = originalReblogged;
+          if (this.tweet) {
+            this.tweet.reblogged = originalTweetReblogged;
+            const target = this.tweet.reblog || this.tweet;
+            target.reblogs_count = originalCount;
+          }
+        } else if (threadPost) {
+          threadPost.reblogged = originalThreadReblogged ?? false;
+          threadPost.reblogs_count = originalThreadCount ?? 0;
         }
         this.requestUpdate();
       },
@@ -933,20 +1006,30 @@ export class TimelineItem extends LitElement {
   async bookmark(id: string) {
     if (!this.tweet) return;
 
-    const isActive = this.isBookmarked || this.tweet.bookmarked;
+    const isMainTweet = id === this.tweet.id || id === this.tweet.reblog?.id;
+    const threadPost = !isMainTweet ? this.findThreadPost(id) : undefined;
+
+    const isActive = isMainTweet
+      ? this.isBookmarked || this.tweet.bookmarked
+      : !!threadPost?.bookmarked;
 
     // Store original state for rollback
     const originalBookmarked = this.isBookmarked;
     const originalTweetBookmarked = this.tweet.bookmarked;
+    const originalThreadBookmarked = threadPost?.bookmarked;
 
     await toggleStatusAction({
       guestMode: this.guestMode,
       actionName: 'bookmark posts',
       isActive,
       onOptimisticUpdate: (active) => {
-        this.isBookmarked = active;
-        if (this.tweet) {
-          this.tweet.bookmarked = active;
+        if (isMainTweet) {
+          this.isBookmarked = active;
+          if (this.tweet) {
+            this.tweet.bookmarked = active;
+          }
+        } else if (threadPost) {
+          threadPost.bookmarked = active;
         }
         this.requestUpdate();
       },
@@ -959,9 +1042,13 @@ export class TimelineItem extends LitElement {
         return removeBookmark(id);
       },
       onRollback: () => {
-        this.isBookmarked = originalBookmarked;
-        if (this.tweet) {
-          this.tweet.bookmarked = originalTweetBookmarked;
+        if (isMainTweet) {
+          this.isBookmarked = originalBookmarked;
+          if (this.tweet) {
+            this.tweet.bookmarked = originalTweetBookmarked;
+          }
+        } else if (threadPost) {
+          threadPost.bookmarked = originalThreadBookmarked ?? false;
         }
         this.requestUpdate();
       },
@@ -1210,11 +1297,28 @@ export class TimelineItem extends LitElement {
   }
 
   viewThreadSensitive(id: string) {
+    // Check in threadPosts (Alt+X expanded thread)
     const index = this.threadPosts.findIndex((p) => p.id === id);
     if (index > -1) {
       const newPosts = [...this.threadPosts];
       newPosts[index] = { ...newPosts[index], sensitive: false };
       this.threadPosts = newPosts;
+      return;
+    }
+
+    // Check in thread_continuation (self-thread grouped posts)
+    if (this.tweet?.thread_continuation) {
+      const contIndex = this.tweet.thread_continuation.findIndex(
+        (p) => p.id === id
+      );
+      if (contIndex > -1) {
+        const newCont = [...this.tweet.thread_continuation];
+        newCont[contIndex] = { ...newCont[contIndex], sensitive: false };
+        this.tweet = {
+          ...this.tweet,
+          thread_continuation: newCont,
+        };
+      }
     }
   }
 
