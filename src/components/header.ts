@@ -27,6 +27,10 @@ export class AppHeader extends LitElement {
 
   @property({ type: Boolean }) showAccountSwitcher: boolean = false;
 
+  @property({ type: String }) currentAccountAvatar: string = '';
+
+  @property({ type: String }) currentAccountLabel: string = '';
+
   static get styles() {
     return css`
       header {
@@ -58,6 +62,35 @@ export class AppHeader extends LitElement {
       #actions {
         display: flex;
         gap: 0px;
+      }
+
+      #account-switcher-button {
+        overflow: hidden;
+      }
+
+      .account-avatar,
+      .avatar-placeholder {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+      }
+
+      .account-avatar {
+        display: block;
+        object-fit: cover;
+        background: var(--md-sys-color-surface-container-high);
+      }
+
+      .avatar-placeholder {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--md-sys-color-secondary-container);
+        color: var(--md-sys-color-on-secondary-container);
+        font-size: 0.75rem;
+        font-weight: 700;
+        line-height: 1;
+        text-transform: uppercase;
       }
 
       header img {
@@ -168,6 +201,25 @@ export class AppHeader extends LitElement {
     import('../router/routes').then((m) => m.router.navigate('/messages'));
   }
 
+  private getCurrentAccountInitial(): string {
+    const source = this.currentAccountLabel.trim();
+    return source.slice(0, 1) || '?';
+  }
+
+  private renderAccountSwitcherContent() {
+    if (this.currentAccountAvatar) {
+      return html`<img
+        class="account-avatar"
+        src="${this.currentAccountAvatar}"
+        alt="${this.currentAccountLabel || msg('Current account avatar')}"
+      />`;
+    }
+
+    return html`<span class="avatar-placeholder" aria-hidden="true"
+      >${this.getCurrentAccountInitial()}</span
+    >`;
+  }
+
   render() {
     return html`
       <header>
@@ -226,11 +278,12 @@ export class AppHeader extends LitElement {
                 ${this.showAccountSwitcher
                   ? html`<md-icon-button
                       title=${msg('Switch accounts')}
+                      label=${msg('Switch accounts')}
                       id="account-switcher-button"
                       @click="${(event: Event) =>
                         this.openAccountSwitcher(event)}"
                     >
-                      <md-icon src="/assets/repeat-outline.svg"></md-icon>
+                      ${this.renderAccountSwitcherContent()}
                     </md-icon-button>`
                   : nothing}
                 ${this.guestMode
