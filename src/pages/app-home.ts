@@ -35,6 +35,7 @@ import {
   saveSidebarTrending,
 } from '../services/sidebar-cache';
 import { getLatestReadStorageKey } from '../services/account';
+import { getActiveAccount } from '../services/auth-session';
 
 import type { OtterDrawer } from '../components/otter-drawer';
 import type { MdDialog } from '../components/md/md-dialog';
@@ -161,6 +162,20 @@ export class AppHome extends LitElement {
   @query('filters-dialog') private filtersDialog!: FiltersDialog;
   @query('scheduled-statuses-dialog')
   private scheduledStatusesDialog!: ScheduledStatusesDialog;
+
+  private getHeaderAccountIdentity(): { avatar: string; label: string } {
+    const activeAccount = getActiveAccount();
+
+    return {
+      avatar: this.user?.avatar || activeAccount?.avatar || '',
+      label:
+        this.user?.display_name ||
+        this.user?.acct ||
+        activeAccount?.displayName ||
+        activeAccount?.acct ||
+        '',
+    };
+  }
 
   static get styles() {
     return [styles, homeStyles, fadeInAnimation];
@@ -824,6 +839,8 @@ export class AppHome extends LitElement {
   }
 
   render() {
+    const headerAccount = this.getHeaderAccountIdentity();
+
     return html`
       ${this.rightClickLoaded
         ? html`
@@ -894,6 +911,8 @@ export class AppHome extends LitElement {
         .guestMode="${this.isGuestMode}"
         .showMessages="${!this.isGuestMode}"
         .showAccountSwitcher="${this.isMobile && !this.isGuestMode}"
+        .currentAccountAvatar="${headerAccount.avatar}"
+        .currentAccountLabel="${headerAccount.label}"
       >
       </app-header>
 
