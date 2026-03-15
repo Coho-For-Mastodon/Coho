@@ -1895,6 +1895,9 @@
 <trans-unit id="s2c214ff1327cceb6">
   <source><x id="0" equiv-text="${remainingCount}"/> more replies</source>
 </trans-unit>
+<trans-unit id="sf18a42912f62bf8a">
+  <source>Current account avatar</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
