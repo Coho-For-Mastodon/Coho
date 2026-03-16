@@ -138,6 +138,7 @@ export class PostDialog extends LitElement {
       md-dialog::part(dialog) {
         min-width: 100vw;
         min-height: 100vh;
+        margin-top: calc(env(safe-area-inset-top, 0px));
       }
     }
 

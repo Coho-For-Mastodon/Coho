@@ -550,6 +550,10 @@ export const homeStyles = css`
       display: none;
     }
 
+    otter-drawer::part(base) {
+      margin-top: calc(env(safe-area-inset-top, 0px));
+    }
+
     md-tab-panel {
       max-width: unset;
     }
