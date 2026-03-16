@@ -528,7 +528,7 @@ export class PostDetail extends LitElement {
           <section class="post-section">
             <timeline-item
               id="main"
-              .tweet="${this.cleanMainTweet}"
+              .tweet="${this.cleanMainTweet || undefined}"
               ?guestMode="${this.isGuestMode}"
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"
