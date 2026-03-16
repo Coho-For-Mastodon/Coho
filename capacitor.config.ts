@@ -13,6 +13,10 @@ const config: CapacitorConfig = {
     App: {
       // Keep default back-button handling so hardware back navigates the router
     },
+    PushNotifications: {
+      // Show notifications even when the app is in the foreground
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
   },
 };
 

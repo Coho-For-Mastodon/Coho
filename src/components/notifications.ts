@@ -654,11 +654,18 @@ export class Notifications extends LitElement {
             await scheduler.yield();
           }
           // check push reg
-          const reg = await navigator.serviceWorker.getRegistration();
-          if (reg && reg.pushManager) {
-            const sub = await reg.pushManager.getSubscription();
-            if (sub) {
-              this.subbed = true;
+          const { isNativePlatform } = await import('../utils/platform.js');
+          if (isNativePlatform()) {
+            const { isNativePushSubscribed } =
+              await import('../services/push-native.js');
+            this.subbed = isNativePushSubscribed();
+          } else {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg && reg.pushManager) {
+              const sub = await reg.pushManager.getSubscription();
+              if (sub) {
+                this.subbed = true;
+              }
             }
           }
 

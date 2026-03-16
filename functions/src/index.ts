@@ -10,6 +10,9 @@ import { defineSecret } from 'firebase-functions/params';
 import OpenAI from 'openai';
 import * as crypto from 'crypto';
 
+// Re-export push relay functions
+export { pushRelay, pushRelayPush } from './push-relay';
+
 // Define the secret
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
 

@@ -46,4 +46,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required for Android 13+ (API 33) to show push notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

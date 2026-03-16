@@ -250,8 +250,9 @@ export default defineConfig({
     terserOptions: {
       module: true,
       compress: {
-        drop_console: true,
+        drop_console: false,
         drop_debugger: true,
+        pure_funcs: ['console.log'], // Strip console.log but keep warn/error
         passes: 2,
         arrows: true,
         booleans_as_integers: true,

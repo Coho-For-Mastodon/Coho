@@ -98,6 +98,16 @@ export class AppIndex extends LitElement {
       requestIdleCallback(() => import('./components/pwa-update'), {
         timeout: 5000,
       });
+    } else {
+      // Initialize native push notification listeners (FCM via Capacitor)
+      requestIdleCallback(
+        async () => {
+          const { setupNativePushListeners } =
+            await import('./services/push-native.js');
+          setupNativePushListeners();
+        },
+        { timeout: 5000 }
+      );
     }
   }
 
