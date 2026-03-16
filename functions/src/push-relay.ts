@@ -37,7 +37,6 @@ const WEB_PUSH_ENCODINGS = new Set(['aesgcm', 'aes128gcm']);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _origEmit: (...args: any[]) => boolean = http.Server.prototype.emit;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 http.Server.prototype.emit = function (
   this: any,
   event: string,
@@ -395,6 +394,8 @@ export const pushRelayPush = onRequest(
           priority: 'high',
           notification: {
             channelId: 'PushDefaultForeground',
+            icon: 'ic_stat_name',
+            color: '#d6325c',
           },
         },
       });

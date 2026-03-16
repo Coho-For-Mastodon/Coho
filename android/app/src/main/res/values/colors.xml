@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Coho primary brand color (hsl 330 70% 55% ≈ #d6325c) used as notification accent -->
+    <color name="notification_accent">#d6325c</color>
+</resources>
