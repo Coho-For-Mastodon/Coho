@@ -74,7 +74,7 @@ export class PostDetail extends LitElement {
 
       /* Account for fixed header on full-page view */
       :host(:not([embedded])) main {
-        padding-top: 60px;
+        padding-top: calc(60px + env(safe-area-inset-top, 0px));
       }
 
       .scroller {

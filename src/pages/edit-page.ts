@@ -19,7 +19,7 @@ export class EditPage extends LitElement {
 
       main {
         display: block;
-        padding-top: 56px;
+        padding-top: calc(56px + env(safe-area-inset-top, 0px));
         padding-bottom: 80px;
         min-height: calc(100vh - 56px);
         max-width: var(--layout-max-width, 1200px);

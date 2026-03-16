@@ -44,7 +44,7 @@ export class AppMessages extends LitElement {
         display: flex;
         flex-direction: column;
         height: 100%;
-        padding-top: 46px;
+        padding-top: calc(46px + env(safe-area-inset-top, 0px));
         box-sizing: border-box;
       }
 

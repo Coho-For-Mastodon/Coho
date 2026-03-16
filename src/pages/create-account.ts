@@ -43,7 +43,7 @@ export class CreateAccount extends LitElement {
 
       main {
         padding: 10px;
-        padding-top: 60px;
+        padding-top: calc(60px + env(safe-area-inset-top, 0px));
 
         overflow-y: auto;
         height: 88vh;

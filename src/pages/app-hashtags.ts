@@ -20,8 +20,8 @@ export class AppHashtags extends LitElement {
       }
 
       main {
-        padding-top: 60px;
         padding: 10px;
+        padding-top: calc(60px + env(safe-area-inset-top, 0px));
         height: 100%;
         box-sizing: border-box;
         display: flex;

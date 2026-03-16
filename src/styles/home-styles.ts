@@ -270,7 +270,8 @@ export const homeStyles = css`
   }
 
   main {
-    padding-top: 54px;
+    padding-top: calc(54px + env(safe-area-inset-top, 0px));
+
     display: grid;
     grid-template-columns: var(--layout-nav-width, 80px) 1fr var(
         --layout-sidebar-width,
@@ -611,7 +612,7 @@ export const homeStyles = css`
       height: 100%;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding-top: 50px;
+      padding-top: calc(50px + env(safe-area-inset-top, 0px));
       scrollbar-color: var(--md-sys-scrollbar-thumb-color)
         var(--md-sys-color-background);
     }

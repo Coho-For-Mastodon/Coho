@@ -10,7 +10,7 @@ export const styles = css`
   }
 
   main {
-    padding-top: 60px;
+    padding-top: calc(60px + env(safe-area-inset-top, 0px));
   }
 
   md-button::part(control) {
