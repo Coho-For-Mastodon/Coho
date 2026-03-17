@@ -41,6 +41,7 @@ export class AppLogin extends LitElement {
         width: 100%;
         background-color: var(--md-sys-color-surface-container);
         padding: 20px;
+        padding-top: calc(90px + env(safe-area-inset-top, 0px)) !important;
         box-sizing: border-box;
         position: relative;
         overflow: hidden;

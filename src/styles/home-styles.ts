@@ -585,6 +585,7 @@ export const homeStyles = css`
 
     #mobile-actions {
       display: flex;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 86px);
     }
 
     #mobile-actions md-button md-icon {

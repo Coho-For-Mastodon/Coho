@@ -57,6 +57,7 @@ export class AppHeader extends LitElement {
         backdrop-filter: unset;
         background: var(--md-sys-color-background);
         height: calc(env(titlebar-area-height, 33px) - 4px);
+        background: transparent;
       }
 
       #actions {

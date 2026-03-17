@@ -35,6 +35,8 @@ export class PostDetailDialog extends LitElement {
       background-color: var(--md-sys-color-surface, #1e1e24);
       color: var(--md-sys-color-on-surface, #e6e1e5);
       overflow: hidden;
+      padding-top: calc(60px + env(safe-area-inset-top, 0px));
+      /* padding-bottom: 120px; */
     }
 
     dialog[open] {

@@ -159,6 +159,7 @@ export class PostDetail extends LitElement {
         padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.18);
         border-radius: var(--md-sys-shape-corner-medium);
+        margin-bottom: 68px;
       }
 
       .composer-shell {
