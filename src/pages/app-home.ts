@@ -226,7 +226,13 @@ export class AppHome extends LitElement {
           await this.shareTarget(name);
         }
       }
+
+      // Check for native Android share intent (cold start)
+      this._checkNativeShareTarget();
     }, 1000);
+
+    // Listen for share intents that arrive while the app is already open
+    this._initNativeShareListener();
 
     window.requestIdleCallback(async () => {
       // Import and init key shortcuts
@@ -401,6 +407,49 @@ export class AppHome extends LitElement {
     }
   }
 
+  private _nativeShareCleanup: { remove: () => void } | null = null;
+
+  /**
+   * Check for shared content from an Android share intent (cold start).
+   */
+  private async _checkNativeShareTarget() {
+    const { checkNativeShare } =
+      await import('../services/native-share-target');
+    const result = await checkNativeShare();
+    if (result.hasShare) {
+      this._handleNativeShare(result);
+    }
+  }
+
+  /**
+   * Listen for Android share intents that arrive while the app is already
+   * running (warm start via onNewIntent).
+   */
+  private async _initNativeShareListener() {
+    const { onNativeShareIntent } =
+      await import('../services/native-share-target');
+    this._nativeShareCleanup = onNativeShareIntent((result) => {
+      this._handleNativeShare(result);
+    });
+  }
+
+  /**
+   * Process a native share intent result — open the compose dialog with
+   * the shared media file and/or pre-filled text.
+   */
+  private async _handleNativeShare(
+    result: import('../services/native-share-target').NativeShareResult
+  ) {
+    if (result.cachedFileName) {
+      // Media share — the file is already in the shareTarget cache,
+      // so openNewDialog → post-dialog shareTarget will pick it up.
+      await this.openNewDialog(result.cachedFileName, undefined, result.text);
+    } else if (result.text) {
+      // Text-only share (e.g. a URL from Chrome)
+      await this.openNewDialog(undefined, undefined, result.text);
+    }
+  }
+
   handlePrimaryColor(color: string) {
     document.documentElement.style.setProperty('--sl-color-primary-600', color);
     localStorage.setItem('primary_color', color);
@@ -415,7 +464,11 @@ export class AppHome extends LitElement {
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }
 
-  async openNewDialog(shareName?: string, origin?: { x: number; y: number }) {
+  async openNewDialog(
+    shareName?: string,
+    origin?: { x: number; y: number },
+    shareText?: string
+  ) {
     // Lazy load post-dialog component
     if (!this.postDialogLoaded) {
       if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
@@ -435,7 +488,7 @@ export class AppHome extends LitElement {
     // Wait for the post-dialog's own shadow DOM to render
     if (this.postDialog) {
       await this.postDialog.updateComplete;
-      this.postDialog.openNewDialog(shareName, origin);
+      this.postDialog.openNewDialog(shareName, origin, shareText);
     }
   }
 
@@ -661,6 +714,9 @@ export class AppHome extends LitElement {
 
     // Remove keyboard shortcut new post dialog listener
     window.removeEventListener('open-post-dialog', this._handleOpenPostDialog);
+
+    // Remove native share intent listener
+    this._nativeShareCleanup?.remove();
 
     const lastPageID = sessionStorage.getItem(getLatestReadStorageKey());
     console.log('lastPageID', lastPageID);
