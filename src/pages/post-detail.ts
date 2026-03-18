@@ -386,6 +386,15 @@ export class PostDetail extends LitElement {
         text: this.tweet?.content,
         url: this.tweet?.url,
       });
+    } // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    else if (window.Capacitor) {
+      const { Share } = await import('@capacitor/share');
+      await Share.share({
+        title: 'Coho',
+        text: this.tweet?.content,
+        url: this.tweet?.url,
+      });
     } else {
       // fallback to clipboard api
       await navigator.clipboard.writeText(this.tweet?.url || '');

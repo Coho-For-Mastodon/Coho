@@ -191,6 +191,15 @@ export class SettingsDrawerContent extends LitElement {
         text: 'Check out my Mastodon profile!',
         url: this.user.url,
       });
+    } // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    else if (window.Capacitor) {
+      const { Share } = await import('@capacitor/share');
+      await Share.share({
+        title: 'My Mastodon Profile',
+        text: 'Check out my Mastodon profile!',
+        url: this.user.url,
+      });
     } else {
       await navigator.clipboard.writeText(this.user.url);
     }
