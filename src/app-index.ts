@@ -301,6 +301,28 @@ export class AppIndex extends LitElement {
   private async syncCredentialsToIndexedDB() {
     await syncActiveToIndexedDb();
     console.log('[App] Synced credentials to IndexedDB');
+
+    // Sync server URL to native SharedPreferences for the Android widget
+    this.syncServerToNativeWidget();
+  }
+
+  /**
+   * Pushes the current server URL to the native Android widget
+   * via the WidgetBridge Capacitor plugin, so the widget can
+   * fetch trending data from the correct Mastodon instance.
+   */
+  private async syncServerToNativeWidget() {
+    try {
+      const { isNativePlatform } = await import('./utils/platform.js');
+      if (!isNativePlatform()) return;
+
+      const { registerPlugin } = await import('@capacitor/core');
+      const WidgetBridge = registerPlugin('WidgetBridge');
+      const server = localStorage.getItem('server') || 'mastodon.social';
+      await (WidgetBridge as any).setServer({ server });
+    } catch {
+      // Widget bridge not available — ignore
+    }
   }
 
   /**

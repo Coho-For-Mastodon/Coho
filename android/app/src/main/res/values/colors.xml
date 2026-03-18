@@ -2,4 +2,14 @@
 <resources>
     <!-- Coho primary brand color (hsl 330 70% 55% ≈ #d6325c) used as notification accent -->
     <color name="notification_accent">#d6325c</color>
+
+    <!-- Widget colors (light) -->
+    <color name="widget_background">#F3EDF7</color>
+    <color name="widget_header_text">#d6325c</color>
+    <color name="widget_text_primary">#1C1B1F</color>
+    <color name="widget_text_secondary">#49454F</color>
+    <color name="widget_item_background">#FFFFFF</color>
+    <color name="colorPrimary">#d6325c</color>
+    <color name="colorPrimaryDark">#a8284a</color>
+    <color name="colorAccent">#d6325c</color>
 </resources>
