@@ -190,6 +190,33 @@
   </head>
 
   <body>
+    <!--
+      Android intent:// fallback for OAuth callback.
+      When App Link verification fails, the Chrome Custom Tab loads this page
+      instead of handing the URL back to the app. This script detects that
+      scenario and uses an intent:// URI with an explicit package to deliver
+      the callback directly to the app, bypassing App Link verification.
+    -->
+    <script>
+      (function () {
+        if (
+          window.location.pathname.startsWith('/auth/callback') &&
+          !window.Capacitor &&
+          /Android/i.test(navigator.userAgent)
+        ) {
+          var params = new URLSearchParams(window.location.search);
+          if (params.get('code') && params.get('state')) {
+            var target =
+              'intent://coho.place' +
+              window.location.pathname +
+              window.location.search +
+              '#Intent;scheme=https;package=place.coho.app;end';
+            window.location.replace(target);
+          }
+        }
+      })();
+    </script>
+
     <!-- Our app-index web component. This component is defined in src/pages/app-index.ts-->
     <app-index></app-index>
 
