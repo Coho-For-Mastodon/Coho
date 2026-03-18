@@ -143,9 +143,18 @@ export class AppIndex extends LitElement {
     const settings = await getSettings();
     console.log('settings', settings);
 
-    const potentialColor = settings.primary_color;
-
     const { applyThemeColor } = await import('./utils/theme-color');
+
+    // On Android Capacitor, always use the device's Material You accent color
+    const { getAndroidDynamicColor } = await import('./utils/dynamic-theme');
+    const deviceColor = await getAndroidDynamicColor();
+    if (deviceColor) {
+      localStorage.setItem('coho-theme-color', deviceColor);
+      applyThemeColor(deviceColor, { useIdleCallback: true });
+      return;
+    }
+
+    const potentialColor = settings.primary_color;
 
     if (potentialColor) {
       // Sync to localStorage for instant theme on next load (migration for existing users)
