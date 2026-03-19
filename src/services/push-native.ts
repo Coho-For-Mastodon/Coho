@@ -264,6 +264,70 @@ function getTargetUrl(data: Record<string, string>): string {
 }
 
 // ---------------------------------------------------------------------------
+// Notification Channels (Android 8+)
+// ---------------------------------------------------------------------------
+
+const NOTIFICATION_CHANNELS: Array<{
+  id: string;
+  name: string;
+  description: string;
+  importance: 1 | 2 | 3 | 4 | 5;
+}> = [
+  {
+    id: 'coho_mentions',
+    name: 'Mentions',
+    description: 'When someone mentions you',
+    importance: 4,
+  },
+  {
+    id: 'coho_boosts',
+    name: 'Boosts',
+    description: 'When someone boosts your post',
+    importance: 3,
+  },
+  {
+    id: 'coho_favourites',
+    name: 'Favourites',
+    description: 'When someone favourites your post',
+    importance: 2,
+  },
+  {
+    id: 'coho_follows',
+    name: 'Follows',
+    description: 'New followers and follow requests',
+    importance: 3,
+  },
+  {
+    id: 'coho_polls',
+    name: 'Polls',
+    description: 'Poll results',
+    importance: 2,
+  },
+  {
+    id: 'coho_status',
+    name: 'New Posts',
+    description: 'Posts from people you follow',
+    importance: 2,
+  },
+  {
+    id: 'coho_general',
+    name: 'General',
+    description: 'Other notifications',
+    importance: 3,
+  },
+];
+
+/**
+ * Create per-type notification channels. Idempotent — Android ignores
+ * duplicate creates but preserves user-customised settings.
+ */
+async function ensureNotificationChannels(): Promise<void> {
+  for (const ch of NOTIFICATION_CHANNELS) {
+    await PushNotifications.createChannel(ch);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Setup Listeners (call once at app startup on native)
 // ---------------------------------------------------------------------------
 
@@ -272,6 +336,10 @@ function getTargetUrl(data: Record<string, string>): string {
  * Also handles FCM token refresh by re-registering with the relay.
  */
 export function setupNativePushListeners(): void {
+  // Create channels early so they exist before any notification arrives
+  ensureNotificationChannels().catch((err) =>
+    console.warn('[NativePush] Channel creation failed:', err)
+  );
   // Foreground notification received
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('[NativePush] Foreground notification received');

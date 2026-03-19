@@ -372,6 +372,19 @@ export const pushRelayPush = onRequest(
 
       const title = String(payload.title || 'Coho');
       const body = String(payload.body || 'You have a new notification');
+      const notificationType = String(payload.notification_type || '');
+      // Map Mastodon notification types to Android notification channels
+      const channelMap: Record<string, string> = {
+        mention: 'coho_mentions',
+        reblog: 'coho_boosts',
+        favourite: 'coho_favourites',
+        follow: 'coho_follows',
+        follow_request: 'coho_follows',
+        poll: 'coho_polls',
+        status: 'coho_status',
+        update: 'coho_status',
+      };
+      const channelId = channelMap[notificationType] || 'coho_general';
 
       // FCM data values must all be strings — stringify everything
       const fcmData: Record<string, string> = {};
@@ -393,9 +406,10 @@ export const pushRelayPush = onRequest(
         android: {
           priority: 'high',
           notification: {
-            channelId: 'PushDefaultForeground',
+            channelId,
             icon: 'ic_stat_name',
             color: '#d6325c',
+            tag: `coho_${notificationType || 'general'}`,
           },
         },
       });
