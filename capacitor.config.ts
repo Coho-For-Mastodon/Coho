@@ -11,7 +11,11 @@ const config: CapacitorConfig = {
   },
   plugins: {
     App: {
-      // Keep default back-button handling so hardware back navigates the router
+      // Disable Capacitor's default back-button handler so our custom
+      // OnBackPressedCallback in MainActivity can dynamically enable/disable
+      // itself based on WebView.canGoBack(). This is required for the
+      // predictive back gesture animation on Android 14+.
+      disableBackButtonHandler: true,
     },
     PushNotifications: {
       // Show notifications even when the app is in the foreground

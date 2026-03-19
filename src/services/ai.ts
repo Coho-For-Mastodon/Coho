@@ -65,6 +65,57 @@ export const translate = async (
   language: string = 'en-us',
   statusId?: string
 ) => {
+  // Normalize target language code (e.g., 'en-us' -> 'en')
+  const targetLanguage = language.split('-')[0].toLowerCase();
+
+  // Detect source language up front (shared by native + Chrome paths)
+  let sourceLanguage = 'en';
+  if ('LanguageDetector' in window) {
+    try {
+      const detector = await window.LanguageDetector.create();
+      const results = await detector.detect(prompt);
+      if (results && results.length > 0 && results[0].confidence > 0.5) {
+        sourceLanguage = results[0].detectedLanguage;
+      }
+      detector.destroy();
+    } catch (err) {
+      console.warn('Language detection failed, defaulting to English:', err);
+    }
+  } else {
+    // Fallback to native ML Kit language detection on Android
+    try {
+      const { nativeDetectLanguage } = await import('./native-ai');
+      sourceLanguage = await nativeDetectLanguage(prompt);
+    } catch {
+      // Not on Android or native detection failed
+    }
+  }
+
+  // Skip translation if source and target are the same
+  if (sourceLanguage === targetLanguage) {
+    return prompt;
+  }
+
+  // Try native Android ML Kit translation first
+  try {
+    const { getNativeAICapabilities, nativeTranslate } =
+      await import('./native-ai');
+    const caps = await getNativeAICapabilities();
+    if (caps.translation) {
+      const result = await nativeTranslate(
+        prompt,
+        sourceLanguage,
+        targetLanguage
+      );
+      return result;
+    }
+  } catch (nativeErr) {
+    console.warn(
+      'Native translation unavailable, trying Chrome API:',
+      nativeErr
+    );
+  }
+
   // Use Chrome's built-in Translator API
   try {
     // Check if the API is available
@@ -72,31 +123,6 @@ export const translate = async (
       throw new Error('Translator API not available');
     }
 
-    // Detect source language using Language Detector API
-    let sourceLanguage = 'en';
-
-    if ('Translator' in window && 'LanguageDetector' in window) {
-      try {
-        console.log('Attempting language detection for prompt:', prompt);
-        const detector = await window.LanguageDetector.create();
-        const results = await detector.detect(prompt);
-        console.log('Language detection results:', results);
-        if (results && results.length > 0 && results[0].confidence > 0.5) {
-          sourceLanguage = results[0].detectedLanguage;
-        }
-        detector.destroy();
-      } catch (err) {
-        console.warn('Language detection failed, defaulting to English:', err);
-      }
-    }
-
-    // Normalize language code (e.g., 'en-us' -> 'en')
-    const targetLanguage = language.split('-')[0].toLowerCase();
-
-    // Skip translation if source and target are the same
-    if (sourceLanguage === targetLanguage) {
-      return prompt;
-    }
     console.log(
       'Checking translator capabilities for',
       sourceLanguage,
@@ -181,6 +207,15 @@ export const createImage = async (prompt: string) => {
  * Check if Chrome's Proofreader API is available on this device
  */
 export const isProofreaderAvailable = async (): Promise<boolean> => {
+  // Check native Android Gemini Nano proofreading first
+  try {
+    const { getNativeAICapabilities } = await import('./native-ai');
+    const caps = await getNativeAICapabilities();
+    if (caps.proofreading) return true;
+  } catch {
+    // Not on native, fall through
+  }
+
   try {
     if (typeof Proofreader === 'undefined') {
       return false;
@@ -202,6 +237,22 @@ export const isProofreaderAvailable = async (): Promise<boolean> => {
 export const proofread = async (
   text: string
 ): Promise<ProofreadResult | null> => {
+  // Try native Android Gemini Nano proofreading first
+  try {
+    const { getNativeAICapabilities, nativeProofread } =
+      await import('./native-ai');
+    const caps = await getNativeAICapabilities();
+    if (caps.proofreading) {
+      const result = await nativeProofread(text);
+      return result as ProofreadResult;
+    }
+  } catch (nativeErr) {
+    console.warn(
+      'Native proofreading unavailable, trying Chrome API:',
+      nativeErr
+    );
+  }
+
   try {
     if (typeof Proofreader === 'undefined') {
       throw new Error('Proofreader API not available');
@@ -253,6 +304,49 @@ export const isPromptAPIAvailable = (): boolean => {
 export const generateAltText = async (
   imageSource: string | Blob
 ): Promise<string | null> => {
+  // Try native Android Gemini Nano first
+  try {
+    const { getNativeAICapabilities, nativeGenerateAltText } =
+      await import('./native-ai');
+    const caps = await getNativeAICapabilities();
+    if (caps.altText) {
+      // Convert image to base64 for the native bridge
+      let base64: string;
+      if (typeof imageSource === 'string' && !imageSource.startsWith('blob:')) {
+        // Regular URL — fetch and convert
+        const resp = await fetch(imageSource);
+        const blob = await resp.blob();
+        const reader = new FileReader();
+        base64 = await new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } else if (typeof imageSource === 'string') {
+        // blob: URL
+        const resp = await fetch(imageSource);
+        const blob = await resp.blob();
+        const reader = new FileReader();
+        base64 = await new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        const reader = new FileReader();
+        base64 = await new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(imageSource);
+        });
+      }
+      const result = await nativeGenerateAltText(base64);
+      if (result) return result;
+    }
+  } catch (nativeErr) {
+    console.warn(
+      'Native alt text generation unavailable, trying Chrome API:',
+      nativeErr
+    );
+  }
+
   try {
     if (!isPromptAPIAvailable()) {
       throw new Error('Prompt API (LanguageModel) not available');
@@ -479,6 +573,26 @@ What text is written in this image?`;
  * Check if on-device translation is available via Chrome's Translator API
  */
 export const isOnDeviceTranslationAvailable = (): boolean => {
+  // Native Android ML Kit translation is always available on Capacitor Android
+  try {
+    // Sync check using Capacitor global (available when running in native shell)
+    const cap =
+      'Capacitor' in window
+        ? (
+            window as unknown as {
+              Capacitor?: {
+                isNativePlatform?: () => boolean;
+                getPlatform?: () => string;
+              };
+            }
+          ).Capacitor
+        : undefined;
+    if (cap?.isNativePlatform?.() && cap?.getPlatform?.() === 'android') {
+      return true;
+    }
+  } catch {
+    // Not in Capacitor context
+  }
   return 'Translator' in window;
 };
 

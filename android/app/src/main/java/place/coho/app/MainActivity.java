@@ -2,44 +2,61 @@ package place.coho.app;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.webkit.WebView;
-import android.window.OnBackInvokedCallback;
-import android.window.OnBackInvokedDispatcher;
 
+import androidx.activity.OnBackPressedCallback;
+
+import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebViewClient;
 
 public class MainActivity extends BridgeActivity {
 
-    private OnBackInvokedCallback backCallback;
+    private OnBackPressedCallback webViewBackCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(WidgetBridge.class);
         registerPlugin(DynamicThemeBridge.class);
         registerPlugin(ShareTargetBridge.class);
+        registerPlugin(AiBridge.class);
         super.onCreate(savedInstanceState);
 
         // If launched from a shortcut (ACTION_VIEW with localhost data),
         // navigate the WebView to the shortcut's target path.
         handleShortcutIntent(getIntent());
 
-        // Register predictive back callback for Android 13+ (API 33).
-        // This replaces the deprecated onBackPressed() and enables the
-        // native predictive back animation (peek at previous page / home).
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            backCallback = () -> {
-                WebView webView = getBridge().getWebView();
-                if (webView.canGoBack()) {
-                    webView.goBack();
-                } else {
-                    finish();
+        // Predictive back gesture support (Android 14+).
+        // The callback is only enabled when the WebView has history, so the
+        // system can show the correct predictive animation:
+        //  - enabled  → in-app back: navigates WebView history
+        //  - disabled → system "back to home" peek animation, then finish()
+        WebView webView = getBridge().getWebView();
+        webViewBackCallback = new OnBackPressedCallback(webView.canGoBack()) {
+            @Override
+            public void handleOnBackPressed() {
+                WebView wv = getBridge().getWebView();
+                if (wv.canGoBack()) {
+                    wv.goBack();
                 }
-            };
-            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-                    OnBackInvokedDispatcher.PRIORITY_DEFAULT, backCallback);
-        }
+                // Update enabled state after navigation
+                setEnabled(wv.canGoBack());
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, webViewBackCallback);
+
+        // Install a custom WebViewClient that tracks both real page loads and
+        // SPA pushState/replaceState navigations via doUpdateVisitedHistory,
+        // keeping the back callback's enabled state in sync with WebView history.
+        Bridge bridge = getBridge();
+        bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
+            @Override
+            public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+                super.doUpdateVisitedHistory(view, url, isReload);
+                webViewBackCallback.setEnabled(view.canGoBack());
+            }
+        });
     }
 
     @Override
