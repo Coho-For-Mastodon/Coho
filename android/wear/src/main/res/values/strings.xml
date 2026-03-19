@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Coho</string>
+    <string name="timeline_title">Home</string>
+    <string name="trending_title">Trending</string>
+    <string name="notifications_title">Notifications</string>
+    <string name="loading">Loading…</string>
+    <string name="error_no_connection">Can\'t connect. Check your watch\'s internet.</string>
+    <string name="error_not_authenticated">Open Coho on your phone to connect.</string>
+    <string name="pull_to_refresh">Pull to refresh</string>
+    <string name="action_favorite">Favorite</string>
+    <string name="action_boost">Boost</string>
+    <string name="boosted_by">%s boosted</string>
+    <string name="notification_follow">followed you</string>
+    <string name="notification_favourite">favorited your post</string>
+    <string name="notification_reblog">boosted your post</string>
+    <string name="notification_mention">mentioned you</string>
+    <string name="notification_poll">poll ended</string>
+    <string name="notification_status">posted</string>
+    <string name="notification_update">edited a post</string>
+    <string name="just_now">just now</string>
+    <string name="minutes_ago">%dm ago</string>
+    <string name="hours_ago">%dh ago</string>
+    <string name="days_ago">%dd ago</string>
+</resources>

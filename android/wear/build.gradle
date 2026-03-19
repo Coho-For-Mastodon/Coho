@@ -1,0 +1,74 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+android {
+    namespace = "place.coho.app.wear"
+    compileSdk = rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "place.coho.app.wear"
+        minSdkVersion 30 // Wear OS 3+
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    buildFeatures {
+        compose true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // Compose for Wear OS
+    def composeBom = platform('androidx.compose:compose-bom:2024.12.01')
+    implementation composeBom
+
+    implementation 'androidx.wear.compose:compose-material3:1.0.0-alpha32'
+    implementation 'androidx.wear.compose:compose-foundation:1.5.0-alpha06'
+    implementation 'androidx.wear.compose:compose-navigation:1.5.0-alpha06'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+
+    // Activity & Lifecycle
+    implementation 'androidx.activity:activity-compose:1.10.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.9.0'
+
+    // Horologist (Google's Wear OS best-practice library)
+    implementation 'com.google.android.horologist:horologist-compose-layout:0.6.22'
+
+    // Networking
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.squareup.retrofit2:converter-moshi:2.11.0'
+    implementation 'com.squareup.moshi:moshi-kotlin:1.15.2'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    // Image loading
+    implementation 'io.coil-kt:coil-compose:2.7.0'
+
+    // Wearable Data Layer (phone ↔ watch sync)
+    implementation 'com.google.android.gms:play-services-wearable:19.0.0'
+
+    // DataStore for local credential persistence
+    implementation 'androidx.datastore:datastore-preferences:1.1.2'
+
+    // Core AndroidX
+    implementation 'androidx.core:core-ktx:1.15.0'
+}

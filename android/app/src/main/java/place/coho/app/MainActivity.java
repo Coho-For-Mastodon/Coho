@@ -21,6 +21,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(DynamicThemeBridge.class);
         registerPlugin(ShareTargetBridge.class);
         registerPlugin(AiBridge.class);
+        registerPlugin(WearSyncBridge.class);
         super.onCreate(savedInstanceState);
 
         // If launched from a shortcut (ACTION_VIEW with localhost data),
