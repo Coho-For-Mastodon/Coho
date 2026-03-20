@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import place.coho.app.wear.api.models.Status
 import place.coho.app.wear.sync.AuthRepository
 import place.coho.app.wear.sync.AuthState
+import place.coho.app.wear.ui.compose.ComposeScreen
 import place.coho.app.wear.ui.notifications.NotificationsScreen
 import place.coho.app.wear.ui.theme.CohoWearTheme
 import place.coho.app.wear.ui.timeline.PostDetailScreen
@@ -75,9 +76,18 @@ fun WearApp(authRepository: AuthRepository) {
                                         selectedStatus = status
                                         navController.navigate("postDetail")
                                     },
+                                    onCompose = {
+                                        navController.navigate("compose")
+                                    },
                                     viewModel = timelineViewModel,
                                 )
-                                1 -> NotificationsScreen(auth = authState)
+                                1 -> NotificationsScreen(
+                                    auth = authState,
+                                    onPostClick = { status ->
+                                        selectedStatus = status
+                                        navController.navigate("postDetail")
+                                    },
+                                )
                             }
                         }
 
@@ -115,6 +125,17 @@ fun WearApp(authRepository: AuthRepository) {
                         } else null,
                     )
                 }
+            }
+
+            composable("compose") {
+                ComposeScreen(
+                    auth = authState,
+                    onDismiss = { navController.popBackStack() },
+                    onPosted = {
+                        navController.popBackStack()
+                        timelineViewModel.refresh()
+                    },
+                )
             }
         }
         }

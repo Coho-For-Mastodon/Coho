@@ -11,7 +11,11 @@ import place.coho.app.wear.sync.AuthState
 
 sealed interface TimelineUiState {
     data object Loading : TimelineUiState
-    data class Success(val posts: List<Status>) : TimelineUiState
+    data class Success(
+        val posts: List<Status>,
+        val isLoadingMore: Boolean = false,
+        val canLoadMore: Boolean = true,
+    ) : TimelineUiState
     data class Error(val message: String) : TimelineUiState
 }
 
@@ -21,6 +25,9 @@ class TimelineViewModel(
 
     private val _uiState = MutableStateFlow<TimelineUiState>(TimelineUiState.Loading)
     val uiState: StateFlow<TimelineUiState> = _uiState
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
 
     private var currentAuth: AuthState? = null
     val isAuthenticated: Boolean get() = currentAuth?.isAuthenticated == true
@@ -45,7 +52,50 @@ class TimelineViewModel(
     }
 
     fun refresh() {
-        loadTimeline(currentAuth)
+        val auth = currentAuth
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                val posts = if (auth != null && auth.isAuthenticated) {
+                    repository.getHomeTimeline(auth)
+                } else {
+                    repository.getPublicTimeline()
+                }
+                _uiState.value = TimelineUiState.Success(posts)
+            } catch (_: Exception) {
+                // Keep existing content on refresh failure
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
+
+    fun loadMore() {
+        val auth = currentAuth
+        val currentState = _uiState.value as? TimelineUiState.Success ?: return
+        if (currentState.isLoadingMore || !currentState.canLoadMore) return
+        val lastId = currentState.posts.lastOrNull()?.id ?: return
+
+        _uiState.value = currentState.copy(isLoadingMore = true)
+
+        viewModelScope.launch {
+            try {
+                val olderPosts = if (auth != null && auth.isAuthenticated) {
+                    repository.getHomeTimeline(auth, maxId = lastId)
+                } else {
+                    emptyList()
+                }
+                val current = (_uiState.value as? TimelineUiState.Success) ?: return@launch
+                _uiState.value = current.copy(
+                    posts = current.posts + olderPosts,
+                    isLoadingMore = false,
+                    canLoadMore = olderPosts.isNotEmpty(),
+                )
+            } catch (_: Exception) {
+                val current = (_uiState.value as? TimelineUiState.Success) ?: return@launch
+                _uiState.value = current.copy(isLoadingMore = false)
+            }
+        }
     }
 
     fun toggleFavourite(statusId: String) {

@@ -22,6 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.Card
@@ -42,6 +46,13 @@ fun PostDetailScreen(
     val displayStatus = status.reblog ?: status
     val isBoosted = status.reblog != null
     val listState = rememberScalingLazyListState()
+    val config = LocalConfiguration.current
+    val horizontalPadding = (config.screenWidthDp * 0.052f).dp
+    val verticalPadding = if (config.isScreenRound) (config.screenHeightDp * 0.22f).dp else 24.dp
+    val columnPadding = PaddingValues(
+        horizontal = horizontalPadding,
+        vertical = verticalPadding,
+    )
 
     ScreenScaffold(
         scrollState = listState,
@@ -49,6 +60,7 @@ fun PostDetailScreen(
         ScalingLazyColumn(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = columnPadding,
             modifier = Modifier.fillMaxSize(),
         ) {
         // Boost indicator
@@ -60,7 +72,6 @@ fun PostDetailScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 8.dp),
                 )
             }
         }
@@ -70,8 +81,7 @@ fun PostDetailScreen(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
+                    .fillMaxWidth(),
             ) {
                 AsyncImage(
                     model = displayStatus.account.avatar,
@@ -109,7 +119,6 @@ fun PostDetailScreen(
                     text = "⚠\uFE0F ${displayStatus.spoilerText}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 8.dp),
                 )
             }
         }
@@ -120,7 +129,6 @@ fun PostDetailScreen(
                 text = htmlToPlainText(displayStatus.content),
                 style = MaterialTheme.typography.bodySmall,
                 lineHeight = 18.sp,
-                modifier = Modifier.padding(horizontal = 8.dp),
             )
         }
 
@@ -134,8 +142,7 @@ fun PostDetailScreen(
                     Card(
                         onClick = { },
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
+                            .fillMaxWidth(),
                     ) {
                         AsyncImage(
                             model = imageUrl,
@@ -152,7 +159,6 @@ fun PostDetailScreen(
                         text = "\uD83C\uDFA5 ${attachment.type} attachment",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp),
                     )
                 }
             }
@@ -164,7 +170,6 @@ fun PostDetailScreen(
                 text = relativeTime(displayStatus.createdAt),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp),
             )
         }
 
@@ -174,8 +179,7 @@ fun PostDetailScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
+                    .fillMaxWidth(),
             ) {
                 if (onFavourite != null) {
                     ActionChip(
@@ -223,8 +227,12 @@ private fun ActionChip(
     count: Int,
     onClick: () -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
     androidx.wear.compose.material3.TextButton(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            onClick()
+        },
     ) {
         Text(
             text = "$label $count",

@@ -20,7 +20,7 @@ class NotificationRepository {
         return api!!
     }
 
-    suspend fun getNotifications(auth: AuthState): List<Notification> {
-        return getApi(auth).getNotifications(limit = 20)
+    suspend fun getNotifications(auth: AuthState, maxId: String? = null): List<Notification> {
+        return getApi(auth).getNotifications(limit = 20, maxId = maxId)
     }
 }

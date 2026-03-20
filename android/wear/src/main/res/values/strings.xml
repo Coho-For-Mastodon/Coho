@@ -22,4 +22,12 @@
     <string name="minutes_ago">%dm ago</string>
     <string name="hours_ago">%dh ago</string>
     <string name="days_ago">%dd ago</string>
+    <string name="compose_title">Compose</string>
+    <string name="voice_input_prompt">What\'s on your mind?</string>
+    <string name="voice_retry">Try again</string>
+    <string name="compose_post">Post</string>
+    <string name="compose_sending">Posting…</string>
+    <string name="compose_error">Failed to post</string>
+    <string name="voice_no_speech">No speech detected. Tap to try again.</string>
+    <string name="voice_compose">New post</string>
 </resources>

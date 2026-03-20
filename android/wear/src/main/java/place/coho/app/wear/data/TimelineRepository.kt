@@ -51,4 +51,13 @@ class TimelineRepository {
     suspend fun unreblogStatus(auth: AuthState, id: String): Status {
         return getApi(auth).unreblogStatus(id)
     }
+
+    suspend fun postStatus(
+        auth: AuthState,
+        status: String,
+        visibility: String = "public",
+        inReplyToId: String? = null,
+    ): Status {
+        return getApi(auth).postStatus(status, visibility, inReplyToId)
+    }
 }

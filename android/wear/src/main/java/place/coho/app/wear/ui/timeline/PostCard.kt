@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -181,8 +183,12 @@ private fun ActionChip(
     count: Int,
     onClick: () -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
     androidx.wear.compose.material3.TextButton(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            onClick()
+        },
     ) {
         Text(
             text = "$label $count",

@@ -2,6 +2,8 @@ package place.coho.app.wear.api
 
 import place.coho.app.wear.api.models.Notification
 import place.coho.app.wear.api.models.Status
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -37,4 +39,12 @@ interface MastodonApi {
         @Query("limit") limit: Int = 20,
         @Query("max_id") maxId: String? = null,
     ): List<Notification>
+
+    @FormUrlEncoded
+    @POST("api/v1/statuses")
+    suspend fun postStatus(
+        @Field("status") status: String,
+        @Field("visibility") visibility: String = "public",
+        @Field("in_reply_to_id") inReplyToId: String? = null,
+    ): Status
 }

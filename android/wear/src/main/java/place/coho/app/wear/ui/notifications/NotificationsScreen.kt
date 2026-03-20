@@ -12,10 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,17 +40,21 @@ import androidx.wear.compose.material3.Text
 import coil.compose.AsyncImage
 import place.coho.app.wear.R
 import place.coho.app.wear.api.models.Notification
+import place.coho.app.wear.api.models.Status
 import place.coho.app.wear.ui.components.htmlToPlainText
 import place.coho.app.wear.ui.components.relativeTime
 import place.coho.app.wear.sync.AuthState
 import androidx.compose.ui.res.stringResource
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
     auth: AuthState,
+    onPostClick: ((Status) -> Unit)? = null,
     viewModel: NotificationsViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     LaunchedEffect(auth) {
         viewModel.loadNotifications(auth)
@@ -77,13 +85,40 @@ fun NotificationsScreen(
 
         is NotificationsUiState.Success -> {
             val listState = rememberScalingLazyListState()
+            val config = androidx.compose.ui.platform.LocalConfiguration.current
+            val horizontalPadding = (config.screenWidthDp * 0.052f).dp
+            val verticalPadding = if (config.isScreenRound) (config.screenHeightDp * 0.22f).dp else 24.dp
+            val columnPadding = androidx.compose.foundation.layout.PaddingValues(
+                horizontal = horizontalPadding,
+                vertical = verticalPadding,
+            )
+
+            // Trigger load-more when near the end of the list
+            val shouldLoadMore by remember {
+                derivedStateOf {
+                    val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                    val totalItems = listState.layoutInfo.totalItemsCount
+                    lastVisibleIndex >= totalItems - 3 && totalItems > 0
+                }
+            }
+            LaunchedEffect(shouldLoadMore) {
+                if (shouldLoadMore && state.canLoadMore && !state.isLoadingMore) {
+                    viewModel.loadMore()
+                }
+            }
 
             ScreenScaffold(
                 scrollState = listState,
             ) {
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = { viewModel.refresh() },
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                 ScalingLazyColumn(
                     state = listState,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
+                    contentPadding = columnPadding,
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     item {
@@ -93,8 +128,24 @@ fun NotificationsScreen(
                     }
 
                     items(state.notifications, key = { it.id }) { notification ->
-                        NotificationCard(notification)
+                        NotificationCard(
+                            notification = notification,
+                            onPostClick = onPostClick,
+                        )
                     }
+
+                    // Loading more indicator
+                    if (state.isLoadingMore) {
+                        item {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+                }
                 }
             }
         }
@@ -102,9 +153,14 @@ fun NotificationsScreen(
 }
 
 @Composable
-private fun NotificationCard(notification: Notification) {
+private fun NotificationCard(
+    notification: Notification,
+    onPostClick: ((Status) -> Unit)? = null,
+) {
     Card(
-        onClick = { },
+        onClick = {
+            notification.status?.let { status -> onPostClick?.invoke(status) }
+        },
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(4.dp)) {
