@@ -36,6 +36,7 @@ export class SettingsDrawerContent extends LitElement {
   @property({ type: Object }) instanceInfo: Instance | null = null;
   @property({ type: Boolean }) wellnessMode = false;
   @property({ type: Boolean }) dataSaverMode = false;
+  @property({ type: Boolean }) hapticsEnabled = true;
   @property({ type: Boolean }) userTermsLoaded = false;
   @property({ type: Boolean }) appThemeLoaded = false;
 
@@ -307,6 +308,17 @@ export class SettingsDrawerContent extends LitElement {
     );
   }
 
+  private handleHapticsToggle(e: Event) {
+    const checked = (e.target as HTMLInputElement).checked;
+    this.dispatchEvent(
+      new CustomEvent('haptics-change', {
+        detail: { checked },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   render() {
     return html`
       <div class="settings-cards">
@@ -416,6 +428,19 @@ export class SettingsDrawerContent extends LitElement {
           </div>
           <p class="setting-description">
             ${msg('Data Saver Mode reduces the amount of data used by Coho.')}
+          </p>
+
+          <md-divider></md-divider>
+
+          <div class="setting-row">
+            <h4>${msg('Haptic Feedback')}</h4>
+            <md-switch
+              @sl-change="${(e: Event) => this.handleHapticsToggle(e)}"
+              ?checked="${this.hapticsEnabled}"
+            ></md-switch>
+          </div>
+          <p class="setting-description">
+            ${msg('Vibrate on actions like likes, boosts, and publishing.')}
           </p>
 
           ${this.isAndroid

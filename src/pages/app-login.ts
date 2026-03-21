@@ -141,18 +141,6 @@ export class AppLogin extends LitElement {
         timeout: 8000,
       }
     );
-
-    requestIdleCallback(
-      async () => {
-        if (this.shadowRoot) {
-          const { enableVibrate } = await import('../utils/handle-vibrate');
-          enableVibrate(this.shadowRoot);
-        }
-      },
-      {
-        timeout: 8000,
-      }
-    );
   }
 
   private async init() {

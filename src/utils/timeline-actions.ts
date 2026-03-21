@@ -73,6 +73,8 @@ export async function toggleStatusAction(options: ToggleOptions) {
     return;
   }
 
+  import('./haptics').then(({ hapticImpact }) => hapticImpact('light'));
+
   if (isActive) {
     // UNDO
     await withOptimisticUpdate(
@@ -104,6 +106,8 @@ export async function performOneWayAction(
     showGuestActionToast(actionName);
     return;
   }
+
+  import('./haptics').then(({ hapticImpact }) => hapticImpact('light'));
 
   await withOptimisticUpdate(onOptimisticUpdate, apiCall, onRollback, {
     errorMessage,

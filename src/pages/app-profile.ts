@@ -1026,6 +1026,10 @@ export class AppProfile extends LitElement {
     // Store original state for rollback
     const originalFollowed = this.followed;
 
+    import('../utils/haptics').then(({ hapticImpact }) =>
+      hapticImpact('light')
+    );
+
     await withOptimisticUpdate(
       // Apply optimistic update
       () => {
@@ -1209,6 +1213,10 @@ export class AppProfile extends LitElement {
 
     // Store original state for rollback
     const originalFollowed = this.followed;
+
+    import('../utils/haptics').then(({ hapticImpact }) =>
+      hapticImpact('light')
+    );
 
     await withOptimisticUpdate(
       // Apply optimistic update

@@ -90,6 +90,7 @@ export class AppHome extends LitElement {
 
   @state() wellnessMode: boolean = false;
   @state() dataSaverMode: boolean = false;
+  @state() hapticsEnabled: boolean = true;
 
   @state() summary: string = '';
 
@@ -277,6 +278,8 @@ export class AppHome extends LitElement {
           this.handleWellnessMode(settings.wellness || false);
 
           this.handleDataSaverMode(settings.data_saver || false);
+
+          this.handleHapticsMode(settings.haptics !== false);
         }
 
         // Only check notifications for authenticated users
@@ -319,13 +322,6 @@ export class AppHome extends LitElement {
       await this.updateComplete;
       this.tabController.openATab(tabToOpen);
     }
-
-    window.requestIdleCallback(async () => {
-      if (this.shadowRoot) {
-        const { enableVibrate } = await import('../utils/handle-vibrate');
-        enableVibrate(this.shadowRoot);
-      }
-    });
 
     // Defer right-click menu and install prompt check - not needed immediately
     window.requestIdleCallback(() => {
@@ -541,6 +537,16 @@ export class AppHome extends LitElement {
 
     const { setSettings } = await import('../services/settings');
     setSettings({ data_saver: mode });
+  }
+
+  async handleHapticsMode(enabled: boolean) {
+    this.hapticsEnabled = enabled;
+
+    const { setHapticsEnabled } = await import('../utils/haptics');
+    setHapticsEnabled(enabled);
+
+    const { setSettings } = await import('../services/settings');
+    setSettings({ haptics: enabled });
   }
 
   async handleTabChange(event: TabChangeEvent) {
@@ -1104,12 +1110,15 @@ export class AppHome extends LitElement {
               .instanceInfo="${this.instanceInfo}"
               .wellnessMode="${this.wellnessMode}"
               .dataSaverMode="${this.dataSaverMode}"
+              .hapticsEnabled="${this.hapticsEnabled}"
               .userTermsLoaded="${this.userTermsLoaded}"
               .appThemeLoaded="${this.appThemeLoaded}"
               @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleWellnessMode(e.detail.checked)}"
               @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleDataSaverMode(e.detail.checked)}"
+              @haptics-change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleHapticsMode(e.detail.checked)}"
               @open-filters="${() => this.openFiltersDialog()}"
               @open-scheduled-statuses="${() =>
                 this.openScheduledStatusesDialog()}"

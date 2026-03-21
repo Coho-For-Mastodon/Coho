@@ -5,6 +5,7 @@ export interface Settings {
   wellness?: boolean;
   focus?: boolean;
   sensitive?: boolean;
+  haptics?: boolean;
 }
 
 const defaultSettings = {
@@ -14,6 +15,7 @@ const defaultSettings = {
   wellness: false,
   focus: false,
   sensitive: false,
+  haptics: true,
 };
 
 export async function getSettings(): Promise<Settings> {
@@ -41,6 +43,9 @@ export async function setSettings(settings: Settings) {
     sensitive: Object.keys(settings).includes('sensitive')
       ? settings.sensitive
       : currentSettings.sensitive,
+    haptics: Object.keys(settings).includes('haptics')
+      ? settings.haptics
+      : currentSettings.haptics,
   };
 
   // Also store theme color in localStorage for instant access on page load

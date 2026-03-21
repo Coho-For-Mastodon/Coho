@@ -1,11 +1,10 @@
-import { LitElement, css, html, PropertyValueMap, nothing } from 'lit';
+import { LitElement, css, html, nothing } from 'lit';
 import { property, customElement } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 
 import './md/md-icon.js';
 import './md/md-icon-button.js';
 
-import { enableVibrate } from '../utils/handle-vibrate';
 import { setAuthRedirect } from '../utils/auth-redirect';
 
 import type {
@@ -156,16 +155,6 @@ export class AppHeader extends LitElement {
         }
       }
     `;
-  }
-
-  protected firstUpdated(
-    _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
-  ): void {
-    window.requestIdleCallback(() => {
-      if (this.shadowRoot) {
-        enableVibrate(this.shadowRoot);
-      }
-    });
   }
 
   openSettings() {

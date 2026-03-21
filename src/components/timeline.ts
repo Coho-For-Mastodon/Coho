@@ -905,7 +905,9 @@ export class Timeline extends LitElement {
       });
 
       if (this._pullDistance >= this._threshold && !this._hapticTriggered) {
-        if (navigator.vibrate) navigator.vibrate(10);
+        import('../utils/haptics').then(({ hapticImpact }) =>
+          hapticImpact('medium')
+        );
         this._hapticTriggered = true;
       } else if (this._pullDistance < this._threshold) {
         this._hapticTriggered = false;

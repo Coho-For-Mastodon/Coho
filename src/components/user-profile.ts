@@ -94,15 +94,6 @@ export class UserProfile extends LitElement {
     `,
   ];
 
-  async firstUpdated() {
-    window.requestIdleCallback(async () => {
-      if (this.shadowRoot) {
-        const { enableVibrate } = await import('../utils/handle-vibrate');
-        enableVibrate(this.shadowRoot);
-      }
-    });
-  }
-
   async openUser() {
     // Set viewTransitionName for cross-document view transition
     // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types

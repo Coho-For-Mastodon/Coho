@@ -118,6 +118,7 @@ describe('settings service', () => {
         wellness: true,
         focus: true,
         sensitive: true,
+        haptics: true,
       };
 
       await setSettings(fullSettings);

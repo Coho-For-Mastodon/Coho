@@ -322,6 +322,8 @@ export const templates = {
   s804676468ea1af74: `No credentials to sync`,
   sfa39c2b9c0dd0c02: `Failed to sync to watch`,
   s2b5047d39b9baf3d: `Preferences`,
+  s399b2152de758495: `Haptic Feedback`,
+  s1210a6c6ad65d97b: `Vibrate on actions like likes, boosts, and publishing.`,
   s5ddb4ae6884197c4: `Sync to Watch`,
   s36c13bb456523146: `Synced ✓`,
   s9cd4984f1a746b40: `Syncing…`,
