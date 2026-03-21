@@ -172,15 +172,14 @@ export class AppIndex extends LitElement {
   }
 
   firstUpdated() {
-    // Sync localStorage credentials to IndexedDB for service worker access
-    // and determine authentication state
-    this.syncCredentialsToIndexedDB();
-
     // Check initial authentication state
     this.checkAuthenticationState();
     console.log('[App] isAuthenticated:', this.isAuthenticated);
 
     if (this.isAuthenticated) {
+      // Sync localStorage credentials to IndexedDB for service worker access
+      this.syncCredentialsToIndexedDB();
+
       this.handleInitTheme();
 
       // Preload data during idle time, then precache critical components.

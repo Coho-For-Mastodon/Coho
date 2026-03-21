@@ -179,7 +179,7 @@ customPlugins.push({
     handler(html: string, { bundle }: { bundle?: Record<string, unknown> }) {
       if (!bundle) return html;
 
-      const chunksToPreload = ['vendor-idb-keyval', 'preload-'];
+      const chunksToPreload = ['vendor-idb-keyval'];
       const preloadLinks: string[] = [];
 
       for (const chunkPattern of chunksToPreload) {
