@@ -26,7 +26,6 @@ Fast, private, and no server required — these features run entirely on your de
 - **Auto-generated alt text** — Images missing alt text get descriptions automatically
 - **Alt text assistance** — Generate alt text for your images before posting
 - **Voice input** — Compose posts by speaking
-- **Handwriting input** — Write posts with your handwriting, converted to text
 
 ### Seamless Navigation
 
