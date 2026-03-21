@@ -314,8 +314,10 @@ export class AppIndex extends LitElement {
     // Sync server URL to native SharedPreferences for the Android widget
     this.syncServerToNativeWidget();
 
-    // Sync credentials to paired Wear OS watch
-    this.syncCredentialsToWearOS();
+    // Keep watch in sync automatically (best-effort, non-blocking)
+    import('./services/wear-sync.js')
+      .then((m) => m.syncCredentialsToWearOS())
+      .catch(() => {});
   }
 
   /**
@@ -334,33 +336,6 @@ export class AppIndex extends LitElement {
       await (WidgetBridge as any).setServer({ server });
     } catch {
       // Widget bridge not available — ignore
-    }
-  }
-
-  /**
-   * Pushes auth credentials to the paired Wear OS watch via the
-   * WearSyncBridge Capacitor plugin so the watch can independently
-   * call the Mastodon API.
-   */
-  private async syncCredentialsToWearOS() {
-    try {
-      const { isNativePlatform } = await import('./utils/platform.js');
-      if (!isNativePlatform()) return;
-
-      const { registerPlugin } = await import('@capacitor/core');
-      const WearSyncBridge = registerPlugin('WearSyncBridge');
-      const server = localStorage.getItem('server') || '';
-      const accessToken = localStorage.getItem('accessToken') || '';
-      const acct = localStorage.getItem('acct') || '';
-      if (!server || !accessToken) return;
-
-      await (WearSyncBridge as any).syncCredentials({
-        server,
-        accessToken,
-        acct,
-      });
-    } catch {
-      // Wear sync bridge not available — ignore
     }
   }
 

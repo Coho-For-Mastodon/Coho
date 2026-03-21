@@ -14,6 +14,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,19 +38,39 @@ import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import coil.compose.AsyncImage
+import place.coho.app.wear.R
 import place.coho.app.wear.api.models.Status
+import place.coho.app.wear.data.TimelineRepository
+import place.coho.app.wear.sync.AuthState
 import place.coho.app.wear.ui.components.htmlToPlainText
 import place.coho.app.wear.ui.components.relativeTime
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun PostDetailScreen(
     status: Status,
+    auth: AuthState? = null,
     onFavourite: ((String) -> Unit)?,
     onBoost: ((String) -> Unit)?,
+    onReply: ((String, String) -> Unit)? = null,
 ) {
     val displayStatus = status.reblog ?: status
     val isBoosted = status.reblog != null
     val listState = rememberScalingLazyListState()
+
+    // Fetch parent post if this is a reply
+    var parentStatus by remember { mutableStateOf<Status?>(null) }
+    if (displayStatus.inReplyToId != null && auth != null) {
+        LaunchedEffect(displayStatus.inReplyToId) {
+            try {
+                val repo = TimelineRepository()
+                parentStatus = repo.getStatus(auth, displayStatus.inReplyToId)
+            } catch (_: Exception) {
+                // Parent fetch is best-effort
+            }
+        }
+    }
+
     val config = LocalConfiguration.current
     val horizontalPadding = (config.screenWidthDp * 0.052f).dp
     val verticalPadding = if (config.isScreenRound) (config.screenHeightDp * 0.22f).dp else 24.dp
@@ -63,6 +88,36 @@ fun PostDetailScreen(
             contentPadding = columnPadding,
             modifier = Modifier.fillMaxSize(),
         ) {
+        // Parent post context (if this is a reply)
+        val parent = parentStatus
+        if (parent != null) {
+            item {
+                Card(
+                    onClick = {},
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(modifier = Modifier.padding(4.dp)) {
+                        Text(
+                            text = stringResource(
+                                R.string.in_reply_to,
+                                parent.account.displayName.ifBlank { parent.account.username },
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = htmlToPlainText(parent.content),
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+
         // Boost indicator
         if (isBoosted) {
             item {
@@ -209,12 +264,25 @@ fun PostDetailScreen(
                     )
                 }
 
-                Text(
-                    text = "\uD83D\uDCAC ${displayStatus.repliesCount}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                )
+                if (onReply != null) {
+                    ActionChip(
+                        label = "💬",
+                        count = displayStatus.repliesCount,
+                        onClick = {
+                            onReply(
+                                displayStatus.id,
+                                displayStatus.account.acct,
+                            )
+                        },
+                    )
+                } else {
+                    Text(
+                        text = "💬 ${displayStatus.repliesCount}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
             }
         }
         }

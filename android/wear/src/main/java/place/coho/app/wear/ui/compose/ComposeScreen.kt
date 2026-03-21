@@ -40,6 +40,8 @@ import place.coho.app.wear.sync.AuthState
 @Composable
 fun ComposeScreen(
     auth: AuthState,
+    replyToId: String? = null,
+    replyToAuthor: String? = null,
     onDismiss: () -> Unit,
     onPosted: () -> Unit,
     viewModel: ComposeViewModel = viewModel(),
@@ -117,6 +119,20 @@ fun ComposeScreen(
                         }
                     }
 
+                    // Reply context
+                    if (replyToAuthor != null) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.replying_to, "@$replyToAuthor"),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 4.dp),
+                            )
+                        }
+                    }
+
                     // Voice text display
                     item {
                         Text(
@@ -163,7 +179,7 @@ fun ComposeScreen(
 
                         item {
                             FilledTonalButton(
-                                onClick = { viewModel.postStatus(auth, voiceText) },
+                                onClick = { viewModel.postStatus(auth, voiceText, inReplyToId = replyToId) },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Text(stringResource(R.string.compose_post))

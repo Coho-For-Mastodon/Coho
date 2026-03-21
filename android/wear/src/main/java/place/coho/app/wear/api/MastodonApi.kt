@@ -34,6 +34,9 @@ interface MastodonApi {
         @Query("limit") limit: Int = 12,
     ): List<Status>
 
+    @GET("api/v1/statuses/{id}")
+    suspend fun getStatus(@Path("id") id: String): Status
+
     @GET("api/v1/notifications")
     suspend fun getNotifications(
         @Query("limit") limit: Int = 20,

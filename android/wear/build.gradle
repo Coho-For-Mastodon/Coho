@@ -10,8 +10,8 @@ android {
         applicationId "place.coho.app"
         minSdkVersion 30 // Wear OS 3+
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 7
+        versionName "5.0"
     }
 
     buildTypes {

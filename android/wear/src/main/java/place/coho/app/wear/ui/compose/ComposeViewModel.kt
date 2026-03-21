@@ -22,12 +22,12 @@ class ComposeViewModel(
     private val _uiState = MutableStateFlow<ComposeUiState>(ComposeUiState.Idle)
     val uiState: StateFlow<ComposeUiState> = _uiState
 
-    fun postStatus(auth: AuthState, text: String, visibility: String = "public") {
+    fun postStatus(auth: AuthState, text: String, visibility: String = "public", inReplyToId: String? = null) {
         if (text.isBlank()) return
         viewModelScope.launch {
             _uiState.value = ComposeUiState.Sending
             try {
-                repository.postStatus(auth, text, visibility)
+                repository.postStatus(auth, text, visibility, inReplyToId)
                 _uiState.value = ComposeUiState.Sent
             } catch (e: Exception) {
                 _uiState.value = ComposeUiState.Error(

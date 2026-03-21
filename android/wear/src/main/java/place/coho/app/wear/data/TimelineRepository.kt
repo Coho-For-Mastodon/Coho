@@ -36,6 +36,10 @@ class TimelineRepository {
         return getPublicApi().getTrendingStatuses(limit = 12)
     }
 
+    suspend fun getStatus(auth: AuthState, id: String): Status {
+        return getApi(auth).getStatus(id)
+    }
+
     suspend fun favouriteStatus(auth: AuthState, id: String): Status {
         return getApi(auth).favouriteStatus(id)
     }

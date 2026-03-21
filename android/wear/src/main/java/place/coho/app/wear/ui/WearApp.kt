@@ -33,6 +33,7 @@ import place.coho.app.wear.sync.AuthRepository
 import place.coho.app.wear.sync.AuthState
 import place.coho.app.wear.ui.compose.ComposeScreen
 import place.coho.app.wear.ui.notifications.NotificationsScreen
+import place.coho.app.wear.ui.settings.WatchSettingsScreen
 import place.coho.app.wear.ui.theme.CohoWearTheme
 import place.coho.app.wear.ui.timeline.PostDetailScreen
 import place.coho.app.wear.ui.timeline.TimelineScreen
@@ -47,6 +48,8 @@ fun WearApp(authRepository: AuthRepository) {
     CohoWearTheme {
         val navController = rememberSwipeDismissableNavController()
         var selectedStatus by remember { mutableStateOf<Status?>(null) }
+        var replyToId by remember { mutableStateOf<String?>(null) }
+        var replyToAuthor by remember { mutableStateOf<String?>(null) }
         val timelineViewModel: TimelineViewModel = viewModel()
 
         AppScaffold {
@@ -56,7 +59,7 @@ fun WearApp(authRepository: AuthRepository) {
             ) {
             composable("home") {
                 if (authState.isAuthenticated) {
-                    val pagerState = rememberPagerState(pageCount = { 2 })
+                    val pagerState = rememberPagerState(pageCount = { 3 })
                     val coroutineScope = rememberCoroutineScope()
 
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -77,6 +80,8 @@ fun WearApp(authRepository: AuthRepository) {
                                         navController.navigate("postDetail")
                                     },
                                     onCompose = {
+                                        replyToId = null
+                                        replyToAuthor = null
                                         navController.navigate("compose")
                                     },
                                     viewModel = timelineViewModel,
@@ -88,11 +93,15 @@ fun WearApp(authRepository: AuthRepository) {
                                         navController.navigate("postDetail")
                                     },
                                 )
+                                2 -> WatchSettingsScreen(
+                                    authRepository = authRepository,
+                                    onLoggedOut = {},
+                                )
                             }
                         }
 
                         PageIndicator(
-                            pageCount = 2,
+                            pageCount = 3,
                             currentPage = pagerState.currentPage,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
@@ -117,11 +126,19 @@ fun WearApp(authRepository: AuthRepository) {
                 if (status != null) {
                     PostDetailScreen(
                         status = status,
+                        auth = if (timelineViewModel.isAuthenticated) authState else null,
                         onFavourite = if (timelineViewModel.isAuthenticated) {
                             { timelineViewModel.toggleFavourite(it) }
                         } else null,
                         onBoost = if (timelineViewModel.isAuthenticated) {
                             { timelineViewModel.toggleBoost(it) }
+                        } else null,
+                        onReply = if (timelineViewModel.isAuthenticated) {
+                            { id, author ->
+                                replyToId = id
+                                replyToAuthor = author
+                                navController.navigate("compose")
+                            }
                         } else null,
                     )
                 }
@@ -130,8 +147,16 @@ fun WearApp(authRepository: AuthRepository) {
             composable("compose") {
                 ComposeScreen(
                     auth = authState,
-                    onDismiss = { navController.popBackStack() },
+                    replyToId = replyToId,
+                    replyToAuthor = replyToAuthor,
+                    onDismiss = {
+                        replyToId = null
+                        replyToAuthor = null
+                        navController.popBackStack()
+                    },
                     onPosted = {
+                        replyToId = null
+                        replyToAuthor = null
                         navController.popBackStack()
                         timelineViewModel.refresh()
                     },

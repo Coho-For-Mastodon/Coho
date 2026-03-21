@@ -27,6 +27,7 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
@@ -37,6 +38,10 @@ import androidx.wear.compose.material3.TextButton
 import place.coho.app.wear.R
 import place.coho.app.wear.api.models.Status
 import place.coho.app.wear.sync.AuthState
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.text.font.FontWeight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,6 +128,30 @@ fun TimelineScreen(
                             else
                                 stringResource(R.string.trending_title)
                         )
+                    }
+                }
+
+                // Sync prompt (unauthenticated only)
+                if (auth?.isAuthenticated != true) {
+                    item {
+                        Card(
+                            onClick = {},
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(4.dp)) {
+                                Text(
+                                    text = stringResource(R.string.sync_prompt_title),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.error_not_authenticated),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                     }
                 }
 
