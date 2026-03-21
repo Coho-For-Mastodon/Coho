@@ -1928,6 +1928,12 @@
 <trans-unit id="s59169c4e8fbcdccf">
   <source>Signing in…</source>
 </trans-unit>
+<trans-unit id="s399b2152de758495">
+  <source>Haptic Feedback</source>
+</trans-unit>
+<trans-unit id="s1210a6c6ad65d97b">
+  <source>Vibrate on actions like likes, boosts, and publishing.</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
