@@ -15,7 +15,7 @@ export class AppMedia extends LitElement {
       }
 
       main {
-        padding-top: 60px;
+        padding-top: calc(60px + env(safe-area-inset-top, 0px));
       }
 
       ul {

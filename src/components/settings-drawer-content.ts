@@ -1,5 +1,5 @@
 import { LitElement, html, css, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { msg, str } from '@lit/localize';
 import { localized } from '@lit/localize';
 
@@ -14,7 +14,10 @@ import './md/md-menu-item';
 import './md/md-button';
 import './md/md-card';
 import './md/md-divider';
+import './md/md-toast';
 import './account-settings';
+
+import type { MdToast } from './md/md-toast';
 
 import type { Account } from '../mastodon/types/account';
 import type { Instance } from '../mastodon/types/instance';
@@ -33,8 +36,13 @@ export class SettingsDrawerContent extends LitElement {
   @property({ type: Object }) instanceInfo: Instance | null = null;
   @property({ type: Boolean }) wellnessMode = false;
   @property({ type: Boolean }) dataSaverMode = false;
+  @property({ type: Boolean }) hapticsEnabled = true;
   @property({ type: Boolean }) userTermsLoaded = false;
   @property({ type: Boolean }) appThemeLoaded = false;
+
+  @state() private isAndroid = false;
+  @state() private syncingToWatch = false;
+  @state() private syncedToWatch = false;
 
   static styles = css`
     :host {
@@ -166,6 +174,49 @@ export class SettingsDrawerContent extends LitElement {
     }
   `;
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.detectPlatform();
+  }
+
+  private async detectPlatform() {
+    try {
+      const { getPlatform } = await import('../utils/platform.js');
+      this.isAndroid = getPlatform() === 'android';
+    } catch {
+      this.isAndroid = false;
+    }
+  }
+
+  private async syncToWatch() {
+    this.syncingToWatch = true;
+    try {
+      const { syncCredentialsToWearOS } =
+        await import('../services/wear-sync.js');
+      const success = await syncCredentialsToWearOS();
+      if (success) {
+        this.syncedToWatch = true;
+      }
+      this.showSyncToast(
+        success ? msg('Synced to watch') : msg('No credentials to sync'),
+        success ? 'success' : 'error'
+      );
+    } catch {
+      this.showSyncToast(msg('Failed to sync to watch'), 'error');
+    } finally {
+      this.syncingToWatch = false;
+    }
+  }
+
+  private showSyncToast(message: string, type: 'success' | 'error') {
+    const toast = this.shadowRoot?.querySelector<MdToast>('md-toast');
+    if (toast) {
+      toast.setAttribute('message', message);
+      toast.setAttribute('type', type);
+      toast.show();
+    }
+  }
+
   private goToFollowers() {
     if (!this.user) return;
     router.navigate(`/followers?id=${this.user.id}`);
@@ -187,6 +238,15 @@ export class SettingsDrawerContent extends LitElement {
     if (!this.user) return;
     if (navigator.share) {
       await navigator.share({
+        title: 'My Mastodon Profile',
+        text: 'Check out my Mastodon profile!',
+        url: this.user.url,
+      });
+    } // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    else if (window.Capacitor) {
+      const { Share } = await import('@capacitor/share');
+      await Share.share({
         title: 'My Mastodon Profile',
         text: 'Check out my Mastodon profile!',
         url: this.user.url,
@@ -241,6 +301,17 @@ export class SettingsDrawerContent extends LitElement {
     const checked = (e.target as HTMLInputElement).checked;
     this.dispatchEvent(
       new CustomEvent('data-saver-change', {
+        detail: { checked },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  private handleHapticsToggle(e: Event) {
+    const checked = (e.target as HTMLInputElement).checked;
+    this.dispatchEvent(
+      new CustomEvent('haptics-change', {
         detail: { checked },
         bubbles: true,
         composed: true,
@@ -358,7 +429,46 @@ export class SettingsDrawerContent extends LitElement {
           <p class="setting-description">
             ${msg('Data Saver Mode reduces the amount of data used by Coho.')}
           </p>
+
+          <md-divider></md-divider>
+
+          <div class="setting-row">
+            <h4>${msg('Haptic Feedback')}</h4>
+            <md-switch
+              @sl-change="${(e: Event) => this.handleHapticsToggle(e)}"
+              ?checked="${this.hapticsEnabled}"
+            ></md-switch>
+          </div>
+          <p class="setting-description">
+            ${msg('Vibrate on actions like likes, boosts, and publishing.')}
+          </p>
+
+          ${this.isAndroid
+            ? html`
+                <md-divider></md-divider>
+
+                <div class="setting-row">
+                  <h4>${msg('Sync to Watch')}</h4>
+                  <md-button
+                    variant="filled"
+                    @click="${() => this.syncToWatch()}"
+                    ?disabled="${this.syncingToWatch || this.syncedToWatch}"
+                  >
+                    ${this.syncedToWatch
+                      ? msg('Synced ✓')
+                      : this.syncingToWatch
+                        ? msg('Syncing…')
+                        : msg('Sync')}
+                  </md-button>
+                </div>
+                <p class="setting-description">
+                  ${msg('Send your account credentials to your Wear OS watch.')}
+                </p>
+              `
+            : nothing}
         </md-card>
+
+        <md-toast></md-toast>
 
         <!-- Account & Privacy / Posting Defaults -->
         <account-settings></account-settings>

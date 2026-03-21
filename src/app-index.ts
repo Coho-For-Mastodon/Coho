@@ -69,6 +69,10 @@ export class AppIndex extends LitElement {
       console.error('[App] Failed to bootstrap auth session', error);
     }
 
+    // If the app was cold-launched via an OAuth deep link (App Link / Universal Link),
+    // consume the launch URL and complete the token exchange before routing starts.
+    await this.handleNativeLaunchCallback();
+
     // Register route-changed listener BEFORE router.init() to avoid missing the
     // initial route-changed event in browsers with native Navigation API + URLPattern
     // support (where init() completes synchronously before firstUpdated() runs).
@@ -88,10 +92,23 @@ export class AppIndex extends LitElement {
     // Ensure the initial route renders after init completes
     this.requestUpdate();
 
-    // Defer PWA update component - not needed immediately, loads on browser idle
-    requestIdleCallback(() => import('./components/pwa-update'), {
-      timeout: 5000,
-    });
+    // Defer PWA update component - not needed in Capacitor native shell
+    const { isNativePlatform } = await import('./utils/platform.js');
+    if (!isNativePlatform()) {
+      requestIdleCallback(() => import('./components/pwa-update'), {
+        timeout: 5000,
+      });
+    } else {
+      // Initialize native push notification listeners (FCM via Capacitor)
+      requestIdleCallback(
+        async () => {
+          const { setupNativePushListeners } =
+            await import('./services/push-native.js');
+          setupNativePushListeners();
+        },
+        { timeout: 5000 }
+      );
+    }
   }
 
   disconnectedCallback() {
@@ -99,14 +116,45 @@ export class AppIndex extends LitElement {
     router.removeEventListener('route-changed', this._onRouteChanged);
   }
 
+  /**
+   * Check if the app was cold-launched via a native deep link carrying OAuth
+   * callback params. If so, complete the token exchange so the user lands
+   * authenticated when routing initializes.
+   */
+  private async handleNativeLaunchCallback() {
+    try {
+      const { isNativePlatform } = await import('./utils/platform.js');
+      if (!isNativePlatform()) return;
+
+      const { consumeLaunchCallback } =
+        await import('./services/auth-platform.js');
+      const params = await consumeLaunchCallback();
+      if (params) {
+        const { authToClient } = await import('./services/account.js');
+        await authToClient(params.code, params.state);
+      }
+    } catch (error) {
+      console.error('[App] Native launch callback failed', error);
+    }
+  }
+
   async handleInitTheme() {
     const { getSettings } = await import('./services/settings');
     const settings = await getSettings();
     console.log('settings', settings);
 
-    const potentialColor = settings.primary_color;
-
     const { applyThemeColor } = await import('./utils/theme-color');
+
+    // On Android Capacitor, always use the device's Material You accent color
+    const { getAndroidDynamicColor } = await import('./utils/dynamic-theme');
+    const deviceColor = await getAndroidDynamicColor();
+    if (deviceColor) {
+      localStorage.setItem('coho-theme-color', deviceColor);
+      applyThemeColor(deviceColor, { useIdleCallback: true });
+      return;
+    }
+
+    const potentialColor = settings.primary_color;
 
     if (potentialColor) {
       // Sync to localStorage for instant theme on next load (migration for existing users)
@@ -124,15 +172,14 @@ export class AppIndex extends LitElement {
   }
 
   firstUpdated() {
-    // Sync localStorage credentials to IndexedDB for service worker access
-    // and determine authentication state
-    this.syncCredentialsToIndexedDB();
-
     // Check initial authentication state
     this.checkAuthenticationState();
     console.log('[App] isAuthenticated:', this.isAuthenticated);
 
     if (this.isAuthenticated) {
+      // Sync localStorage credentials to IndexedDB for service worker access
+      this.syncCredentialsToIndexedDB();
+
       this.handleInitTheme();
 
       // Preload data during idle time, then precache critical components.
@@ -262,6 +309,33 @@ export class AppIndex extends LitElement {
   private async syncCredentialsToIndexedDB() {
     await syncActiveToIndexedDb();
     console.log('[App] Synced credentials to IndexedDB');
+
+    // Sync server URL to native SharedPreferences for the Android widget
+    this.syncServerToNativeWidget();
+
+    // Keep watch in sync automatically (best-effort, non-blocking)
+    import('./services/wear-sync.js')
+      .then((m) => m.syncCredentialsToWearOS())
+      .catch(() => {});
+  }
+
+  /**
+   * Pushes the current server URL to the native Android widget
+   * via the WidgetBridge Capacitor plugin, so the widget can
+   * fetch trending data from the correct Mastodon instance.
+   */
+  private async syncServerToNativeWidget() {
+    try {
+      const { isNativePlatform } = await import('./utils/platform.js');
+      if (!isNativePlatform()) return;
+
+      const { registerPlugin } = await import('@capacitor/core');
+      const WidgetBridge = registerPlugin('WidgetBridge');
+      const server = localStorage.getItem('server') || 'mastodon.social';
+      await (WidgetBridge as any).setServer({ server });
+    } catch {
+      // Widget bridge not available — ignore
+    }
   }
 
   /**

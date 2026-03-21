@@ -46,7 +46,7 @@ export class ConversationThread extends LitElement {
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        padding-top: 46px;
+        padding-top: calc(46px + env(safe-area-inset-top, 0px));
       }
 
       .scroller {

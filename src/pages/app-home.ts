@@ -90,6 +90,7 @@ export class AppHome extends LitElement {
 
   @state() wellnessMode: boolean = false;
   @state() dataSaverMode: boolean = false;
+  @state() hapticsEnabled: boolean = true;
 
   @state() summary: string = '';
 
@@ -226,7 +227,13 @@ export class AppHome extends LitElement {
           await this.shareTarget(name);
         }
       }
+
+      // Check for native Android share intent (cold start)
+      this._checkNativeShareTarget();
     }, 1000);
+
+    // Listen for share intents that arrive while the app is already open
+    this._initNativeShareListener();
 
     window.requestIdleCallback(async () => {
       // Import and init key shortcuts
@@ -271,6 +278,8 @@ export class AppHome extends LitElement {
           this.handleWellnessMode(settings.wellness || false);
 
           this.handleDataSaverMode(settings.data_saver || false);
+
+          this.handleHapticsMode(settings.haptics !== false);
         }
 
         // Only check notifications for authenticated users
@@ -313,13 +322,6 @@ export class AppHome extends LitElement {
       await this.updateComplete;
       this.tabController.openATab(tabToOpen);
     }
-
-    window.requestIdleCallback(async () => {
-      if (this.shadowRoot) {
-        const { enableVibrate } = await import('../utils/handle-vibrate');
-        enableVibrate(this.shadowRoot);
-      }
-    });
 
     // Defer right-click menu and install prompt check - not needed immediately
     window.requestIdleCallback(() => {
@@ -401,6 +403,49 @@ export class AppHome extends LitElement {
     }
   }
 
+  private _nativeShareCleanup: { remove: () => void } | null = null;
+
+  /**
+   * Check for shared content from an Android share intent (cold start).
+   */
+  private async _checkNativeShareTarget() {
+    const { checkNativeShare } =
+      await import('../services/native-share-target');
+    const result = await checkNativeShare();
+    if (result.hasShare) {
+      this._handleNativeShare(result);
+    }
+  }
+
+  /**
+   * Listen for Android share intents that arrive while the app is already
+   * running (warm start via onNewIntent).
+   */
+  private async _initNativeShareListener() {
+    const { onNativeShareIntent } =
+      await import('../services/native-share-target');
+    this._nativeShareCleanup = onNativeShareIntent((result) => {
+      this._handleNativeShare(result);
+    });
+  }
+
+  /**
+   * Process a native share intent result — open the compose dialog with
+   * the shared media file and/or pre-filled text.
+   */
+  private async _handleNativeShare(
+    result: import('../services/native-share-target').NativeShareResult
+  ) {
+    if (result.cachedFileName) {
+      // Media share — the file is already in the shareTarget cache,
+      // so openNewDialog → post-dialog shareTarget will pick it up.
+      await this.openNewDialog(result.cachedFileName, undefined, result.text);
+    } else if (result.text) {
+      // Text-only share (e.g. a URL from Chrome)
+      await this.openNewDialog(undefined, undefined, result.text);
+    }
+  }
+
   handlePrimaryColor(color: string) {
     document.documentElement.style.setProperty('--sl-color-primary-600', color);
     localStorage.setItem('primary_color', color);
@@ -415,7 +460,11 @@ export class AppHome extends LitElement {
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }
 
-  async openNewDialog(shareName?: string, origin?: { x: number; y: number }) {
+  async openNewDialog(
+    shareName?: string,
+    origin?: { x: number; y: number },
+    shareText?: string
+  ) {
     // Lazy load post-dialog component
     if (!this.postDialogLoaded) {
       if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
@@ -435,7 +484,7 @@ export class AppHome extends LitElement {
     // Wait for the post-dialog's own shadow DOM to render
     if (this.postDialog) {
       await this.postDialog.updateComplete;
-      this.postDialog.openNewDialog(shareName, origin);
+      this.postDialog.openNewDialog(shareName, origin, shareText);
     }
   }
 
@@ -488,6 +537,16 @@ export class AppHome extends LitElement {
 
     const { setSettings } = await import('../services/settings');
     setSettings({ data_saver: mode });
+  }
+
+  async handleHapticsMode(enabled: boolean) {
+    this.hapticsEnabled = enabled;
+
+    const { setHapticsEnabled } = await import('../utils/haptics');
+    setHapticsEnabled(enabled);
+
+    const { setSettings } = await import('../services/settings');
+    setSettings({ haptics: enabled });
   }
 
   async handleTabChange(event: TabChangeEvent) {
@@ -662,6 +721,9 @@ export class AppHome extends LitElement {
     // Remove keyboard shortcut new post dialog listener
     window.removeEventListener('open-post-dialog', this._handleOpenPostDialog);
 
+    // Remove native share intent listener
+    this._nativeShareCleanup?.remove();
+
     const lastPageID = sessionStorage.getItem(getLatestReadStorageKey());
     console.log('lastPageID', lastPageID);
     if (lastPageID) {
@@ -770,6 +832,10 @@ export class AppHome extends LitElement {
 
   // PWA Install methods
   async checkInstallPrompt() {
+    // Skip install prompt entirely when running inside Capacitor native shell
+    const { isNativePlatform } = await import('../utils/platform');
+    if (isNativePlatform()) return;
+
     // Wait a moment for the pwa-install component to initialize
     await this.updateComplete;
 
@@ -1044,12 +1110,15 @@ export class AppHome extends LitElement {
               .instanceInfo="${this.instanceInfo}"
               .wellnessMode="${this.wellnessMode}"
               .dataSaverMode="${this.dataSaverMode}"
+              .hapticsEnabled="${this.hapticsEnabled}"
               .userTermsLoaded="${this.userTermsLoaded}"
               .appThemeLoaded="${this.appThemeLoaded}"
               @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleWellnessMode(e.detail.checked)}"
               @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleDataSaverMode(e.detail.checked)}"
+              @haptics-change="${(e: CustomEvent<{ checked: boolean }>) =>
+                this.handleHapticsMode(e.detail.checked)}"
               @open-filters="${() => this.openFiltersDialog()}"
               @open-scheduled-statuses="${() =>
                 this.openScheduledStatusesDialog()}"

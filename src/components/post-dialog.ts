@@ -138,6 +138,7 @@ export class PostDialog extends LitElement {
       md-dialog::part(dialog) {
         min-width: 100vw;
         min-height: 100vh;
+        margin-top: calc(env(safe-area-inset-top, 0px));
       }
     }
 
@@ -164,7 +165,8 @@ export class PostDialog extends LitElement {
 
   public async openNewDialog(
     shareName?: string,
-    origin?: { x: number; y: number }
+    origin?: { x: number; y: number },
+    shareText?: string
   ) {
     await this.updateComplete;
     await customElements.whenDefined('md-dialog');
@@ -174,6 +176,11 @@ export class PostDialog extends LitElement {
     }
 
     this.notifyDialog?.show();
+
+    // Pre-fill composer with shared text (e.g. a URL from another app)
+    if (shareText && this.composer) {
+      this.composer.value = shareText;
+    }
 
     const nameToUse =
       shareName ?? new URLSearchParams(window.location.search).get('name');

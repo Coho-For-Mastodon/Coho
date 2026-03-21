@@ -23,6 +23,15 @@ export async function shareStatus(tweet: Post | undefined | null) {
       // User cancelled or share failed, ignore
       console.warn('Share failed:', err);
     }
+  } // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
+  else if (window.Capacitor) {
+    const { Share } = await import('@capacitor/share');
+    await Share.share({
+      title: 'Coho',
+      text: content,
+      url: url,
+    });
   } else {
     try {
       await navigator.clipboard.writeText(url);
@@ -64,6 +73,8 @@ export async function toggleStatusAction(options: ToggleOptions) {
     return;
   }
 
+  import('./haptics').then(({ hapticImpact }) => hapticImpact('light'));
+
   if (isActive) {
     // UNDO
     await withOptimisticUpdate(
@@ -95,6 +106,8 @@ export async function performOneWayAction(
     showGuestActionToast(actionName);
     return;
   }
+
+  import('./haptics').then(({ hapticImpact }) => hapticImpact('light'));
 
   await withOptimisticUpdate(onOptimisticUpdate, apiCall, onRollback, {
     errorMessage,

@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Coho</string>
+    <string name="title_activity_main">Coho</string>
+    <string name="package_name">place.coho.app</string>
+    <string name="custom_url_scheme">place.coho.app</string>
+    <string name="widget_header">Trending on Mastodon</string>
+    <string name="widget_description">Shows trending hashtags from Mastodon</string>
+    <string name="widget_tap_to_refresh">Tap to open Coho</string>
+    <string name="widget_name">Coho Trending</string>
+    <string name="widget_posts_today">%s posts today</string>
+
+    <!-- App shortcuts (long-press launcher icon) -->
+    <string name="shortcut_home">Home</string>
+    <string name="shortcut_home_long">Go to home timeline</string>
+    <string name="shortcut_explore">Explore</string>
+    <string name="shortcut_explore_long">Explore trending content</string>
+    <string name="shortcut_notifications">Notifications</string>
+    <string name="shortcut_notifications_long">View your notifications</string>
+    <string name="shortcut_messages">Messages</string>
+    <string name="shortcut_messages_long">View your messages</string>
+    <string name="shortcut_new_post">New Post</string>
+    <string name="shortcut_new_post_long">Compose a new post</string>
+</resources>

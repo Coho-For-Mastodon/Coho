@@ -16,7 +16,9 @@ const LOCAL_BASE_URL = `http://127.0.0.1:5001/${FIREBASE_PROJECT_ID}/${FIREBASE_
 const isLocal =
   (window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1') &&
-  import.meta.env.MODE !== 'test';
+  import.meta.env.MODE !== 'test' &&
+  // Capacitor's WebView runs on https://localhost but should use production APIs
+  window.location.protocol !== 'https:';
 
 // Export the appropriate base URL
 export const FIREBASE_FUNCTIONS_BASE_URL = isLocal

@@ -55,6 +55,7 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 - [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)
 - [Why Coho?](docs/WHY_COHO.md)
+- [Safety Standards (CSAE)](SAFETY_STANDARDS.md)
 
 <details>
 <summary>AI Use Disclaimer</summary>

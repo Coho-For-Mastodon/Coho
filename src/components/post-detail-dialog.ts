@@ -35,6 +35,8 @@ export class PostDetailDialog extends LitElement {
       background-color: var(--md-sys-color-surface, #1e1e24);
       color: var(--md-sys-color-on-surface, #e6e1e5);
       overflow: hidden;
+      padding-top: env(safe-area-inset-top, 0px);
+      /* padding-bottom: 120px; */
     }
 
     dialog[open] {
@@ -158,6 +160,7 @@ export class PostDetailDialog extends LitElement {
         height: min(90vh, 900px);
         max-width: min(720px, calc(100vw - 64px));
         max-height: min(90vh, 900px);
+        padding-top: 0;
       }
 
       .back-button {
@@ -334,7 +337,10 @@ export class PostDetailDialog extends LitElement {
 
         <div class="dialog-body">
           ${this.post
-            ? html`<post-detail .passed_tweet="${this.post}"></post-detail>`
+            ? html`<post-detail
+                embedded
+                .passed_tweet="${this.post}"
+              ></post-detail>`
             : null}
         </div>
       </dialog>

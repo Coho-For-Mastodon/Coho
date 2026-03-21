@@ -2318,6 +2318,10 @@ export class PostComposer extends LitElement {
       this.isPublishing = false;
       this.publishSuccess = true;
 
+      import('../utils/haptics').then(({ hapticNotification }) =>
+        hapticNotification('success')
+      );
+
       // Brief success flash, then reset and dispatch
       setTimeout(() => {
         this.publishSuccess = false;

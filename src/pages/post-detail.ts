@@ -74,7 +74,7 @@ export class PostDetail extends LitElement {
 
       /* Account for fixed header on full-page view */
       :host(:not([embedded])) main {
-        padding-top: 60px;
+        padding-top: calc(60px + env(safe-area-inset-top, 0px));
       }
 
       .scroller {
@@ -159,6 +159,7 @@ export class PostDetail extends LitElement {
         padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.18);
         border-radius: var(--md-sys-shape-corner-medium);
+        margin-bottom: 68px;
       }
 
       .composer-shell {
@@ -385,6 +386,15 @@ export class PostDetail extends LitElement {
         text: this.tweet?.content,
         url: this.tweet?.url,
       });
+    } // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    else if (window.Capacitor) {
+      const { Share } = await import('@capacitor/share');
+      await Share.share({
+        title: 'Coho',
+        text: this.tweet?.content,
+        url: this.tweet?.url,
+      });
     } else {
       // fallback to clipboard api
       await navigator.clipboard.writeText(this.tweet?.url || '');
@@ -528,7 +538,7 @@ export class PostDetail extends LitElement {
           <section class="post-section">
             <timeline-item
               id="main"
-              .tweet="${this.cleanMainTweet}"
+              .tweet="${this.cleanMainTweet || undefined}"
               ?guestMode="${this.isGuestMode}"
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"

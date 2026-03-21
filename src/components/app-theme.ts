@@ -6,6 +6,7 @@ import './md/md-icon.js';
 
 import { getSettings, setSettings, Settings } from '../services/settings';
 import { applyThemeColor } from '../utils/theme-color';
+import { getAndroidDynamicColor } from '../utils/dynamic-theme';
 
 @customElement('app-theme')
 export class AppTheme extends LitElement {
@@ -144,24 +145,31 @@ export class AppTheme extends LitElement {
     this.settings = await getSettings();
     console.log('this.settings', this.settings);
 
-    const potentialColor = this.settings.primary_color;
-    const potentialFontSize = this.settings.font_size;
-
-    if (potentialColor) {
-      this.primary_color = potentialColor;
-      applyThemeColor(potentialColor);
+    // On Android Capacitor, device color always wins
+    const deviceColor = await getAndroidDynamicColor();
+    if (deviceColor) {
+      this.primary_color = deviceColor;
+      applyThemeColor(deviceColor);
     } else {
-      // get css variable color
-      const color = getComputedStyle(document.body).getPropertyValue(
-        '--sl-color-primary-600'
-      );
-      this.primary_color = color;
+      const potentialColor = this.settings.primary_color;
 
-      document
-        .querySelector('html')!
-        .style.setProperty('--primary-color', color);
+      if (potentialColor) {
+        this.primary_color = potentialColor;
+        applyThemeColor(potentialColor);
+      } else {
+        // get css variable color
+        const color = getComputedStyle(document.body).getPropertyValue(
+          '--sl-color-primary-600'
+        );
+        this.primary_color = color;
+
+        document
+          .querySelector('html')!
+          .style.setProperty('--primary-color', color);
+      }
     }
 
+    const potentialFontSize = this.settings.font_size;
     if (potentialFontSize) {
       this.font_size = potentialFontSize;
       document.body.style.setProperty(

@@ -41,6 +41,7 @@ export class AppLogin extends LitElement {
         width: 100%;
         background-color: var(--md-sys-color-surface-container);
         padding: 20px;
+        padding-top: calc(90px + env(safe-area-inset-top, 0px)) !important;
         box-sizing: border-box;
         position: relative;
         overflow: hidden;
@@ -140,18 +141,6 @@ export class AppLogin extends LitElement {
         timeout: 8000,
       }
     );
-
-    requestIdleCallback(
-      async () => {
-        if (this.shadowRoot) {
-          const { enableVibrate } = await import('../utils/handle-vibrate');
-          enableVibrate(this.shadowRoot);
-        }
-      },
-      {
-        timeout: 8000,
-      }
-    );
   }
 
   private async init() {
@@ -209,8 +198,20 @@ export class AppLogin extends LitElement {
       }
       this.loggingIn = true;
       try {
-        const { initAuth } = await import('../services/account');
+        const { initAuth, authToClient } = await import('../services/account');
         await initAuth(serverURL);
+
+        // On native, the OAuth redirect comes back as an appUrlOpen event
+        // instead of a page navigation, so we listen for it here.
+        const { isNativePlatform } = await import('../utils/platform');
+        if (isNativePlatform()) {
+          const { waitForNativeCallback } =
+            await import('../services/auth-platform');
+          const { code, state } = await waitForNativeCallback();
+          await authToClient(code, state);
+          const router = await getRouter();
+          await router.navigate(await this.getPostAuthRedirect());
+        }
       } catch (err) {
         console.error(err);
       } finally {

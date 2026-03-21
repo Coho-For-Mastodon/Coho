@@ -43,6 +43,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/browser": "^8.0.2",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/haptics": "^8.0.1",
+    "@capacitor/push-notifications": "^8.0.2",
+    "@capacitor/share": "^8.0.1",
     "@huggingface/transformers": "^4.0.0-next.2",
     "@lit-labs/compiler": "^1.1.2",
     "@lit-labs/virtualizer": "^2.1.1",
@@ -58,6 +64,8 @@
     "web-router": "^0.5.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.1",
     "@lit-labs/ssr": "^4.0.0",

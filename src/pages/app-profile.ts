@@ -132,7 +132,7 @@ export class AppProfile extends LitElement {
         background-size: cover;
         background-position: center;
         position: relative;
-        margin-top: 40px;
+        margin-top: calc(40px + env(safe-area-inset-top, 0px));
         overflow: hidden;
         view-timeline-name: --banner-timeline;
         view-timeline-axis: block;
@@ -1026,6 +1026,10 @@ export class AppProfile extends LitElement {
     // Store original state for rollback
     const originalFollowed = this.followed;
 
+    import('../utils/haptics').then(({ hapticImpact }) =>
+      hapticImpact('light')
+    );
+
     await withOptimisticUpdate(
       // Apply optimistic update
       () => {
@@ -1209,6 +1213,10 @@ export class AppProfile extends LitElement {
 
     // Store original state for rollback
     const originalFollowed = this.followed;
+
+    import('../utils/haptics').then(({ hapticImpact }) =>
+      hapticImpact('light')
+    );
 
     await withOptimisticUpdate(
       // Apply optimistic update

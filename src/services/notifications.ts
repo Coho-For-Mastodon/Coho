@@ -42,6 +42,13 @@ function urlBase64ToUint8Array(key: string) {
 }
 
 export const subToPush = async () => {
+  // On native Capacitor platforms, delegate to the FCM-based flow
+  const { isNativePlatform } = await import('../utils/platform.js');
+  if (isNativePlatform()) {
+    const { subToPushNative } = await import('./push-native.js');
+    return subToPushNative();
+  }
+
   const registration = await navigator.serviceWorker.getRegistration();
 
   let vapidKey: string | undefined;
@@ -264,6 +271,13 @@ export const modifyPush = async (options: {
 };
 
 export const unsubToPush = async () => {
+  // On native Capacitor platforms, delegate to the FCM-based flow
+  const { isNativePlatform } = await import('../utils/platform.js');
+  if (isNativePlatform()) {
+    const { unsubToPushNative } = await import('./push-native.js');
+    return unsubToPushNative();
+  }
+
   // get push subscription
   const registration = await navigator.serviceWorker.getRegistration();
   const subscription = await registration?.pushManager.getSubscription();

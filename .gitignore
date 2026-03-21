@@ -31,3 +31,8 @@ stats.html
 
 # Service worker build artifact (generated from src/sw.ts)
 public/sw.js
+
+# Capacitor native build artifacts (projects themselves are committed)
+android/app/build/
+android/.gradle/
+android/build/

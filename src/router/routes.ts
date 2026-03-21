@@ -25,6 +25,12 @@ const routes: Route<TemplateResult>[] = [
     render: () => html`<app-login></app-login>`,
   },
   {
+    path: '/auth/callback',
+    title: 'signing in',
+    plugins: [lazy(() => import('../pages/auth-callback.js'))],
+    render: () => html`<auth-callback></auth-callback>`,
+  },
+  {
     path: '/share',
     title: 'share',
     plugins: [lazy(() => import('../pages/app-home.js'))],

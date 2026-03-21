@@ -179,7 +179,7 @@ customPlugins.push({
     handler(html: string, { bundle }: { bundle?: Record<string, unknown> }) {
       if (!bundle) return html;
 
-      const chunksToPreload = ['vendor-idb-keyval', 'preload-'];
+      const chunksToPreload = ['vendor-idb-keyval'];
       const preloadLinks: string[] = [];
 
       for (const chunkPattern of chunksToPreload) {
@@ -250,8 +250,9 @@ export default defineConfig({
     terserOptions: {
       module: true,
       compress: {
-        drop_console: true,
+        drop_console: false,
         drop_debugger: true,
+        pure_funcs: ['console.log'], // Strip console.log but keep warn/error
         passes: 2,
         arrows: true,
         booleans_as_integers: true,

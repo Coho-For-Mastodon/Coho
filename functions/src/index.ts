@@ -10,6 +10,9 @@ import { defineSecret } from 'firebase-functions/params';
 import OpenAI from 'openai';
 import * as crypto from 'crypto';
 
+// Re-export push relay functions
+export { pushRelay, pushRelayPush } from './push-relay';
+
 // Define the secret
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
 
@@ -18,6 +21,8 @@ const allowedOrigins = [
   'https://coho.place',
   'https://coho-mastodon.web.app',
   'http://localhost:3000',
+  // Capacitor Android WebView origin (androidScheme: 'https' in capacitor.config.ts)
+  'https://localhost',
 ];
 
 const applyCors = (

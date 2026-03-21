@@ -248,9 +248,9 @@ export class ImagePreviewDialog extends LitElement {
     await new Promise((resolve) => requestAnimationFrame(resolve));
     this.updatePlaceholderSize();
 
-    // Lazy load AI service to keep it out of main bundle
-    const { isPromptAPIAvailable } = await import('../services/ai');
-    if (isPromptAPIAvailable() && (!this.alt || this.alt.trim() === '')) {
+    // Always attempt alt text generation when missing — generateAltText has
+    // its own fallback chain: native Android → Chrome Prompt API → cloud function
+    if (!this.alt || this.alt.trim() === '') {
       this.alt = 'Loading alt text...';
       this.handleGenerateAlt();
     }

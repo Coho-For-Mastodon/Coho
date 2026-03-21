@@ -1,10 +1,14 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "coho.mastodon.twa",
-    "sha256_cert_fingerprints": [
-      "11:B4:5F:D0:8B:F6:6D:6E:CC:FC:5A:5D:FA:EB:46:14:64:21:D5:8A:64:9A:02:0A:C4:DA:AF:05:71:A5:32:CB"
-    ]
+
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "place.coho.app",
+      "sha256_cert_fingerprints": [
+        "B0:9F:08:87:66:03:4A:D1:BF:6D:E8:08:6B:C0:05:4F:63:8E:1A:39:E9:05:3C:40:83:1C:B8:F6:40:C6:A6:E6",
+        "82:20:E9:33:F1:68:59:CF:76:A9:AB:E6:74:3C:6E:00:A6:BF:B0:DF:13:F9:10:DE:67:79:E9:BF:95:AD:FF:DA"
+      ]
+    }
   }
-}]
+]

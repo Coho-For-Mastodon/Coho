@@ -27,7 +27,7 @@ export class AppExplore extends LitElement {
       }
 
       main {
-        padding-top: 60px;
+        padding-top: calc(60px + env(safe-area-inset-top, 0px));
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 10px;
