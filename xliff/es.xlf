@@ -1898,6 +1898,36 @@
 <trans-unit id="sf18a42912f62bf8a">
   <source>Current account avatar</source>
 </trans-unit>
+<trans-unit id="s288fdb61a9ecaffb">
+  <source>Synced to watch</source>
+</trans-unit>
+<trans-unit id="s804676468ea1af74">
+  <source>No credentials to sync</source>
+</trans-unit>
+<trans-unit id="sfa39c2b9c0dd0c02">
+  <source>Failed to sync to watch</source>
+</trans-unit>
+<trans-unit id="s5ddb4ae6884197c4">
+  <source>Sync to Watch</source>
+</trans-unit>
+<trans-unit id="s36c13bb456523146">
+  <source>Synced ✓</source>
+</trans-unit>
+<trans-unit id="s9cd4984f1a746b40">
+  <source>Syncing…</source>
+</trans-unit>
+<trans-unit id="s05073d2537b45d1a">
+  <source>Sync</source>
+</trans-unit>
+<trans-unit id="s0c61be2ad8538497">
+  <source>Send your account credentials to your Wear OS watch.</source>
+</trans-unit>
+<trans-unit id="s93c8f5aaa2f14fb6">
+  <source>Back to login</source>
+</trans-unit>
+<trans-unit id="s59169c4e8fbcdccf">
+  <source>Signing in…</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
