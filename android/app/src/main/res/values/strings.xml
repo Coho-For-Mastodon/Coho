@@ -5,10 +5,19 @@
     <string name="package_name">place.coho.app</string>
     <string name="custom_url_scheme">place.coho.app</string>
     <string name="widget_header">Trending on Mastodon</string>
-    <string name="widget_description">Shows trending hashtags from Mastodon</string>
+    <string name="widget_description">Your Mastodon timeline, notifications, and trending</string>
     <string name="widget_tap_to_refresh">Tap to open Coho</string>
-    <string name="widget_name">Coho Trending</string>
+    <string name="widget_name">Coho</string>
     <string name="widget_posts_today">%s posts today</string>
+    <string name="widget_tab_timeline">Timeline</string>
+    <string name="widget_tab_notifications">Notifications</string>
+    <string name="widget_tab_trending">Trending</string>
+    <string name="widget_sign_in">Sign in to Coho</string>
+    <string name="widget_sign_in_tap">Tap to open the app</string>
+    <string name="widget_no_posts">No posts yet</string>
+    <string name="widget_no_notifications">No notifications</string>
+    <string name="widget_no_trending">No trending tags</string>
+    <string name="widget_tap_refresh">Tap to refresh</string>
 
     <!-- App shortcuts (long-press launcher icon) -->
     <string name="shortcut_home">Home</string>

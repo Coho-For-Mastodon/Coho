@@ -320,9 +320,9 @@ export class AppIndex extends LitElement {
   }
 
   /**
-   * Pushes the current server URL to the native Android widget
+   * Pushes the current server URL and access token to the native Android widget
    * via the WidgetBridge Capacitor plugin, so the widget can
-   * fetch trending data from the correct Mastodon instance.
+   * fetch timeline, notification, and trending data.
    */
   private async syncServerToNativeWidget() {
     try {
@@ -332,7 +332,8 @@ export class AppIndex extends LitElement {
       const { registerPlugin } = await import('@capacitor/core');
       const WidgetBridge = registerPlugin('WidgetBridge');
       const server = localStorage.getItem('server') || 'mastodon.social';
-      await (WidgetBridge as any).setServer({ server });
+      const accessToken = localStorage.getItem('accessToken') || '';
+      await (WidgetBridge as any).setCredentials({ server, accessToken });
     } catch {
       // Widget bridge not available — ignore
     }
