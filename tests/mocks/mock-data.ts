@@ -217,3 +217,26 @@ export const mockTrendingTags = [
     ],
   },
 ];
+
+export const mockEditHistory = [
+  {
+    content: '<p>Welcome to the mocked timeline! (edited)</p>',
+    spoiler_text: '',
+    sensitive: false,
+    created_at: MOCK_TIMESTAMP,
+    account: mockAccount,
+    poll: null,
+    media_attachments: [],
+    emojis: [],
+  },
+  {
+    content: '<p>Welcome to the mocked timeline!</p>',
+    spoiler_text: '',
+    sensitive: false,
+    created_at: MOCK_TIMESTAMP_EARLIER,
+    account: mockAccount,
+    poll: null,
+    media_attachments: [],
+    emojis: [],
+  },
+];

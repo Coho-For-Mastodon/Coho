@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 import {
   mockAccountProfile,
   mockBookmarks,
+  mockEditHistory,
   mockFavorites,
   mockNotifications,
   mockSearchResult,
@@ -81,6 +82,14 @@ export const mastodonHandlers = [
 
   http.get('https://*/api/v1/statuses/:id/reactions', () => {
     return HttpResponse.json([]);
+  }),
+
+  http.get('https://*/api/v1/statuses/:id/history', ({ params }) => {
+    const post = findPostById(params.id as string);
+    if (post) {
+      return HttpResponse.json(mockEditHistory);
+    }
+    return HttpResponse.json({ error: 'Record not found' }, { status: 404 });
   }),
 
   http.get('https://*/api/v1/statuses/:id', ({ params }) => {

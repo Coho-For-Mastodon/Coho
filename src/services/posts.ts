@@ -170,6 +170,29 @@ export async function unmuteConversation(id: string): Promise<Post> {
   return data;
 }
 
+export async function getEditHistory(
+  id: string
+): Promise<import('../mastodon/types/status').StatusEdit[]> {
+  const server = getServer();
+  const accessToken = getAccessToken();
+  const response = await fetch(
+    `https://${server}/api/v1/statuses/${id}/history`,
+    {
+      method: 'GET',
+      headers: new Headers({
+        Authorization: `Bearer ${accessToken}`,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch edit history: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
 export async function getPostDetail(id: string): Promise<Post> {
   const server = getServer();
   const accessToken = getAccessToken();

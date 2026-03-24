@@ -117,6 +117,7 @@ export interface TimelineItemHandlers {
   shareStatus: (tweet: Post | null) => void;
   deleteStatus: () => void;
   initEditStatus: () => void;
+  viewEditHistory: (id: string) => void;
   openPost: () => void;
   openParentPost: () => void;
   openLinkCard: (url: string) => void;
@@ -348,6 +349,19 @@ export function renderRegularTweet(
                 ${msg('Share')}
               </md-menu-item>
               ${
+                state.tweet?.edited_at
+                  ? html`
+                      <md-menu-item
+                        @click="${() =>
+                          handlers.viewEditHistory(state.tweet?.id || '')}"
+                      >
+                        <md-icon slot="prefix" name="time"></md-icon>
+                        ${msg('View edit history')}
+                      </md-menu-item>
+                    `
+                  : null
+              }
+              ${
                 state.canPin
                   ? html`
                       <md-menu-item @click="${() => handlers.togglePin()}">
@@ -437,7 +451,15 @@ export function renderRegularTweet(
 
       ${
         state.tweet?.edited_at
-          ? html`<span class="edited-indicator">${msg('(edited)')}</span>`
+          ? html`<button
+              class="edited-indicator"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                handlers.viewEditHistory(state.tweet?.id || '');
+              }}"
+            >
+              ${msg('(edited)')}
+            </button>`
           : null
       }
 

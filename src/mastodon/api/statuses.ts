@@ -1,6 +1,7 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
 import { Account, Post, ScheduledStatus } from '../types';
+import type { StatusEdit } from '../types/status';
 
 export async function whoBoostedAndFavorited(id: string): Promise<Account[]> {
   const { url } = getClientConfig();
@@ -68,6 +69,21 @@ export async function getStatusSource(
 
   if (!response.ok) {
     throw new Error(`Failed to fetch status source: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+export async function getEditHistory(id: string): Promise<StatusEdit[]> {
+  const { url } = getClientConfig();
+  const response = await apiFetch(
+    `https://${url}/api/v1/statuses/${id}/history`,
+    { method: 'GET' }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch edit history: ${response.status}`);
   }
 
   const data = await response.json();

@@ -385,6 +385,16 @@ export class TimelineItem extends LitElement {
         font-size: var(--md-sys-typescale-label-small-font-size, 11px);
         color: var(--md-sys-color-on-surface-variant, #878792);
         margin-top: 4px;
+        background: none;
+        border: none;
+        padding: 0;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .edited-indicator:hover {
+        text-decoration: underline;
+        color: var(--md-sys-color-primary, var(--sl-color-primary-600));
       }
 
       img[data-src] {
@@ -1286,6 +1296,21 @@ export class TimelineItem extends LitElement {
     );
   }
 
+  async viewEditHistory(id: string) {
+    if (!this._editHistoryDialog) {
+      await import('./post-edit-history-dialog.js');
+      const el = document.createElement('post-edit-history-dialog');
+      this.shadowRoot!.appendChild(el);
+      this._editHistoryDialog =
+        el as import('./post-edit-history-dialog').PostEditHistoryDialog;
+    }
+    this._editHistoryDialog.show(id);
+  }
+
+  private _editHistoryDialog:
+    | import('./post-edit-history-dialog').PostEditHistoryDialog
+    | null = null;
+
   viewSensitive() {
     if (this.tweet) {
       this.tweet.sensitive = false;
@@ -1511,6 +1536,7 @@ export class TimelineItem extends LitElement {
       shareStatus: (tweet: Post | null) => this.shareStatus(tweet),
       deleteStatus: () => this.deleteStatus(),
       initEditStatus: () => this.initEditStatus(),
+      viewEditHistory: (id: string) => this.viewEditHistory(id),
       openPost: () => this.openPost(),
       openParentPost: () => this.openParentPost(),
       openLinkCard: (url: string) => this.openLinkCard(url),
