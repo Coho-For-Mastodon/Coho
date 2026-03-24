@@ -171,6 +171,24 @@ export class AppIndex extends LitElement {
     }
   }
 
+  /**
+   * Fetch server-side user preferences and store them in localStorage
+   * for use by the post composer and other components.
+   */
+  private async syncServerPreferences() {
+    try {
+      const { getServerPreferences } =
+        await import('./mastodon/api/preferences.js');
+      const prefs = await getServerPreferences();
+      if (!prefs) return;
+
+      const { set } = await import('idb-keyval');
+      await set('server-preferences', prefs);
+    } catch (error) {
+      console.error('[App] Failed to sync server preferences', error);
+    }
+  }
+
   firstUpdated() {
     // Check initial authentication state
     this.checkAuthenticationState();
@@ -181,6 +199,9 @@ export class AppIndex extends LitElement {
       this.syncCredentialsToIndexedDB();
 
       this.handleInitTheme();
+
+      // Sync server-side user preferences (default visibility, language, etc.)
+      this.syncServerPreferences();
 
       // Preload data during idle time, then precache critical components.
       // Component precaching waits for data preload to finish to avoid

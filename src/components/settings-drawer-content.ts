@@ -288,6 +288,10 @@ export class SettingsDrawerContent extends LitElement {
     router.navigate('/blocked');
   }
 
+  private _openFollowRequests() {
+    router.navigate('/follow-requests');
+  }
+
   private _openScheduledStatuses() {
     this.dispatchEvent(
       new CustomEvent('open-scheduled-statuses', {
@@ -509,6 +513,23 @@ export class SettingsDrawerContent extends LitElement {
           </div>
           <p class="setting-description">
             ${msg('Review and manage accounts you have muted or blocked.')}
+          </p>
+
+          <md-divider></md-divider>
+
+          <h4>${msg('Follow Requests')}</h4>
+          <div class="setting-row">
+            <md-button
+              variant="text"
+              @click="${() => this._openFollowRequests()}"
+            >
+              ${msg('Manage')}
+            </md-button>
+          </div>
+          <p class="setting-description">
+            ${msg(
+              'Review pending requests from people who want to follow you.'
+            )}
           </p>
 
           <md-divider></md-divider>

@@ -80,3 +80,6 @@ export type {
 
 // Suggestion types
 export type { Suggestion, SuggestionSource } from './suggestion';
+
+// Preferences types
+export type { ServerPreferences } from './preferences';
