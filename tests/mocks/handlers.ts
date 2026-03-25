@@ -2,8 +2,11 @@ import { http, HttpResponse } from 'msw';
 import {
   mockAccountProfile,
   mockBookmarks,
+  mockBlockedAccounts,
   mockEditHistory,
   mockFavorites,
+  mockLookupImportAccount,
+  mockMutedAccounts,
   mockNotifications,
   mockSearchResult,
   mockTimelinePosts,
@@ -296,6 +299,48 @@ export const mastodonHandlers = [
       'reading:expand:media': 'default',
       'reading:expand:spoilers': false,
     });
+  }),
+
+  http.get('https://*/api/v1/blocks', ({ request }) => {
+    const url = new URL(request.url);
+    const maxId = url.searchParams.get('max_id');
+    const all = mockBlockedAccounts;
+    if (maxId) {
+      const idx = all.findIndex((a) => a.id === maxId);
+      return HttpResponse.json(idx >= 0 ? all.slice(idx + 1) : []);
+    }
+    return HttpResponse.json(all);
+  }),
+
+  http.get('https://*/api/v1/mutes', ({ request }) => {
+    const url = new URL(request.url);
+    const maxId = url.searchParams.get('max_id');
+    const all = mockMutedAccounts;
+    if (maxId) {
+      const idx = all.findIndex((a) => a.id === maxId);
+      return HttpResponse.json(idx >= 0 ? all.slice(idx + 1) : []);
+    }
+    return HttpResponse.json(all);
+  }),
+
+  http.get('https://*/api/v1/accounts/lookup', ({ request }) => {
+    const url = new URL(request.url);
+    const acct = url.searchParams.get('acct');
+    if (acct === 'blocked_a@elsewhere') {
+      return HttpResponse.json(mockBlockedAccounts[0]);
+    }
+    if (acct === 'importme@remote.social') {
+      return HttpResponse.json(mockLookupImportAccount);
+    }
+    return HttpResponse.json({ error: 'Record not found' }, { status: 404 });
+  }),
+
+  http.post('https://*/api/v1/accounts/:id/block', () => {
+    return HttpResponse.json(mockBlockedAccounts[0]);
+  }),
+
+  http.post('https://*/api/v1/accounts/:id/mute', () => {
+    return HttpResponse.json(mockMutedAccounts[0]);
   }),
 ];
 

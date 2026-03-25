@@ -1,6 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { msg } from '@lit/localize';
+import { msg, str } from '@lit/localize';
 import { parseEmojis } from '../utils/emoji-parser';
 import type { StatusEdit } from '../mastodon/types/status';
 import { getEditHistory } from '../services/posts';
@@ -202,7 +202,9 @@ export class PostEditHistoryDialog extends LitElement {
             <div class="history-item">
               <div class="version-header">
                 <span class="version-badge">
-                  ${isOriginal ? msg('Original') : msg(`Version ${versionNum}`)}
+                  ${isOriginal
+                    ? msg('Original')
+                    : msg(str`Version ${versionNum}`)}
                 </span>
                 <span class="version-date"
                   >${this.formatDate(version.created_at)}</span

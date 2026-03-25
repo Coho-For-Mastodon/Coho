@@ -23,8 +23,27 @@ export class AppFollowRequests extends LitElement {
   static styles = [
     userListStyles,
     css`
+      main {
+        padding-left: 6em;
+        padding-right: 6em;
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 820px) {
+        main {
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+      }
+
       h2 {
         animation: slideInFromLeft 0.3s ease-in-out;
+        padding-left: 0;
+      }
+
+      ul {
+        padding-left: 0;
+        padding-right: 0;
       }
 
       ul li {
@@ -144,7 +163,7 @@ export class AppFollowRequests extends LitElement {
                   const processing = this._processingIds.has(account.id);
                   return html`
                     <li>
-                      <user-profile .account=${account}></user-profile>
+                      <user-profile list-row .account=${account}></user-profile>
                       <div class="actions">
                         <md-button
                           variant="filled"

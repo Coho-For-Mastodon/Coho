@@ -13,6 +13,8 @@ export class UserProfile extends LitElement {
 
   @property({ type: Boolean }) small: boolean = false;
   @property({ type: Boolean }) boosted: boolean = false;
+  /** Use in flex list rows (blocked/muted): text fills space before trailing actions. */
+  @property({ type: Boolean, attribute: 'list-row' }) listRow: boolean = false;
 
   static styles = [
     css`
@@ -22,12 +24,35 @@ export class UserProfile extends LitElement {
         contain: content;
       }
 
+      :host([list-row]) {
+        flex: 1;
+        min-width: 0;
+        align-self: center;
+        contain: layout style;
+      }
+
+      :host([list-row]) .headerBlock {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+      }
+
+      :host([list-row]) .headerBlock > div {
+        min-width: 0;
+        flex: 1;
+      }
+
       p,
       h4 {
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 196px;
         white-space: nowrap;
+      }
+
+      :host([list-row]) p,
+      :host([list-row]) h4 {
+        max-width: none;
       }
 
       .headerBlock {
@@ -86,8 +111,8 @@ export class UserProfile extends LitElement {
       }
 
       @media (max-width: 500px) {
-        p,
-        h4 {
+        :host(:not([list-row])) p,
+        :host(:not([list-row])) h4 {
           max-width: 40vw;
         }
       }

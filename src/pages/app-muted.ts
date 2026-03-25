@@ -1,7 +1,12 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { localized, msg } from '@lit/localize';
-import { getMutedAccounts, unmuteUser } from '../services/account';
+import { localized, msg, str } from '@lit/localize';
+import {
+  downloadMutedAccountsCsv,
+  fetchAllMutedAccounts,
+  importBlocksOrMutesFromCsv,
+  unmuteUser,
+} from '../services/account';
 import { userListStyles } from '../styles/user-list-styles';
 
 import '../components/md/md-skeleton';
@@ -14,13 +19,49 @@ import type { Account } from '../mastodon/types';
 export class AppMuted extends LitElement {
   @state() accounts: Account[] = [];
   @state() loading = false;
+  @state() private _importing = false;
+  @state() private _importProgress = '';
   @state() private _unmutingIds = new Set<string>();
 
   static styles = [
     userListStyles,
     css`
+      main {
+        padding-left: 6em;
+        padding-right: 6em;
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 820px) {
+        main {
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+      }
+
       h2 {
         animation: slideInFromLeft 0.3s ease-in-out;
+        padding-left: 0;
+      }
+
+      ul {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      .list-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .import-hint {
+        font-size: 0.85rem;
+        color: var(--md-sys-color-on-surface-variant, #878792);
+        margin: 0 0 12px;
+        max-width: none;
       }
 
       ul li {
@@ -29,6 +70,10 @@ export class AppMuted extends LitElement {
         align-items: center;
         justify-content: space-between;
         gap: 8px;
+      }
+
+      ul li md-button {
+        flex-shrink: 0;
       }
     `,
   ];
@@ -40,12 +85,80 @@ export class AppMuted extends LitElement {
   private async _loadMutedAccounts() {
     this.loading = true;
     try {
-      const data = await getMutedAccounts();
-      this.accounts = Array.isArray(data) ? [...data] : [];
+      this.accounts = await fetchAllMutedAccounts();
     } catch (error) {
       console.error('Failed to load muted accounts', error);
     } finally {
       this.loading = false;
+    }
+  }
+
+  private _exportCsv() {
+    downloadMutedAccountsCsv(this.accounts);
+    window.dispatchEvent(
+      new CustomEvent('app-toast', {
+        detail: {
+          message: msg('Exported account list.'),
+          variant: 'success',
+        },
+      })
+    );
+  }
+
+  private _openImportPicker() {
+    const input = this.shadowRoot?.querySelector<HTMLInputElement>(
+      'input[data-csv-import]'
+    );
+    input?.click();
+  }
+
+  private async _onImportFile(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    this._importing = true;
+    this._importProgress = '';
+    try {
+      const text = await file.text();
+      const selfId = localStorage.getItem('currentUserID');
+      const existing = new Set(this.accounts.map((a) => a.id));
+      const result = await importBlocksOrMutesFromCsv('mute', text, {
+        existingAccountIds: existing,
+        selfAccountId: selfId,
+        onProgress: (current, total) => {
+          this._importProgress = total > 0 ? `${current} / ${total}` : '';
+          this.requestUpdate();
+        },
+      });
+      if (result.newAccounts.length > 0) {
+        this.accounts = [...this.accounts, ...result.newAccounts];
+      }
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: msg(
+              str`Import finished: ${result.imported} imported, ${result.skipped} skipped, ${result.failed} failed.`
+            ),
+            variant:
+              result.imported === 0 && result.failed > 0 ? 'error' : 'success',
+          },
+        })
+      );
+    } catch (error) {
+      console.error('CSV import failed', error);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: msg('Import failed. Please try again.'),
+            variant: 'error',
+          },
+        })
+      );
+    } finally {
+      this._importing = false;
+      this._importProgress = '';
     }
   }
 
@@ -80,6 +193,40 @@ export class AppMuted extends LitElement {
 
       <main>
         <h2>${msg('Muted Accounts')}</h2>
+        <p class="import-hint">
+          ${msg(
+            'Export or import a list of account addresses as CSV (one column: Account address). Import resolves each handle on your server and may take a while.'
+          )}
+        </p>
+        <div class="list-actions">
+          <input
+            type="file"
+            accept=".csv,text/csv,text/plain"
+            data-csv-import
+            hidden
+            @change=${this._onImportFile}
+          />
+          <md-button
+            variant="outlined"
+            size="small"
+            ?disabled=${this._importing}
+            @click=${this._exportCsv}
+          >
+            ${msg('Export CSV')}
+          </md-button>
+          <md-button
+            variant="filled"
+            size="small"
+            ?disabled=${this._importing}
+            @click=${this._openImportPicker}
+          >
+            ${this._importing
+              ? this._importProgress
+                ? msg(str`Importing… ${this._importProgress}`)
+                : msg('Importing…')
+              : msg('Import CSV')}
+          </md-button>
+        </div>
         <ul class="scrollbar-hidden">
           ${this.loading && this.accounts.length === 0
             ? Array.from({ length: 6 }, () => {
@@ -106,7 +253,7 @@ export class AppMuted extends LitElement {
               : this.accounts.map((account) => {
                   return html`
                     <li>
-                      <user-profile .account=${account}></user-profile>
+                      <user-profile list-row .account=${account}></user-profile>
                       <md-button
                         variant="text"
                         size="small"

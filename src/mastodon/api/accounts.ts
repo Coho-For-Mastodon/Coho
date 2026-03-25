@@ -158,3 +158,24 @@ export const searchAccounts = async (
   const data = await response.json();
   return data;
 };
+
+/**
+ * Resolve a single handle to an Account (exact lookup, not ranked search).
+ * @see https://docs.joinmastodon.org/methods/accounts/#lookup
+ */
+export const lookupAccountByAcct = async (
+  acct: string
+): Promise<Account | null> => {
+  const { url } = getClientConfig();
+  const response = await apiFetch(
+    `https://${url}/api/v1/accounts/lookup?acct=${encodeURIComponent(acct)}`,
+    { method: 'GET' }
+  );
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Account lookup failed: ${response.status}`);
+  }
+  return response.json() as Promise<Account>;
+};
