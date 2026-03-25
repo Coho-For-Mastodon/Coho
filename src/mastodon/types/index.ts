@@ -83,3 +83,12 @@ export type { Suggestion, SuggestionSource } from './suggestion';
 
 // Preferences types
 export type { ServerPreferences } from './preferences';
+
+// Announcement types
+export type {
+  Announcement,
+  AnnouncementMention,
+  AnnouncementReaction,
+  AnnouncementStatusLink,
+  AnnouncementTag,
+} from './announcement';

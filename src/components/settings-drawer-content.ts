@@ -19,8 +19,10 @@ import './account-settings';
 
 import type { MdToast } from './md/md-toast';
 
+import { parseEmojis } from '../utils/emoji-parser';
 import type { Account } from '../mastodon/types/account';
 import type { Instance } from '../mastodon/types/instance';
+import type { Announcement } from '../mastodon/types/announcement';
 import { router } from '../router/routes';
 
 declare const __APP_VERSION__: string;
@@ -43,6 +45,7 @@ export class SettingsDrawerContent extends LitElement {
   @state() private isAndroid = false;
   @state() private syncingToWatch = false;
   @state() private syncedToWatch = false;
+  @state() private latestAnnouncement: Announcement | null = null;
 
   static styles = css`
     :host {
@@ -165,6 +168,28 @@ export class SettingsDrawerContent extends LitElement {
       color: var(--md-sys-color-on-surface);
     }
 
+    .announcement-date {
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 8px;
+    }
+
+    .announcement-body {
+      line-height: 1.5;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .announcement-body a {
+      color: var(--md-sys-color-primary, var(--sl-color-primary-600));
+    }
+
+    .announcement-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
     .build-info {
       margin-top: 8px;
       padding-bottom: 24px;
@@ -177,6 +202,28 @@ export class SettingsDrawerContent extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.detectPlatform();
+    this.loadLatestAnnouncement();
+  }
+
+  private async loadLatestAnnouncement() {
+    try {
+      const { get } = await import('idb-keyval');
+      const { SERVER_ANNOUNCEMENTS_IDB_KEY } =
+        await import('../mastodon/api/announcements.js');
+      const list = (await get(SERVER_ANNOUNCEMENTS_IDB_KEY)) as
+        | Announcement[]
+        | undefined;
+      if (list?.length) {
+        const sorted = [...list].sort(
+          (a, b) =>
+            new Date(b.published_at).getTime() -
+            new Date(a.published_at).getTime()
+        );
+        this.latestAnnouncement = sorted[0];
+      }
+    } catch {
+      /* ignore */
+    }
   }
 
   private async detectPlatform() {
@@ -290,6 +337,21 @@ export class SettingsDrawerContent extends LitElement {
 
   private _openFollowRequests() {
     router.navigate('/follow-requests');
+  }
+
+  private _openAnnouncements() {
+    router.navigate('/announcements');
+  }
+
+  private _formatAnnouncementDate(iso: string): string {
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(iso));
+    } catch {
+      return iso;
+    }
   }
 
   private _openScheduledStatuses() {
@@ -547,6 +609,36 @@ export class SettingsDrawerContent extends LitElement {
             ${msg('View, reschedule, or cancel queued posts.')}
           </p>
         </md-card>
+
+        <!-- Server Announcement Card -->
+        ${this.latestAnnouncement
+          ? html`
+              <md-card variant="filled">
+                <h3 slot="header">${msg('Server announcements')}</h3>
+
+                <p class="announcement-date">
+                  ${this._formatAnnouncementDate(
+                    this.latestAnnouncement.published_at
+                  )}
+                </p>
+                <div
+                  class="announcement-body"
+                  .innerHTML=${parseEmojis(
+                    this.latestAnnouncement.content,
+                    this.latestAnnouncement.emojis ?? []
+                  )}
+                ></div>
+                <div class="announcement-footer">
+                  <md-button
+                    variant="text"
+                    @click="${() => this._openAnnouncements()}"
+                  >
+                    ${msg('View all')}
+                  </md-button>
+                </div>
+              </md-card>
+            `
+          : nothing}
 
         <!-- Keyboard Shortcuts Card -->
         <md-card variant="filled">

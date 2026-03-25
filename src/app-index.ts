@@ -189,6 +189,19 @@ export class AppIndex extends LitElement {
     }
   }
 
+  /** Cache instance announcements for offline display and faster load. */
+  private async syncServerAnnouncements() {
+    try {
+      const { getAnnouncements, SERVER_ANNOUNCEMENTS_IDB_KEY } =
+        await import('./mastodon/api/announcements.js');
+      const list = await getAnnouncements();
+      const { set } = await import('idb-keyval');
+      await set(SERVER_ANNOUNCEMENTS_IDB_KEY, list);
+    } catch (error) {
+      console.error('[App] Failed to sync server announcements', error);
+    }
+  }
+
   firstUpdated() {
     // Check initial authentication state
     this.checkAuthenticationState();
@@ -202,6 +215,8 @@ export class AppIndex extends LitElement {
 
       // Sync server-side user preferences (default visibility, language, etc.)
       this.syncServerPreferences();
+
+      this.syncServerAnnouncements();
 
       // Preload data during idle time, then precache critical components.
       // Component precaching waits for data preload to finish to avoid

@@ -1934,6 +1934,78 @@
 <trans-unit id="s1210a6c6ad65d97b">
   <source>Vibrate on actions like likes, boosts, and publishing.</source>
 </trans-unit>
+<trans-unit id="scdf74b34332eaf3d">
+  <source>Edit history</source>
+</trans-unit>
+<trans-unit id="s7af16ebfc7bccfe5">
+  <source>No edit history available.</source>
+</trans-unit>
+<trans-unit id="s06f6c6f99db6b552">
+  <source>Original</source>
+</trans-unit>
+<trans-unit id="s358e08de4fbebf51">
+  <source>Version <x id="0" equiv-text="${versionNum}"/></source>
+</trans-unit>
+<trans-unit id="s0801f2a8114692af">
+  <source>Sensitive</source>
+</trans-unit>
+<trans-unit id="s6f4c4fce2e03e1d0">
+  <source>Review pending requests from people who want to follow you.</source>
+</trans-unit>
+<trans-unit id="s0e38e1fef7b4e2b4">
+  <source>View edit history</source>
+</trans-unit>
+<trans-unit id="sbcae6b4673c35110">
+  <source>Failed to authorize follow request.</source>
+</trans-unit>
+<trans-unit id="s422dcc81f722ef06">
+  <source>Failed to reject follow request.</source>
+</trans-unit>
+<trans-unit id="se54d7853a7526eae">
+  <source>No pending follow requests.</source>
+</trans-unit>
+<trans-unit id="s1712cf608ea8a507">
+  <source>Exported account list.</source>
+</trans-unit>
+<trans-unit id="s768b65ec1e907de3">
+  <source>Import finished: <x id="0" equiv-text="${result.imported}"/> imported, <x id="1" equiv-text="${result.skipped}"/> skipped, <x id="2" equiv-text="${result.failed}"/> failed.</source>
+</trans-unit>
+<trans-unit id="s2dcb9d30da3783e2">
+  <source>Import failed. Please try again.</source>
+</trans-unit>
+<trans-unit id="sdc550810808f6dc7">
+  <source>Export or import a list of account addresses as CSV (one column: Account address). Import resolves each handle on your server and may take a while.</source>
+</trans-unit>
+<trans-unit id="s8b409dc1f261b173">
+  <source>Export CSV</source>
+</trans-unit>
+<trans-unit id="saaab7315866aa324">
+  <source>Importing… <x id="0" equiv-text="${this._importProgress}"/></source>
+</trans-unit>
+<trans-unit id="s99d05b52dd4b3346">
+  <source>Importing…</source>
+</trans-unit>
+<trans-unit id="s147a601e02e7abe4">
+  <source>Import CSV</source>
+</trans-unit>
+<trans-unit id="s81b134d8e31948ba">
+  <source>Server announcements</source>
+</trans-unit>
+<trans-unit id="scfd940bdead89c80">
+  <source>Could not dismiss announcement.</source>
+</trans-unit>
+<trans-unit id="sebd5b231818bbfa8">
+  <source>No announcements from your server right now.</source>
+</trans-unit>
+<trans-unit id="s40044a467a880f82">
+  <source>Unread</source>
+</trans-unit>
+<trans-unit id="saf439b4c85cb1e19">
+  <source>…</source>
+</trans-unit>
+<trans-unit id="sc41426622aab8b8b">
+  <source>View all</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
