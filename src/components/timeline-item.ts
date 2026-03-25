@@ -1450,6 +1450,34 @@ export class TimelineItem extends LitElement {
     );
   }
 
+  async blockDomain(domain: string) {
+    if (!domain) return;
+
+    try {
+      const { blockDomain } = await import('../mastodon/api/domain-blocks.js');
+      await blockDomain(domain);
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: `Blocked domain ${domain}`,
+            variant: 'success',
+          },
+        })
+      );
+    } catch (error) {
+      console.error('Failed to block domain', error);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: `Failed to block domain ${domain}`,
+            variant: 'error',
+          },
+        })
+      );
+    }
+  }
+
   reportUser(accountId: string, accountAcct: string, statusId?: string) {
     if (!accountId) return;
 
@@ -1548,6 +1576,7 @@ export class TimelineItem extends LitElement {
       showThread: () => this.showThread(),
       muteUser: (accountId: string) => this.muteUser(accountId),
       blockUser: (accountId: string) => this.blockUser(accountId),
+      blockDomain: (domain: string) => this.blockDomain(domain),
       reportUser: (accountId: string, accountAcct: string, statusId?: string) =>
         this.reportUser(accountId, accountAcct, statusId),
     };

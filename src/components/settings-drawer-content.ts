@@ -60,8 +60,8 @@ export class SettingsDrawerContent extends LitElement {
     }
 
     md-card md-divider {
-      margin-top: 16px;
-      margin-bottom: 16px;
+      margin-top: 20px;
+      margin-bottom: 20px;
     }
 
     .profile-inner {
@@ -116,10 +116,17 @@ export class SettingsDrawerContent extends LitElement {
     }
 
     .setting-description {
-      margin-top: 4px;
+      margin-top: 6px;
       margin-bottom: 0;
       font-size: var(--md-sys-typescale-body-small-font-size);
       color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .setting-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
     }
 
     .instance-img {
@@ -333,6 +340,10 @@ export class SettingsDrawerContent extends LitElement {
 
   private _openBlocked() {
     router.navigate('/blocked');
+  }
+
+  private _openDomainBlocks() {
+    router.navigate('/domain-blocks');
   }
 
   private _openFollowRequests() {
@@ -568,14 +579,16 @@ export class SettingsDrawerContent extends LitElement {
 
           <md-divider></md-divider>
 
-          <h4>${msg('Muted & Blocked Accounts')}</h4>
           <div class="setting-row">
-            <md-button variant="text" @click="${() => this._openMuted()}">
-              ${msg('Muted')}
-            </md-button>
-            <md-button variant="text" @click="${() => this._openBlocked()}">
-              ${msg('Blocked')}
-            </md-button>
+            <h4>${msg('Muted & Blocked Accounts')}</h4>
+            <div class="setting-actions">
+              <md-button variant="text" @click="${() => this._openMuted()}">
+                ${msg('Muted')}
+              </md-button>
+              <md-button variant="text" @click="${() => this._openBlocked()}">
+                ${msg('Blocked')}
+              </md-button>
+            </div>
           </div>
           <p class="setting-description">
             ${msg('Review and manage accounts you have muted or blocked.')}
@@ -583,8 +596,25 @@ export class SettingsDrawerContent extends LitElement {
 
           <md-divider></md-divider>
 
-          <h4>${msg('Follow Requests')}</h4>
           <div class="setting-row">
+            <h4>${msg('Blocked Domains')}</h4>
+            <md-button
+              variant="text"
+              @click="${() => this._openDomainBlocks()}"
+            >
+              ${msg('Manage')}
+            </md-button>
+          </div>
+          <p class="setting-description">
+            ${msg(
+              'Block entire servers to hide all content from those domains.'
+            )}
+          </p>
+
+          <md-divider></md-divider>
+
+          <div class="setting-row">
+            <h4>${msg('Follow Requests')}</h4>
             <md-button
               variant="text"
               @click="${() => this._openFollowRequests()}"
@@ -600,8 +630,8 @@ export class SettingsDrawerContent extends LitElement {
 
           <md-divider></md-divider>
 
-          <h4>${msg('Followed Hashtags')}</h4>
           <div class="setting-row">
+            <h4>${msg('Followed Hashtags')}</h4>
             <md-button
               variant="text"
               @click="${() => this._openFollowedHashtags()}"

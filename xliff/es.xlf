@@ -2006,6 +2006,45 @@
 <trans-unit id="sc41426622aab8b8b">
   <source>View all</source>
 </trans-unit>
+<trans-unit id="sbc939600de149de2">
+  <source>Blocked Domains</source>
+</trans-unit>
+<trans-unit id="s129d211032cb48dc">
+  <source>Block entire servers to hide all content from those domains.</source>
+</trans-unit>
+<trans-unit id="s79a80352fbc52976">
+  <source>Followed Hashtags</source>
+</trans-unit>
+<trans-unit id="s45dcd1e5c602a371">
+  <source>Hashtags you follow appear in your home timeline.</source>
+</trans-unit>
+<trans-unit id="s99c2b6afffda35c0">
+  <source>Block domain <x id="0" equiv-text="${state.tweet?.account.acct?.split('@')[1]}"/></source>
+</trans-unit>
+<trans-unit id="s1efb5caef274c1e9">
+  <source>Exported domain block list.</source>
+</trans-unit>
+<trans-unit id="sd5418b79c4c93eec">
+  <source>Failed to unblock domain. Please try again.</source>
+</trans-unit>
+<trans-unit id="s9dbec9b5bad9ddfd">
+  <source>Export or import a list of blocked domains as CSV. Blocking a domain hides all content from that server.</source>
+</trans-unit>
+<trans-unit id="s51b0619017c1a577">
+  <source>No blocked domains.</source>
+</trans-unit>
+<trans-unit id="saee78fdad4eb79ef">
+  <source>You are not following any hashtags.</source>
+</trans-unit>
+<trans-unit id="s30e732532eecc809">
+  <source>Failed to unfollow hashtag.</source>
+</trans-unit>
+<trans-unit id="sf158af9c0c6e4e84">
+  <source>Failed to follow hashtag.</source>
+</trans-unit>
+<trans-unit id="s7f6c9aa6ca96b7c7">
+  <source>Unfollow</source>
+</trans-unit>
 </body>
 </file>
 </xliff>

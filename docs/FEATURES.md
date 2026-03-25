@@ -22,7 +22,7 @@ Coho covers the core post lifecycle (create, edit, delete, boost, favourite, boo
 | Notification Preferences UI         | Medium   | ✅ Implemented |
 | Preferences Sync                    | Medium   | ✅ Implemented |
 | Audio Player                        | Medium   | ⚠️ Partial     |
-| Domain Blocks                       | Medium   | ❌ Missing     |
+| Domain Blocks                       | Medium   | ✅ Implemented |
 | Featured Hashtags                   | Medium   | ❌ Missing     |
 
 ---
@@ -125,19 +125,19 @@ Audio attachments render using native `<audio controls>` in the media carousel a
 
 **Remaining polish:** A custom styled audio player with waveform visualization and playback progress persistence would improve the experience, but basic playback works today.
 
+### 17. Domain Blocks
+
+View, block, and unblock entire instance domains. Management page with CSV export/import accessible from settings. "Block domain" action available in post context menus for remote accounts.
+
+**Key files:** `src/mastodon/api/domain-blocks.ts`, `src/pages/app-domain-blocks.ts`, `src/components/timeline-renderers.ts`, `src/components/timeline-item.ts`
+
 ---
 
 ## Remaining Work
 
 ### Medium Priority -- Polish and completeness
 
-#### 1. Domain Blocks
-
-**Current state:** Only a `domain_blocking` type field exists in the account types. No API calls.
-
-**What's needed:** `GET/POST/DELETE /api/v1/domain_blocks`. UI to view blocked domains and block/unblock entire instances (e.g., from a post or profile context menu).
-
-#### 2. Featured Hashtags
+#### 1. Featured Hashtags
 
 **Current state:** No references in `src/`.
 

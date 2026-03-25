@@ -129,6 +129,7 @@ export interface TimelineItemHandlers {
   showThread: () => void;
   muteUser: (accountId: string) => void;
   blockUser: (accountId: string) => void;
+  blockDomain: (domain: string) => void;
   reportUser: (
     accountId: string,
     accountAcct: string,
@@ -409,6 +410,21 @@ export function renderRegularTweet(
                         <md-icon slot="prefix" name="ban"></md-icon>
                         ${msg(str`Block @${state.tweet?.account.acct}`)}
                       </md-menu-item>
+                      ${state.tweet?.account.acct?.includes('@')
+                        ? html`
+                            <md-menu-item
+                              @click="${() =>
+                                handlers.blockDomain(
+                                  state.tweet?.account.acct?.split('@')[1] || ''
+                                )}"
+                            >
+                              <md-icon slot="prefix" name="ban"></md-icon>
+                              ${msg(
+                                str`Block domain ${state.tweet?.account.acct?.split('@')[1]}`
+                              )}
+                            </md-menu-item>
+                          `
+                        : null}
                       <md-menu-item
                         @click="${() =>
                           handlers.reportUser(
@@ -824,6 +840,23 @@ export function renderReblog(
                     <md-icon slot="prefix" name="ban"></md-icon>
                     ${msg(str`Block @${state.tweet?.reblog?.account.acct}`)}
                   </md-menu-item>
+                  ${state.tweet?.reblog?.account.acct?.includes('@')
+                    ? html`
+                        <md-menu-item
+                          @click="${() =>
+                            handlers.blockDomain(
+                              state.tweet?.reblog?.account.acct?.split(
+                                '@'
+                              )[1] || ''
+                            )}"
+                        >
+                          <md-icon slot="prefix" name="ban"></md-icon>
+                          ${msg(
+                            str`Block domain ${state.tweet?.reblog?.account.acct?.split('@')[1]}`
+                          )}
+                        </md-menu-item>
+                      `
+                    : null}
                   <md-menu-item
                     @click="${() =>
                       handlers.reportUser(
