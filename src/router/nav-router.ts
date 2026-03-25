@@ -238,12 +238,12 @@ export class Router extends EventTarget {
 
     const moveFocusToMain = () => {
       requestAnimationFrame(() => {
-        const main = document.querySelector('main');
-        if (main) {
-          if (!main.hasAttribute('tabindex')) {
-            main.setAttribute('tabindex', '-1');
+        const target = document.querySelector('main, section, [role="main"]');
+        if (target) {
+          if (!target.hasAttribute('tabindex')) {
+            target.setAttribute('tabindex', '-1');
           }
-          main.focus({ preventScroll: true });
+          (target as HTMLElement).focus({ preventScroll: true });
         }
       });
     };

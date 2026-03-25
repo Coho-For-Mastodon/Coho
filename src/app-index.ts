@@ -397,12 +397,12 @@ export class AppIndex extends LitElement {
         class="skip-link"
         @click="${(e: Event) => {
           e.preventDefault();
-          const main = document.querySelector('main');
-          if (main) {
-            if (!main.hasAttribute('tabindex')) {
-              main.setAttribute('tabindex', '-1');
+          const target = document.querySelector('main, section, [role="main"]');
+          if (target) {
+            if (!target.hasAttribute('tabindex')) {
+              target.setAttribute('tabindex', '-1');
             }
-            main.focus();
+            (target as HTMLElement).focus();
           }
         }}"
         >${'Skip to main content'}</a

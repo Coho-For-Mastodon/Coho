@@ -1467,6 +1467,7 @@ export class Notifications extends LitElement {
 
       <md-segmented-button
         .value="${this.activeSegment}"
+        aria-label="${msg('Notification filters')}"
         @segment-change="${(e: CustomEvent) =>
           (this.activeSegment = e.detail.value)}"
       >

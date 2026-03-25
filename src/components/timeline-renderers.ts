@@ -336,7 +336,7 @@ export function renderRegularTweet(
 
         <div class="actions-right">
           <md-dropdown placement="bottom-end">
-            <md-icon-button slot="trigger" name="ellipsis-vertical" label="More options" size="small"></md-icon-button>
+            <md-icon-button slot="trigger" name="ellipsis-vertical" label="${msg('More options')}" size="small"></md-icon-button>
             <md-menu>
               <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null, state.tweet?.id)}" title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}>
                 <md-icon slot="prefix" name="language"></md-icon>
@@ -525,6 +525,7 @@ export function renderRegularTweet(
                 pill
                 size="small"
                 style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+                aria-label="${msg('Reply')}"
                 @click="${() => handlers.replies()}"
               >
                 <md-icon
@@ -683,6 +684,10 @@ export function renderThreadContinuation(
                 : 'var(--md-sys-color-on-surface-variant)'}"
               pill
               size="small"
+              aria-pressed="${threadPost.bookmarked ? 'true' : 'false'}"
+              aria-label="${threadPost.bookmarked
+                ? msg('Remove bookmark')
+                : msg('Bookmark')}"
               @click="${(e: Event) => {
                 e.stopPropagation();
                 handlers.bookmark(threadPost.id);
@@ -697,6 +702,10 @@ export function renderThreadContinuation(
                     : 'var(--md-sys-color-on-surface-variant)'}"
                   pill
                   size="small"
+                  aria-pressed="${threadPost.favourited ? 'true' : 'false'}"
+                  aria-label="${threadPost.favourited
+                    ? msg('Unfavourite')
+                    : msg('Favourite')}"
                   @click="${(e: Event) => {
                     e.stopPropagation();
                     handlers.favorite(threadPost.id);
@@ -713,6 +722,10 @@ export function renderThreadContinuation(
                     : 'var(--md-sys-color-on-surface-variant)'}"
                   pill
                   size="small"
+                  aria-pressed="${threadPost.reblogged ? 'true' : 'false'}"
+                  aria-label="${threadPost.reblogged
+                    ? msg('Undo boost')
+                    : msg('Boost')}"
                   @click="${(e: Event) => {
                     e.stopPropagation();
                     handlers.reblog(threadPost.id);
@@ -793,7 +806,7 @@ export function renderReblog(
           <md-icon-button
             slot="trigger"
             name="ellipsis-vertical"
-            label="More options"
+            label="${msg('More options')}"
             size="small"
           ></md-icon-button>
           <md-menu>

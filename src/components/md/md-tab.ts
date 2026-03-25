@@ -49,7 +49,7 @@ export class MdTab extends LitElement {
         min-width: 0;
       }
 
-      button {
+      .tab-inner {
         all: unset;
         display: flex;
         flex-direction: column;
@@ -81,8 +81,9 @@ export class MdTab extends LitElement {
       }
 
       /* Vertical orientation (side nav) - stacked icon/label layout like MD3 nav rail */
-      :host([data-orientation='vertical']) button,
-      :host([data-orientation='horizontal'][data-placement='bottom']) button {
+      :host([data-orientation='vertical']) .tab-inner,
+      :host([data-orientation='horizontal'][data-placement='bottom'])
+        .tab-inner {
         flex-direction: column;
         justify-content: center;
         align-items: center;
@@ -152,7 +153,7 @@ export class MdTab extends LitElement {
       }
 
       /* Active state */
-      :host([active]) button {
+      :host([active]) .tab-inner {
         color: var(--md-sys-color-primary, var(--sl-color-primary-600));
       }
 
@@ -162,7 +163,7 @@ export class MdTab extends LitElement {
       }
 
       /* Disabled state */
-      :host([disabled]) button {
+      :host([disabled]) .tab-inner {
         color: var(--md-sys-color-on-surface, var(--sl-color-neutral-400));
         opacity: 0.38;
         cursor: not-allowed;
@@ -170,7 +171,7 @@ export class MdTab extends LitElement {
       }
 
       /* Hover overlay */
-      button::before {
+      .tab-inner::before {
         content: '';
         position: absolute;
         inset: 0;
@@ -181,24 +182,24 @@ export class MdTab extends LitElement {
         border-radius: inherit;
       }
 
-      /* Only show button hover overlay for horizontal tabs */
-      :host(:not([data-orientation='vertical'])) button:hover::before {
+      /* Only show hover overlay for horizontal tabs */
+      :host(:not([data-orientation='vertical'])) .tab-inner:hover::before {
         opacity: 0.08;
       }
 
-      :host(:not([data-orientation='vertical'])) button:active::before {
+      :host(:not([data-orientation='vertical'])) .tab-inner:active::before {
         opacity: 0.12;
       }
 
-      /* Disable button overlay for vertical tabs - hover is on icon-container instead */
-      :host([data-orientation='vertical']) button::before,
+      /* Disable overlay for vertical tabs - hover is on icon-container instead */
+      :host([data-orientation='vertical']) .tab-inner::before,
       :host([data-orientation='horizontal'][data-placement='bottom'])
-        button::before {
+        .tab-inner::before {
         display: none;
       }
 
       /* Focus visible ring */
-      :host(:focus-visible) button::after {
+      :host(:focus-visible) .tab-inner::after {
         content: '';
         position: absolute;
         inset: 4px;
@@ -247,10 +248,10 @@ export class MdTab extends LitElement {
         display: none;
       }
 
-      /* Vertical active state - handled by icon-container pill, no full button background */
-      :host([active][data-orientation='vertical']) button,
+      /* Vertical active state - handled by icon-container pill, no full background */
+      :host([active][data-orientation='vertical']) .tab-inner,
       :host([active][data-orientation='horizontal'][data-placement='bottom'])
-        button {
+        .tab-inner {
         background: transparent;
       }
 
@@ -261,7 +262,7 @@ export class MdTab extends LitElement {
 
       /* Mobile - force bottom nav styling for horizontal tabs */
       @media (max-width: 820px) {
-        :host([data-orientation='horizontal']) button {
+        :host([data-orientation='horizontal']) .tab-inner {
           flex-direction: column;
           justify-content: center;
           align-items: center;
@@ -306,7 +307,7 @@ export class MdTab extends LitElement {
           );
         }
 
-        :host([data-orientation='horizontal']) button::before {
+        :host([data-orientation='horizontal']) .tab-inner::before {
           display: none;
         }
 
@@ -314,25 +315,25 @@ export class MdTab extends LitElement {
           display: none;
         }
 
-        :host([active][data-orientation='horizontal']) button {
+        :host([active][data-orientation='horizontal']) .tab-inner {
           background: transparent;
         }
       }
 
       /* Dark mode */
       @media (prefers-color-scheme: dark) {
-        button {
+        .tab-inner {
           color: var(
             --md-sys-color-on-surface-variant,
             var(--sl-color-neutral-400)
           );
         }
 
-        :host([active]) button {
+        :host([active]) .tab-inner {
           color: var(--md-sys-color-primary, var(--sl-color-primary-600));
         }
 
-        :host([disabled]) button {
+        :host([disabled]) .tab-inner {
           color: var(--md-sys-color-on-surface, var(--sl-color-neutral-600));
         }
       }
@@ -416,7 +417,7 @@ export class MdTab extends LitElement {
 
   render() {
     return html`
-      <button aria-hidden="true" tabindex="-1" @click="${this._handleClick}">
+      <button class="tab-inner" tabindex="-1" @click="${this._handleClick}">
         <span class="icon-container">
           <slot name="icon"></slot>
         </span>

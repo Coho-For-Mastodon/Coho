@@ -888,6 +888,7 @@ export class SearchPage extends LitElement {
 
         <md-segmented-button
           .value="${this.activeSegment}"
+          aria-label="${msg('Search categories')}"
           @segment-change="${this.handleSegmentChange}"
         >
           <md-segment value="trending">${msg('Trending')}</md-segment>

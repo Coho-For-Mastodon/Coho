@@ -429,6 +429,8 @@ export const templates = {
   s133ae7a2e42ce76e: `Schedule post`,
   sf5952f51e4c2435a: `Manage scheduled posts`,
   s2fa1fff378499ed5: str`Will publish on ${0}`,
+  s0621fbc662f668f2: `Remove attachment`,
+  s9491c05a7ecf766e: `Edit attachment`,
   s2859729711f48280: `Schedule reply`,
   s3b99edc962b693e5: `Posted!`,
   sb6c0ebd56d0e2486: `Publishing...`,

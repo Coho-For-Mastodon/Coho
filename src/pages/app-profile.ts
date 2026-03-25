@@ -1703,6 +1703,7 @@ export class AppProfile extends LitElement {
             : html`
                 <md-segmented-button
                   .value="${this.activeSegment}"
+                  aria-label="${msg('Profile content')}"
                   @segment-change="${(e: CustomEvent) =>
                     this.handleSegmentChange(e)}"
                 >
