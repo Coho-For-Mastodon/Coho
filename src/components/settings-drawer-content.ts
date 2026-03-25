@@ -339,6 +339,10 @@ export class SettingsDrawerContent extends LitElement {
     router.navigate('/follow-requests');
   }
 
+  private _openFollowedHashtags() {
+    router.navigate('/followed-hashtags');
+  }
+
   private _openAnnouncements() {
     router.navigate('/announcements');
   }
@@ -592,6 +596,21 @@ export class SettingsDrawerContent extends LitElement {
             ${msg(
               'Review pending requests from people who want to follow you.'
             )}
+          </p>
+
+          <md-divider></md-divider>
+
+          <h4>${msg('Followed Hashtags')}</h4>
+          <div class="setting-row">
+            <md-button
+              variant="text"
+              @click="${() => this._openFollowedHashtags()}"
+            >
+              ${msg('Manage')}
+            </md-button>
+          </div>
+          <p class="setting-description">
+            ${msg('Hashtags you follow appear in your home timeline.')}
           </p>
 
           <md-divider></md-divider>

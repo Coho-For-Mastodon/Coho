@@ -121,6 +121,12 @@ const routes: Route<TemplateResult>[] = [
     render: () => html`<app-hashtags></app-hashtags>`,
   },
   {
+    path: '/followed-hashtags',
+    title: 'followed hashtags',
+    plugins: [lazy(() => import('../pages/app-followed-hashtags.js'))],
+    render: () => html`<app-followed-hashtags></app-followed-hashtags>`,
+  },
+  {
     path: '/home/post/:id',
     title: 'post',
     plugins: [lazy(() => import('../pages/post-detail.js'))],

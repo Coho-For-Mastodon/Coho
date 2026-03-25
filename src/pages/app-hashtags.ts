@@ -1,14 +1,20 @@
-import { LitElement, html, css, PropertyValueMap } from 'lit';
+import { LitElement, html, css, nothing, PropertyValueMap } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { getHashtagTimeline } from '../services/timeline';
+import { getTag, followTag, unfollowTag } from '../mastodon/api/tags';
 import type { Post } from '../interfaces/Post';
 import '../components/post-detail-dialog';
+import '../components/md/md-button';
 import type { PostDetailDialog } from '../components/post-detail-dialog';
 
+@localized()
 @customElement('app-hashtags')
 export class AppHashtags extends LitElement {
   @state() data: Post[] | undefined;
   @state() tag: string | null | undefined;
+  @state() private _following: boolean | null = null;
+  @state() private _toggling = false;
 
   @query('post-detail-dialog') private postDetailDialog!: PostDetailDialog;
 
@@ -27,26 +33,37 @@ export class AppHashtags extends LitElement {
         display: flex;
         flex-direction: column;
         margin-top: 12px;
-        /* margin-left: 20vw; */
         align-items: center;
-        /* margin-right: 20vw; */
         max-width: var(--layout-max-width, 1200px);
         margin-left: auto;
         margin-right: auto;
       }
 
+      .tag-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        max-width: 600px;
+        margin-bottom: 8px;
+      }
+
+      .tag-header h3 {
+        flex: 1;
+        margin: 0;
+      }
+
       app-timeline {
         flex: 1;
         overflow: hidden;
-
         width: 100%;
         max-width: 600px;
       }
 
       @media (max-width: 820px) {
         main {
-          padding-left: 0;
-          padding-right: 0;
+          padding-left: 12px;
+          padding-right: 12px;
         }
       }
     `,
@@ -55,19 +72,51 @@ export class AppHashtags extends LitElement {
   protected async firstUpdated(
     _changedProperties: PropertyValueMap<unknown> | Map<PropertyKey, unknown>
   ) {
-    // get tag from url
     const params = new URLSearchParams(window.location.search);
     const tag = params.get('tag');
 
     this.tag = tag;
 
     if (tag) {
-      // get hashtag data
-      const hashtagData = await getHashtagTimeline(tag);
-
-      console.log('hashtagData', hashtagData);
-
+      const [hashtagData] = await Promise.all([
+        getHashtagTimeline(tag),
+        this._loadFollowState(tag),
+      ]);
       this.data = hashtagData;
+    }
+  }
+
+  private async _loadFollowState(tag: string) {
+    try {
+      const info = await getTag(tag);
+      this._following = info.following ?? false;
+    } catch {
+      this._following = null;
+    }
+  }
+
+  private async _toggleFollow() {
+    if (!this.tag || this._following === null) return;
+    this._toggling = true;
+    try {
+      const result = this._following
+        ? await unfollowTag(this.tag)
+        : await followTag(this.tag);
+      this._following = result.following ?? !this._following;
+    } catch (error) {
+      console.error('Failed to toggle tag follow', error);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: this._following
+              ? msg('Failed to unfollow hashtag.')
+              : msg('Failed to follow hashtag.'),
+            variant: 'error',
+          },
+        })
+      );
+    } finally {
+      this._toggling = false;
     }
   }
 
@@ -80,7 +129,25 @@ export class AppHashtags extends LitElement {
       <app-header ?enableBack=${true}></app-header>
 
       <main>
-        <h3>${this.tag ? `#${this.tag}` : ''}</h3>
+        <div class="tag-header">
+          <h3>${this.tag ? `#${this.tag}` : ''}</h3>
+          ${this._following !== null
+            ? html`
+                <md-button
+                  variant=${this._following ? 'outlined' : 'filled'}
+                  size="small"
+                  ?disabled=${this._toggling}
+                  @click=${() => this._toggleFollow()}
+                >
+                  ${this._toggling
+                    ? msg('...')
+                    : this._following
+                      ? msg('Unfollow')
+                      : msg('Follow')}
+                </md-button>
+              `
+            : nothing}
+        </div>
 
         <app-timeline
           .data=${this.data}

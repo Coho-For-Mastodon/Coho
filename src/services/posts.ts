@@ -8,11 +8,11 @@ import { MediaAttachment } from '../types/interfaces/MediaAttachment';
 const getServer = () => localStorage.getItem('server') || '';
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
 
-export async function whoBoostedAndFavorited(id: string): Promise<Account[]> {
+export async function getFavouritedBy(id: string): Promise<Account[]> {
   const server = getServer();
   const accessToken = getAccessToken();
   const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/reactions`,
+    `https://${server}/api/v1/statuses/${id}/favourited_by`,
     {
       method: 'GET',
       headers: new Headers({
@@ -20,9 +20,22 @@ export async function whoBoostedAndFavorited(id: string): Promise<Account[]> {
       }),
     }
   );
+  return response.json();
+}
 
-  const data = await response.json();
-  return data;
+export async function getRebloggedBy(id: string): Promise<Account[]> {
+  const server = getServer();
+  const accessToken = getAccessToken();
+  const response = await fetch(
+    `https://${server}/api/v1/statuses/${id}/reblogged_by`,
+    {
+      method: 'GET',
+      headers: new Headers({
+        Authorization: `Bearer ${accessToken}`,
+      }),
+    }
+  );
+  return response.json();
 }
 
 export interface EditPostParams {

@@ -3,15 +3,22 @@ import { apiFetch } from '../../utils/api-client';
 import { Account, Post, ScheduledStatus } from '../types';
 import type { StatusEdit } from '../types/status';
 
-export async function whoBoostedAndFavorited(id: string): Promise<Account[]> {
+export async function getFavouritedBy(id: string): Promise<Account[]> {
   const { url } = getClientConfig();
   const response = await apiFetch(
-    `https://${url}/api/v1/statuses/${id}/reactions`,
+    `https://${url}/api/v1/statuses/${id}/favourited_by`,
     { method: 'GET' }
   );
+  return response.json();
+}
 
-  const data = await response.json();
-  return data;
+export async function getRebloggedBy(id: string): Promise<Account[]> {
+  const { url } = getClientConfig();
+  const response = await apiFetch(
+    `https://${url}/api/v1/statuses/${id}/reblogged_by`,
+    { method: 'GET' }
+  );
+  return response.json();
 }
 
 export interface EditPostParams {

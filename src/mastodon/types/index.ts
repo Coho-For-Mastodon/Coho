@@ -92,3 +92,6 @@ export type {
   AnnouncementStatusLink,
   AnnouncementTag,
 } from './announcement';
+
+// Tag types (full entity with following state)
+export type { TagInfo, TagHistoryEntry } from './tag';
