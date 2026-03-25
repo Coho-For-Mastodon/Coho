@@ -73,9 +73,17 @@ export class ImageCarousel extends LitElement {
         opacity: 1;
       }
 
-      video {
+      .video-container video {
+        position: relative;
         width: 100%;
         border-radius: var(--md-sys-shape-corner-medium);
+        z-index: 1;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      .video-container video.loaded {
+        opacity: 1;
       }
 
       audio {
@@ -261,6 +269,13 @@ export class ImageCarousel extends LitElement {
     }, 100);
   }
 
+  private _handleVideoLoaded(e: Event) {
+    const video = e.target as HTMLVideoElement;
+    setTimeout(() => {
+      video.classList.add('loaded');
+    }, 100);
+  }
+
   async openInBox(image: MediaAttachment, event?: MouseEvent) {
     console.log('show image', image);
     const target = event?.currentTarget as HTMLElement | null;
@@ -314,15 +329,48 @@ export class ImageCarousel extends LitElement {
               </div>
             `;
           } else if (image.type === 'video') {
+            const style = this.getImageStyle(image);
+            const blurhashUrl = this.blurhashUrls.get(image.id);
             return html`
-              <div>
-                <video controls src="${image.url}"></video>
+              <div class="image-container video-container" style="${style}">
+                ${blurhashUrl
+                  ? html`<img
+                      class="blurhash-canvas"
+                      src="${blurhashUrl}"
+                      aria-hidden="true"
+                    />`
+                  : null}
+                <video
+                  controls
+                  preload="metadata"
+                  poster="${image.preview_url}"
+                  src="${image.url}"
+                  @loadeddata="${this._handleVideoLoaded}"
+                ></video>
               </div>
             `;
           } else if (image.type === 'gifv') {
+            const style = this.getImageStyle(image);
+            const blurhashUrl = this.blurhashUrls.get(image.id);
             return html`
-              <div>
-                <video autoplay loop src="${image.url}"></video>
+              <div class="image-container video-container" style="${style}">
+                ${blurhashUrl
+                  ? html`<img
+                      class="blurhash-canvas"
+                      src="${blurhashUrl}"
+                      aria-hidden="true"
+                    />`
+                  : null}
+                <video
+                  autoplay
+                  loop
+                  muted
+                  playsinline
+                  preload="metadata"
+                  poster="${image.preview_url}"
+                  src="${image.url}"
+                  @loadeddata="${this._handleVideoLoaded}"
+                ></video>
               </div>
             `;
           } else if (image.type === 'audio') {
