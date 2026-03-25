@@ -114,12 +114,27 @@ export class ImageCarousel extends LitElement {
       #list::-webkit-scrollbar {
         display: none;
       }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
     `,
   ];
 
   firstUpdated() {
     this.addEventListener('keydown', this._handleKeydown);
     this.setAttribute('tabindex', '0');
+    this.setAttribute('role', 'region');
+    this.setAttribute('aria-roledescription', 'carousel');
+    this.setAttribute('aria-label', 'Media');
 
     this._videoObserver = createIntersectionObserver(
       (entries) => {
@@ -296,6 +311,11 @@ export class ImageCarousel extends LitElement {
 
   render() {
     return html`
+      <span class="sr-only" role="status" aria-live="polite">
+        ${this.images.length > 1
+          ? `Item ${this.currentIndex + 1} of ${this.images.length}`
+          : ''}
+      </span>
       <div id="list">
         ${this.images.map((image) => {
           if (image.type === 'image') {

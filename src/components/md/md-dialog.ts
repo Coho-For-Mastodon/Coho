@@ -232,17 +232,20 @@ export class MdDialog extends LitElement {
     `,
   ];
 
+  private _titleId = `md-dialog-title-${Math.random().toString(36).slice(2, 9)}`;
+
   render() {
     return html`
       <dialog
         part="dialog"
         class="${this.fullscreen ? 'fullscreen' : ''}"
+        aria-labelledby="${this._titleId}"
         @close="${this._handleClose}"
         @cancel="${this._handleCancel}"
         @click="${this._handleBackdropClick}"
       >
         <div class="dialog-header">
-          <h2 class="dialog-title">${this.label}</h2>
+          <h2 class="dialog-title" id="${this._titleId}">${this.label}</h2>
           <slot name="header-actions"></slot>
           <button
             class="close-btn"

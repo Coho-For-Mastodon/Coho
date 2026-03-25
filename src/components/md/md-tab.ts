@@ -394,22 +394,29 @@ export class MdTab extends LitElement {
     }
   }
 
-  /**
-   * Focus the tab button (used for keyboard navigation)
-   */
-  focus() {
-    this.shadowRoot?.querySelector('button')?.focus();
+  connectedCallback() {
+    super.connectedCallback();
+    this.setAttribute('role', 'tab');
+    this.addEventListener('keydown', this._handleKeyDown);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener('keydown', this._handleKeyDown);
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('active')) {
+      this.setAttribute('aria-selected', this.active ? 'true' : 'false');
+    }
+    if (changedProperties.has('disabled')) {
+      this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
+    }
   }
 
   render() {
     return html`
-      <button
-        role="tab"
-        aria-selected="${this.active ? 'true' : 'false'}"
-        aria-disabled="${this.disabled ? 'true' : 'false'}"
-        @click="${this._handleClick}"
-        @keydown="${this._handleKeyDown}"
-      >
+      <button aria-hidden="true" tabindex="-1" @click="${this._handleClick}">
         <span class="icon-container">
           <slot name="icon"></slot>
         </span>

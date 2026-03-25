@@ -661,7 +661,7 @@ export class AppMessages extends LitElement {
   render() {
     return html`
       <app-header .enableBack=${true}></app-header>
-      <main>
+      <section>
         <div class="title-bar">
           <h1>${msg('Messages')}</h1>
         </div>
@@ -750,7 +750,7 @@ export class AppMessages extends LitElement {
         </div>
 
         ${this._renderNewMessageDialog()}
-      </main>
+      </section>
     `;
   }
 

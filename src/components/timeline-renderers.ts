@@ -55,8 +55,13 @@ export function renderLinkCard(
   if (hasImage) {
     // Vertical "large" card layout: image on top, content below
     return html`
-      <div
+      <a
+        href="${card.url}"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="text-decoration: none; color: inherit; display: block;"
         @click="${(e: Event) => {
+          e.preventDefault();
           e.stopPropagation();
           openLinkCard(card.url || '');
         }}"
@@ -75,14 +80,19 @@ export function renderLinkCard(
             ? html`<span class="link-card-provider">${provider}</span>`
             : nothing}
         </div>
-      </div>
+      </a>
     `;
   }
 
   // Compact horizontal layout: no image
   return html`
-    <div
+    <a
+      href="${card.url}"
+      target="_blank"
+      rel="noopener noreferrer"
+      style="text-decoration: none; color: inherit; display: block;"
       @click="${(e: Event) => {
+        e.preventDefault();
         e.stopPropagation();
         openLinkCard(card.url || '');
       }}"
@@ -98,7 +108,7 @@ export function renderLinkCard(
           ? html`<span class="link-card-provider">${provider}</span>`
           : nothing}
       </div>
-    </div>
+    </a>
   `;
 }
 
@@ -238,6 +248,7 @@ export function renderReplyContext(
               pill
               size="small"
               style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+              aria-label="Reply"
               @click="${(e: Event) => {
                 e.stopPropagation();
                 handlers.replies();
@@ -532,6 +543,8 @@ export function renderRegularTweet(
           }"
           pill
           size="small"
+          aria-pressed="${state.isBookmarked || state.tweet?.bookmarked ? 'true' : 'false'}"
+          aria-label="${state.isBookmarked || state.tweet?.bookmarked ? 'Remove bookmark' : 'Bookmark'}"
           @click="${() => handlers.bookmark(state.tweet?.id || '')}"
           ><md-icon slot="suffix" src="/assets/bookmark-outline.svg"></md-icon
         ></md-button>
@@ -545,6 +558,12 @@ export function renderRegularTweet(
                   : 'var(--md-sys-color-on-surface-variant)'}"
                 pill
                 size="small"
+                aria-pressed="${state.isBoosted || state.tweet?.favourited
+                  ? 'true'
+                  : 'false'}"
+                aria-label="${state.isBoosted || state.tweet?.favourited
+                  ? 'Unfavourite'
+                  : 'Favourite'}"
                 @click="${() => handlers.favorite(state.tweet?.id || '')}"
                 >${state.tweet?.favourites_count}
                 <md-icon slot="suffix" name="heart"></md-icon
@@ -561,6 +580,12 @@ export function renderRegularTweet(
                   : 'var(--md-sys-color-on-surface-variant)'}"
                 pill
                 size="small"
+                aria-pressed="${state.isReblogged || state.tweet?.reblogged
+                  ? 'true'
+                  : 'false'}"
+                aria-label="${state.isReblogged || state.tweet?.reblogged
+                  ? 'Undo boost'
+                  : 'Boost'}"
                 @click="${() => handlers.reblog(state.tweet?.id || '')}"
                 >${state.tweet?.reblogs_count}
                 <md-icon slot="suffix" name="repeat"></md-icon
@@ -707,10 +732,15 @@ export function renderThreadContinuation(
     })}
     ${state.tweet?.thread_truncated && !state.threadExpanded
       ? html`
-          <div class="thread-show-more" @click="${() => handlers.openPost()}">
+          <button
+            type="button"
+            class="thread-show-more"
+            style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%;"
+            @click="${() => handlers.openPost()}"
+          >
             <md-icon name="chatbox"></md-icon>
             ${msg('Show thread')}
-          </div>
+          </button>
         `
       : null}
   `;
@@ -727,8 +757,10 @@ export function renderReblog(
 
   return html`
     <md-card slot="card">
-      <div
+      <button
+        type="button"
         class="boost-indicator"
+        style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%;"
         @click="${(e: Event) => {
           e.stopPropagation();
           router.navigate(`/account?id=${state.tweet?.account.id}`, {
@@ -751,7 +783,7 @@ export function renderReblog(
           )}"
         ></span>
         <span>${msg('boosted')}</span>
-      </div>
+      </button>
       <div class="header-block" slot="header">
         <user-profile
           ?small="${true}"

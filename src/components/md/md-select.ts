@@ -22,6 +22,9 @@ export class MdSelect extends LitElement {
 
   @state() private _open = false;
   @state() private _options: MdOption[] = [];
+  @state() private _highlightedIndex = -1;
+
+  private _listboxId = `md-select-listbox-${Math.random().toString(36).slice(2, 9)}`;
 
   static styles = [
     mdSharedStyles,
@@ -323,6 +326,8 @@ export class MdSelect extends LitElement {
     this._updateOptions();
   }
 
+  private _optionClickHandlers = new WeakMap<MdOption, () => void>();
+
   private _updateOptions() {
     const slot = this.shadowRoot?.querySelector('slot');
     if (slot) {
@@ -331,9 +336,13 @@ export class MdSelect extends LitElement {
         (el) => el.tagName === 'MD-OPTION'
       );
 
-      // Set up click handlers for options
-      this._options.forEach((option) => {
-        option.addEventListener('click', () => this._handleOptionClick(option));
+      this._options.forEach((option, index) => {
+        if (!this._optionClickHandlers.has(option)) {
+          const handler = () => this._handleOptionClick(option);
+          this._optionClickHandlers.set(option, handler);
+          option.addEventListener('click', handler);
+        }
+        option.id = `${this._listboxId}-opt-${index}`;
       });
     }
   }
@@ -341,8 +350,90 @@ export class MdSelect extends LitElement {
   private _handleKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && this._open) {
       this._close();
+      return;
+    }
+
+    if (!this._open) {
+      if (
+        e.key === 'ArrowDown' ||
+        e.key === 'ArrowUp' ||
+        e.key === 'Enter' ||
+        e.key === ' '
+      ) {
+        const trigger = this.shadowRoot?.querySelector('.select-input');
+        if (trigger?.contains(e.target as Node) || e.target === trigger) {
+          e.preventDefault();
+          this._open = true;
+          this._highlightedIndex = this._options.findIndex(
+            (opt) => opt.value === this.value
+          );
+          if (this._highlightedIndex < 0) this._highlightedIndex = 0;
+        }
+      }
+      return;
+    }
+
+    const enabledOptions = this._options.filter((o) => !o.disabled);
+    if (enabledOptions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        this._highlightedIndex = Math.min(
+          this._highlightedIndex + 1,
+          this._options.length - 1
+        );
+        while (
+          this._options[this._highlightedIndex]?.disabled &&
+          this._highlightedIndex < this._options.length - 1
+        ) {
+          this._highlightedIndex++;
+        }
+        this._scrollHighlightedIntoView();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        this._highlightedIndex = Math.max(this._highlightedIndex - 1, 0);
+        while (
+          this._options[this._highlightedIndex]?.disabled &&
+          this._highlightedIndex > 0
+        ) {
+          this._highlightedIndex--;
+        }
+        this._scrollHighlightedIntoView();
+        break;
+      case 'Home':
+        e.preventDefault();
+        this._highlightedIndex = 0;
+        this._scrollHighlightedIntoView();
+        break;
+      case 'End':
+        e.preventDefault();
+        this._highlightedIndex = this._options.length - 1;
+        this._scrollHighlightedIntoView();
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (
+          this._highlightedIndex >= 0 &&
+          this._options[this._highlightedIndex] &&
+          !this._options[this._highlightedIndex].disabled
+        ) {
+          this._handleOptionClick(this._options[this._highlightedIndex]);
+        }
+        break;
     }
   };
+
+  private _scrollHighlightedIntoView() {
+    requestAnimationFrame(() => {
+      const option = this._options[this._highlightedIndex];
+      if (option) {
+        option.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  }
 
   private _handleInputClick() {
     if (this.disabled) return;
@@ -414,6 +505,10 @@ export class MdSelect extends LitElement {
           role="combobox"
           aria-expanded="${this._open ? 'true' : 'false'}"
           aria-haspopup="listbox"
+          aria-controls="${this._listboxId}"
+          aria-activedescendant="${this._open && this._highlightedIndex >= 0
+            ? `${this._listboxId}-opt-${this._highlightedIndex}`
+            : ''}"
           aria-label="${ariaLabel}"
         >
           ${this.iconOnly && this.iconSrc
@@ -444,7 +539,11 @@ export class MdSelect extends LitElement {
           @click=${this._handleBackdropClick}
         ></div>
 
-        <div class="dropdown ${this._open ? 'open' : ''}" role="listbox">
+        <div
+          class="dropdown ${this._open ? 'open' : ''}"
+          role="listbox"
+          id="${this._listboxId}"
+        >
           <slot @slotchange=${this._updateOptions}></slot>
         </div>
       </div>

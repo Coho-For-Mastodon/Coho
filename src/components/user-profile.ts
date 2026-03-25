@@ -77,7 +77,7 @@ export class UserProfile extends LitElement {
         color: grey;
       }
 
-      div.small img {
+      .headerBlock.small img {
         height: 36px;
         width: 36px;
 
@@ -85,11 +85,11 @@ export class UserProfile extends LitElement {
         contain: strict;
       }
 
-      div.small p {
+      .headerBlock.small p {
         display: none;
       }
 
-      div.small h4 {
+      .headerBlock.small h4 {
         margin-top: 0;
         white-space: nowrap;
         overflow-x: hidden;
@@ -145,7 +145,7 @@ export class UserProfile extends LitElement {
 
   render() {
     return html`
-      <div
+      <button
         @click="${() => this.openUser()}"
         class=${classMap({
           small: this.small === true,
@@ -153,6 +153,7 @@ export class UserProfile extends LitElement {
           boosted: this.boosted,
         })}
         slot="header"
+        style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; width: 100%;"
       >
         <img
           id="avatar"
@@ -172,7 +173,7 @@ export class UserProfile extends LitElement {
           ></h4>
           <p>${this.account?.acct || 'Loading...'}</p>
         </div>
-      </div>
+      </button>
     `;
   }
 }

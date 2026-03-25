@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeSVG } from 'lit/directives/unsafe-svg.js';
 
 /**
@@ -268,6 +269,8 @@ export class MdIcon extends LitElement {
       'icon--error': this.loadError,
     };
 
+    const hasLabel = !!this.label;
+
     return html`
       <div
         part="base"
@@ -275,8 +278,9 @@ export class MdIcon extends LitElement {
           .filter(([_, v]) => v)
           .map(([k]) => k)
           .join(' ')}"
-        role="img"
-        aria-label="${this.label || 'icon'}"
+        role="${hasLabel ? 'img' : 'presentation'}"
+        aria-hidden="${hasLabel ? 'false' : 'true'}"
+        aria-label="${ifDefined(hasLabel ? this.label : undefined)}"
       >
         ${this.svgContent
           ? html`<div part="svg">${unsafeSVG(this.svgContent)}</div>`

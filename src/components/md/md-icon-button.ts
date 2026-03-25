@@ -303,20 +303,14 @@ export class MdIconButton extends LitElement {
         ?disabled=${this.disabled}
         @click=${this.handleClick}
         @keydown=${this.handleKeyDown}
-        aria-label="${this.label || 'icon button'}"
+        aria-label="${this.label || this.title || 'icon button'}"
         title=${ifDefined(this.title || undefined)}
       >
         <div part="icon" class="icon">
           ${this.name
-            ? html`<md-icon
-                name="${this.name}"
-                label="${ifDefined(this.label)}"
-              ></md-icon>`
+            ? html`<md-icon name="${this.name}"></md-icon>`
             : this.src
-              ? html`<md-icon
-                  src="${this.src}"
-                  label="${ifDefined(this.label)}"
-                ></md-icon>`
+              ? html`<md-icon src="${this.src}"></md-icon>`
               : html`<slot></slot>`}
         </div>
       </button>

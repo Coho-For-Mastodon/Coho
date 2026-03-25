@@ -27,6 +27,10 @@ export class MdSegmentedButton extends LitElement {
    */
   @property({ type: String, reflect: true }) value: string = '';
 
+  /** Accessible label for the radio group */
+  @property({ type: String, attribute: 'aria-label' }) ariaGroupLabel: string =
+    '';
+
   static styles = css`
     :host {
       display: block;
@@ -131,7 +135,11 @@ export class MdSegmentedButton extends LitElement {
 
   render() {
     return html`
-      <div class="container" role="group">
+      <div
+        class="container"
+        role="radiogroup"
+        aria-label="${this.ariaGroupLabel}"
+      >
         <slot @slotchange=${this._updateSegments}></slot>
       </div>
     `;

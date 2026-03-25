@@ -392,6 +392,21 @@ export class AppIndex extends LitElement {
 
   render() {
     return html`
+      <a
+        href="#"
+        class="skip-link"
+        @click="${(e: Event) => {
+          e.preventDefault();
+          const main = document.querySelector('main');
+          if (main) {
+            if (!main.hasAttribute('tabindex')) {
+              main.setAttribute('tabindex', '-1');
+            }
+            main.focus();
+          }
+        }}"
+        >${'Skip to main content'}</a
+      >
       ${router.render()}
       <pwa-update></pwa-update>
     `;

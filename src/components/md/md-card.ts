@@ -250,6 +250,14 @@ export class MdCard extends LitElement {
     }
   }
 
+  private handleKeyDown(e: KeyboardEvent) {
+    if (!this.clickable || this.disabled) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.handleClick();
+    }
+  }
+
   render() {
     const classes = {
       'card': true,
@@ -268,6 +276,7 @@ export class MdCard extends LitElement {
           .map(([k]) => k)
           .join(' ')}"
         @click=${this.handleClick}
+        @keydown=${this.handleKeyDown}
         tabindex="${this.clickable && !this.disabled ? '0' : '-1'}"
         role="${this.clickable ? 'button' : 'article'}"
         aria-disabled="${this.disabled ? 'true' : 'false'}"
