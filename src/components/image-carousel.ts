@@ -17,6 +17,8 @@ export class ImageCarousel extends LitElement {
   @state() currentIndex: number = 0;
 
   private _videoObserver: IntersectionObserver | null = null;
+  /** Track IDs sent to the worker so we can cancel on disconnect. */
+  private _pendingBlurhashIds: Set<string> = new Set();
 
   static styles = [
     css`
@@ -116,12 +118,9 @@ export class ImageCarousel extends LitElement {
   ];
 
   firstUpdated() {
-    console.log('image-carousel firstUpdated, images:', this.images);
     this.addEventListener('keydown', this._handleKeydown);
-    // Make carousel focusable for keyboard navigation
     this.setAttribute('tabindex', '0');
 
-    // Auto-pause videos when scrolled off-screen, auto-resume gifvs when back
     this._videoObserver = createIntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -129,7 +128,6 @@ export class ImageCarousel extends LitElement {
           if (!entry.isIntersecting) {
             video.pause();
           } else if (video.hasAttribute('loop')) {
-            // Resume autoplay gifvs when scrolled back into view
             video.play().catch(() => {});
           }
         }
@@ -142,9 +140,7 @@ export class ImageCarousel extends LitElement {
 
   updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('images') && this.images.length > 0) {
-      console.log('Images updated, generating blurhashes');
       this.generateBlurhashes();
-      // Wait for the render to flush so new <video> elements are in the DOM
       this.updateComplete.then(() => this._observeVideos());
     }
   }
@@ -154,12 +150,23 @@ export class ImageCarousel extends LitElement {
     this.removeEventListener('keydown', this._handleKeydown);
     disconnectIntersectionObserver(this._videoObserver);
     this._videoObserver = null;
+
+    // Cancel any in-flight worker requests
+    const worker = getBlurhashWorker();
+    for (const id of this._pendingBlurhashIds) {
+      worker.cancel(id);
+    }
+    this._pendingBlurhashIds.clear();
+
+    // Revoke all object URLs to free memory
+    for (const url of this.blurhashUrls.values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.blurhashUrls = new Map();
   }
 
-  /** Observe all <video> elements in this carousel for visibility-based pause/play */
   private _observeVideos() {
     if (!this._videoObserver) return;
-    // Reset observer to drop any stale elements before re-observing
     this._videoObserver.disconnect();
     const videos = this.shadowRoot?.querySelectorAll('video');
     if (!videos) return;
@@ -211,43 +218,32 @@ export class ImageCarousel extends LitElement {
   }
 
   private generateBlurhashes() {
-    if (!this.images || this.images.length === 0) {
-      console.warn('⚠ No images to process');
-      return;
-    }
-
-    console.log('→ Generating blurhashes for', this.images.length, 'images');
+    if (!this.images || this.images.length === 0) return;
 
     const worker = getBlurhashWorker();
 
     for (const image of this.images) {
-      // Skip if already processed or processing
-      if (this.blurhashUrls.has(image.id)) {
-        console.log('⏭ Skipping already processed', image.id);
+      if (
+        this.blurhashUrls.has(image.id) ||
+        this._pendingBlurhashIds.has(image.id)
+      ) {
         continue;
       }
 
-      if (!image.blurhash) {
-        console.warn('⚠ No blurhash for image', image.id);
-        continue;
-      }
+      if (!image.blurhash) continue;
+
+      this._pendingBlurhashIds.add(image.id);
 
       worker.generateBlurhash(
         image.id,
         image.blurhash,
         20,
         20,
-        (id: string, dataUrl: string) => {
-          // Update the map
+        (id: string, objectUrl: string) => {
+          this._pendingBlurhashIds.delete(id);
           const newMap = new Map(this.blurhashUrls);
-          newMap.set(id, dataUrl);
+          newMap.set(id, objectUrl);
           this.blurhashUrls = newMap;
-
-          console.log(
-            '✓ Blurhash URLs map updated, size:',
-            this.blurhashUrls.size
-          );
-          this.requestUpdate();
         }
       );
     }
@@ -263,7 +259,6 @@ export class ImageCarousel extends LitElement {
 
   private handleImageLoad(e: Event) {
     const img = e.target as HTMLImageElement;
-    // Small delay to ensure blurhash is visible first
     setTimeout(() => {
       img.classList.add('loaded');
     }, 100);
@@ -277,7 +272,6 @@ export class ImageCarousel extends LitElement {
   }
 
   async openInBox(image: MediaAttachment, event?: MouseEvent) {
-    console.log('show image', image);
     const target = event?.currentTarget as HTMLElement | null;
     const rect = target?.getBoundingClientRect();
     const origin = rect
