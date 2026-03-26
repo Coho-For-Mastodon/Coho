@@ -1,6 +1,7 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
 import { Account, Post } from '../types';
+import type { FamiliarFollowersResult } from '../types/account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../../config/firebase';
 import { get, set } from 'idb-keyval';
 import { syncActiveAccountProfile } from '../../services/auth-session';
@@ -157,6 +158,20 @@ export const searchAccounts = async (
 
   const data = await response.json();
   return data;
+};
+
+/**
+ * Get accounts that you follow and that also follow the given account.
+ * @see https://docs.joinmastodon.org/methods/accounts/#familiar_followers
+ */
+export const getFamiliarFollowers = async (id: string): Promise<Account[]> => {
+  const { url } = getClientConfig();
+  const response = await apiFetch(
+    `https://${url}/api/v1/accounts/familiar_followers?id[]=${encodeURIComponent(id)}`,
+    { method: 'GET' }
+  );
+  const data = (await response.json()) as FamiliarFollowersResult[];
+  return data[0]?.accounts ?? [];
 };
 
 /**

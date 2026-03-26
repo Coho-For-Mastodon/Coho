@@ -37,6 +37,7 @@ import '../components/post-detail-dialog';
 import type { ReportSubmitDetail } from '../components/report-dialog';
 import type { PostDetailDialog } from '../components/post-detail-dialog';
 import type { Account } from '../mastodon/types';
+import { getFamiliarFollowers } from '../mastodon/api/accounts';
 
 import '../components/md/md-skeleton';
 import '../components/md/md-skeleton-card';
@@ -79,6 +80,7 @@ export class AppProfile extends LitElement {
   @state() avatarReady: boolean = false;
   @state() isGuestMode: boolean = false;
   @state() avatarFailed: boolean = false;
+  @state() familiarFollowers: Account[] = [];
   private _currentProfileId: string | null = null;
   private _loadRequestId = 0;
   @state() showListMembershipDialog: boolean = false;
@@ -457,6 +459,55 @@ export class AppProfile extends LitElement {
         font-size: 12px;
         font-weight: 600;
         margin-bottom: 12px;
+      }
+
+      /* Familiar followers */
+      #familiar-followers {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 8px 0 4px;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .familiar-avatars {
+        display: flex;
+        flex-shrink: 0;
+      }
+
+      .familiar-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid var(--md-sys-color-surface);
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+      }
+
+      .familiar-avatar:not(:first-child) {
+        margin-left: -8px;
+      }
+
+      .familiar-avatar:hover {
+        transform: scale(1.15);
+        z-index: 1;
+      }
+
+      .familiar-text {
+        font-size: 13px;
+        line-height: 1.3;
+        color: var(--md-sys-color-on-surface-variant);
+      }
+
+      .familiar-name {
+        color: var(--md-sys-color-primary);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .familiar-name:hover {
+        text-decoration: underline;
       }
 
       /* Fields section */
@@ -944,6 +995,7 @@ export class AppProfile extends LitElement {
     this.muted = false;
     this.blocked = false;
     this.followStatusLoaded = false;
+    this.familiarFollowers = [];
 
     // Check if viewing own profile (only matters for authenticated users)
     const currentUserID = localStorage.getItem('currentUserID');
@@ -967,16 +1019,26 @@ export class AppProfile extends LitElement {
     const shouldFetchRelationship = !this.isOwnProfile && !this.isGuestMode;
 
     // Fetch account (if not already from nav state), posts, and relationship data in parallel
-    const [accountData, postsData, relationshipData, pinnedPostsData] =
-      await Promise.all([
-        navigationAccount ? Promise.resolve(navigationAccount) : getAccount(id),
-        getUsersPosts(id),
-        // isFollowingMe returns the full relationship object with following, followed_by, muting, blocking
-        shouldFetchRelationship
-          ? isFollowingMe(id).catch(() => null)
-          : Promise.resolve(null),
-        getPinnedPosts(id),
-      ]);
+    const [
+      accountData,
+      postsData,
+      relationshipData,
+      pinnedPostsData,
+      familiarData,
+    ] = await Promise.all([
+      navigationAccount ? Promise.resolve(navigationAccount) : getAccount(id),
+      getUsersPosts(id),
+      shouldFetchRelationship
+        ? isFollowingMe(id).catch(() => null)
+        : Promise.resolve(null),
+      getPinnedPosts(id),
+      shouldFetchRelationship
+        ? getFamiliarFollowers(id).catch((err) => {
+            console.error('[Profile] Failed to fetch familiar followers', err);
+            return [] as Account[];
+          })
+        : Promise.resolve([] as Account[]),
+    ]);
 
     // Ignore stale async results after a newer profile load starts.
     if (requestId !== this._loadRequestId) return;
@@ -1006,6 +1068,8 @@ export class AppProfile extends LitElement {
       }
       this.followStatusLoaded = true;
     }
+
+    this.familiarFollowers = familiarData;
   }
 
   async follow() {
@@ -1354,14 +1418,73 @@ export class AppProfile extends LitElement {
 
   private goToFollowers() {
     if (this.user) {
-      window.location.href = `/followers?id=${this.user.id}`;
+      router.navigate(`/followers?id=${this.user.id}`);
     }
   }
 
   private goToFollowing() {
     if (this.user) {
-      window.location.href = `/following?id=${this.user.id}`;
+      router.navigate(`/following?id=${this.user.id}`);
     }
+  }
+
+  private _navigateToAccount(account: Account) {
+    router.navigate(`/account?id=${account.id}`, {
+      state: { account },
+    });
+  }
+
+  private _renderFamiliarFollowers() {
+    const followers = this.familiarFollowers;
+    if (followers.length === 0) return null;
+
+    const MAX_AVATARS = 3;
+    const displayAvatars = followers.slice(0, MAX_AVATARS);
+
+    const nameLink = (account: Account) =>
+      html`<a
+        class="familiar-name"
+        href="/account?id=${account.id}"
+        @click="${(e: Event) => {
+          e.preventDefault();
+          this._navigateToAccount(account);
+        }}"
+        >${account.display_name || account.username}</a
+      >`;
+
+    let text;
+    if (followers.length === 1) {
+      text = html`${msg(str`Followed by`)} ${nameLink(followers[0])}`;
+    } else if (followers.length === 2) {
+      text = html`${msg(str`Followed by`)} ${nameLink(followers[0])}
+      ${msg(str`and`)} ${nameLink(followers[1])}`;
+    } else if (followers.length === 3) {
+      text = html`${msg(str`Followed by`)} ${nameLink(followers[0])},
+      ${nameLink(followers[1])}, ${msg(str`and`)} ${nameLink(followers[2])}`;
+    } else {
+      const othersCount = followers.length - 2;
+      text = html`${msg(str`Followed by`)} ${nameLink(followers[0])},
+      ${nameLink(followers[1])}, ${msg(str`and ${othersCount} others`)}`;
+    }
+
+    return html`
+      <div id="familiar-followers">
+        <div class="familiar-avatars">
+          ${displayAvatars.map(
+            (account) => html`
+              <img
+                class="familiar-avatar"
+                src="${account.avatar}"
+                alt="${account.display_name || account.username}"
+                loading="lazy"
+                @click="${() => this._navigateToAccount(account)}"
+              />
+            `
+          )}
+        </div>
+        <span class="familiar-text">${text}</span>
+      </div>
+    `;
   }
 
   renderMediaGrid() {
@@ -1643,6 +1766,9 @@ export class AppProfile extends LitElement {
                     </span>
                   </div>
 
+                  ${this.familiarFollowers.length > 0
+                    ? this._renderFamiliarFollowers()
+                    : null}
                   ${this.user.fields && this.user.fields.length > 0
                     ? html`
                         <div id="fields">

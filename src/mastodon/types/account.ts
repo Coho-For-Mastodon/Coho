@@ -115,3 +115,12 @@ export interface ReportOptions {
   category?: 'spam' | 'legal' | 'violation' | 'other';
   forward?: boolean;
 }
+
+/**
+ * Response entry from GET /api/v1/accounts/familiar_followers
+ * @see https://docs.joinmastodon.org/methods/accounts/#familiar_followers
+ */
+export interface FamiliarFollowersResult {
+  id: string;
+  accounts: Account[];
+}
