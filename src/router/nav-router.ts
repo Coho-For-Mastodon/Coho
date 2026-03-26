@@ -375,22 +375,6 @@ export class Router extends EventTarget {
     // Skip SSR
     if (typeof window === 'undefined') return;
 
-    // Ensure polyfills for Navigation API + URLPattern in browsers like Firefox
-    if (!('navigation' in window)) {
-      try {
-        await import('@virtualstate/navigation');
-      } catch (e) {
-        console.warn('[Router] Navigation API polyfill failed:', e);
-      }
-    }
-    if (typeof URLPattern === 'undefined') {
-      try {
-        await import('urlpattern-polyfill');
-      } catch (e) {
-        console.warn('[Router] URLPattern polyfill failed:', e);
-      }
-    }
-
     // Categorize routes: exact paths go to fast Map, parameterized routes deferred
     for (const route of this.routes) {
       if (route.path.includes(':')) {

@@ -63,28 +63,14 @@ export class AppIndex extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
 
-    try {
-      await bootstrapSession();
-    } catch (error) {
-      console.error('[App] Failed to bootstrap auth session', error);
-    }
-
-    // If the app was cold-launched via an OAuth deep link (App Link / Universal Link),
-    // consume the launch URL and complete the token exchange before routing starts.
-    await this.handleNativeLaunchCallback();
-
-    // Register route-changed listener BEFORE router.init() to avoid missing the
-    // initial route-changed event in browsers with native Navigation API + URLPattern
-    // support (where init() completes synchronously before firstUpdated() runs).
+    // Register route-changed listener synchronously — must be in place before
+    // router.init() to avoid missing the initial event in browsers with native
+    // Navigation API + URLPattern support.
     router.addEventListener('route-changed', this._onRouteChanged);
 
-    // Load polyfills for browsers without native Navigation API / URLPattern
-    if (!('navigation' in window)) {
-      await import('@virtualstate/navigation');
-    }
-    if (typeof URLPattern === 'undefined') {
-      await import('urlpattern-polyfill');
-    }
+    // Auth bootstrap + native OAuth deep-link handling and polyfill loading are
+    // independent — run them in parallel so neither blocks the other.
+    await Promise.all([this._initAuth(), this._loadPolyfills()]);
 
     // Initialize router (loads initial route's lazy imports)
     await router.init();
@@ -99,7 +85,6 @@ export class AppIndex extends LitElement {
         timeout: 5000,
       });
     } else {
-      // Initialize native push notification listeners (FCM via Capacitor)
       requestIdleCallback(
         async () => {
           const { setupNativePushListeners } =
@@ -109,6 +94,28 @@ export class AppIndex extends LitElement {
         { timeout: 5000 }
       );
     }
+  }
+
+  /** Bootstrap session and handle any native OAuth deep-link launch. */
+  private async _initAuth() {
+    try {
+      await bootstrapSession();
+    } catch (error) {
+      console.error('[App] Failed to bootstrap auth session', error);
+    }
+    await this.handleNativeLaunchCallback();
+  }
+
+  /** Load Navigation API / URLPattern polyfills if the browser needs them. */
+  private async _loadPolyfills() {
+    const loads: Promise<unknown>[] = [];
+    if (!('navigation' in window)) {
+      loads.push(import('@virtualstate/navigation'));
+    }
+    if (typeof URLPattern === 'undefined') {
+      loads.push(import('urlpattern-polyfill'));
+    }
+    await Promise.all(loads);
   }
 
   disconnectedCallback() {
