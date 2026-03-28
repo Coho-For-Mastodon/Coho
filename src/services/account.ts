@@ -611,41 +611,6 @@ export const authToClient = async (code: string, state: string) => {
   }
 };
 
-export const registerAccount = async (
-  username: string,
-  email: string,
-  password: string,
-  agreement: boolean,
-  locale: string,
-  chosenServer: string
-) => {
-  const response = await fetch(`https://${chosenServer}/api/v1/accounts`, {
-    method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify({
-      username,
-      email,
-      password,
-      agreement,
-      locale,
-    }),
-  });
-
-  const data = await response.json();
-  return data;
-};
-
-export const getServers = async () => {
-  const response = await fetch(
-    'https://mammoth-api-v3.azurewebsites.net/api/getOpenInstances'
-  );
-  const data = await response.json();
-
-  return data;
-};
-
 export const isFollowingMe = async (id: string) => {
   // check if you are following a user
   const accessToken = getAccessToken();
