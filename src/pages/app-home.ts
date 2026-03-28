@@ -34,7 +34,6 @@ import {
   saveSidebarUser,
   saveSidebarTrending,
 } from '../services/sidebar-cache';
-import { getLatestReadStorageKey } from '../services/account';
 import { getActiveAccount } from '../services/auth-session';
 
 import type { OtterDrawer } from '../components/otter-drawer';
@@ -723,13 +722,6 @@ export class AppHome extends LitElement {
 
     // Remove native share intent listener
     this._nativeShareCleanup?.remove();
-
-    const lastPageID = sessionStorage.getItem(getLatestReadStorageKey());
-    console.log('lastPageID', lastPageID);
-    if (lastPageID) {
-      const { savePlace } = await import('../services/timeline');
-      await savePlace(lastPageID);
-    }
   }
 
   private _handleSwitchTab = async (event: Event) => {

@@ -246,7 +246,7 @@ export default defineConfig({
     cssCodeSplit: true,
     minify: 'terser',
     modulePreload: { polyfill: false },
-    target: ['esnext', 'edge140', 'firefox146', 'chrome140', 'safari24'],
+    target: 'esnext',
     terserOptions: {
       module: true,
       compress: {

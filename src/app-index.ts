@@ -110,7 +110,11 @@ export class AppIndex extends LitElement {
   private async _loadPolyfills() {
     const loads: Promise<unknown>[] = [];
     if (!('navigation' in window)) {
-      loads.push(import('@virtualstate/navigation'));
+      loads.push(
+        import('@virtualstate/navigation').then(({ applyPolyfill }) => {
+          applyPolyfill();
+        })
+      );
     }
     if (typeof URLPattern === 'undefined') {
       loads.push(import('urlpattern-polyfill'));

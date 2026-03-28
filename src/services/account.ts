@@ -20,10 +20,7 @@ import {
   syncActiveAccountProfile,
   upsertAccountFromOAuth,
 } from './auth-session';
-import {
-  getAccountScopedIdbKey,
-  getAccountScopedSessionStorageKey,
-} from '../utils/account-scoped-storage';
+import { getAccountScopedIdbKey } from '../utils/account-scoped-storage';
 
 // Helper functions to always get fresh values from localStorage
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
@@ -38,8 +35,6 @@ const getUserPostsCacheKey = (id: string, filter: ProfilePostsFilter) =>
   getAccountScopedIdbKey(`user_posts:${id}:${filter}`);
 const getPinnedPostsCacheKey = (server: string, id: string) =>
   getAccountScopedIdbKey(`user_pinned_posts:${server}:${id}`);
-export const getLatestReadStorageKey = () =>
-  getAccountScopedSessionStorageKey('latest-read');
 
 // Note: IndexedDB is updated in authToClient() after successful login
 // We don't update it here at module load to avoid overwriting with empty values
@@ -547,11 +542,9 @@ export const getInstanceInfo = async () => {
 export const initAuth = async (serverURL: string) => {
   const normalizedServer = normalizeServer(serverURL);
 
-  // On native, location.origin is "https://localhost" (Capacitor WebView).
-  // The redirect must use the real domain so the OS intercepts it as an App Link.
   const { isNativePlatform } = await import('../utils/platform.js');
   const redirect_uri = isNativePlatform()
-    ? 'https://coho.place/auth/callback'
+    ? 'coho://auth/callback'
     : `${location.origin}/auth/callback`;
 
   const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/authenticate`, {
@@ -580,9 +573,15 @@ export const authToClient = async (code: string, state: string) => {
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `Token exchange failed (HTTP ${response.status})`
+      );
+    }
+
     const data = await response.json();
 
-    // Firebase function returns {access_token, server, clientId, clientSecret}
     if (!data.access_token || typeof data.access_token !== 'string') {
       console.error('Invalid token response');
       throw new Error(

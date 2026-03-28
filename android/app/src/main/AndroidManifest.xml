@@ -28,12 +28,14 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
 
-            <!-- App Links: verified HTTPS deep links for coho.place -->
-            <intent-filter android:autoVerify="true">
+            <!-- OAuth callback via custom URI scheme.
+                 Uses coho:// instead of https://coho.place so the redirect
+                 works without assetlinks.json (no Play Store popup for PWA users). -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="coho.place" />
+                <data android:scheme="coho" android:host="auth" android:pathPrefix="/callback" />
             </intent-filter>
 
             <!-- Share target: receive text (URLs, plain text) from other apps -->

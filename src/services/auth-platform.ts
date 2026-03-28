@@ -117,7 +117,10 @@ export async function consumeLaunchCallback(): Promise<OAuthCallbackParams | nul
 function parseCallbackUrl(url: string): OAuthCallbackParams | null {
   try {
     const parsed = new URL(url);
-    if (!parsed.pathname.startsWith('/auth/callback')) return null;
+    const isCustomScheme =
+      parsed.protocol === 'coho:' && parsed.pathname.startsWith('/callback');
+    const isHttps = parsed.pathname.startsWith('/auth/callback');
+    if (!isCustomScheme && !isHttps) return null;
     const code = parsed.searchParams.get('code');
     const state = parsed.searchParams.get('state');
     if (code && state) return { code, state };

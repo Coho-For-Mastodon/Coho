@@ -134,7 +134,6 @@ export class AppLogin extends LitElement {
   firstUpdated() {
     requestIdleCallback(
       async () => {
-        // get code and state from url
         await this.init();
       },
       {
@@ -148,18 +147,9 @@ export class AppLogin extends LitElement {
       await import('../services/auth-session');
     await bootstrapSession();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const state = urlParams.get('state');
-
     const activeAccount = getActiveAccount();
 
-    if (code && state) {
-      const { authToClient } = await import('../services/account');
-      await authToClient(code, state);
-      const router = await getRouter();
-      await router.navigate(await this.getPostAuthRedirect());
-    } else if (activeAccount) {
+    if (activeAccount) {
       const router = await getRouter();
       await router.navigate(await this.getPostAuthRedirect());
     }
