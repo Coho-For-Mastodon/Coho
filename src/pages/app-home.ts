@@ -220,11 +220,8 @@ export class AppHome extends LitElement {
 
     setTimeout(async () => {
       if (effectiveParams.has('name')) {
-        const name = effectiveParams.get('name');
-
-        if (name) {
-          await this.shareTarget(name);
-        }
+        const names = effectiveParams.getAll('name');
+        await this.handleSharedFiles(names);
       }
 
       // Check for native Android share intent (cold start)
@@ -384,20 +381,37 @@ export class AppHome extends LitElement {
     });
   }
 
-  async shareTarget(name: string) {
-    const result = await shareTarget(name);
+  async handleSharedFiles(names: string[]) {
+    const validNames: string[] = [];
 
-    if (result.success) {
-      console.log('[Share Target] Found cached file, opening dialog');
-      await this.openNewDialog(result.decodedName);
-    } else {
-      console.log('[Share Target] No cached file found');
-      // Show error toast to user
+    for (const name of names) {
+      const result = await shareTarget(name);
+      if (result.success) {
+        validNames.push(result.decodedName);
+      } else {
+        console.warn('[Share Target] No cached file found for:', name);
+      }
+    }
+
+    if (validNames.length === 0) {
       await this.overlays.show('error-toast');
       if (this.errorToast) {
-        this.errorToast.message = result.errorMessage || msg('Error');
+        this.errorToast.message = msg(
+          'Failed to load shared image. Please try sharing again.'
+        );
         this.errorToast.variant = 'error';
         this.errorToast.show();
+      }
+      return;
+    }
+
+    // Open dialog once, then add all files as attachments
+    await this.openNewDialog();
+
+    if (this.postDialog) {
+      await this.postDialog.updateComplete;
+      for (const name of validNames) {
+        await this.postDialog.shareTarget(name);
       }
     }
   }
@@ -483,7 +497,7 @@ export class AppHome extends LitElement {
     // Wait for the post-dialog's own shadow DOM to render
     if (this.postDialog) {
       await this.postDialog.updateComplete;
-      this.postDialog.openNewDialog(shareName, origin, shareText);
+      await this.postDialog.openNewDialog(shareName, origin, shareText);
     }
   }
 

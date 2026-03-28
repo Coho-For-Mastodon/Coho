@@ -182,11 +182,8 @@ export class PostDialog extends LitElement {
       this.composer.value = shareText;
     }
 
-    const nameToUse =
-      shareName ?? new URLSearchParams(window.location.search).get('name');
-
-    if (nameToUse) {
-      await this.shareTarget(nameToUse);
+    if (shareName) {
+      await this.shareTarget(shareName);
     }
   }
 

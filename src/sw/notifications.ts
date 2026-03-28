@@ -253,7 +253,10 @@ export function handleNotificationClick(event: NotificationEvent): void {
           if (response.ok) {
             const notification = await response.json();
             if (notification.account?.id) {
-              await followAUser(notification.account.id);
+              await followAUser(notification.account.id, {
+                server,
+                accessToken: notificationData.access_token,
+              });
             }
           }
         } catch (error) {

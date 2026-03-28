@@ -116,12 +116,29 @@ export async function focusOrOpenWindow(
 
 /**
  * Follow a user on Mastodon. Used by notification click "Follow back" action.
+ *
+ * Accepts optional auth to allow callers (e.g. push notification click) to
+ * supply a specific token rather than reading from IndexedDB.
  */
-export async function followAUser(id: string): Promise<void> {
-  const { server, headers } = await getAuthHeaders();
-
-  await fetch(`https://${server}/api/v1/accounts/${id}/follow`, {
-    method: 'POST',
-    headers,
+export async function followAUser(
+  id: string,
+  auth?: { server: string; accessToken: string }
+): Promise<void> {
+  const server = auth?.server ?? ((await get('server')) as string);
+  const headers = new Headers({
+    Authorization: `Bearer ${auth?.accessToken ?? ((await get('accessToken')) as string)}`,
   });
+
+  const response = await fetch(
+    `https://${server}/api/v1/accounts/${id}/follow`,
+    { method: 'POST', headers }
+  );
+
+  if (!response.ok) {
+    console.error(
+      '[SW] Follow request failed:',
+      response.status,
+      response.statusText
+    );
+  }
 }
