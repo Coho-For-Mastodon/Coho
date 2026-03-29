@@ -18,6 +18,7 @@ import type { PostComposer } from '../components/post-composer';
 import type { PostDialog } from '../components/post-dialog';
 import { router, type AppNavigationState } from '../router/routes';
 import { getNotificationById } from '../mastodon/api/notifications';
+import { getConversations } from '../services/messages';
 
 @localized()
 @customElement('post-detail')
@@ -274,6 +275,28 @@ export class PostDetail extends LitElement {
         } else {
           // Direct post ID access (/post/:postId)
           this.tweet = await getPostDetail(pathId);
+        }
+        // If the post is a DM, redirect to the messages UI
+        if (this.tweet?.visibility === 'direct') {
+          try {
+            const convs = await getConversations();
+            // Prefer exact status match, fall back to 1:1 account match
+            const conv =
+              convs.find((c) => c.last_status?.id === this.tweet!.id) ||
+              convs.find(
+                (c) =>
+                  c.accounts.length === 1 &&
+                  c.accounts[0].id === this.tweet!.account.id
+              );
+            if (conv) {
+              router.navigate(`/messages/${conv.id}`, {
+                state: { conversation: conv },
+              });
+              return;
+            }
+          } catch (err) {
+            console.error('[PostDetail] Failed to find DM conversation:', err);
+          }
         }
       } catch (err) {
         console.error('Failed to load post:', err);

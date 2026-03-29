@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 import {
   searchInstances,
@@ -11,6 +11,7 @@ import type { Instance } from '../mastodon/types/instance';
 import '../components/md/md-autocomplete';
 import '../components/md/md-button.js';
 import '../components/md/md-dialog.js';
+import type { MdDialog } from '../components/md/md-dialog.js';
 
 const getRouter = () => import('../router/routes').then((m) => m.router);
 
@@ -25,7 +26,10 @@ export class CreateAccount extends LitElement {
   @state() private instanceError = '';
   @state() private signupStarted = false;
 
+  @query('md-dialog') private _dialog!: MdDialog;
+
   private _searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private _fetchController: AbortController | null = null;
 
   static styles = [
     css`
@@ -252,22 +256,28 @@ export class CreateAccount extends LitElement {
   }
 
   private async fetchInstanceInfo(server: string) {
+    // Abort any in-flight request
+    this._fetchController?.abort();
+    this._fetchController = new AbortController();
+
     this.loadingInfo = true;
     this.instanceInfo = null;
     this.instanceError = '';
 
     try {
-      const response = await fetch(`https://${server}/api/v1/instance`);
+      const url = new URL(`https://${server}/api/v1/instance`);
+      const response = await fetch(url.href, {
+        signal: this._fetchController.signal,
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch instance info`);
       }
       this.instanceInfo = await response.json();
 
-      // Show the dialog after data loads
       await this.updateComplete;
-      const dialog = this.shadowRoot?.querySelector('md-dialog');
-      dialog?.show();
-    } catch {
+      this._dialog?.show();
+    } catch (e) {
+      if ((e as DOMException).name === 'AbortError') return;
       this.instanceError = msg(
         'Could not fetch server information. Please check the server name and try again.'
       );
@@ -281,8 +291,7 @@ export class CreateAccount extends LitElement {
       window.open(`https://${this.chosenServer}/auth/sign_up`, '_blank');
 
       // Close dialog and show post-signup state
-      const dialog = this.shadowRoot?.querySelector('md-dialog');
-      await dialog?.hide();
+      await this._dialog?.hide();
       this.signupStarted = true;
     }
   }
