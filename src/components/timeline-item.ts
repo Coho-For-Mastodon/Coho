@@ -1192,15 +1192,17 @@ export class TimelineItem extends LitElement {
     }
   }
 
-  async replies() {
+  async replies(post?: Post) {
     if (this.guestMode) {
       showGuestActionToast('reply to posts');
       return;
     }
 
+    const target = post || this.tweet;
+
     const event = new CustomEvent('reply-clicked', {
       detail: {
-        tweet: this.tweet,
+        tweet: target,
       },
       bubbles: true,
       composed: true,
@@ -1209,7 +1211,7 @@ export class TimelineItem extends LitElement {
     const dispatched = this.dispatchEvent(event);
 
     if (dispatched) {
-      await this.openPost();
+      await this.openPost(target);
     }
   }
 
@@ -1244,14 +1246,15 @@ export class TimelineItem extends LitElement {
     await shareStatusAction(tweet);
   }
 
-  async openPost() {
-    if (!this.tweet) return;
+  async openPost(post?: Post) {
+    const target = post || this.tweet;
+    if (!target) return;
 
     // Emit an open event so the parent context can handle navigation
     this.dispatchEvent(
       new CustomEvent('open', {
         detail: {
-          tweet: this.tweet,
+          tweet: target,
         },
       })
     );
@@ -1552,7 +1555,7 @@ export class TimelineItem extends LitElement {
       viewSensitive: () => this.viewSensitive(),
       viewThreadSensitive: (id: string) => this.viewThreadSensitive(id),
       viewReplySensitive: () => this.viewReplySensitive(),
-      replies: () => this.replies(),
+      replies: (post?: Post) => this.replies(post),
       bookmark: (id: string) => this.bookmark(id),
       favorite: (id: string) => this.favorite(id),
       reblog: (id: string) => this.reblog(id),

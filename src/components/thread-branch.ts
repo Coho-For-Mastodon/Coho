@@ -187,6 +187,18 @@ export class ThreadBranch extends LitElement {
     );
   }
 
+  private handleReplyClick(e: Event, post: Post) {
+    e.stopPropagation();
+    this.dispatchEvent(
+      new CustomEvent('reply-clicked', {
+        detail: { tweet: post },
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      })
+    );
+  }
+
   render() {
     if (!this.node) return nothing;
 
@@ -248,7 +260,12 @@ export class ThreadBranch extends LitElement {
             : nothing}
 
           <div class="actions" slot="footer">
-            <md-button variant="text" pill size="small">
+            <md-button
+              variant="text"
+              pill
+              size="small"
+              @click=${(e: Event) => this.handleReplyClick(e, post)}
+            >
               ${post.replies_count || ''}
               <md-icon
                 slot="suffix"

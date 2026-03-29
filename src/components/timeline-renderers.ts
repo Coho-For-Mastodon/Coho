@@ -116,7 +116,7 @@ export interface TimelineItemHandlers {
   viewSensitive: () => void;
   viewThreadSensitive: (id: string) => void;
   viewReplySensitive: () => void;
-  replies: () => void;
+  replies: (post?: Post) => void;
   bookmark: (id: string) => void;
   favorite: (id: string) => void;
   reblog: (id: string) => void;
@@ -251,7 +251,7 @@ export function renderReplyContext(
               aria-label="Reply"
               @click="${(e: Event) => {
                 e.stopPropagation();
-                handlers.replies();
+                handlers.replies(state.tweet?.reply_to);
               }}"
             >
               <md-icon slot="suffix" name="chatbox"></md-icon>
@@ -1067,6 +1067,24 @@ export function renderThread(
                 )
               : null}
             <div class="actions" slot="footer">
+              ${state.show === true
+                ? html`<md-button
+                    variant="text"
+                    pill
+                    size="small"
+                    style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+                    aria-label="${msg('Reply')}"
+                    @click="${(e: Event) => {
+                      e.stopPropagation();
+                      handlers.replies(threadPost);
+                    }}"
+                  >
+                    <md-icon
+                      slot="suffix"
+                      src="/assets/chatbox-outline.svg"
+                    ></md-icon>
+                  </md-button>`
+                : null}
               <md-button
                 variant="text"
                 style="--md-sys-color-primary: ${threadPost.bookmarked

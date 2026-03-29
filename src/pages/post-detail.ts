@@ -160,7 +160,7 @@ export class PostDetail extends LitElement {
         padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.18);
         border-radius: var(--md-sys-shape-corner-medium);
-        margin-bottom: 68px;
+        margin-bottom: 6px;
       }
 
       .composer-shell {
@@ -565,17 +565,18 @@ export class PostDetail extends LitElement {
               ?guestMode="${this.isGuestMode}"
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"
+              @reply-clicked="${(e: CustomEvent) => this.handleReplyClick(e)}"
               @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleEditPost(e.detail.tweet)}"
             ></timeline-item>
           </section>
 
           <section class="replies-section">
+            ${this.loadingThread || this.replyTree.length > 0
+              ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
+              : nothing}
             ${this.loadingThread
               ? html`<md-skeleton-card count="3"></md-skeleton-card>`
-              : nothing}
-            ${this.replyTree.length > 0
-              ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
               : nothing}
             ${this.replyTree.map(
               (node) => html`
@@ -584,6 +585,7 @@ export class PostDetail extends LitElement {
                   ?guestMode=${this.isGuestMode}
                   @open=${(e: CustomEvent<{ tweet: Post }>) =>
                     this.handleOpenPost(e)}
+                  @reply-clicked=${(e: CustomEvent) => this.handleReplyClick(e)}
                 ></thread-branch>
               `
             )}
