@@ -7,11 +7,7 @@ import { router } from './router/routes';
 import './config/localization.js';
 
 import './pages/app-login';
-import {
-  bootstrapSession,
-  getActiveAccount,
-  syncActiveToIndexedDb,
-} from './services/auth-session';
+import { bootstrapSession, getActiveAccount } from './services/auth-session';
 
 @customElement('app-index')
 export class AppIndex extends LitElement {
@@ -354,6 +350,7 @@ export class AppIndex extends LitElement {
    * This ensures the service worker has access to the latest tokens
    */
   private async syncCredentialsToIndexedDB() {
+    const { syncActiveToIndexedDb } = await import('./services/auth-session');
     await syncActiveToIndexedDb();
     console.log('[App] Synced credentials to IndexedDB');
 

@@ -19,157 +19,141 @@ export class AppLogin extends LitElement {
 
   private _searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  static styles = [
-    css`
-      :host {
-        display: block;
-        --md-sys-color-surface-container: #f0f4f8;
-      }
+  static styles = css`
+    :host {
+      display: block;
+      --md-sys-color-surface-container: #f0f4f8;
+    }
 
-      @media (prefers-color-scheme: dark) {
-        :host {
-          --md-sys-color-surface-container: #1a1c1e;
-        }
+    @media (prefers-color-scheme: dark) {
+      :host {
+        --md-sys-color-surface-container: #1a1c1e;
+      }
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      width: 100%;
+      background-color: var(--md-sys-color-surface-container);
+      padding: 20px;
+      padding-top: calc(90px + env(safe-area-inset-top, 0px)) !important;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-card {
+      max-width: 400px;
+      width: 100%;
+      z-index: 2;
+      padding: 32px;
+    }
+
+    .login-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+      align-items: center;
+    }
+
+    md-text-field {
+      width: 100%;
+    }
+
+    .login-button {
+      --md-button-height: 48px;
+    }
+
+    .login-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .app-footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant);
+      z-index: 1;
+      text-align: center;
+    }
+
+    .app-footer a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .app-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 820px) {
+      .login-card {
+        box-shadow: none;
+        background: transparent;
+        border: none;
       }
 
       main {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        width: 100%;
-        background-color: var(--md-sys-color-surface-container);
-        padding: 20px;
-        padding-top: calc(90px + env(safe-area-inset-top, 0px)) !important;
-        box-sizing: border-box;
-        position: relative;
-        overflow: hidden;
+        justify-content: flex-start;
+        padding-top: 40px;
       }
+    }
 
-      .login-card {
-        max-width: 400px;
-        width: 100%;
-        z-index: 2;
-        padding: 32px;
-      }
+    .build-info {
+      opacity: 0.5;
+      margin-top: 8px;
+    }
+  `;
 
-      .login-header {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        margin-bottom: 24px;
-      }
-
-      h1 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 500;
-        color: var(--md-sys-color-on-surface);
-      }
-
-      .subtitle {
-        margin: 8px 0 0;
-        font-size: 14px;
-        color: var(--md-sys-color-on-surface-variant);
-      }
-
-      .login-form {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-bottom: 24px;
-        align-items: center;
-      }
-
-      md-text-field {
-        width: 100%;
-      }
-
-      .login-button {
-        --md-button-height: 48px;
-      }
-
-      .login-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        align-items: center;
-        width: 100%;
-      }
-
-      .app-footer {
-        margin-top: 24px;
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
-        z-index: 1;
-        text-align: center;
-      }
-
-      .app-footer a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      .app-footer a:hover {
-        text-decoration: underline;
-      }
-
-      @media (max-width: 820px) {
-        .login-card {
-          box-shadow: none;
-          background: transparent;
-          border: none;
-        }
-
-        main {
-          justify-content: flex-start;
-          padding-top: 40px;
-        }
-      }
-    `,
-  ];
-
-  firstUpdated() {
-    requestIdleCallback(
-      async () => {
-        await this.init();
-      },
-      {
-        timeout: 8000,
-      }
-    );
+  async firstUpdated() {
+    await this.init();
   }
 
   private async init() {
-    const { bootstrapSession, getActiveAccount } =
-      await import('../services/auth-session');
-    await bootstrapSession();
-
-    const activeAccount = getActiveAccount();
-
-    if (activeAccount) {
-      const router = await getRouter();
-      await router.navigate(await this.getPostAuthRedirect());
+    const mod = await import('../services/auth-session');
+    await mod.bootstrapSession();
+    if (mod.getActiveAccount()) {
+      (await getRouter()).navigate(await this.getPostAuthRedirect());
     }
   }
 
   private async getPostAuthRedirect(): Promise<string> {
-    // If the current URL already carries an intent (rare, but possible),
-    // preserve it when we redirect to /home.
-    const currentParams = new URLSearchParams(window.location.search);
-    if (
-      currentParams.has('tab') ||
-      currentParams.has('newPost') ||
-      currentParams.has('name')
-    ) {
-      return `/home${window.location.search}${window.location.hash}`;
+    const s = window.location.search;
+    const p = new URLSearchParams(s);
+    if (p.has('tab') || p.has('newPost') || p.has('name')) {
+      return `/home${s}${window.location.hash}`;
     }
 
     const { consumeAuthRedirect } = await import('../utils/auth-redirect');
-
-    // Check for stored redirect from before OAuth flow started
     const storedRedirect = consumeAuthRedirect();
     if (storedRedirect) {
       return storedRedirect;
@@ -180,33 +164,25 @@ export class AppLogin extends LitElement {
 
   private login = async () => {
     if (this.loggingIn) return;
-
-    let serverURL = this.chosenServer;
-    if (serverURL.length > 0) {
-      if (serverURL.includes('https://')) {
-        serverURL = serverURL.replace('https://', '');
+    let url = this.chosenServer;
+    if (!url.length) return;
+    if (url.includes('https://')) url = url.replace('https://', '');
+    this.loggingIn = true;
+    try {
+      const acct = await import('../services/account');
+      await acct.initAuth(url);
+      const { isNativePlatform } = await import('../utils/platform');
+      if (isNativePlatform()) {
+        const { waitForNativeCallback } =
+          await import('../services/auth-platform');
+        const { code, state } = await waitForNativeCallback();
+        await acct.authToClient(code, state);
+        (await getRouter()).navigate(await this.getPostAuthRedirect());
       }
-      this.loggingIn = true;
-      try {
-        const { initAuth, authToClient } = await import('../services/account');
-        await initAuth(serverURL);
-
-        // On native, the OAuth redirect comes back as an appUrlOpen event
-        // instead of a page navigation, so we listen for it here.
-        const { isNativePlatform } = await import('../utils/platform');
-        if (isNativePlatform()) {
-          const { waitForNativeCallback } =
-            await import('../services/auth-platform');
-          const { code, state } = await waitForNativeCallback();
-          await authToClient(code, state);
-          const router = await getRouter();
-          await router.navigate(await this.getPostAuthRedirect());
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        this.loggingIn = false;
-      }
+    } catch {
+      // auth failed
+    } finally {
+      this.loggingIn = false;
     }
   };
 
@@ -243,8 +219,7 @@ export class AppLogin extends LitElement {
         ...(await searchInstances(query)),
         ...POPULAR_INSTANCES,
       ];
-    } catch (error) {
-      console.error('Failed to search instances:', error);
+    } catch {
       const { POPULAR_INSTANCES } = await import('../services/instance-search');
       this.instances = POPULAR_INSTANCES;
     } finally {
@@ -256,16 +231,12 @@ export class AppLogin extends LitElement {
     this.chosenServer = event.detail.value;
   }
 
-  private joinMastodon = async () => {
-    const router = await getRouter();
-    router.navigate('/createaccount');
-  };
+  private joinMastodon = async () =>
+    (await getRouter()).navigate('/createaccount');
 
   private explore = async () => {
-    const { enterGuestMode } = await import('../services/auth-state');
-    enterGuestMode();
-    const router = await getRouter();
-    router.navigate('/home');
+    (await import('../services/auth-state')).enterGuestMode();
+    (await getRouter()).navigate('/home');
   };
 
   render() {
@@ -314,7 +285,7 @@ export class AppLogin extends LitElement {
           <a href="https://github.com/jgw96/mammoth-app#readme" target="_blank">
             ${msg('Learn More about Coho')}
           </a>
-          <p style="opacity: 0.5; margin-top: 8px;">
+          <p class="build-info">
             ${msg('Build:')} ${new Date(__APP_VERSION__).toLocaleString()}
           </p>
         </div>

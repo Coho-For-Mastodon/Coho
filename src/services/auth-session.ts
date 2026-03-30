@@ -1,5 +1,4 @@
 import { del, set } from 'idb-keyval';
-import type { AccountChangedDetail } from '../types/events';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 
 const AUTH_SESSION_STORAGE_KEY = 'coho:auth-session';
@@ -7,8 +6,6 @@ const AUTH_SESSION_VERSION = 2;
 const GUEST_SERVER = 'mastodon.social';
 const ACTIVE_ACCOUNT_IDB_KEY = 'activeAccountKey';
 const LEGACY_ACCOUNT_ID = '__legacy__';
-
-export const ACCOUNT_CHANGED_EVENT = 'coho:account-changed';
 
 export interface AuthAccountRecord {
   accountKey: string;
@@ -60,7 +57,7 @@ function normalizeServer(server: string): string {
   return server.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
-export function buildAccountKey(server: string, accountId: string): string {
+function buildAccountKey(server: string, accountId: string): string {
   return `${normalizeServer(server)}::${accountId}`;
 }
 
@@ -202,26 +199,6 @@ function projectActiveAccountToLegacyKeys(store: AuthSessionStore): void {
   }
 }
 
-function emitAccountChanged(
-  previousActiveAccountKey: string | null,
-  newActiveAccountKey: string | null,
-  reason: string
-): void {
-  if (previousActiveAccountKey === newActiveAccountKey) {
-    return;
-  }
-
-  window.dispatchEvent(
-    new CustomEvent<AccountChangedDetail>(ACCOUNT_CHANGED_EVENT, {
-      detail: {
-        previousActiveAccountKey,
-        newActiveAccountKey,
-        reason,
-      },
-    })
-  );
-}
-
 async function cleanupPreviousAccountPushSubscription(): Promise<void> {
   try {
     const { unsubToPush } = await import('./notifications');
@@ -331,10 +308,6 @@ export function getActiveAccount(): AuthAccountRecord | null {
   return resolveActiveAccount(readStore());
 }
 
-export function hasAuthenticatedAccount(): boolean {
-  return listAccounts().length > 0;
-}
-
 export async function syncActiveToIndexedDb(): Promise<void> {
   await exchangeActiveCredentialsWithIndexedDb(readStore());
 }
@@ -347,7 +320,6 @@ export async function upsertAccountFromOAuth(
   const normalizedServer = normalizeServer(server);
   const profile = await fetchOAuthAccountProfile(normalizedServer, accessToken);
   const previousStore = readStore();
-  const previousActiveAccountKey = previousStore.activeAccountKey;
   const previousPlaceholder =
     previousStore.accounts.find(
       (account) =>
@@ -376,11 +348,6 @@ export async function upsertAccountFromOAuth(
 
   projectActiveAccountToLegacyKeys(nextStore);
   await exchangeActiveCredentialsWithIndexedDb(nextStore);
-  emitAccountChanged(
-    previousActiveAccountKey,
-    nextStore.activeAccountKey,
-    'oauth'
-  );
 
   return record;
 }
@@ -403,7 +370,6 @@ export async function switchAccount(
 
   await cleanupPreviousAccountPushSubscription();
 
-  const previousActiveAccountKey = store.activeAccountKey;
   const nextStore = writeStore({
     version: AUTH_SESSION_VERSION,
     activeAccountKey: accountKey,
@@ -416,18 +382,12 @@ export async function switchAccount(
 
   projectActiveAccountToLegacyKeys(nextStore);
   await exchangeActiveCredentialsWithIndexedDb(nextStore);
-  emitAccountChanged(
-    previousActiveAccountKey,
-    nextStore.activeAccountKey,
-    'switch'
-  );
 
   return resolveActiveAccount(nextStore) as AuthAccountRecord;
 }
 
 export async function removeAccount(
-  accountKey: string,
-  reason: string = 'remove'
+  accountKey: string
 ): Promise<AccountMutationResult> {
   const store = readStore();
   const existing = store.accounts.find(
@@ -488,11 +448,6 @@ export async function removeAccount(
 
   projectActiveAccountToLegacyKeys(nextStore);
   await exchangeActiveCredentialsWithIndexedDb(nextStore);
-  emitAccountChanged(
-    store.activeAccountKey,
-    nextStore.activeAccountKey,
-    reason
-  );
 
   return {
     removedAccountKey: accountKey,
@@ -517,7 +472,7 @@ export async function invalidateActiveAccount(): Promise<AccountMutationResult> 
     };
   }
 
-  return removeAccount(activeAccount.accountKey, 'unauthorized');
+  return removeAccount(activeAccount.accountKey);
 }
 
 export async function syncActiveAccountProfile(
