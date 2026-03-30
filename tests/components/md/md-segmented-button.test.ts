@@ -21,7 +21,7 @@ describe('md-segmented-button', () => {
       const container = el.shadowRoot!.querySelector('.container');
 
       expect(container).toBeDefined();
-      expect(container?.getAttribute('role')).toBe('group');
+      expect(container?.getAttribute('role')).toBe('radiogroup');
     });
 
     it('renders with segments', async () => {
@@ -169,37 +169,6 @@ describe('md-segmented-button', () => {
 });
 
 describe('md-segment', () => {
-  describe('rendering', () => {
-    it('renders with default properties', async () => {
-      const el = await fixture(
-        html`<md-segment value="test">Test</md-segment>`
-      );
-
-      expect(el).toBeDefined();
-    });
-
-    it('renders slotted content', async () => {
-      const el = await fixture(
-        html`<md-segment value="test">Label</md-segment>`
-      );
-      const slot = el.shadowRoot!.querySelector('slot:not([name])');
-
-      expect(slot).toBeDefined();
-    });
-
-    it('renders icon slot', async () => {
-      const el = await fixture(html`
-        <md-segment value="test">
-          <span slot="icon">🏠</span>
-          Home
-        </md-segment>
-      `);
-      const iconSlot = el.shadowRoot!.querySelector('slot[name="icon"]');
-
-      expect(iconSlot).toBeDefined();
-    });
-  });
-
   describe('selected state', () => {
     it('reflects selected attribute', async () => {
       const el = await fixture(

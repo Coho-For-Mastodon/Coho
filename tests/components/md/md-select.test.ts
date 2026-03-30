@@ -17,20 +17,6 @@ describe('md-select', () => {
       expect(el.pill).toBe(false);
     });
 
-    it('renders select input container', async () => {
-      const el = await fixture<MdSelect>(html`<md-select></md-select>`);
-      const selectInput = el.shadowRoot!.querySelector('.select-input');
-
-      expect(selectInput).toBeDefined();
-    });
-
-    it('renders dropdown container', async () => {
-      const el = await fixture<MdSelect>(html`<md-select></md-select>`);
-      const dropdown = el.shadowRoot!.querySelector('.dropdown');
-
-      expect(dropdown).toBeDefined();
-    });
-
     it('renders with options', async () => {
       const el = await fixture<MdSelect>(html`
         <md-select>
@@ -273,13 +259,6 @@ describe('md-select', () => {
   });
 
   describe('dropdown icon', () => {
-    it('renders dropdown icon', async () => {
-      const el = await fixture<MdSelect>(html`<md-select></md-select>`);
-      const icon = el.shadowRoot!.querySelector('.dropdown-icon');
-
-      expect(icon).toBeDefined();
-    });
-
     it('rotates icon when open', async () => {
       const el = await fixture<MdSelect>(html`
         <md-select>

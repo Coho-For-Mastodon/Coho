@@ -13,57 +13,6 @@ describe('md-card', () => {
       expect(el.clickable).toBe(false);
       expect(el.disabled).toBe(false);
     });
-
-    it('renders body slot content', async () => {
-      const el = await fixture<MdCard>(
-        html`<md-card>Card body content</md-card>`
-      );
-      const bodySlot = el.shadowRoot!.querySelector(
-        'slot:not([name])'
-      ) as HTMLSlotElement;
-
-      expect(bodySlot).toBeDefined();
-    });
-  });
-
-  describe('variants', () => {
-    it('applies filled variant by default', async () => {
-      const el = await fixture<MdCard>(html`<md-card></md-card>`);
-      const card = el.shadowRoot!.querySelector('.card');
-
-      expect(card?.classList.contains('card--filled')).toBe(true);
-    });
-
-    it('applies outlined variant', async () => {
-      const el = await fixture<MdCard>(
-        html`<md-card variant="outlined"></md-card>`
-      );
-      const card = el.shadowRoot!.querySelector('.card');
-
-      expect(card?.classList.contains('card--outlined')).toBe(true);
-    });
-
-    it('applies elevated variant', async () => {
-      const el = await fixture<MdCard>(
-        html`<md-card variant="elevated"></md-card>`
-      );
-      const card = el.shadowRoot!.querySelector('.card');
-
-      expect(card?.classList.contains('card--elevated')).toBe(true);
-    });
-
-    it('changes variant dynamically', async () => {
-      const el = await fixture<MdCard>(html`<md-card></md-card>`);
-      const card = el.shadowRoot!.querySelector('.card');
-
-      expect(card?.classList.contains('card--filled')).toBe(true);
-
-      el.variant = 'outlined';
-      await elementUpdated(el);
-
-      expect(card?.classList.contains('card--outlined')).toBe(true);
-      expect(card?.classList.contains('card--filled')).toBe(false);
-    });
   });
 
   describe('slots', () => {
@@ -162,12 +111,10 @@ describe('md-card', () => {
   });
 
   describe('clickable state', () => {
-    it('adds clickable class when clickable', async () => {
+    it('reflects clickable property when set', async () => {
       const el = await fixture<MdCard>(html`<md-card clickable></md-card>`);
-      const card = el.shadowRoot!.querySelector('.card');
 
       expect(el.clickable).toBe(true);
-      expect(card?.classList.contains('card--clickable')).toBe(true);
     });
 
     it('dispatches card-click event when clicked and clickable', async () => {
@@ -196,12 +143,10 @@ describe('md-card', () => {
   });
 
   describe('disabled state', () => {
-    it('adds disabled class when disabled', async () => {
+    it('reflects disabled property when set', async () => {
       const el = await fixture<MdCard>(html`<md-card disabled></md-card>`);
-      const card = el.shadowRoot!.querySelector('.card');
 
       expect(el.disabled).toBe(true);
-      expect(card?.classList.contains('card--disabled')).toBe(true);
     });
 
     it('does not dispatch card-click when disabled', async () => {

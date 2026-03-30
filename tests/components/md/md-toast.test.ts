@@ -34,13 +34,6 @@ describe('md-toast', () => {
 
       expect(message?.textContent).toBe('Test message');
     });
-
-    it('renders toast container', async () => {
-      const el = await fixture<MdToast>(html`<md-toast></md-toast>`);
-      const container = el.shadowRoot!.querySelector('.toast-container');
-
-      expect(container).toBeDefined();
-    });
   });
 
   describe('open state', () => {

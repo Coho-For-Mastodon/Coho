@@ -24,24 +24,6 @@ describe('md-audio-player', () => {
       expect(el.preload).toBe('metadata');
     });
 
-    it('renders play button', async () => {
-      const el = await fixture<MdAudioPlayer>(
-        html`<md-audio-player></md-audio-player>`
-      );
-
-      const playButton = el.shadowRoot?.querySelector('.play-button');
-      expect(playButton).toBeDefined();
-    });
-
-    it('renders progress track', async () => {
-      const el = await fixture<MdAudioPlayer>(
-        html`<md-audio-player></md-audio-player>`
-      );
-
-      const track = el.shadowRoot?.querySelector('.progress-track');
-      expect(track).toBeDefined();
-    });
-
     it('renders seek input range', async () => {
       const el = await fixture<MdAudioPlayer>(
         html`<md-audio-player></md-audio-player>`

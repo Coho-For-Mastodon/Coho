@@ -29,7 +29,7 @@ export class AppAnnouncements extends LitElement {
     }
 
     main {
-      padding-top: 50px;
+      padding-top: calc(46px + env(safe-area-inset-top, 0px));
       padding-left: 6em;
       padding-right: 6em;
       padding-bottom: 48px;

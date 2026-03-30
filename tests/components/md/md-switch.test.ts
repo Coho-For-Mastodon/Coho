@@ -12,15 +12,6 @@ describe('md-switch', () => {
       expect(el.checked).toBe(false);
       expect(el.disabled).toBe(false);
     });
-
-    it('renders with a label via slot', async () => {
-      const el = await fixture<MdSwitch>(
-        html`<md-switch>Enable notifications</md-switch>`
-      );
-      const slot = el.shadowRoot!.querySelector('slot');
-
-      expect(slot).toBeDefined();
-    });
   });
 
   describe('checked state', () => {
@@ -226,22 +217,6 @@ describe('md-switch', () => {
       const control = el.shadowRoot!.querySelector('.control');
 
       expect(control?.getAttribute('tabindex')).toBe('-1');
-    });
-  });
-
-  describe('visual elements', () => {
-    it('renders control track', async () => {
-      const el = await fixture<MdSwitch>(html`<md-switch></md-switch>`);
-      const control = el.shadowRoot!.querySelector('.control');
-
-      expect(control).toBeDefined();
-    });
-
-    it('renders thumb', async () => {
-      const el = await fixture<MdSwitch>(html`<md-switch></md-switch>`);
-      const thumb = el.shadowRoot!.querySelector('.thumb');
-
-      expect(thumb).toBeDefined();
     });
   });
 });

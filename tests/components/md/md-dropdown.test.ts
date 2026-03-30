@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fixture, html, elementUpdated } from '../../test-utils';
 import '../../../src/components/md/md-dropdown';
-import '../../../src/components/md/md-menu';
 import type { MdDropdown } from '../../../src/components/md/md-dropdown';
 
 describe('md-dropdown', () => {
@@ -13,32 +12,6 @@ describe('md-dropdown', () => {
       expect(el.open).toBe(false);
       expect(el.placement).toBe('bottom-start');
       expect(el.distance).toBe(8);
-    });
-
-    it('renders trigger slot', async () => {
-      const el = await fixture<MdDropdown>(html`
-        <md-dropdown>
-          <button slot="trigger">Open</button>
-        </md-dropdown>
-      `);
-      const triggerSlot = el.shadowRoot!.querySelector(
-        'slot[name="trigger"]'
-      ) as HTMLSlotElement;
-
-      expect(triggerSlot).toBeDefined();
-    });
-
-    it('renders content slot', async () => {
-      const el = await fixture<MdDropdown>(html`
-        <md-dropdown>
-          <button slot="trigger">Open</button>
-          <md-menu>Menu content</md-menu>
-        </md-dropdown>
-      `);
-
-      // Content slot exists but content is hidden when closed
-      const contentHolder = el.shadowRoot!.querySelector('.content-holder');
-      expect(contentHolder).toBeDefined();
     });
   });
 

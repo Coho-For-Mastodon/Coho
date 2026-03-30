@@ -13,13 +13,6 @@ describe('md-skeleton', () => {
       expect(el.width).toBe('100%');
       expect(el.height).toBe('1em');
     });
-
-    it('renders skeleton element', async () => {
-      const el = await fixture<MdSkeleton>(html`<md-skeleton></md-skeleton>`);
-      const skeleton = el.shadowRoot!.querySelector('.skeleton');
-
-      expect(skeleton).toBeDefined();
-    });
   });
 
   describe('shape property', () => {
@@ -123,17 +116,6 @@ describe('md-skeleton', () => {
 
       expect(el.width).toBe('100%');
       expect(el.height).toBe('200px');
-    });
-  });
-
-  describe('shimmer animation', () => {
-    it('has shimmer pseudo-element via CSS', async () => {
-      const el = await fixture<MdSkeleton>(html`<md-skeleton></md-skeleton>`);
-      const skeleton = el.shadowRoot!.querySelector('.skeleton');
-
-      // The shimmer animation is applied via CSS ::after pseudo-element
-      // We can verify the skeleton element exists and has the proper class
-      expect(skeleton).toBeDefined();
     });
   });
 });

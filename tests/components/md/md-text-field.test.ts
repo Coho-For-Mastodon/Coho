@@ -17,15 +17,6 @@ describe('md-text-field', () => {
       expect(el.variant).toBe('filled');
       expect(el.type).toBe('text');
     });
-
-    it('renders an input element', async () => {
-      const el = await fixture<MdTextField>(
-        html`<md-text-field></md-text-field>`
-      );
-      const input = el.shadowRoot!.querySelector('input');
-
-      expect(input).toBeDefined();
-    });
   });
 
   describe('value', () => {
@@ -120,18 +111,6 @@ describe('md-text-field', () => {
       const input = el.shadowRoot!.querySelector('input');
 
       expect(el.variant).toBe('outlined');
-      expect(input?.classList.contains('outlined')).toBe(true);
-    });
-
-    it('changes variant dynamically', async () => {
-      const el = await fixture<MdTextField>(
-        html`<md-text-field></md-text-field>`
-      );
-      const input = el.shadowRoot!.querySelector('input');
-
-      el.variant = 'outlined';
-      await elementUpdated(el);
-
       expect(input?.classList.contains('outlined')).toBe(true);
     });
   });

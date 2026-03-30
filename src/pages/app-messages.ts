@@ -40,7 +40,7 @@ export class AppMessages extends LitElement {
         height: 100%;
       }
 
-      main {
+      section {
         display: flex;
         flex-direction: column;
         height: 100%;
