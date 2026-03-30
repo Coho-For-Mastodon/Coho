@@ -278,30 +278,6 @@
   <source>Create Account</source>
   <target>Crear Cuenta</target>
 </trans-unit>
-<trans-unit id="sc24793fb8ec3d327">
-  <source>Go Create An Account</source>
-  <target>Ir a Crear una Cuenta</target>
-</trans-unit>
-<trans-unit id="s6777491c1a3b144c">
-  <source>Account Created</source>
-  <target>Cuenta Creada</target>
-</trans-unit>
-<trans-unit id="sc03db9ce6bb8c242">
-  <source>A confirmation email has been sent to the provided email address, please click the link in the email to confirm your account</source>
-  <target>Se ha enviado un correo de confirmación a la dirección proporcionada, por favor haz clic en el enlace del correo para confirmar tu cuenta</target>
-</trans-unit>
-<trans-unit id="s7e8e808d9576fe5e">
-  <source>Account Confirmed, Login</source>
-  <target>Cuenta Confirmada, Iniciar Sesión</target>
-</trans-unit>
-<trans-unit id="s279b9e6f821888b9">
-  <source><x id="0" equiv-text="${server.users}"/> users</source>
-  <target><x id="0" equiv-text="${server.users}"/> usuarios</target>
-</trans-unit>
-<trans-unit id="sf0584b1ec3b8cab6">
-  <source>No Description...</source>
-  <target>Sin descripción...</target>
-</trans-unit>
 <trans-unit id="sadf9c2063e1497b7">
   <source>Your modern Mastodon client</source>
   <target>Tu cliente moderno de Mastodon</target>
@@ -1102,10 +1078,6 @@
   <source>Cloud AI</source>
   <target>IA en la nube</target>
 </trans-unit>
-<trans-unit id="s5f343a43e7ea9f91">
-  <source>Error</source>
-  <target>Error</target>
-</trans-unit>
 <trans-unit id="sd4d317f1fe40a847">
   <source>Disable the poll to attach media.</source>
 </trans-unit>
@@ -1264,9 +1236,6 @@
 </trans-unit>
 <trans-unit id="s9ad3e85be89be269">
   <source>Add @<x id="0" equiv-text="${this.user?.acct}"/> to list</source>
-</trans-unit>
-<trans-unit id="s127804f48e0e56ef">
-  <source>Mastodon is a decentralized social network that allows users to create and join communities of their interest. To use Mastodon, you need to choose a server that hosts your account and connects you to other servers. Choosing a server is an important decision, as it affects your privacy, moderation, and content policies. You can browse the list of servers below to find one that suits your needs and preferences. Once you have created an account at your chosen server, come back to Coho and login to start using Coho as your Mastodon client.</source>
 </trans-unit>
 <trans-unit id="seed275e54b072145">
   <source>Home &amp; lists</source>
@@ -2044,6 +2013,87 @@
 </trans-unit>
 <trans-unit id="s7f6c9aa6ca96b7c7">
   <source>Unfollow</source>
+</trans-unit>
+<trans-unit id="s43d9b11080e3a9b0">
+  <source>Opening conversation…</source>
+</trans-unit>
+<trans-unit id="saa38ac14eb5b622d">
+  <source>Notification filters</source>
+</trans-unit>
+<trans-unit id="s0621fbc662f668f2">
+  <source>Remove attachment</source>
+</trans-unit>
+<trans-unit id="s9491c05a7ecf766e">
+  <source>Edit attachment</source>
+</trans-unit>
+<trans-unit id="s4a10a115049fac4b">
+  <source>Remove bookmark</source>
+</trans-unit>
+<trans-unit id="scc448565c2d96859">
+  <source>Unfavourite</source>
+</trans-unit>
+<trans-unit id="scf8e7ff24f98b064">
+  <source>Favourite</source>
+</trans-unit>
+<trans-unit id="se9598c6db44bc574">
+  <source>Undo boost</source>
+</trans-unit>
+<trans-unit id="se54e9d4d0fde357e">
+  <source>Followed by</source>
+</trans-unit>
+<trans-unit id="se6f79719051ff286">
+  <source>and</source>
+</trans-unit>
+<trans-unit id="s540f97efd95106d7">
+  <source>and <x id="0" equiv-text="${othersCount}"/> others</source>
+</trans-unit>
+<trans-unit id="scf1d78691f826443">
+  <source>Profile content</source>
+</trans-unit>
+<trans-unit id="sc1d5befdc2b33c8d">
+  <source>Could not fetch server information. Please check the server name and try again.</source>
+</trans-unit>
+<trans-unit id="s42288471628c3333">
+  <source>users</source>
+</trans-unit>
+<trans-unit id="scaf63635761eef5c">
+  <source>posts</source>
+</trans-unit>
+<trans-unit id="s634c567f1c931cf8">
+  <source>connected servers</source>
+</trans-unit>
+<trans-unit id="sd506ce88609f7e99">
+  <source>Server Rules</source>
+</trans-unit>
+<trans-unit id="s02a83d758b7eab61">
+  <source>This server is not accepting new registrations.</source>
+</trans-unit>
+<trans-unit id="sd4a54f9d04dc20f9">
+  <source>This server requires admin approval after sign-up.</source>
+</trans-unit>
+<trans-unit id="s1b82c95cf5060eff">
+  <source>Create Account on</source>
+</trans-unit>
+<trans-unit id="s17ad46ae4871cb5c">
+  <source>Almost there!</source>
+</trans-unit>
+<trans-unit id="s969cf571be74f0f0">
+  <source>Once you've finished creating your account and confirmed your email, come back here to log in.</source>
+</trans-unit>
+<trans-unit id="s17d1078b6e542578">
+  <source>Choose a Mastodon server to create your account. Each server is independently operated with its own rules and community. After signing up, you can follow anyone on any server.</source>
+</trans-unit>
+<trans-unit id="sd2f21b91439aa3e9">
+  <source>Search for a server (e.g. mastodon.social)</source>
+</trans-unit>
+<trans-unit id="s8a43219bc7d86354">
+  <source>Loading server info...</source>
+</trans-unit>
+<trans-unit id="s32a8dacf6bdadb4b">
+  <source>Already have an account? Login</source>
+</trans-unit>
+<trans-unit id="s5c9d1ed02acbea87">
+  <source>Search categories</source>
 </trans-unit>
 </body>
 </file>
