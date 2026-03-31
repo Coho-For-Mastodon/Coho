@@ -594,16 +594,16 @@ export class Timeline extends LitElement {
     const { default: hotkeys } = await import('hotkeys-js');
     this._hotkeys = hotkeys;
 
-    // Set up alt+j/k navigation with a specific scope for this timeline
-    hotkeys('alt+j,alt+k', this._keyboardScope, (event, handler) => {
+    // Set up j/k navigation with a specific scope for this timeline
+    hotkeys('j,k', this._keyboardScope, (event, handler) => {
       // Only handle if this timeline is visible/active
       if (!this.isConnected || this.timeline.length === 0) return;
 
       event.preventDefault();
 
-      if (handler.key === 'alt+j') {
+      if (handler.key === 'j') {
         this._navigateToNextPost();
-      } else if (handler.key === 'alt+k') {
+      } else if (handler.key === 'k') {
         this._navigateToPreviousPost();
       }
     });
@@ -623,7 +623,7 @@ export class Timeline extends LitElement {
   };
 
   private _cleanupKeyboardNavigation() {
-    this._hotkeys?.unbind('alt+j,alt+k', this._keyboardScope);
+    this._hotkeys?.unbind('j,k', this._keyboardScope);
     window.removeEventListener('refresh-timeline', this._handleRefreshEvent);
   }
 

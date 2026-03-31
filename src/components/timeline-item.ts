@@ -775,20 +775,15 @@ export class TimelineItem extends LitElement {
     // Only handle if this item is focused
     if (!this.focused || !this.tweet) return;
 
-    // All shortcuts require alt modifier (except Enter) to avoid conflicts with typing
     const postId = this.tweet.reblog?.id || this.tweet.id;
 
-    // Enter doesn't need alt modifier as it doesn't conflict with typing
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.openPost();
-      return;
-    }
-
-    // All other shortcuts require alt key
-    if (!event.altKey) return;
-
     switch (event.key) {
+      case 'Enter':
+      case 'o':
+        // Open post
+        event.preventDefault();
+        this.openPost();
+        break;
       case 'r':
         // Reply
         event.preventDefault();
@@ -804,15 +799,10 @@ export class TimelineItem extends LitElement {
         event.preventDefault();
         this.favorite(postId);
         break;
-      case 'd':
-        // Bookmark
+      case 's':
+        // Bookmark (s = save)
         event.preventDefault();
         this.bookmark(postId);
-        break;
-      case 'o':
-        // Open post
-        event.preventDefault();
-        this.openPost();
         break;
       case 'x':
         // Expand thread

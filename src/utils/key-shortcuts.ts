@@ -1,63 +1,91 @@
 import hotkeys from 'hotkeys-js';
 import { router } from '../router/routes';
 
-// With modifier keys required, we allow shortcuts everywhere
-// The alt key prevents conflicts with normal typing
-hotkeys.filter = function () {
+// Only allow shortcuts when NOT focused on an input/textarea/contenteditable.
+// This replaces the old Alt-modifier approach — single keys are safe because
+// they won't fire while the user is typing.
+hotkeys.filter = function (event: KeyboardEvent) {
+  const target = event.target as HTMLElement | null;
+  if (!target) return true;
+
+  const tag = target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) {
+    return false;
+  }
+
+  // Also check shadow DOM: the target may be inside an input in a shadow root
+  const composed = event.composedPath?.();
+  if (composed) {
+    for (const el of composed) {
+      if (el instanceof HTMLElement) {
+        const t = el.tagName;
+        if (t === 'INPUT' || t === 'TEXTAREA' || el.isContentEditable) {
+          return false;
+        }
+      }
+    }
+  }
+
   return true;
 };
 
 export function init() {
-  // Navigation shortcuts (alt+g followed by key)
-  hotkeys(
-    'alt+g+h,alt+g+n,alt+g+s,alt+g+b,alt+g+f,alt+g+p,alt+g+m',
-    (event, handler) => {
-      event.preventDefault();
+  // Navigation shortcuts (hold g + press key)
+  hotkeys('g+h,g+n,g+s,g+b,g+f,g+p,g+m', (event, handler) => {
+    event.preventDefault();
 
-      switch (handler.key) {
-        case 'alt+g+h':
-          handleGoToHome();
-          break;
-        case 'alt+g+n':
-          handleGoToNotifications();
-          break;
-        case 'alt+g+s':
-          handleGoToSearch();
-          break;
-        case 'alt+g+b':
-          handleGoToBookmarks();
-          break;
-        case 'alt+g+f':
-          handleGoToFavorites();
-          break;
-        case 'alt+g+p':
-          handleGoToProfile();
-          break;
-        case 'alt+g+m':
-          handleGoToMessages();
-          break;
-        default:
-          break;
-      }
+    switch (handler.key) {
+      case 'g+h':
+        handleGoToHome();
+        break;
+      case 'g+n':
+        handleGoToNotifications();
+        break;
+      case 'g+s':
+        handleGoToSearch();
+        break;
+      case 'g+b':
+        handleGoToBookmarks();
+        break;
+      case 'g+f':
+        handleGoToFavorites();
+        break;
+      case 'g+p':
+        handleGoToProfile();
+        break;
+      case 'g+m':
+        handleGoToMessages();
+        break;
+      default:
+        break;
     }
-  );
+  });
 
-  // Action shortcuts (all require alt modifier to avoid conflicts with typing)
-  hotkeys('alt+n', (event) => {
+  // New post
+  hotkeys('n', (event) => {
     event.preventDefault();
     handleNewPost();
   });
 
-  hotkeys('alt+/', (event) => {
+  // Focus search
+  hotkeys('/', (event) => {
     event.preventDefault();
     handleFocusSearch();
   });
 
-  hotkeys('alt+shift+/', (event) => {
+  // Show shortcuts help
+  hotkeys('shift+/', (event) => {
     event.preventDefault();
     handleShowShortcutsHelp();
   });
 
+  // Refresh timeline
+  hotkeys('.', (event) => {
+    event.preventDefault();
+    handleRefreshTimeline();
+  });
+
+  // Escape
   hotkeys('escape', () => {
     const active = document.activeElement;
     const isInDialog =
@@ -69,12 +97,6 @@ export function init() {
     if (!isInDialog) {
       handleEscape();
     }
-  });
-
-  // Period to refresh timeline
-  hotkeys('alt+.', (event) => {
-    event.preventDefault();
-    handleRefreshTimeline();
   });
 }
 
@@ -114,7 +136,6 @@ async function handleGoToSearch() {
 }
 
 async function handleGoToProfile() {
-  // Get current user from localStorage
   const currentUserId = localStorage.getItem('currentUserId');
   if (currentUserId) {
     await router.navigate(`/account?id=${currentUserId}`);
@@ -126,26 +147,21 @@ async function handleGoToMessages() {
 }
 
 function handleNewPost() {
-  // Dispatch event to open post dialog
   window.dispatchEvent(new CustomEvent('open-post-dialog'));
 }
 
 function handleFocusSearch() {
-  // Dispatch event to focus search input
   window.dispatchEvent(new CustomEvent('focus-search'));
 }
 
 function handleShowShortcutsHelp() {
-  // Dispatch event to show shortcuts help dialog
   window.dispatchEvent(new CustomEvent('show-shortcuts-help'));
 }
 
 function handleEscape() {
-  // Dispatch escape event for dialogs/modals to handle
   window.dispatchEvent(new CustomEvent('global-escape'));
 }
 
 function handleRefreshTimeline() {
-  // Dispatch event to refresh timeline
   window.dispatchEvent(new CustomEvent('refresh-timeline'));
 }

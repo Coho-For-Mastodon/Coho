@@ -153,45 +153,37 @@ export class ShortcutsHelpDialog extends LitElement {
         <div>
           <h3>${msg('Navigation')}</h3>
           <ul class="shortcut-list">
-            ${this._renderShortcut(msg('Go to Home'), ['Alt', 'g', 'h'])}
-            ${this._renderShortcut(msg('Go to Notifications'), [
-              'Alt',
-              'g',
-              'n',
-            ])}
-            ${this._renderShortcut(msg('Go to Search'), ['Alt', 'g', 's'])}
-            ${this._renderShortcut(msg('Go to Bookmarks'), ['Alt', 'g', 'b'])}
-            ${this._renderShortcut(msg('Go to Favorites'), ['Alt', 'g', 'f'])}
-            ${this._renderShortcut(msg('Go to Profile'), ['Alt', 'g', 'p'])}
-            ${this._renderShortcut(msg('Go to Messages'), ['Alt', 'g', 'm'])}
+            ${this._renderShortcut(msg('Go to Home'), ['g', 'h'])}
+            ${this._renderShortcut(msg('Go to Notifications'), ['g', 'n'])}
+            ${this._renderShortcut(msg('Go to Search'), ['g', 's'])}
+            ${this._renderShortcut(msg('Go to Bookmarks'), ['g', 'b'])}
+            ${this._renderShortcut(msg('Go to Favorites'), ['g', 'f'])}
+            ${this._renderShortcut(msg('Go to Profile'), ['g', 'p'])}
+            ${this._renderShortcut(msg('Go to Messages'), ['g', 'm'])}
           </ul>
 
           <h3>${msg('Timeline')}</h3>
           <ul class="shortcut-list">
-            ${this._renderShortcut(msg('Next post'), ['Alt', 'j'])}
-            ${this._renderShortcut(msg('Previous post'), ['Alt', 'k'])}
-            ${this._renderShortcut(msg('Refresh timeline'), ['Alt', '.'])}
+            ${this._renderShortcut(msg('Next post'), ['j'])}
+            ${this._renderShortcut(msg('Previous post'), ['k'])}
+            ${this._renderShortcut(msg('Refresh timeline'), ['.'])}
           </ul>
 
           <h3>${msg('Post Actions (when focused)')}</h3>
           <ul class="shortcut-list">
             ${this._renderShortcut(msg('Open post'), ['Enter'])}
-            ${this._renderShortcut(msg('Reply'), ['Alt', 'r'])}
-            ${this._renderShortcut(msg('Boost'), ['Alt', 'b'])}
-            ${this._renderShortcut(msg('Favorite'), ['Alt', 'f'])}
-            ${this._renderShortcut(msg('Bookmark'), ['Alt', 'd'])}
-            ${this._renderShortcut(msg('Expand thread'), ['Alt', 'x'])}
+            ${this._renderShortcut(msg('Reply'), ['r'])}
+            ${this._renderShortcut(msg('Boost'), ['b'])}
+            ${this._renderShortcut(msg('Favorite'), ['f'])}
+            ${this._renderShortcut(msg('Bookmark'), ['s'])}
+            ${this._renderShortcut(msg('Expand thread'), ['x'])}
           </ul>
 
           <h3>${msg('Actions')}</h3>
           <ul class="shortcut-list">
-            ${this._renderShortcut(msg('New post'), ['Alt', 'n'])}
-            ${this._renderShortcut(msg('Focus search'), ['Alt', '/'])}
-            ${this._renderShortcut(msg('Show shortcuts help'), [
-              'Alt',
-              'Shift',
-              '/',
-            ])}
+            ${this._renderShortcut(msg('New post'), ['n'])}
+            ${this._renderShortcut(msg('Focus search'), ['/'])}
+            ${this._renderShortcut(msg('Show shortcuts help'), ['?'])}
           </ul>
 
           <h3>${msg('Composing')}</h3>
