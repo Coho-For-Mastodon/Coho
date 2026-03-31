@@ -9,6 +9,7 @@ import '../components/timeline-item';
 import { router } from '../router/routes';
 
 import '../components/md/md-skeleton';
+import '../components/md/md-skeleton-card';
 
 import '../components/md/md-segmented-button';
 import { parseEmojis } from '../utils/emoji-parser';
@@ -602,6 +603,7 @@ export class SearchPage extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    void this.loadTrendingIfNeeded();
     void this.loadSuggestionsIfNeeded();
   }
 
@@ -934,7 +936,7 @@ export class SearchPage extends LitElement {
         <div class="panel ${this.activeSegment === 'trending' ? 'active' : ''}">
           <ul>
             ${this.trendingLoading
-              ? html`<li><md-skeleton></md-skeleton></li>`
+              ? html`<li><md-skeleton-card count="5"></md-skeleton-card></li>`
               : this.trendingError
                 ? html`<li>${this.trendingError}</li>`
                 : this.trending
