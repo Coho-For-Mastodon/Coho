@@ -222,9 +222,10 @@ export class Router extends EventTarget {
       }
     }
 
-    // Update document title
     if (route.title) {
-      document.title = route.title;
+      const formatted =
+        route.title.charAt(0).toUpperCase() + route.title.slice(1);
+      document.title = `${formatted} - Coho`;
     }
 
     // Update current route and dispatch event wrapped in View Transition
@@ -235,9 +236,22 @@ export class Router extends EventTarget {
       );
     };
 
+    const moveFocusToMain = () => {
+      requestAnimationFrame(() => {
+        const target = document.querySelector('main, section, [role="main"]');
+        if (target) {
+          if (!target.hasAttribute('tabindex')) {
+            target.setAttribute('tabindex', '-1');
+          }
+          (target as HTMLElement).focus({ preventScroll: true });
+        }
+      });
+    };
+
     // Skip view transition if requested (e.g., when closing a dialog that pushed history state)
     if (options?.skipViewTransition) {
       updateDOM();
+      moveFocusToMain();
       return;
     }
 
@@ -253,15 +267,16 @@ export class Router extends EventTarget {
           }
         ).startViewTransition(updateDOM);
 
-        // Wait for animations to finish
         await transition.finished;
+        moveFocusToMain();
       } catch (e) {
-        // If transition fails, just update DOM normally
         console.warn('View transition failed:', e);
         updateDOM();
+        moveFocusToMain();
       }
     } else {
       updateDOM();
+      moveFocusToMain();
     }
   }
 
@@ -359,22 +374,6 @@ export class Router extends EventTarget {
 
     // Skip SSR
     if (typeof window === 'undefined') return;
-
-    // Ensure polyfills for Navigation API + URLPattern in browsers like Firefox
-    if (!('navigation' in window)) {
-      try {
-        await import('@virtualstate/navigation');
-      } catch (e) {
-        console.warn('[Router] Navigation API polyfill failed:', e);
-      }
-    }
-    if (typeof URLPattern === 'undefined') {
-      try {
-        await import('urlpattern-polyfill');
-      } catch (e) {
-        console.warn('[Router] URLPattern polyfill failed:', e);
-      }
-    }
 
     // Categorize routes: exact paths go to fast Map, parameterized routes deferred
     for (const route of this.routes) {

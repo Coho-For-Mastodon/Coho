@@ -5,15 +5,22 @@ import type {
   CredentialAccount,
   UpdateCredentialsParams,
 } from '../mastodon/types/account';
-import { searchAccounts as mastodonSearchAccounts } from '../mastodon/api/accounts';
+import {
+  lookupAccountByAcct,
+  searchAccounts as mastodonSearchAccounts,
+} from '../mastodon/api/accounts';
+import {
+  buildAccountAddressCsv,
+  downloadUtf8Csv,
+  extractAccountAddressesFromCsvText,
+  formatDatedExportFilename,
+  normalizeAcctForLookup,
+} from '../utils/csv-simple';
 import {
   syncActiveAccountProfile,
   upsertAccountFromOAuth,
 } from './auth-session';
-import {
-  getAccountScopedIdbKey,
-  getAccountScopedSessionStorageKey,
-} from '../utils/account-scoped-storage';
+import { getAccountScopedIdbKey } from '../utils/account-scoped-storage';
 
 // Helper functions to always get fresh values from localStorage
 const getAccessToken = () => localStorage.getItem('accessToken') || '';
@@ -28,8 +35,6 @@ const getUserPostsCacheKey = (id: string, filter: ProfilePostsFilter) =>
   getAccountScopedIdbKey(`user_posts:${id}:${filter}`);
 const getPinnedPostsCacheKey = (server: string, id: string) =>
   getAccountScopedIdbKey(`user_pinned_posts:${server}:${id}`);
-export const getLatestReadStorageKey = () =>
-  getAccountScopedSessionStorageKey('latest-read');
 
 // Note: IndexedDB is updated in authToClient() after successful login
 // We don't update it here at module load to avoid overwriting with empty values
@@ -537,11 +542,9 @@ export const getInstanceInfo = async () => {
 export const initAuth = async (serverURL: string) => {
   const normalizedServer = normalizeServer(serverURL);
 
-  // On native, location.origin is "https://localhost" (Capacitor WebView).
-  // The redirect must use the real domain so the OS intercepts it as an App Link.
   const { isNativePlatform } = await import('../utils/platform.js');
   const redirect_uri = isNativePlatform()
-    ? 'https://coho.place/auth/callback'
+    ? 'coho://auth/callback'
     : `${location.origin}/auth/callback`;
 
   const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/authenticate`, {
@@ -570,9 +573,15 @@ export const authToClient = async (code: string, state: string) => {
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `Token exchange failed (HTTP ${response.status})`
+      );
+    }
+
     const data = await response.json();
 
-    // Firebase function returns {access_token, server, clientId, clientSecret}
     if (!data.access_token || typeof data.access_token !== 'string') {
       console.error('Invalid token response');
       throw new Error(
@@ -600,41 +609,6 @@ export const authToClient = async (code: string, state: string) => {
     console.error('Auth to client error', err);
     throw err;
   }
-};
-
-export const registerAccount = async (
-  username: string,
-  email: string,
-  password: string,
-  agreement: boolean,
-  locale: string,
-  chosenServer: string
-) => {
-  const response = await fetch(`https://${chosenServer}/api/v1/accounts`, {
-    method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify({
-      username,
-      email,
-      password,
-      agreement,
-      locale,
-    }),
-  });
-
-  const data = await response.json();
-  return data;
-};
-
-export const getServers = async () => {
-  const response = await fetch(
-    'https://mammoth-api-v3.azurewebsites.net/api/getOpenInstances'
-  );
-  const data = await response.json();
-
-  return data;
 };
 
 export const isFollowingMe = async (id: string) => {
@@ -769,22 +743,142 @@ export const searchAccounts = async (query: string, limit = 6) => {
   return mastodonSearchAccounts(query, limit);
 };
 
-export const getMutedAccounts = async () => {
+const BLOCK_MUTE_PAGE_LIMIT = 80;
+
+async function fetchAccountListPage(
+  endpoint: 'blocks' | 'mutes',
+  maxId?: string
+): Promise<Account[]> {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(`https://${server}/api/v1/mutes`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+  const params = new URLSearchParams({
+    limit: String(BLOCK_MUTE_PAGE_LIMIT),
   });
+  if (maxId) {
+    params.set('max_id', maxId);
+  }
+  const response = await fetch(
+    `https://${server}/api/v1/${endpoint}?${params.toString()}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
   const data = await response.json();
-  return data;
+  return Array.isArray(data) ? data : [];
+}
+
+/** All blocked accounts (paginated). */
+export const fetchAllBlockedAccounts = async (): Promise<Account[]> => {
+  const out: Account[] = [];
+  let maxId: string | undefined;
+  for (;;) {
+    const page = await fetchAccountListPage('blocks', maxId);
+    if (page.length === 0) break;
+    out.push(...page);
+    if (page.length < BLOCK_MUTE_PAGE_LIMIT) break;
+    const last = page[page.length - 1];
+    if (!last?.id) break;
+    maxId = last.id;
+  }
+  return out;
 };
 
-export const getBlockedAccounts = async () => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(`https://${server}/api/v1/blocks`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  const data = await response.json();
-  return data;
+/** All muted accounts (paginated). */
+export const fetchAllMutedAccounts = async (): Promise<Account[]> => {
+  const out: Account[] = [];
+  let maxId: string | undefined;
+  for (;;) {
+    const page = await fetchAccountListPage('mutes', maxId);
+    if (page.length === 0) break;
+    out.push(...page);
+    if (page.length < BLOCK_MUTE_PAGE_LIMIT) break;
+    const last = page[page.length - 1];
+    if (!last?.id) break;
+    maxId = last.id;
+  }
+  return out;
 };
+
+export function downloadBlockedAccountsCsv(accounts: Account[]): void {
+  const csv = buildAccountAddressCsv(accounts.map((a) => a.acct));
+  downloadUtf8Csv(formatDatedExportFilename('coho-blocked'), csv);
+}
+
+export function downloadMutedAccountsCsv(accounts: Account[]): void {
+  const csv = buildAccountAddressCsv(accounts.map((a) => a.acct));
+  downloadUtf8Csv(formatDatedExportFilename('coho-muted'), csv);
+}
+
+export interface CsvImportAccountsResult {
+  imported: number;
+  skipped: number;
+  failed: number;
+  newAccounts: Account[];
+}
+
+/**
+ * Import block or mute actions from Mastodon-style CSV (Account address column).
+ * Resolves each handle via GET /api/v1/accounts/lookup, then POST block/mute.
+ */
+export async function importBlocksOrMutesFromCsv(
+  kind: 'block' | 'mute',
+  csvText: string,
+  options: {
+    existingAccountIds: Set<string>;
+    selfAccountId: string | null;
+    onProgress?: (current: number, total: number) => void;
+  }
+): Promise<CsvImportAccountsResult> {
+  const rawAddresses = extractAccountAddressesFromCsvText(csvText);
+  const server = getServer();
+  const seen = new Set<string>();
+  const addresses: string[] = [];
+  for (const raw of rawAddresses) {
+    const n = normalizeAcctForLookup(raw, server);
+    if (!n) continue;
+    const key = n.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    addresses.push(n);
+  }
+
+  const total = addresses.length;
+  let imported = 0;
+  let skipped = 0;
+  let failed = 0;
+  const newAccounts: Account[] = [];
+  const existing = options.existingAccountIds;
+
+  for (let i = 0; i < addresses.length; i++) {
+    const acct = addresses[i]!;
+    options.onProgress?.(i + 1, total);
+    try {
+      const account = await lookupAccountByAcct(acct);
+      if (!account) {
+        failed++;
+        continue;
+      }
+      if (options.selfAccountId && account.id === options.selfAccountId) {
+        skipped++;
+        continue;
+      }
+      if (existing.has(account.id)) {
+        skipped++;
+        continue;
+      }
+      if (kind === 'block') {
+        await blockUser(account.id);
+      } else {
+        await muteUser(account.id);
+      }
+      existing.add(account.id);
+      newAccounts.push(account as Account);
+      imported++;
+    } catch (e) {
+      console.error('[importBlocksOrMutesFromCsv]', acct, e);
+      failed++;
+    }
+  }
+
+  return { imported, skipped, failed, newAccounts };
+}

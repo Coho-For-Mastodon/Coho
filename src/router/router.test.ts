@@ -261,7 +261,7 @@ describe('Router', () => {
       router = new Router({ routes: createTestRoutes() });
       await router.init();
 
-      expect(document.title).toBe('Home');
+      expect(document.title).toBe('Home - Coho');
     });
   });
 

@@ -8,7 +8,6 @@ vi.mock('../../src/services/notifications', () => ({
 import {
   bootstrapSession,
   getActiveAccount,
-  hasAuthenticatedAccount,
   invalidateActiveAccount,
   listAccounts,
   removeAccount,
@@ -67,7 +66,7 @@ describe('auth-session service', () => {
 
     expect(store.accounts).toHaveLength(1);
     expect(store.activeAccountKey).toBe('tech.lgbt::self');
-    expect(hasAuthenticatedAccount()).toBe(true);
+    expect(listAccounts().length > 0).toBe(true);
     expect(localStorage.getItem('accessToken')).toBe('legacy-token');
     expect(await get('accessToken')).toBe('legacy-token');
     expect(await get('server')).toBe('tech.lgbt');
@@ -134,10 +133,8 @@ describe('auth-session service', () => {
     expect(record.clientSecret).toBe('csec-456');
   });
 
-  it('switches the active account, syncs the legacy projection, and emits an event', async () => {
+  it('switches the active account and syncs the legacy projection', async () => {
     seedStore();
-    const changed = vi.fn();
-    window.addEventListener('coho:account-changed', changed);
 
     await switchAccount('hachyderm.io::2');
 
@@ -145,9 +142,7 @@ describe('auth-session service', () => {
     expect(localStorage.getItem('accessToken')).toBe('token-b');
     expect(localStorage.getItem('server')).toBe('hachyderm.io');
     expect(localStorage.getItem('currentUserID')).toBe('2');
-    expect(changed).toHaveBeenCalledTimes(1);
     expect(await get('activeAccountKey')).toBe('hachyderm.io::2');
-    window.removeEventListener('coho:account-changed', changed);
   });
 
   it('removes the active account and auto-switches to the most recent remaining account', async () => {

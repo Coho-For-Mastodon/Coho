@@ -55,8 +55,13 @@ export function renderLinkCard(
   if (hasImage) {
     // Vertical "large" card layout: image on top, content below
     return html`
-      <div
+      <a
+        href="${card.url}"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="text-decoration: none; color: inherit; display: block;"
         @click="${(e: Event) => {
+          e.preventDefault();
           e.stopPropagation();
           openLinkCard(card.url || '');
         }}"
@@ -75,14 +80,19 @@ export function renderLinkCard(
             ? html`<span class="link-card-provider">${provider}</span>`
             : nothing}
         </div>
-      </div>
+      </a>
     `;
   }
 
   // Compact horizontal layout: no image
   return html`
-    <div
+    <a
+      href="${card.url}"
+      target="_blank"
+      rel="noopener noreferrer"
+      style="text-decoration: none; color: inherit; display: block;"
       @click="${(e: Event) => {
+        e.preventDefault();
         e.stopPropagation();
         openLinkCard(card.url || '');
       }}"
@@ -98,7 +108,7 @@ export function renderLinkCard(
           ? html`<span class="link-card-provider">${provider}</span>`
           : nothing}
       </div>
-    </div>
+    </a>
   `;
 }
 
@@ -106,7 +116,7 @@ export interface TimelineItemHandlers {
   viewSensitive: () => void;
   viewThreadSensitive: (id: string) => void;
   viewReplySensitive: () => void;
-  replies: () => void;
+  replies: (post?: Post) => void;
   bookmark: (id: string) => void;
   favorite: (id: string) => void;
   reblog: (id: string) => void;
@@ -117,6 +127,7 @@ export interface TimelineItemHandlers {
   shareStatus: (tweet: Post | null) => void;
   deleteStatus: () => void;
   initEditStatus: () => void;
+  viewEditHistory: (id: string) => void;
   openPost: () => void;
   openParentPost: () => void;
   openLinkCard: (url: string) => void;
@@ -128,6 +139,7 @@ export interface TimelineItemHandlers {
   showThread: () => void;
   muteUser: (accountId: string) => void;
   blockUser: (accountId: string) => void;
+  blockDomain: (domain: string) => void;
   reportUser: (
     accountId: string,
     accountAcct: string,
@@ -236,9 +248,10 @@ export function renderReplyContext(
               pill
               size="small"
               style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+              aria-label="Reply"
               @click="${(e: Event) => {
                 e.stopPropagation();
-                handlers.replies();
+                handlers.replies(state.tweet?.reply_to);
               }}"
             >
               <md-icon slot="suffix" name="chatbox"></md-icon>
@@ -323,7 +336,7 @@ export function renderRegularTweet(
 
         <div class="actions-right">
           <md-dropdown placement="bottom-end">
-            <md-icon-button slot="trigger" name="ellipsis-vertical" label="More options" size="small"></md-icon-button>
+            <md-icon-button slot="trigger" name="ellipsis-vertical" label="${msg('More options')}" size="small"></md-icon-button>
             <md-menu>
               <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null, state.tweet?.id)}" title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}>
                 <md-icon slot="prefix" name="language"></md-icon>
@@ -347,6 +360,19 @@ export function renderRegularTweet(
                 <md-icon slot="prefix" name="share"></md-icon>
                 ${msg('Share')}
               </md-menu-item>
+              ${
+                state.tweet?.edited_at
+                  ? html`
+                      <md-menu-item
+                        @click="${() =>
+                          handlers.viewEditHistory(state.tweet?.id || '')}"
+                      >
+                        <md-icon slot="prefix" name="time"></md-icon>
+                        ${msg('View edit history')}
+                      </md-menu-item>
+                    `
+                  : null
+              }
               ${
                 state.canPin
                   ? html`
@@ -395,6 +421,21 @@ export function renderRegularTweet(
                         <md-icon slot="prefix" name="ban"></md-icon>
                         ${msg(str`Block @${state.tweet?.account.acct}`)}
                       </md-menu-item>
+                      ${state.tweet?.account.acct?.includes('@')
+                        ? html`
+                            <md-menu-item
+                              @click="${() =>
+                                handlers.blockDomain(
+                                  state.tweet?.account.acct?.split('@')[1] || ''
+                                )}"
+                            >
+                              <md-icon slot="prefix" name="ban"></md-icon>
+                              ${msg(
+                                str`Block domain ${state.tweet?.account.acct?.split('@')[1]}`
+                              )}
+                            </md-menu-item>
+                          `
+                        : null}
                       <md-menu-item
                         @click="${() =>
                           handlers.reportUser(
@@ -437,7 +478,15 @@ export function renderRegularTweet(
 
       ${
         state.tweet?.edited_at
-          ? html`<span class="edited-indicator">${msg('(edited)')}</span>`
+          ? html`<button
+              class="edited-indicator"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                handlers.viewEditHistory(state.tweet?.id || '');
+              }}"
+            >
+              ${msg('(edited)')}
+            </button>`
           : null
       }
 
@@ -476,6 +525,7 @@ export function renderRegularTweet(
                 pill
                 size="small"
                 style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+                aria-label="${msg('Reply')}"
                 @click="${() => handlers.replies()}"
               >
                 <md-icon
@@ -494,6 +544,8 @@ export function renderRegularTweet(
           }"
           pill
           size="small"
+          aria-pressed="${state.isBookmarked || state.tweet?.bookmarked ? 'true' : 'false'}"
+          aria-label="${state.isBookmarked || state.tweet?.bookmarked ? 'Remove bookmark' : 'Bookmark'}"
           @click="${() => handlers.bookmark(state.tweet?.id || '')}"
           ><md-icon slot="suffix" src="/assets/bookmark-outline.svg"></md-icon
         ></md-button>
@@ -507,6 +559,12 @@ export function renderRegularTweet(
                   : 'var(--md-sys-color-on-surface-variant)'}"
                 pill
                 size="small"
+                aria-pressed="${state.isBoosted || state.tweet?.favourited
+                  ? 'true'
+                  : 'false'}"
+                aria-label="${state.isBoosted || state.tweet?.favourited
+                  ? 'Unfavourite'
+                  : 'Favourite'}"
                 @click="${() => handlers.favorite(state.tweet?.id || '')}"
                 >${state.tweet?.favourites_count}
                 <md-icon slot="suffix" name="heart"></md-icon
@@ -523,6 +581,12 @@ export function renderRegularTweet(
                   : 'var(--md-sys-color-on-surface-variant)'}"
                 pill
                 size="small"
+                aria-pressed="${state.isReblogged || state.tweet?.reblogged
+                  ? 'true'
+                  : 'false'}"
+                aria-label="${state.isReblogged || state.tweet?.reblogged
+                  ? 'Undo boost'
+                  : 'Boost'}"
                 @click="${() => handlers.reblog(state.tweet?.id || '')}"
                 >${state.tweet?.reblogs_count}
                 <md-icon slot="suffix" name="repeat"></md-icon
@@ -620,6 +684,10 @@ export function renderThreadContinuation(
                 : 'var(--md-sys-color-on-surface-variant)'}"
               pill
               size="small"
+              aria-pressed="${threadPost.bookmarked ? 'true' : 'false'}"
+              aria-label="${threadPost.bookmarked
+                ? msg('Remove bookmark')
+                : msg('Bookmark')}"
               @click="${(e: Event) => {
                 e.stopPropagation();
                 handlers.bookmark(threadPost.id);
@@ -634,6 +702,10 @@ export function renderThreadContinuation(
                     : 'var(--md-sys-color-on-surface-variant)'}"
                   pill
                   size="small"
+                  aria-pressed="${threadPost.favourited ? 'true' : 'false'}"
+                  aria-label="${threadPost.favourited
+                    ? msg('Unfavourite')
+                    : msg('Favourite')}"
                   @click="${(e: Event) => {
                     e.stopPropagation();
                     handlers.favorite(threadPost.id);
@@ -650,6 +722,10 @@ export function renderThreadContinuation(
                     : 'var(--md-sys-color-on-surface-variant)'}"
                   pill
                   size="small"
+                  aria-pressed="${threadPost.reblogged ? 'true' : 'false'}"
+                  aria-label="${threadPost.reblogged
+                    ? msg('Undo boost')
+                    : msg('Boost')}"
                   @click="${(e: Event) => {
                     e.stopPropagation();
                     handlers.reblog(threadPost.id);
@@ -669,10 +745,15 @@ export function renderThreadContinuation(
     })}
     ${state.tweet?.thread_truncated && !state.threadExpanded
       ? html`
-          <div class="thread-show-more" @click="${() => handlers.openPost()}">
+          <button
+            type="button"
+            class="thread-show-more"
+            style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%;"
+            @click="${() => handlers.openPost()}"
+          >
             <md-icon name="chatbox"></md-icon>
             ${msg('Show thread')}
-          </div>
+          </button>
         `
       : null}
   `;
@@ -689,8 +770,10 @@ export function renderReblog(
 
   return html`
     <md-card slot="card">
-      <div
+      <button
+        type="button"
         class="boost-indicator"
+        style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%;"
         @click="${(e: Event) => {
           e.stopPropagation();
           router.navigate(`/account?id=${state.tweet?.account.id}`, {
@@ -713,7 +796,7 @@ export function renderReblog(
           )}"
         ></span>
         <span>${msg('boosted')}</span>
-      </div>
+      </button>
       <div class="header-block" slot="header">
         <user-profile
           ?small="${true}"
@@ -723,7 +806,7 @@ export function renderReblog(
           <md-icon-button
             slot="trigger"
             name="ellipsis-vertical"
-            label="More options"
+            label="${msg('More options')}"
             size="small"
           ></md-icon-button>
           <md-menu>
@@ -802,6 +885,23 @@ export function renderReblog(
                     <md-icon slot="prefix" name="ban"></md-icon>
                     ${msg(str`Block @${state.tweet?.reblog?.account.acct}`)}
                   </md-menu-item>
+                  ${state.tweet?.reblog?.account.acct?.includes('@')
+                    ? html`
+                        <md-menu-item
+                          @click="${() =>
+                            handlers.blockDomain(
+                              state.tweet?.reblog?.account.acct?.split(
+                                '@'
+                              )[1] || ''
+                            )}"
+                        >
+                          <md-icon slot="prefix" name="ban"></md-icon>
+                          ${msg(
+                            str`Block domain ${state.tweet?.reblog?.account.acct?.split('@')[1]}`
+                          )}
+                        </md-menu-item>
+                      `
+                    : null}
                   <md-menu-item
                     @click="${() =>
                       handlers.reportUser(
@@ -967,6 +1067,24 @@ export function renderThread(
                 )
               : null}
             <div class="actions" slot="footer">
+              ${state.show === true
+                ? html`<md-button
+                    variant="text"
+                    pill
+                    size="small"
+                    style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+                    aria-label="${msg('Reply')}"
+                    @click="${(e: Event) => {
+                      e.stopPropagation();
+                      handlers.replies(threadPost);
+                    }}"
+                  >
+                    <md-icon
+                      slot="suffix"
+                      src="/assets/chatbox-outline.svg"
+                    ></md-icon>
+                  </md-button>`
+                : null}
               <md-button
                 variant="text"
                 style="--md-sys-color-primary: ${threadPost.bookmarked

@@ -6,7 +6,6 @@ import {
   groupSelfThreads,
   getPaginatedHomeTimeline,
   mixTimeline,
-  getLastPlaceTimeline,
   prefetchNextPage,
   resetLastPageID,
 } from '../services/timeline';
@@ -17,7 +16,6 @@ import {
   updateCacheScrollPosition,
   clearTimelineCache,
 } from '../services/timeline-cache';
-import { getLatestReadStorageKey } from '../services/account';
 import { filterTimelinePosts } from '../services/filters';
 import { spinAnimation } from '../styles/animations';
 import type { FilterContext } from '../mastodon/types';
@@ -1152,10 +1150,7 @@ export class Timeline extends LitElement {
     // Clear any pending new posts since we're doing a full refresh
     this.pendingNewPosts = [];
 
-    // When doing a pull-to-refresh, clear the "last read" marker, pagination state,
-    // and session cache so we fetch completely fresh posts from the top
     if (skipCache) {
-      sessionStorage.removeItem(getLatestReadStorageKey());
       clearTimelineCache(this.timelineType);
       await resetLastPageID(this.timelineType);
     }
@@ -1247,40 +1242,7 @@ export class Timeline extends LitElement {
         break;
       }
       case 'home': {
-        const last_read_id = sessionStorage.getItem(getLatestReadStorageKey());
-        if (last_read_id) {
-          const timelineData = await getLastPlaceTimeline();
-
-          this.timeline = [];
-          await this.updateComplete;
-
-          if (timelineData) {
-            // Deduplicate by post ID
-            const uniqueLastPlace = Array.from(
-              new Map(
-                timelineData.map((post: Post) => [post.id, post])
-              ).values()
-            ) as Post[];
-
-            // Enrich posts with reply context and apply filters
-            this.timeline = filterTimelinePosts(
-              await enrichPostsWithReplyContext(
-                groupSelfThreads(uniqueLastPlace)
-              ),
-              this._filterContext
-            );
-          }
-
-          // Save to cache after successful fetch
-          saveTimelineCache(this.timelineType, this.timeline, 0);
-
-          this.requestUpdate();
-          break;
-        }
-
-        console.log('LOOK HERE');
         const timelineData = await getPaginatedHomeTimeline('home');
-        console.log('timelineData', timelineData);
 
         this.timeline = [];
         await this.updateComplete;

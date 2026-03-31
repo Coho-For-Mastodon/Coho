@@ -103,10 +103,34 @@ const routes: Route<TemplateResult>[] = [
     render: () => html`<app-blocked></app-blocked>`,
   },
   {
+    path: '/domain-blocks',
+    title: 'blocked domains',
+    plugins: [lazy(() => import('../pages/app-domain-blocks.js'))],
+    render: () => html`<app-domain-blocks></app-domain-blocks>`,
+  },
+  {
+    path: '/follow-requests',
+    title: 'follow requests',
+    plugins: [lazy(() => import('../pages/app-follow-requests.js'))],
+    render: () => html`<app-follow-requests></app-follow-requests>`,
+  },
+  {
+    path: '/announcements',
+    title: 'server announcements',
+    plugins: [lazy(() => import('../pages/app-announcements.js'))],
+    render: () => html`<app-announcements></app-announcements>`,
+  },
+  {
     path: '/hashtag',
     title: 'hashtags',
     plugins: [lazy(() => import('../pages/app-hashtags.js'))],
     render: () => html`<app-hashtags></app-hashtags>`,
+  },
+  {
+    path: '/followed-hashtags',
+    title: 'followed hashtags',
+    plugins: [lazy(() => import('../pages/app-followed-hashtags.js'))],
+    render: () => html`<app-followed-hashtags></app-followed-hashtags>`,
   },
   {
     path: '/home/post/:id',

@@ -132,7 +132,10 @@ export class MdBadge extends LitElement {
       <div
         class="badge ${this.variant} ${this.clickable ? 'clickable' : ''}"
         part="badge"
+        tabindex="${this.clickable ? '0' : '-1'}"
+        role="${this.clickable ? 'button' : 'status'}"
         @click="${this._handleClick}"
+        @keydown="${this._handleKeyDown}"
       >
         <slot></slot>
       </div>
@@ -148,6 +151,14 @@ export class MdBadge extends LitElement {
           detail: { originalEvent: e },
         })
       );
+    }
+  }
+
+  private _handleKeyDown(e: KeyboardEvent) {
+    if (!this.clickable) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this._handleClick(e);
     }
   }
 }

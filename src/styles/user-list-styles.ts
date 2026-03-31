@@ -12,7 +12,7 @@ export const userListStyles = css`
   }
 
   main {
-    padding-top: 50px;
+    padding-top: calc(46px + env(safe-area-inset-top, 0px));
     max-width: var(--layout-max-width, 1200px);
     margin: 0 auto;
   }

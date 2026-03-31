@@ -289,6 +289,16 @@ export class MdDropdown extends LitElement {
     this.hide();
   };
 
+  updated(changedProperties: Map<PropertyKey, unknown>) {
+    if (changedProperties.has('open')) {
+      const triggerEl = this.triggerSlot?.assignedElements()[0] as HTMLElement;
+      if (triggerEl) {
+        triggerEl.setAttribute('aria-expanded', String(this.open));
+        triggerEl.setAttribute('aria-haspopup', 'true');
+      }
+    }
+  }
+
   render() {
     return html`
       <div class="trigger" @click=${this._handleTriggerClick}>

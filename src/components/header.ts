@@ -218,6 +218,7 @@ export class AppHeader extends LitElement {
             ? html`<md-icon-button
                 @click="${() => this.goBack()}"
                 title=${msg('back')}
+                label=${msg('back')}
                 size="small"
                 pill
               >
@@ -250,6 +251,7 @@ export class AppHeader extends LitElement {
                 ${this.showInstall
                   ? html`<md-icon-button
                       title=${msg('Install App')}
+                      label=${msg('Install App')}
                       id="install-button"
                       @click="${() => this.openInstall()}"
                     >
@@ -259,6 +261,7 @@ export class AppHeader extends LitElement {
                 ${this.showMessages
                   ? html`<md-icon-button
                       title=${msg('Messages')}
+                      label=${msg('Messages')}
                       id="messages-button"
                       @click="${() => this._openMessages()}"
                     >
@@ -280,6 +283,7 @@ export class AppHeader extends LitElement {
                   ? html`<md-icon-button
                       id="login-button"
                       title=${msg('Sign In')}
+                      label=${msg('Sign In')}
                       @click="${() => {
                         setAuthRedirect(
                           `${window.location.pathname}${window.location.search}${window.location.hash}`
@@ -294,6 +298,7 @@ export class AppHeader extends LitElement {
                   : html`<md-icon-button
                       id="settings-button"
                       title=${msg('Open Settings')}
+                      label=${msg('Open Settings')}
                       @click="${() => this.openSettings()}"
                     >
                       <md-icon src="/assets/settings-outline.svg"></md-icon>

@@ -98,6 +98,7 @@ export class MdSkeleton extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this._applyInlineSize();
+    this.setAttribute('aria-hidden', 'true');
   }
 
   protected updated(changed: Map<string, unknown>) {

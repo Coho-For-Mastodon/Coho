@@ -293,6 +293,7 @@ export class HomeSidebar extends LitElement {
             <div id="user-actions">
               <md-icon-button
                 title=${msg('Switch accounts')}
+                label=${msg('Switch accounts')}
                 @click="${(event: Event) => this.openAccountSwitcher(event)}"
               >
                 <md-icon src="/assets/repeat-outline.svg"></md-icon>
@@ -300,6 +301,7 @@ export class HomeSidebar extends LitElement {
               <md-dropdown>
                 <md-icon-button
                   slot="trigger"
+                  label=${msg('Open Settings')}
                   src="/assets/settings-outline.svg"
                 ></md-icon-button>
                 <md-menu>
@@ -405,15 +407,16 @@ export class HomeSidebar extends LitElement {
         <h3>${msg('Trending Tags')}</h3>
         ${this.trendingTags.slice(0, 5).map(
           (tag) => html`
-            <div
+            <button
               class="trending-item"
               @click="${() => this.navigateToTag(tag.name)}"
+              style="background: none; border: none; padding: 8px 0; font: inherit; color: inherit; cursor: pointer; text-align: left; width: 100%; display: flex;"
             >
               <span class="tag">#${tag.name}</span>
               <span class="count"
                 >${msg(str`${tag.history?.[0]?.uses || 0} posts today`)}</span
               >
-            </div>
+            </button>
           `
         )}
       </div>

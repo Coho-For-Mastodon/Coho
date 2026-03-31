@@ -600,6 +600,7 @@ export class EditAccount extends LitElement {
                     name="trash"
                     @click=${() => this.removeField(index)}
                     title=${msg('Remove field')}
+                    label=${msg('Remove field')}
                   ></md-icon-button>
                 </div>
               `

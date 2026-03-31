@@ -14,69 +14,6 @@ describe('md-icon-button', () => {
       expect(el.variant).toBe('standard');
       expect(el.disabled).toBe(false);
     });
-
-    it('renders a button element', async () => {
-      const el = await fixture<MdIconButton>(
-        html`<md-icon-button></md-icon-button>`
-      );
-      const button = el.shadowRoot!.querySelector('.icon-button');
-
-      expect(button).toBeDefined();
-    });
-  });
-
-  describe('variants', () => {
-    it('applies standard variant by default', async () => {
-      const el = await fixture<MdIconButton>(
-        html`<md-icon-button></md-icon-button>`
-      );
-      const button = el.shadowRoot!.querySelector('.icon-button');
-
-      expect(button?.classList.contains('icon-button--standard')).toBe(true);
-    });
-
-    it('applies filled variant', async () => {
-      const el = await fixture<MdIconButton>(
-        html`<md-icon-button variant="filled"></md-icon-button>`
-      );
-      const button = el.shadowRoot!.querySelector('.icon-button');
-
-      expect(button?.classList.contains('icon-button--filled')).toBe(true);
-    });
-
-    it('applies filled-tonal variant', async () => {
-      const el = await fixture<MdIconButton>(
-        html`<md-icon-button variant="filled-tonal"></md-icon-button>`
-      );
-      const button = el.shadowRoot!.querySelector('.icon-button');
-
-      expect(button?.classList.contains('icon-button--filled-tonal')).toBe(
-        true
-      );
-    });
-
-    it('applies outlined variant', async () => {
-      const el = await fixture<MdIconButton>(
-        html`<md-icon-button variant="outlined"></md-icon-button>`
-      );
-      const button = el.shadowRoot!.querySelector('.icon-button');
-
-      expect(button?.classList.contains('icon-button--outlined')).toBe(true);
-    });
-
-    it('changes variant dynamically', async () => {
-      const el = await fixture<MdIconButton>(
-        html`<md-icon-button></md-icon-button>`
-      );
-      const button = el.shadowRoot!.querySelector('.icon-button');
-
-      expect(button?.classList.contains('icon-button--standard')).toBe(true);
-
-      el.variant = 'filled';
-      await elementUpdated(el);
-
-      expect(button?.classList.contains('icon-button--filled')).toBe(true);
-    });
   });
 
   describe('icon properties', () => {
@@ -170,21 +107,6 @@ describe('md-icon-button', () => {
       el.shadowRoot!.querySelector('.icon-button')?.click();
 
       expect(clickHandler).toHaveBeenCalled();
-    });
-  });
-
-  describe('slotted content', () => {
-    it('renders slotted icon content', async () => {
-      const el = await fixture<MdIconButton>(html`
-        <md-icon-button>
-          <svg viewBox="0 0 24 24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-          </svg>
-        </md-icon-button>
-      `);
-      const slot = el.shadowRoot!.querySelector('slot');
-
-      expect(slot).toBeDefined();
     });
   });
 

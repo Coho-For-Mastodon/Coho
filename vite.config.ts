@@ -246,14 +246,16 @@ export default defineConfig({
     cssCodeSplit: true,
     minify: 'terser',
     modulePreload: { polyfill: false },
-    target: ['esnext', 'edge140', 'firefox146', 'chrome140', 'safari24'],
+    target: 'esnext',
     terserOptions: {
       module: true,
+      toplevel: true,
       compress: {
+        ecma: 2020,
         drop_console: false,
         drop_debugger: true,
         pure_funcs: ['console.log'], // Strip console.log but keep warn/error
-        passes: 2,
+        passes: 3,
         arrows: true,
         booleans_as_integers: true,
         collapse_vars: true,
@@ -267,13 +269,14 @@ export default defineConfig({
         unsafe_methods: true,
         unsafe_proto: false,
         unsafe_regexp: false,
-        unsafe_undefined: false,
+        unsafe_undefined: true,
       },
       mangle: {
         safari10: true,
       },
       format: {
         comments: false,
+        ecma: 2020,
       },
       keep_classnames: false,
       keep_fnames: false,

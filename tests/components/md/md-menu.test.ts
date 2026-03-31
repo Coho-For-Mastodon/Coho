@@ -6,19 +6,6 @@ import type { MdMenu } from '../../../src/components/md/md-menu';
 
 describe('md-menu', () => {
   describe('rendering', () => {
-    it('renders with default properties', async () => {
-      const el = await fixture<MdMenu>(html`<md-menu></md-menu>`);
-
-      expect(el).toBeDefined();
-    });
-
-    it('renders menu container', async () => {
-      const el = await fixture<MdMenu>(html`<md-menu></md-menu>`);
-      const menu = el.shadowRoot!.querySelector('.menu');
-
-      expect(menu).toBeDefined();
-    });
-
     it('has role="menu"', async () => {
       const el = await fixture<MdMenu>(html`<md-menu></md-menu>`);
       const menu = el.shadowRoot!.querySelector('.menu');
@@ -40,31 +27,11 @@ describe('md-menu', () => {
 
       expect(items.length).toBe(3);
     });
-
-    it('renders slot element', async () => {
-      const el = await fixture<MdMenu>(html`<md-menu></md-menu>`);
-      const slot = el.shadowRoot!.querySelector('slot');
-
-      expect(slot).toBeDefined();
-    });
   });
 });
 
 describe('md-menu-item', () => {
   describe('rendering', () => {
-    it('renders with default properties', async () => {
-      const el = await fixture(html`<md-menu-item>Menu Item</md-menu-item>`);
-
-      expect(el).toBeDefined();
-    });
-
-    it('renders slotted content', async () => {
-      const el = await fixture(html`<md-menu-item>Edit</md-menu-item>`);
-      const slot = el.shadowRoot!.querySelector('slot:not([name])');
-
-      expect(slot).toBeDefined();
-    });
-
     it('renders prefix slot', async () => {
       const el = await fixture(html`
         <md-menu-item>

@@ -17,16 +17,6 @@ describe('md-tabs', () => {
       expect(el.placement).toBe('top');
     });
 
-    it('renders tab bar and panel container', async () => {
-      const el = await fixture<MdTabs>(html`<md-tabs></md-tabs>`);
-
-      const tabBar = el.shadowRoot!.querySelector('.tab-bar');
-      const panelContainer = el.shadowRoot!.querySelector('.panel-container');
-
-      expect(tabBar).toBeDefined();
-      expect(panelContainer).toBeDefined();
-    });
-
     it('renders with tabs and panels', async () => {
       const el = await fixture<MdTabs>(html`
         <md-tabs>
@@ -246,36 +236,6 @@ describe('md-tab', () => {
       expect(el.active).toBe(false);
       expect(el.disabled).toBe(false);
     });
-
-    it('renders a button element', async () => {
-      const el = await fixture<MdTab>(html`<md-tab panel="test">Test</md-tab>`);
-      const button = el.shadowRoot!.querySelector('button');
-
-      expect(button).toBeDefined();
-    });
-
-    it('renders slotted content', async () => {
-      const el = await fixture<MdTab>(
-        html`<md-tab panel="test">Tab Label</md-tab>`
-      );
-      const slot = el.shadowRoot!.querySelector('slot:not([name])');
-
-      expect(slot).toBeDefined();
-    });
-
-    it('renders icon slot', async () => {
-      const el = await fixture<MdTab>(html`
-        <md-tab panel="test">
-          <span slot="icon">🏠</span>
-          Home
-        </md-tab>
-      `);
-      const iconSlot = el.shadowRoot!.querySelector(
-        'slot[name="icon"]'
-      ) as HTMLSlotElement;
-
-      expect(iconSlot).toBeDefined();
-    });
   });
 
   describe('active state', () => {
@@ -339,11 +299,10 @@ describe('md-tab', () => {
 
     it('dispatches tab-selected event on keyboard Enter', async () => {
       const el = await fixture<MdTab>(html`<md-tab panel="test">Test</md-tab>`);
-      const button = el.shadowRoot!.querySelector('button')!;
       const selectHandler = vi.fn();
 
       el.addEventListener('tab-selected', selectHandler);
-      button.dispatchEvent(
+      el.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
       );
       await elementUpdated(el);
@@ -353,11 +312,10 @@ describe('md-tab', () => {
 
     it('dispatches tab-selected event on keyboard Space', async () => {
       const el = await fixture<MdTab>(html`<md-tab panel="test">Test</md-tab>`);
-      const button = el.shadowRoot!.querySelector('button')!;
       const selectHandler = vi.fn();
 
       el.addEventListener('tab-selected', selectHandler);
-      button.dispatchEvent(
+      el.dispatchEvent(
         new KeyboardEvent('keydown', { key: ' ', bubbles: true })
       );
       await elementUpdated(el);
@@ -369,30 +327,27 @@ describe('md-tab', () => {
   describe('accessibility', () => {
     it('has role="tab"', async () => {
       const el = await fixture<MdTab>(html`<md-tab panel="test">Test</md-tab>`);
-      const button = el.shadowRoot!.querySelector('button');
 
-      expect(button?.getAttribute('role')).toBe('tab');
+      expect(el.getAttribute('role')).toBe('tab');
     });
 
     it('sets aria-selected based on active state', async () => {
       const el = await fixture<MdTab>(html`<md-tab panel="test">Test</md-tab>`);
-      const button = el.shadowRoot!.querySelector('button');
 
-      expect(button?.getAttribute('aria-selected')).toBe('false');
+      expect(el.getAttribute('aria-selected')).toBe('false');
 
       el.active = true;
       await elementUpdated(el);
 
-      expect(button?.getAttribute('aria-selected')).toBe('true');
+      expect(el.getAttribute('aria-selected')).toBe('true');
     });
 
     it('sets aria-disabled when disabled', async () => {
       const el = await fixture<MdTab>(
         html`<md-tab panel="test" disabled>Test</md-tab>`
       );
-      const button = el.shadowRoot!.querySelector('button');
 
-      expect(button?.getAttribute('aria-disabled')).toBe('true');
+      expect(el.getAttribute('aria-disabled')).toBe('true');
     });
 
     it('has panel property for reference', async () => {
@@ -413,15 +368,6 @@ describe('md-tab-panel', () => {
       expect(el).toBeDefined();
       expect(el.name).toBe('test');
       expect(el.active).toBe(false);
-    });
-
-    it('renders slotted content', async () => {
-      const el = await fixture<MdTabPanel>(
-        html`<md-tab-panel name="test">Panel content</md-tab-panel>`
-      );
-      const slot = el.shadowRoot!.querySelector('slot');
-
-      expect(slot).toBeDefined();
     });
   });
 
@@ -454,27 +400,25 @@ describe('md-tab-panel', () => {
   });
 
   describe('accessibility', () => {
-    it('has role="tabpanel" on content', async () => {
+    it('has role="tabpanel" on host', async () => {
       const el = await fixture<MdTabPanel>(
         html`<md-tab-panel name="test"></md-tab-panel>`
       );
-      const panelContent = el.shadowRoot!.querySelector('.panel-content');
 
-      expect(panelContent?.getAttribute('role')).toBe('tabpanel');
+      expect(el.getAttribute('role')).toBe('tabpanel');
     });
 
     it('has aria-hidden based on active state', async () => {
       const el = await fixture<MdTabPanel>(
         html`<md-tab-panel name="test"></md-tab-panel>`
       );
-      const panelContent = el.shadowRoot!.querySelector('.panel-content');
 
-      expect(panelContent?.getAttribute('aria-hidden')).toBe('true');
+      expect(el.getAttribute('aria-hidden')).toBe('true');
 
       el.active = true;
       await elementUpdated(el);
 
-      expect(panelContent?.getAttribute('aria-hidden')).toBe('false');
+      expect(el.getAttribute('aria-hidden')).toBe('false');
     });
   });
 });

@@ -18,6 +18,7 @@ import type { PostComposer } from '../components/post-composer';
 import type { PostDialog } from '../components/post-dialog';
 import { router, type AppNavigationState } from '../router/routes';
 import { getNotificationById } from '../mastodon/api/notifications';
+import { getConversations } from '../services/messages';
 
 @localized()
 @customElement('post-detail')
@@ -159,7 +160,7 @@ export class PostDetail extends LitElement {
         padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
         box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.18);
         border-radius: var(--md-sys-shape-corner-medium);
-        margin-bottom: 68px;
+        margin-bottom: 6px;
       }
 
       .composer-shell {
@@ -274,6 +275,28 @@ export class PostDetail extends LitElement {
         } else {
           // Direct post ID access (/post/:postId)
           this.tweet = await getPostDetail(pathId);
+        }
+        // If the post is a DM, redirect to the messages UI
+        if (this.tweet?.visibility === 'direct') {
+          try {
+            const convs = await getConversations();
+            // Prefer exact status match, fall back to 1:1 account match
+            const conv =
+              convs.find((c) => c.last_status?.id === this.tweet!.id) ||
+              convs.find(
+                (c) =>
+                  c.accounts.length === 1 &&
+                  c.accounts[0].id === this.tweet!.account.id
+              );
+            if (conv) {
+              router.navigate(`/messages/${conv.id}`, {
+                state: { conversation: conv },
+              });
+              return;
+            }
+          } catch (err) {
+            console.error('[PostDetail] Failed to find DM conversation:', err);
+          }
         }
       } catch (err) {
         console.error('Failed to load post:', err);
@@ -542,17 +565,18 @@ export class PostDetail extends LitElement {
               ?guestMode="${this.isGuestMode}"
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"
+              @reply-clicked="${(e: CustomEvent) => this.handleReplyClick(e)}"
               @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleEditPost(e.detail.tweet)}"
             ></timeline-item>
           </section>
 
           <section class="replies-section">
+            ${this.loadingThread || this.replyTree.length > 0
+              ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
+              : nothing}
             ${this.loadingThread
               ? html`<md-skeleton-card count="3"></md-skeleton-card>`
-              : nothing}
-            ${this.replyTree.length > 0
-              ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
               : nothing}
             ${this.replyTree.map(
               (node) => html`
@@ -561,6 +585,7 @@ export class PostDetail extends LitElement {
                   ?guestMode=${this.isGuestMode}
                   @open=${(e: CustomEvent<{ tweet: Post }>) =>
                     this.handleOpenPost(e)}
+                  @reply-clicked=${(e: CustomEvent) => this.handleReplyClick(e)}
                 ></thread-branch>
               `
             )}

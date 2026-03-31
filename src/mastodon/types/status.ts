@@ -49,6 +49,21 @@ export interface StatusSource {
   spoiler_text: string;
 }
 
+/**
+ * Represents a single version in a post's edit history.
+ * @see https://docs.joinmastodon.org/entities/StatusEdit/
+ */
+export interface StatusEdit {
+  content: string;
+  spoiler_text: string;
+  sensitive: boolean;
+  created_at: string;
+  account: Account;
+  poll: Pick<Poll, 'options'> | null;
+  media_attachments: MediaAttachment[];
+  emojis: Emoji[];
+}
+
 export type StatusVisibility = 'public' | 'unlisted' | 'private' | 'direct';
 
 export interface Application {

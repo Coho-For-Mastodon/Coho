@@ -187,6 +187,18 @@ export class ThreadBranch extends LitElement {
     );
   }
 
+  private handleReplyClick(e: Event, post: Post) {
+    e.stopPropagation();
+    this.dispatchEvent(
+      new CustomEvent('reply-clicked', {
+        detail: { tweet: post },
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      })
+    );
+  }
+
   render() {
     if (!this.node) return nothing;
 
@@ -206,13 +218,14 @@ export class ThreadBranch extends LitElement {
     if (depth >= MAX_THREAD_DEPTH) {
       return html`
         <div class="branch" data-depth="${depthAttr}">
-          <div
+          <button
             class="continue-thread"
+            style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 8px;"
             @click=${() => this.handlePostClick(post)}
           >
             <md-icon name="arrow-forward"></md-icon>
             ${msg('Continue this thread')}
-          </div>
+          </button>
         </div>
       `;
     }
@@ -247,7 +260,12 @@ export class ThreadBranch extends LitElement {
             : nothing}
 
           <div class="actions" slot="footer">
-            <md-button variant="text" pill size="small">
+            <md-button
+              variant="text"
+              pill
+              size="small"
+              @click=${(e: Event) => this.handleReplyClick(e, post)}
+            >
               ${post.replies_count || ''}
               <md-icon
                 slot="suffix"
@@ -277,15 +295,16 @@ export class ThreadBranch extends LitElement {
           ?guestMode=${this.guestMode}
           @open=${(e: CustomEvent) => this.handlePostClick(e.detail.tweet)}
         ></thread-branch>
-        <div
+        <button
           class="more-replies"
+          style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 8px;"
           @click=${() => this.handlePostClick(this.node.post)}
         >
           <md-icon name="chatbubbles"></md-icon>
           ${remainingCount === 1
             ? msg('1 more reply')
             : msg(str`${remainingCount} more replies`)}
-        </div>
+        </button>
       `;
     }
 

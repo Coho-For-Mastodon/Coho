@@ -804,6 +804,7 @@ export class ConversationThread extends LitElement {
                           src="${media.url}"
                           controls
                           preload="metadata"
+                          poster="${media.preview_url}"
                         ></video>`
                       : media.type === 'audio'
                         ? html`<audio

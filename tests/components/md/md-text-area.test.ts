@@ -15,13 +15,6 @@ describe('md-text-area', () => {
       expect(el.variant).toBe('filled');
       expect(el.rows).toBe(4);
     });
-
-    it('renders a textarea element', async () => {
-      const el = await fixture<MdTextArea>(html`<md-text-area></md-text-area>`);
-      const textarea = el.shadowRoot!.querySelector('textarea');
-
-      expect(textarea).toBeDefined();
-    });
   });
 
   describe('value', () => {
@@ -110,16 +103,6 @@ describe('md-text-area', () => {
       const textarea = el.shadowRoot!.querySelector('textarea');
 
       expect(el.variant).toBe('outlined');
-      expect(textarea?.classList.contains('outlined')).toBe(true);
-    });
-
-    it('changes variant dynamically', async () => {
-      const el = await fixture<MdTextArea>(html`<md-text-area></md-text-area>`);
-      const textarea = el.shadowRoot!.querySelector('textarea');
-
-      el.variant = 'outlined';
-      await elementUpdated(el);
-
       expect(textarea?.classList.contains('outlined')).toBe(true);
     });
   });

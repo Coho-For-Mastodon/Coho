@@ -2,7 +2,11 @@ import { http, HttpResponse } from 'msw';
 import {
   mockAccountProfile,
   mockBookmarks,
+  mockBlockedAccounts,
+  mockEditHistory,
   mockFavorites,
+  mockLookupImportAccount,
+  mockMutedAccounts,
   mockNotifications,
   mockSearchResult,
   mockTimelinePosts,
@@ -81,6 +85,14 @@ export const mastodonHandlers = [
 
   http.get('https://*/api/v1/statuses/:id/reactions', () => {
     return HttpResponse.json([]);
+  }),
+
+  http.get('https://*/api/v1/statuses/:id/history', ({ params }) => {
+    const post = findPostById(params.id as string);
+    if (post) {
+      return HttpResponse.json(mockEditHistory);
+    }
+    return HttpResponse.json({ error: 'Record not found' }, { status: 404 });
   }),
 
   http.get('https://*/api/v1/statuses/:id', ({ params }) => {
@@ -222,6 +234,113 @@ export const mastodonHandlers = [
         updated_at: '2025-01-01T00:00:00.000Z',
       },
     });
+  }),
+
+  // Follow requests
+  http.get('https://*/api/v1/follow_requests', () => {
+    return HttpResponse.json([
+      {
+        id: 'fr_acct_1',
+        username: 'alice',
+        acct: 'alice@remote.social',
+        display_name: 'Alice',
+        locked: false,
+        bot: false,
+        created_at: '2025-01-01T00:00:00.000Z',
+        note: '<p>Hello</p>',
+        url: 'https://remote.social/@alice',
+        avatar: '',
+        avatar_static: '',
+        header: '',
+        header_static: '',
+        followers_count: 10,
+        following_count: 20,
+        statuses_count: 50,
+        emojis: [],
+        fields: [],
+      },
+      {
+        id: 'fr_acct_2',
+        username: 'bob',
+        acct: 'bob@other.social',
+        display_name: 'Bob',
+        locked: false,
+        bot: false,
+        created_at: '2025-01-01T00:00:00.000Z',
+        note: '<p>Hi there</p>',
+        url: 'https://other.social/@bob',
+        avatar: '',
+        avatar_static: '',
+        header: '',
+        header_static: '',
+        followers_count: 5,
+        following_count: 15,
+        statuses_count: 30,
+        emojis: [],
+        fields: [],
+      },
+    ]);
+  }),
+
+  http.post('https://*/api/v1/follow_requests/:id/authorize', () => {
+    return HttpResponse.json({});
+  }),
+
+  http.post('https://*/api/v1/follow_requests/:id/reject', () => {
+    return HttpResponse.json({});
+  }),
+
+  // Server preferences
+  http.get('https://*/api/v1/preferences', () => {
+    return HttpResponse.json({
+      'posting:default:visibility': 'public',
+      'posting:default:sensitive': false,
+      'posting:default:language': 'en',
+      'reading:expand:media': 'default',
+      'reading:expand:spoilers': false,
+    });
+  }),
+
+  http.get('https://*/api/v1/blocks', ({ request }) => {
+    const url = new URL(request.url);
+    const maxId = url.searchParams.get('max_id');
+    const all = mockBlockedAccounts;
+    if (maxId) {
+      const idx = all.findIndex((a) => a.id === maxId);
+      return HttpResponse.json(idx >= 0 ? all.slice(idx + 1) : []);
+    }
+    return HttpResponse.json(all);
+  }),
+
+  http.get('https://*/api/v1/mutes', ({ request }) => {
+    const url = new URL(request.url);
+    const maxId = url.searchParams.get('max_id');
+    const all = mockMutedAccounts;
+    if (maxId) {
+      const idx = all.findIndex((a) => a.id === maxId);
+      return HttpResponse.json(idx >= 0 ? all.slice(idx + 1) : []);
+    }
+    return HttpResponse.json(all);
+  }),
+
+  http.get('https://*/api/v1/accounts/lookup', ({ request }) => {
+    const url = new URL(request.url);
+    const acct = url.searchParams.get('acct');
+    if (acct === 'blocked_a@elsewhere') {
+      return HttpResponse.json(mockBlockedAccounts[0]);
+    }
+    if (acct === 'importme@remote.social') {
+      return HttpResponse.json(mockLookupImportAccount);
+    }
+    return HttpResponse.json({ error: 'Record not found' }, { status: 404 });
+  }),
+
+  http.post('https://*/api/v1/accounts/:id/block', () => {
+    return HttpResponse.json(mockBlockedAccounts[0]);
+  }),
+
+  http.post('https://*/api/v1/accounts/:id/mute', () => {
+    return HttpResponse.json(mockMutedAccounts[0]);
   }),
 ];
 

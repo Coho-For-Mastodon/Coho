@@ -93,9 +93,12 @@ export class MdTabPanel extends LitElement {
     }
 
     /* Mobile: reduce padding */
-        @media (max-width: 820px) {
-      .panel {
+    @media (max-width: 820px) {
+      .panel-content {
         padding: 12px;
+        padding-top: 0;
+      }
+    }
 
     /* Allow custom padding override */
     :host([no-padding]) .panel-content {
@@ -103,14 +106,20 @@ export class MdTabPanel extends LitElement {
     }
   `;
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.setAttribute('role', 'tabpanel');
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('active')) {
+      this.setAttribute('aria-hidden', this.active ? 'false' : 'true');
+    }
+  }
+
   render() {
     return html`
-      <div
-        class="panel-content"
-        part="panel-content"
-        role="tabpanel"
-        aria-hidden="${this.active ? 'false' : 'true'}"
-      >
+      <div class="panel-content" part="panel-content">
         <slot></slot>
       </div>
     `;

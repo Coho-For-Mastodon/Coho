@@ -178,6 +178,8 @@ export class MdCheckbox extends LitElement {
     );
   }
 
+  private _labelId = `md-cb-label-${Math.random().toString(36).slice(2, 9)}`;
+
   render() {
     return html`
       <div
@@ -185,6 +187,7 @@ export class MdCheckbox extends LitElement {
         role="checkbox"
         aria-checked=${this.checked ? 'true' : 'false'}
         aria-disabled=${this.disabled ? 'true' : 'false'}
+        aria-labelledby="${this._labelId}"
         tabindex="${this.disabled ? -1 : 0}"
         @click=${this._onClick}
         @keydown=${this._onKeyDown}
@@ -197,7 +200,7 @@ export class MdCheckbox extends LitElement {
             </svg>
           </div>
         </div>
-        <slot class="label"></slot>
+        <span id="${this._labelId}"><slot class="label"></slot></span>
       </div>
     `;
   }

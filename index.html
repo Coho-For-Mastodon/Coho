@@ -150,12 +150,34 @@
       }
 
       /* Simple cross-fade - noticeable but not distracting */
-      ::view-transition-old(root) {
-        animation: 210ms ease-out both fade-out;
+      @media (prefers-reduced-motion: no-preference) {
+        ::view-transition-old(root) {
+          animation: 210ms ease-out both fade-out;
+        }
+
+        ::view-transition-new(root) {
+          animation: 210ms ease-in both fade-in;
+        }
       }
 
-      ::view-transition-new(root) {
-        animation: 210ms ease-in both fade-in;
+      /* Skip navigation link */
+      .skip-link {
+        position: absolute;
+        top: -100%;
+        left: 16px;
+        z-index: 100001;
+        padding: 8px 16px;
+        background: var(--md-sys-color-primary, #6750a4);
+        color: var(--md-sys-color-on-primary, #fff);
+        border-radius: 0 0 8px 8px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        transition: top 0.15s ease;
+      }
+
+      .skip-link:focus {
+        top: 0;
       }
 
       html,

@@ -385,6 +385,16 @@ export class TimelineItem extends LitElement {
         font-size: var(--md-sys-typescale-label-small-font-size, 11px);
         color: var(--md-sys-color-on-surface-variant, #878792);
         margin-top: 4px;
+        background: none;
+        border: none;
+        padding: 0;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .edited-indicator:hover {
+        text-decoration: underline;
+        color: var(--md-sys-color-primary, var(--sl-color-primary-600));
       }
 
       img[data-src] {
@@ -1182,15 +1192,17 @@ export class TimelineItem extends LitElement {
     }
   }
 
-  async replies() {
+  async replies(post?: Post) {
     if (this.guestMode) {
       showGuestActionToast('reply to posts');
       return;
     }
 
+    const target = post || this.tweet;
+
     const event = new CustomEvent('reply-clicked', {
       detail: {
-        tweet: this.tweet,
+        tweet: target,
       },
       bubbles: true,
       composed: true,
@@ -1199,7 +1211,7 @@ export class TimelineItem extends LitElement {
     const dispatched = this.dispatchEvent(event);
 
     if (dispatched) {
-      await this.openPost();
+      await this.openPost(target);
     }
   }
 
@@ -1234,14 +1246,15 @@ export class TimelineItem extends LitElement {
     await shareStatusAction(tweet);
   }
 
-  async openPost() {
-    if (!this.tweet) return;
+  async openPost(post?: Post) {
+    const target = post || this.tweet;
+    if (!target) return;
 
     // Emit an open event so the parent context can handle navigation
     this.dispatchEvent(
       new CustomEvent('open', {
         detail: {
-          tweet: this.tweet,
+          tweet: target,
         },
       })
     );
@@ -1285,6 +1298,21 @@ export class TimelineItem extends LitElement {
       })
     );
   }
+
+  async viewEditHistory(id: string) {
+    if (!this._editHistoryDialog) {
+      await import('./post-edit-history-dialog.js');
+      const el = document.createElement('post-edit-history-dialog');
+      this.shadowRoot!.appendChild(el);
+      this._editHistoryDialog =
+        el as import('./post-edit-history-dialog').PostEditHistoryDialog;
+    }
+    this._editHistoryDialog.show(id);
+  }
+
+  private _editHistoryDialog:
+    | import('./post-edit-history-dialog').PostEditHistoryDialog
+    | null = null;
 
   viewSensitive() {
     if (this.tweet) {
@@ -1425,6 +1453,34 @@ export class TimelineItem extends LitElement {
     );
   }
 
+  async blockDomain(domain: string) {
+    if (!domain) return;
+
+    try {
+      const { blockDomain } = await import('../mastodon/api/domain-blocks.js');
+      await blockDomain(domain);
+
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: `Blocked domain ${domain}`,
+            variant: 'success',
+          },
+        })
+      );
+    } catch (error) {
+      console.error('Failed to block domain', error);
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: `Failed to block domain ${domain}`,
+            variant: 'error',
+          },
+        })
+      );
+    }
+  }
+
   reportUser(accountId: string, accountAcct: string, statusId?: string) {
     if (!accountId) return;
 
@@ -1499,7 +1555,7 @@ export class TimelineItem extends LitElement {
       viewSensitive: () => this.viewSensitive(),
       viewThreadSensitive: (id: string) => this.viewThreadSensitive(id),
       viewReplySensitive: () => this.viewReplySensitive(),
-      replies: () => this.replies(),
+      replies: (post?: Post) => this.replies(post),
       bookmark: (id: string) => this.bookmark(id),
       favorite: (id: string) => this.favorite(id),
       reblog: (id: string) => this.reblog(id),
@@ -1511,6 +1567,7 @@ export class TimelineItem extends LitElement {
       shareStatus: (tweet: Post | null) => this.shareStatus(tweet),
       deleteStatus: () => this.deleteStatus(),
       initEditStatus: () => this.initEditStatus(),
+      viewEditHistory: (id: string) => this.viewEditHistory(id),
       openPost: () => this.openPost(),
       openParentPost: () => this.openParentPost(),
       openLinkCard: (url: string) => this.openLinkCard(url),
@@ -1522,6 +1579,7 @@ export class TimelineItem extends LitElement {
       showThread: () => this.showThread(),
       muteUser: (accountId: string) => this.muteUser(accountId),
       blockUser: (accountId: string) => this.blockUser(accountId),
+      blockDomain: (domain: string) => this.blockDomain(domain),
       reportUser: (accountId: string, accountAcct: string, statusId?: string) =>
         this.reportUser(accountId, accountAcct, statusId),
     };

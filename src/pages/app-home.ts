@@ -3,38 +3,25 @@ import { customElement, state, query } from 'lit/decorators.js';
 import { msg } from '@lit/localize';
 import { localized } from '@lit/localize';
 
+// Core components needed for initial render
 import '../components/timeline';
-import '../components/timeline-item';
-
-import '../components/otter-drawer';
-import '../components/md/md-menu';
-import '../components/md/md-menu-item';
-import '../components/md/md-dialog';
 import '../components/md/md-tabs';
 import '../components/md/md-tab';
 import '../components/md/md-tab-panel';
 import '../components/md/md-icon';
 import '../components/md/md-button';
-import '../components/md/md-toast';
 import '../components/offline-notify';
-import '../components/pwa-install';
-import '../components/guest-login-banner';
 import '../components/home-sidebar';
-import '../components/settings-drawer-content';
-import '../components/account-manager';
 import '../components/home-tabs-nav';
 import '../components/header';
 
-import { getEffectiveParams } from '../utils/launch-params';
 import { TabController } from '../controllers/tab-controller';
-import { shareTarget } from '../services/share-target';
 import {
   getSidebarUser,
   getSidebarTrending,
   saveSidebarUser,
   saveSidebarTrending,
 } from '../services/sidebar-cache';
-import { getLatestReadStorageKey } from '../services/account';
 import { getActiveAccount } from '../services/auth-session';
 
 import type { OtterDrawer } from '../components/otter-drawer';
@@ -58,20 +45,11 @@ import {
   componentLoaders,
   isLoaded,
 } from '../utils/lazy-component-loader';
-import {
-  ensureListMembershipDialogLoaded,
-  ensureListsDialogLoaded,
-} from '../utils/list-dialogs';
 import { LazyOverlayManager } from '../utils/lazy-overlay';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
 import type { List } from '../mastodon/types';
-import {
-  checkNewNotifications,
-  markNotificationsRead,
-} from '../services/notifications';
-import { getLists } from '../services/lists';
 import type {
   TabChangeEvent,
   HandleSummaryEvent,
@@ -205,6 +183,10 @@ export class AppHome extends LitElement {
       await import('../services/auth-state');
     this.isGuestMode = checkGuestMode();
 
+    if (this.isGuestMode) {
+      import('../components/guest-login-banner');
+    }
+
     // Detect mobile for conditional sidebar rendering
     this.isMobile = window.matchMedia('(max-width: 820px)').matches;
 
@@ -214,6 +196,7 @@ export class AppHome extends LitElement {
     // Listen for keyboard shortcut to open new post dialog
     window.addEventListener('open-post-dialog', this._handleOpenPostDialog);
 
+    const { getEffectiveParams } = await import('../utils/launch-params');
     const effectiveParams = getEffectiveParams(window.location);
 
     // Set up global toast listener for error notifications
@@ -221,11 +204,8 @@ export class AppHome extends LitElement {
 
     setTimeout(async () => {
       if (effectiveParams.has('name')) {
-        const name = effectiveParams.get('name');
-
-        if (name) {
-          await this.shareTarget(name);
-        }
+        const names = effectiveParams.getAll('name');
+        await this.handleSharedFiles(names);
       }
 
       // Check for native Android share intent (cold start)
@@ -284,6 +264,8 @@ export class AppHome extends LitElement {
 
         // Only check notifications for authenticated users
         if (!this.isGuestMode) {
+          const { checkNewNotifications } =
+            await import('../services/notifications');
           this.hasNewNotifications = await checkNewNotifications();
         }
       },
@@ -324,8 +306,9 @@ export class AppHome extends LitElement {
     }
 
     // Defer right-click menu and install prompt check - not needed immediately
-    window.requestIdleCallback(() => {
+    window.requestIdleCallback(async () => {
       this.loadRightClick();
+      await import('../components/pwa-install');
       this.checkInstallPrompt();
     });
 
@@ -369,6 +352,7 @@ export class AppHome extends LitElement {
         variant: string;
       }>;
       if (customEvent.detail) {
+        await import('../components/md/md-toast');
         // Add toast to DOM first
         await this.overlays.show('error-toast');
         // Then configure and show it
@@ -385,20 +369,39 @@ export class AppHome extends LitElement {
     });
   }
 
-  async shareTarget(name: string) {
-    const result = await shareTarget(name);
+  async handleSharedFiles(names: string[]) {
+    const { shareTarget } = await import('../services/share-target');
+    const validNames: string[] = [];
 
-    if (result.success) {
-      console.log('[Share Target] Found cached file, opening dialog');
-      await this.openNewDialog(result.decodedName);
-    } else {
-      console.log('[Share Target] No cached file found');
-      // Show error toast to user
+    for (const name of names) {
+      const result = await shareTarget(name);
+      if (result.success) {
+        validNames.push(result.decodedName);
+      } else {
+        console.warn('[Share Target] No cached file found for:', name);
+      }
+    }
+
+    if (validNames.length === 0) {
+      await import('../components/md/md-toast');
       await this.overlays.show('error-toast');
       if (this.errorToast) {
-        this.errorToast.message = result.errorMessage || msg('Error');
+        this.errorToast.message = msg(
+          'Failed to load shared image. Please try sharing again.'
+        );
         this.errorToast.variant = 'error';
         this.errorToast.show();
+      }
+      return;
+    }
+
+    // Open dialog once, then add all files as attachments
+    await this.openNewDialog();
+
+    if (this.postDialog) {
+      await this.postDialog.updateComplete;
+      for (const name of validNames) {
+        await this.postDialog.shareTarget(name);
       }
     }
   }
@@ -484,12 +487,17 @@ export class AppHome extends LitElement {
     // Wait for the post-dialog's own shadow DOM to render
     if (this.postDialog) {
       await this.postDialog.updateComplete;
-      this.postDialog.openNewDialog(shareName, origin, shareText);
+      await this.postDialog.openNewDialog(shareName, origin, shareText);
     }
   }
 
   async openSettingsDrawer() {
-    await Promise.all([this.loadUserTerms(), this.loadAppTheme()]);
+    await Promise.all([
+      this.loadUserTerms(),
+      this.loadAppTheme(),
+      import('../components/otter-drawer'),
+      import('../components/settings-drawer-content'),
+    ]);
     // Add drawer to DOM first
     await this.overlays.show('settings-drawer');
     // Then show it (triggers animation)
@@ -506,6 +514,10 @@ export class AppHome extends LitElement {
       return;
     }
 
+    await Promise.all([
+      import('../components/md/md-dialog'),
+      import('../components/account-manager'),
+    ]);
     await this.overlays.show('account-switcher-dialog');
     await customElements.whenDefined('account-manager');
     await this.updateComplete;
@@ -519,6 +531,11 @@ export class AppHome extends LitElement {
   async handleReplies(replies: Post[], _id: string) {
     this.replies = replies;
 
+    // Lazy-load drawer and timeline-item for replies
+    await Promise.all([
+      import('../components/otter-drawer'),
+      import('../components/timeline-item'),
+    ]);
     // Add drawer to DOM first
     await this.overlays.show('replies-drawer');
     // Then show it (triggers animation)
@@ -569,6 +586,7 @@ export class AppHome extends LitElement {
     if (this.listsLoading) return;
     this.listsLoading = true;
     try {
+      const { getLists } = await import('../services/lists');
       this.lists = await getLists();
     } catch (error) {
       console.error('Failed to load lists', error);
@@ -586,6 +604,7 @@ export class AppHome extends LitElement {
   private async openListsDialog() {
     if (this.isGuestMode) return;
 
+    const { ensureListsDialogLoaded } = await import('../utils/list-dialogs');
     await ensureListsDialogLoaded();
 
     await this.overlays.show('lists-dialog');
@@ -599,6 +618,8 @@ export class AppHome extends LitElement {
 
     this.listMembershipAccount = account;
 
+    const { ensureListMembershipDialogLoaded } =
+      await import('../utils/list-dialogs');
     await ensureListMembershipDialogLoaded();
 
     await this.overlays.show('list-membership-dialog');
@@ -658,6 +679,7 @@ export class AppHome extends LitElement {
       this.overlays.hide('translation-toast');
     }
 
+    await import('../components/md/md-dialog');
     // Add dialog to DOM first
     await this.overlays.show('summary-dialog');
     // Then show it (triggers animation)
@@ -723,13 +745,6 @@ export class AppHome extends LitElement {
 
     // Remove native share intent listener
     this._nativeShareCleanup?.remove();
-
-    const lastPageID = sessionStorage.getItem(getLatestReadStorageKey());
-    console.log('lastPageID', lastPageID);
-    if (lastPageID) {
-      const { savePlace } = await import('../services/timeline');
-      await savePlace(lastPageID);
-    }
   }
 
   private _handleSwitchTab = async (event: Event) => {
@@ -796,6 +811,7 @@ export class AppHome extends LitElement {
    */
   private async handleNotificationsSideEffects(): Promise<void> {
     this.hasNewNotifications = false;
+    const { markNotificationsRead } = await import('../services/notifications');
     await markNotificationsRead();
     if (navigator.clearAppBadge) {
       navigator.clearAppBadge();
@@ -825,7 +841,15 @@ export class AppHome extends LitElement {
   }
 
   async loadRightClick() {
-    if (await lazyLoad('rightClick', componentLoaders.rightClick)) {
+    if (
+      await lazyLoad('rightClick', async () => {
+        await Promise.all([
+          componentLoaders.rightClick(),
+          import('../components/md/md-menu'),
+          import('../components/md/md-menu-item'),
+        ]);
+      })
+    ) {
       this.rightClickLoaded = true;
     }
   }
@@ -866,6 +890,7 @@ export class AppHome extends LitElement {
 
   async openInstallDialog() {
     // Add dialog to DOM first
+    await import('../components/md/md-dialog');
     await this.overlays.show('install-dialog');
     // Then show it (triggers animation)
     this.installDialog?.show();
@@ -887,6 +912,7 @@ export class AppHome extends LitElement {
 
   async handleTranslating(_event: HandleTranslatingEvent) {
     console.log('handle translating event received');
+    await import('../components/md/md-toast');
     // Add toast to DOM first
     await this.overlays.show('translation-toast');
     // Show translation toast

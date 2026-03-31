@@ -7,11 +7,7 @@ import { router } from './router/routes';
 import './config/localization.js';
 
 import './pages/app-login';
-import {
-  bootstrapSession,
-  getActiveAccount,
-  syncActiveToIndexedDb,
-} from './services/auth-session';
+import { bootstrapSession, getActiveAccount } from './services/auth-session';
 
 @customElement('app-index')
 export class AppIndex extends LitElement {
@@ -63,28 +59,14 @@ export class AppIndex extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
 
-    try {
-      await bootstrapSession();
-    } catch (error) {
-      console.error('[App] Failed to bootstrap auth session', error);
-    }
-
-    // If the app was cold-launched via an OAuth deep link (App Link / Universal Link),
-    // consume the launch URL and complete the token exchange before routing starts.
-    await this.handleNativeLaunchCallback();
-
-    // Register route-changed listener BEFORE router.init() to avoid missing the
-    // initial route-changed event in browsers with native Navigation API + URLPattern
-    // support (where init() completes synchronously before firstUpdated() runs).
+    // Register route-changed listener synchronously — must be in place before
+    // router.init() to avoid missing the initial event in browsers with native
+    // Navigation API + URLPattern support.
     router.addEventListener('route-changed', this._onRouteChanged);
 
-    // Load polyfills for browsers without native Navigation API / URLPattern
-    if (!('navigation' in window)) {
-      await import('@virtualstate/navigation');
-    }
-    if (typeof URLPattern === 'undefined') {
-      await import('urlpattern-polyfill');
-    }
+    // Auth bootstrap + native OAuth deep-link handling and polyfill loading are
+    // independent — run them in parallel so neither blocks the other.
+    await Promise.all([this._initAuth(), this._loadPolyfills()]);
 
     // Initialize router (loads initial route's lazy imports)
     await router.init();
@@ -99,7 +81,6 @@ export class AppIndex extends LitElement {
         timeout: 5000,
       });
     } else {
-      // Initialize native push notification listeners (FCM via Capacitor)
       requestIdleCallback(
         async () => {
           const { setupNativePushListeners } =
@@ -109,6 +90,32 @@ export class AppIndex extends LitElement {
         { timeout: 5000 }
       );
     }
+  }
+
+  /** Bootstrap session and handle any native OAuth deep-link launch. */
+  private async _initAuth() {
+    try {
+      await bootstrapSession();
+    } catch (error) {
+      console.error('[App] Failed to bootstrap auth session', error);
+    }
+    await this.handleNativeLaunchCallback();
+  }
+
+  /** Load Navigation API / URLPattern polyfills if the browser needs them. */
+  private async _loadPolyfills() {
+    const loads: Promise<unknown>[] = [];
+    if (!('navigation' in window)) {
+      loads.push(
+        import('@virtualstate/navigation').then(({ applyPolyfill }) => {
+          applyPolyfill();
+        })
+      );
+    }
+    if (typeof URLPattern === 'undefined') {
+      loads.push(import('urlpattern-polyfill'));
+    }
+    await Promise.all(loads);
   }
 
   disconnectedCallback() {
@@ -171,6 +178,37 @@ export class AppIndex extends LitElement {
     }
   }
 
+  /**
+   * Fetch server-side user preferences and store them in localStorage
+   * for use by the post composer and other components.
+   */
+  private async syncServerPreferences() {
+    try {
+      const { getServerPreferences } =
+        await import('./mastodon/api/preferences.js');
+      const prefs = await getServerPreferences();
+      if (!prefs) return;
+
+      const { set } = await import('idb-keyval');
+      await set('server-preferences', prefs);
+    } catch (error) {
+      console.error('[App] Failed to sync server preferences', error);
+    }
+  }
+
+  /** Cache instance announcements for offline display and faster load. */
+  private async syncServerAnnouncements() {
+    try {
+      const { getAnnouncements, SERVER_ANNOUNCEMENTS_IDB_KEY } =
+        await import('./mastodon/api/announcements.js');
+      const list = await getAnnouncements();
+      const { set } = await import('idb-keyval');
+      await set(SERVER_ANNOUNCEMENTS_IDB_KEY, list);
+    } catch (error) {
+      console.error('[App] Failed to sync server announcements', error);
+    }
+  }
+
   firstUpdated() {
     // Check initial authentication state
     this.checkAuthenticationState();
@@ -181,6 +219,11 @@ export class AppIndex extends LitElement {
       this.syncCredentialsToIndexedDB();
 
       this.handleInitTheme();
+
+      // Sync server-side user preferences (default visibility, language, etc.)
+      this.syncServerPreferences();
+
+      this.syncServerAnnouncements();
 
       // Preload data during idle time, then precache critical components.
       // Component precaching waits for data preload to finish to avoid
@@ -307,6 +350,7 @@ export class AppIndex extends LitElement {
    * This ensures the service worker has access to the latest tokens
    */
   private async syncCredentialsToIndexedDB() {
+    const { syncActiveToIndexedDb } = await import('./services/auth-session');
     await syncActiveToIndexedDb();
     console.log('[App] Synced credentials to IndexedDB');
 
@@ -356,6 +400,21 @@ export class AppIndex extends LitElement {
 
   render() {
     return html`
+      <a
+        href="#"
+        class="skip-link"
+        @click="${(e: Event) => {
+          e.preventDefault();
+          const target = document.querySelector('main, section, [role="main"]');
+          if (target) {
+            if (!target.hasAttribute('tabindex')) {
+              target.setAttribute('tabindex', '-1');
+            }
+            (target as HTMLElement).focus();
+          }
+        }}"
+        >${'Skip to main content'}</a
+      >
       ${router.render()}
       <pwa-update></pwa-update>
     `;

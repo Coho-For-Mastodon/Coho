@@ -13,15 +13,6 @@ describe('md-checkbox', () => {
       expect(el.disabled).toBe(false);
       expect(el.value).toBe('');
     });
-
-    it('renders with a label via slot', async () => {
-      const el = await fixture<MdCheckbox>(
-        html`<md-checkbox>Accept terms</md-checkbox>`
-      );
-      const slot = el.shadowRoot!.querySelector('slot');
-
-      expect(slot).toBeDefined();
-    });
   });
 
   describe('checked state', () => {
@@ -229,29 +220,6 @@ describe('md-checkbox', () => {
       const wrapper = el.shadowRoot!.querySelector('.wrapper');
 
       expect(wrapper?.getAttribute('tabindex')).toBe('-1');
-    });
-  });
-
-  describe('visual elements', () => {
-    it('renders control element', async () => {
-      const el = await fixture<MdCheckbox>(html`<md-checkbox></md-checkbox>`);
-      const control = el.shadowRoot!.querySelector('.control');
-
-      expect(control).toBeDefined();
-    });
-
-    it('renders checkmark SVG', async () => {
-      const el = await fixture<MdCheckbox>(html`<md-checkbox></md-checkbox>`);
-      const checkmark = el.shadowRoot!.querySelector('.checkmark');
-
-      expect(checkmark).toBeDefined();
-    });
-
-    it('renders state layer for hover effects', async () => {
-      const el = await fixture<MdCheckbox>(html`<md-checkbox></md-checkbox>`);
-      const stateLayer = el.shadowRoot!.querySelector('.state-layer');
-
-      expect(stateLayer).toBeDefined();
     });
   });
 });

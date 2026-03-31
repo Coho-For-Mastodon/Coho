@@ -7,22 +7,23 @@ Coho covers the core post lifecycle (create, edit, delete, boost, favourite, boo
 | Feature                             | Priority | Status         |
 | ----------------------------------- | -------- | -------------- |
 | Direct Messages / Conversations     | Critical | ✅ Implemented |
-| Follow Requests                     | Critical | ❌ Missing     |
+| Follow Requests                     | Critical | ✅ Implemented |
 | Muted & Blocked Accounts Management | Critical | ✅ Implemented |
 | Content Filters (Keyword Filters)   | Critical | ✅ Implemented |
 | Custom Emoji Support                | Critical | ✅ Implemented |
+| Favourited-by / Reblogged-by        | Critical | ✅ Implemented |
 | Scheduled Statuses Management       | High     | ✅ Implemented |
-| WebSocket Streaming Integration     | High     | ❌ Missing     |
-| Multi-Account Support               | High     | ❌ Missing     |
+| Multi-Account Support               | High     | ✅ Implemented |
 | Conversation / Thread Muting        | High     | ✅ Implemented |
-| Edit History Viewing                | High     | ❌ Missing     |
-| Server Announcements                | Medium   | ❌ Missing     |
+| Edit History Viewing                | High     | ✅ Implemented |
+| Followed Hashtags                   | High     | ✅ Implemented |
+| Server Announcements                | Medium   | ✅ Implemented |
 | Who to Follow / Suggestions         | Medium   | ✅ Implemented |
-| Domain Blocks                       | Medium   | ❌ Missing     |
-| Featured Hashtags                   | Medium   | ❌ Missing     |
-| Audio Player                        | Medium   | ⚠️ Partial     |
 | Notification Preferences UI         | Medium   | ✅ Implemented |
-| Preferences Sync                    | Medium   | ❌ Missing     |
+| Preferences Sync                    | Medium   | ✅ Implemented |
+| Audio Player                        | Medium   | ⚠️ Partial     |
+| Domain Blocks                       | Medium   | ✅ Implemented |
+| Featured Hashtags                   | Medium   | ❌ Missing     |
 
 ---
 
@@ -34,47 +35,89 @@ Full conversation list, thread view, new message flow, search for recipients, an
 
 **Key files:** `src/pages/app-messages.ts`, `src/pages/conversation-thread.ts`, `src/mastodon/api/messages.ts`, `src/services/messages.ts`
 
-### 2. Muted & Blocked Accounts Management
+### 2. Follow Requests
 
-Dedicated pages listing muted and blocked accounts with unmute/unblock actions. Accessible from settings.
+List pending follow requests and approve or reject them. Accessible from settings.
+
+**Key files:** `src/pages/app-follow-requests.ts`, `src/mastodon/api/follow-requests.ts`
+
+### 3. Muted & Blocked Accounts Management
+
+Dedicated pages listing muted and blocked accounts with unmute/unblock actions and CSV import/export. Accessible from settings.
 
 **Key files:** `src/pages/app-muted.ts`, `src/pages/app-blocked.ts`, `src/services/account.ts` (`getMutedAccounts`, `getBlockedAccounts`)
 
-### 3. Content Filters (Keyword Filters)
+### 4. Content Filters (Keyword Filters)
 
 Full CRUD for Mastodon v2 filters with client-side filtering of timeline posts. UI supports keyword management, context selection (home, notifications, public, thread, account), expiry, and filter actions (hide/warn).
 
 **Key files:** `src/mastodon/api/filters.ts`, `src/services/filters.ts` (`applyFilters`, `filterTimelinePosts`), `src/components/filters-dialog.ts`
 
-### 4. Custom Emoji Support
+### 5. Custom Emoji Support
 
 Fetches instance custom emoji list, caches in IndexedDB, renders `:shortcode:` as `<img>` tags in post content, and provides an emoji picker in the composer.
 
 **Key files:** `src/mastodon/api/custom-emojis.ts`, `src/services/custom-emojis.ts`, `src/utils/emoji-parser.ts`, `src/components/emoji-picker.ts`
 
-### 5. Scheduled Statuses Management
+### 6. Favourited-by / Reblogged-by
+
+Separate API calls for `GET /api/v1/statuses/:id/favourited_by` and `GET /api/v1/statuses/:id/reblogged_by` to show which accounts interacted with a post.
+
+**Key files:** `src/mastodon/api/statuses.ts` (`getFavouritedBy`, `getRebloggedBy`), `src/services/posts.ts`
+
+### 7. Scheduled Statuses Management
 
 UI to list, expand, reschedule, and cancel scheduled posts. Integrated into the home page via lazy loading.
 
 **Key files:** `src/mastodon/api/scheduled-statuses.ts`, `src/services/scheduled-statuses.ts`, `src/components/scheduled-statuses-dialog.ts`
 
-### 6. Conversation / Thread Muting
+### 8. Multi-Account Support
+
+Store multiple accounts, switch between them, and remove saved accounts. Scoped storage per account.
+
+**Key files:** `src/services/auth-session.ts`, `src/components/account-manager.ts`
+
+### 9. Conversation / Thread Muting
 
 Mute/unmute conversations via `POST /api/v1/statuses/:id/mute` and `unmute`. Toggle available in post action menus with `conversation-mute-change` event for UI updates.
 
 **Key files:** `src/services/posts.ts` (`muteConversation`, `unmuteConversation`), `src/components/timeline-item.ts`, `src/components/timeline-renderers.ts`
 
-### 7. Who to Follow / Suggestions
+### 10. Edit History Viewing
+
+View the full edit history of a post, including content changes, media, spoiler text, and sensitive flags. Accessible via the "(edited)" indicator and the post menu.
+
+**Key files:** `src/components/post-edit-history-dialog.ts`, `src/mastodon/api/statuses.ts` (`getEditHistory`)
+
+### 11. Followed Hashtags
+
+Follow and unfollow hashtags from the hashtag timeline page. Followed hashtags appear in the home timeline. A dedicated management page lists all followed hashtags with unfollow controls.
+
+**Key files:** `src/mastodon/api/tags.ts`, `src/mastodon/types/tag.ts`, `src/pages/app-hashtags.ts`, `src/pages/app-followed-hashtags.ts`
+
+### 12. Server Announcements
+
+View and dismiss instance announcements. Latest announcement shown in settings, full list on a dedicated page.
+
+**Key files:** `src/mastodon/api/announcements.ts`, `src/pages/app-announcements.ts`, `src/components/settings-drawer-content.ts`
+
+### 13. Who to Follow / Suggestions
 
 The explore page "For You" tab fetches `GET /api/v2/suggestions` and displays suggested accounts to follow.
 
-### 8. Notification Preferences UI
+### 14. Notification Preferences UI
 
 Full dialog with toggles for each notification type (follow, favourite, reblog, mention, poll, follow_request, status, update), push policy selection, and enable/disable push.
 
 **Key files:** `src/components/notification-preferences-dialog.ts`
 
-### 9. Audio Player (Partial)
+### 15. Preferences Sync
+
+Fetches server-side user preferences (`GET /api/v1/preferences`) on login and applies defaults for posting visibility, sensitive flag, and language in the composer.
+
+**Key files:** `src/mastodon/api/preferences.ts`, `src/app-index.ts`, `src/components/post-composer.ts`
+
+### 16. Audio Player (Partial)
 
 Audio attachments render using native `<audio controls>` in the media carousel and conversation threads.
 
@@ -82,68 +125,20 @@ Audio attachments render using native `<audio controls>` in the media carousel a
 
 **Remaining polish:** A custom styled audio player with waveform visualization and playback progress persistence would improve the experience, but basic playback works today.
 
+### 17. Domain Blocks
+
+View, block, and unblock entire instance domains. Management page with CSV export/import accessible from settings. "Block domain" action available in post context menus for remote accounts.
+
+**Key files:** `src/mastodon/api/domain-blocks.ts`, `src/pages/app-domain-blocks.ts`, `src/components/timeline-renderers.ts`, `src/components/timeline-item.ts`
+
 ---
 
 ## Remaining Work
 
-### Critical -- Users will hit these regularly
-
-#### 1. Follow Requests (for locked accounts)
-
-**Current state:** No API calls and no UI for follow requests. Notification type definitions exist but there is no way to approve or reject requests.
-
-**What's needed:** `GET /api/v1/follow_requests` to list pending requests, `POST /api/v1/follow_requests/:id/authorize` and `reject`. A UI accessible from notifications or settings.
-
-**Why critical:** Users with locked/private accounts cannot approve new followers at all.
-
-### High Priority -- Noticeable gaps for daily-driver use
-
-#### 2. WebSocket Streaming Integration
-
-**Current state:** A streaming worker exists at `src/utils/timeline-worker.ts` (27 lines) but is never instantiated from any page or component.
-
-**What's needed:** Connect the worker to timeline and notification components so new posts and notifications appear in real time without manual refresh.
-
-**Impact:** The home timeline requires manual refresh or pull-to-refresh. New posts and notifications don't appear in real time.
-
-#### 3. Multi-Account Support
-
-**Current state:** Single account per installation. Token stored in localStorage with fixed keys.
-
-**What's needed:** Infrastructure to store multiple tokens keyed by instance+account, an account switcher UI, and scoped storage so each account's data is isolated.
-
-**Impact:** Many Mastodon users maintain accounts on multiple instances. Switching requires logging out and back in.
-
-#### 4. Edit History Viewing
-
-**Current state:** Edited posts show an "edited" indicator, but there is no UI to view the edit history.
-
-**What's needed:** Call `GET /api/v1/statuses/:id/history` and display a diff or timeline of changes (content, media, sensitive flag, spoiler text).
-
-**Impact:** Users cannot see what changed in an edited post.
-
 ### Medium Priority -- Polish and completeness
 
-#### 5. Server Announcements
-
-**Current state:** No API client, service, or UI. Only an E2E test mock returning `[]`.
-
-**What's needed:** `GET /api/v1/announcements`, `POST /api/v1/announcements/:id/dismiss`, and a UI to display and dismiss instance announcements. Support for announcement reactions is a nice-to-have.
-
-#### 6. Domain Blocks
-
-**Current state:** Only a `domain_blocking` type field exists in the account types. No API calls.
-
-**What's needed:** `GET/POST/DELETE /api/v1/domain_blocks`. UI to view blocked domains and block/unblock entire instances (e.g., from a post or profile context menu).
-
-#### 7. Featured Hashtags
+#### 1. Featured Hashtags
 
 **Current state:** No references in `src/`.
 
 **What's needed:** `GET/POST/DELETE /api/v1/featured_tags`. UI on the user's own profile to showcase hashtags, and display featured hashtags on other users' profiles.
-
-#### 8. Preferences Sync
-
-**Current state:** `GET /api/v1/preferences` is never called.
-
-**What's needed:** Fetch server-side defaults on login and respect them for posting visibility, default language, and sensitive content flag. These should serve as initial values in the composer and settings.

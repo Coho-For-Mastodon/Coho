@@ -11,13 +11,6 @@ describe('md-icon', () => {
       expect(el).toBeDefined();
       expect(el.size).toBe('24px');
     });
-
-    it('renders icon container', async () => {
-      const el = await fixture<MdIcon>(html`<md-icon></md-icon>`);
-      const icon = el.shadowRoot!.querySelector('.icon');
-
-      expect(icon).toBeDefined();
-    });
   });
 
   describe('size property', () => {
@@ -63,21 +56,6 @@ describe('md-icon', () => {
     });
   });
 
-  describe('slotted content', () => {
-    it('renders slotted SVG content', async () => {
-      const el = await fixture<MdIcon>(html`
-        <md-icon>
-          <svg viewBox="0 0 24 24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-          </svg>
-        </md-icon>
-      `);
-      const slot = el.shadowRoot!.querySelector('slot');
-
-      expect(slot).toBeDefined();
-    });
-  });
-
   describe('events', () => {
     it('dispatches md-icon-load on successful load', async () => {
       const el = await fixture<MdIcon>(html`<md-icon></md-icon>`);
@@ -113,11 +91,20 @@ describe('md-icon', () => {
   });
 
   describe('accessibility', () => {
-    it('has role="img"', async () => {
-      const el = await fixture<MdIcon>(html`<md-icon name="home"></md-icon>`);
+    it('has role="img" when label is provided', async () => {
+      const el = await fixture<MdIcon>(
+        html`<md-icon name="home" label="Home"></md-icon>`
+      );
       const icon = el.shadowRoot!.querySelector('.icon');
 
       expect(icon?.getAttribute('role')).toBe('img');
+    });
+
+    it('has role="presentation" when no label provided', async () => {
+      const el = await fixture<MdIcon>(html`<md-icon name="home"></md-icon>`);
+      const icon = el.shadowRoot!.querySelector('.icon');
+
+      expect(icon?.getAttribute('role')).toBe('presentation');
     });
 
     it('has aria-label when label is provided', async () => {
@@ -129,11 +116,11 @@ describe('md-icon', () => {
       expect(icon?.getAttribute('aria-label')).toBe('Home');
     });
 
-    it('has default aria-label when no label provided', async () => {
+    it('has no aria-label when no label provided', async () => {
       const el = await fixture<MdIcon>(html`<md-icon name="home"></md-icon>`);
       const icon = el.shadowRoot!.querySelector('.icon');
 
-      expect(icon?.getAttribute('aria-label')).toBe('icon');
+      expect(icon?.getAttribute('aria-label')).toBeNull();
     });
   });
 });

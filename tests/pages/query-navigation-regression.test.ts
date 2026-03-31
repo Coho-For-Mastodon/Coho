@@ -40,6 +40,7 @@ const hoisted = vi.hoisted(() => {
     reportUser: vi.fn(),
     editPost: vi.fn(),
     getInstanceInfo: vi.fn(async () => ({})),
+    getFamiliarFollowers: vi.fn(async () => []),
   };
 });
 
@@ -72,6 +73,15 @@ vi.mock('../../src/services/account', async (importOriginal) => {
 vi.mock('../../src/services/auth-state', () => ({
   isGuestMode: hoisted.isGuestMode,
 }));
+
+vi.mock('../../src/mastodon/api/accounts', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../src/mastodon/api/accounts')>();
+  return {
+    ...actual,
+    getFamiliarFollowers: hoisted.getFamiliarFollowers,
+  };
+});
 
 vi.mock('../../src/services/posts', async (importOriginal) => {
   const actual =

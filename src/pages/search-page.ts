@@ -876,7 +876,7 @@ export class SearchPage extends LitElement {
 
   render() {
     return html`
-      <main>
+      <section>
         <app-search
           @search="${(
             e: CustomEvent<{ searchData: SearchData; isAutoSearch?: boolean }>
@@ -888,6 +888,7 @@ export class SearchPage extends LitElement {
 
         <md-segmented-button
           .value="${this.activeSegment}"
+          aria-label="${msg('Search categories')}"
           @segment-change="${this.handleSegmentChange}"
         >
           <md-segment value="trending">${msg('Trending')}</md-segment>
@@ -974,10 +975,18 @@ export class SearchPage extends LitElement {
         <div class="panel ${this.activeSegment === 'hashtags' ? 'active' : ''}">
           ${this.searchData && this.searchData.hashtags
             ? html`
-                <ul id="hashtagsList">
+                <ul id="hashtagsList" role="list">
                   ${this.searchData.hashtags.map((hashtag) => {
                     return html`<li
+                      tabindex="0"
+                      role="button"
                       @click="${() => this.handleHashtagClick(hashtag.name)}"
+                      @keydown="${(e: KeyboardEvent) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          this.handleHashtagClick(hashtag.name);
+                        }
+                      }}"
                     >
                       <div class="account">#${hashtag.name}</div>
                     </li>`;
@@ -986,7 +995,7 @@ export class SearchPage extends LitElement {
               `
             : null}
         </div>
-      </main>
+      </section>
 
       <!-- Post Detail Dialog -->
       <post-detail-dialog></post-detail-dialog>

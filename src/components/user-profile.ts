@@ -13,6 +13,8 @@ export class UserProfile extends LitElement {
 
   @property({ type: Boolean }) small: boolean = false;
   @property({ type: Boolean }) boosted: boolean = false;
+  /** Use in flex list rows (blocked/muted): text fills space before trailing actions. */
+  @property({ type: Boolean, attribute: 'list-row' }) listRow: boolean = false;
 
   static styles = [
     css`
@@ -22,12 +24,35 @@ export class UserProfile extends LitElement {
         contain: content;
       }
 
+      :host([list-row]) {
+        flex: 1;
+        min-width: 0;
+        align-self: center;
+        contain: layout style;
+      }
+
+      :host([list-row]) .headerBlock {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+      }
+
+      :host([list-row]) .headerBlock > div {
+        min-width: 0;
+        flex: 1;
+      }
+
       p,
       h4 {
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 196px;
         white-space: nowrap;
+      }
+
+      :host([list-row]) p,
+      :host([list-row]) h4 {
+        max-width: none;
       }
 
       .headerBlock {
@@ -52,7 +77,7 @@ export class UserProfile extends LitElement {
         color: grey;
       }
 
-      div.small img {
+      .headerBlock.small img {
         height: 36px;
         width: 36px;
 
@@ -60,11 +85,11 @@ export class UserProfile extends LitElement {
         contain: strict;
       }
 
-      div.small p {
+      .headerBlock.small p {
         display: none;
       }
 
-      div.small h4 {
+      .headerBlock.small h4 {
         margin-top: 0;
         white-space: nowrap;
         overflow-x: hidden;
@@ -86,8 +111,8 @@ export class UserProfile extends LitElement {
       }
 
       @media (max-width: 500px) {
-        p,
-        h4 {
+        :host(:not([list-row])) p,
+        :host(:not([list-row])) h4 {
           max-width: 40vw;
         }
       }
@@ -120,7 +145,7 @@ export class UserProfile extends LitElement {
 
   render() {
     return html`
-      <div
+      <button
         @click="${() => this.openUser()}"
         class=${classMap({
           small: this.small === true,
@@ -128,6 +153,7 @@ export class UserProfile extends LitElement {
           boosted: this.boosted,
         })}
         slot="header"
+        style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; width: 100%;"
       >
         <img
           id="avatar"
@@ -147,7 +173,7 @@ export class UserProfile extends LitElement {
           ></h4>
           <p>${this.account?.acct || 'Loading...'}</p>
         </div>
-      </div>
+      </button>
     `;
   }
 }

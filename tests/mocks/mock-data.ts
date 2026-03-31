@@ -217,3 +217,90 @@ export const mockTrendingTags = [
     ],
   },
 ];
+
+const mockAccountListFields = {
+  locked: false,
+  bot: false,
+  created_at: MOCK_TIMESTAMP,
+  note: '',
+  avatar: '',
+  avatar_static: '',
+  header: '',
+  header_static: '',
+  followers_count: 0,
+  following_count: 0,
+  statuses_count: 0,
+  emojis: [],
+  fields: [],
+};
+
+/** Blocked accounts for MSW (paginated list + lookup tests). */
+export const mockBlockedAccounts = [
+  {
+    id: 'block_1',
+    username: 'blocked_a',
+    acct: 'blocked_a@elsewhere',
+    display_name: 'Blocked A',
+    url: 'https://elsewhere/@blocked_a',
+    ...mockAccountListFields,
+  },
+  {
+    id: 'block_2',
+    username: 'blocked_b',
+    acct: 'blocked_b@elsewhere',
+    display_name: 'Blocked B',
+    url: 'https://elsewhere/@blocked_b',
+    ...mockAccountListFields,
+  },
+];
+
+export const mockMutedAccounts = [
+  {
+    id: 'mute_1',
+    username: 'muted_a',
+    acct: 'muted_a@elsewhere',
+    display_name: 'Muted A',
+    url: 'https://elsewhere/@muted_a',
+    ...mockAccountListFields,
+  },
+  {
+    id: 'mute_2',
+    username: 'muted_b',
+    acct: 'muted_b@elsewhere',
+    display_name: 'Muted B',
+    url: 'https://elsewhere/@muted_b',
+    ...mockAccountListFields,
+  },
+];
+
+export const mockLookupImportAccount = {
+  id: 'lookup_import_1',
+  username: 'importme',
+  acct: 'importme@remote.social',
+  display_name: 'Import Me',
+  url: 'https://remote.social/@importme',
+  ...mockAccountListFields,
+};
+
+export const mockEditHistory = [
+  {
+    content: '<p>Welcome to the mocked timeline! (edited)</p>',
+    spoiler_text: '',
+    sensitive: false,
+    created_at: MOCK_TIMESTAMP,
+    account: mockAccount,
+    poll: null,
+    media_attachments: [],
+    emojis: [],
+  },
+  {
+    content: '<p>Welcome to the mocked timeline!</p>',
+    spoiler_text: '',
+    sensitive: false,
+    created_at: MOCK_TIMESTAMP_EARLIER,
+    account: mockAccount,
+    poll: null,
+    media_attachments: [],
+    emojis: [],
+  },
+];

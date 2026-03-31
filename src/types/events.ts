@@ -120,18 +120,6 @@ export interface OpenAccountSwitcherDetail {
 export type OpenAccountSwitcherEvent = CustomEvent<OpenAccountSwitcherDetail>;
 
 // ============================================================================
-// Account Session Events
-// ============================================================================
-
-export interface AccountChangedDetail {
-  previousActiveAccountKey: string | null;
-  newActiveAccountKey: string | null;
-  reason: string;
-}
-
-export type AccountChangedEvent = CustomEvent<AccountChangedDetail>;
-
-// ============================================================================
 // Menu Events
 // ============================================================================
 

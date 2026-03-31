@@ -1014,6 +1014,20 @@ export class PostComposer extends LitElement {
         instance.configuration.media_attachments.video_size_limit;
     }
 
+    // Apply server-side posting defaults (async from IndexedDB)
+    if (!this.editingPost && !this.replyTo) {
+      const { get } = await import('idb-keyval');
+      const prefs = await get('server-preferences');
+      if (prefs) {
+        if (prefs['posting:default:visibility']) {
+          this.visibility = prefs['posting:default:visibility'];
+        }
+        if (prefs['posting:default:sensitive']) {
+          this.sensitive = prefs['posting:default:sensitive'];
+        }
+      }
+    }
+
     // Check if AI features are available
     this.proofreaderAvailable = await isProofreaderAvailable();
     this.speechToTextAvailable = isAudioTranscriptionAvailable();
@@ -2430,7 +2444,7 @@ export class PostComposer extends LitElement {
 
   private async _applyDraft(draft: DraftPost) {
     this.statusText = draft.status ?? '';
-    this.visibility = draft.visibility ?? 'public';
+    this.visibility = draft.visibility ?? this.visibility;
     this.sensitive = !!draft.sensitive;
     this.spoilerText = draft.spoilerText ?? '';
     this.pollEnabled = !!draft.poll;
@@ -2647,6 +2661,7 @@ export class PostComposer extends LitElement {
       <div class="replying-to-indicator">
         <span>${msg(str`Replying to @${this.replyTo.account.acct}`)}</span>
         <md-icon-button
+          label=${msg('Dismiss')}
           src="/assets/close-outline.svg"
           @click=${() => this.clearReplyTo()}
         ></md-icon-button>
@@ -3173,12 +3188,14 @@ export class PostComposer extends LitElement {
                         <div class="preview-actions">
                           <md-icon-button
                             size="small"
+                            label=${msg('Remove attachment')}
                             @click="${() => this.removeImage(attachment.id)}"
                           >
                             <md-icon src="/assets/close-outline.svg"></md-icon>
                           </md-icon-button>
                           <md-icon-button
                             size="small"
+                            label=${msg('Edit attachment')}
                             @click="${() => this.openEditDialog(attachment)}"
                           >
                             <md-icon src="/assets/brush-outline.svg"></md-icon>
@@ -3278,6 +3295,8 @@ export class PostComposer extends LitElement {
                   : this.charCount >= this.maxChars * 0.9
                     ? 'near-limit'
                     : ''}"
+                role="status"
+                aria-live="polite"
                 >${this.charCount}/${this.maxChars}</span
               >`
             : nothing}

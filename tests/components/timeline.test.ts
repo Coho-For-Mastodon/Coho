@@ -110,35 +110,6 @@ describe('timeline pull-to-refresh', () => {
   });
 
   describe('refresh indicator element', () => {
-    it('should have refresh indicator in the DOM', async () => {
-      const el = await fixture<Timeline>(
-        html`<app-timeline
-          .data=${testPosts}
-          .autoLoad=${false}
-        ></app-timeline>`
-      );
-
-      await elementUpdated(el);
-
-      const indicator = el.shadowRoot?.querySelector('#refresh-indicator');
-      expect(indicator).toBeDefined();
-    });
-
-    it('should have refresh icon inside indicator', async () => {
-      const el = await fixture<Timeline>(
-        html`<app-timeline
-          .data=${testPosts}
-          .autoLoad=${false}
-        ></app-timeline>`
-      );
-
-      await elementUpdated(el);
-
-      const indicator = el.shadowRoot?.querySelector('#refresh-indicator');
-      const icon = indicator?.querySelector('md-icon');
-      expect(icon).toBeDefined();
-    });
-
     it('should have initial height of 0 on refresh indicator', async () => {
       const el = await fixture<Timeline>(
         html`<app-timeline

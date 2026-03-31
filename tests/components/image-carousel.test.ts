@@ -21,6 +21,7 @@ const hoisted = vi.hoisted(() => {
 vi.mock('../../src/services/blurhash-worker', () => ({
   getBlurhashWorker: () => ({
     generateBlurhash: hoisted.generateBlurhash,
+    cancel: vi.fn(),
   }),
 }));
 

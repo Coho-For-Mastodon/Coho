@@ -1,11 +1,9 @@
 import { set } from 'idb-keyval';
-import { getLatestReadStorageKey, getUsersPosts } from './account';
+import { getUsersPosts } from './account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 import { Post } from '../interfaces/Post';
 
-// Import from mastodon library
 import {
-  getHomeTimeline as mastodonGetHomeTimeline,
   getPublicTimeline as mastodonGetPublicTimeline,
   getPreviewTimeline as mastodonGetPreviewTimeline,
   getTrendingStatuses as mastodonGetTrendingStatuses,
@@ -14,19 +12,11 @@ import {
   getHashtagTimeline as mastodonGetHashtagTimeline,
   getStatus as mastodonGetStatus,
   getMediaTimeline as mastodonGetMediaTimeline,
-  saveMarker as mastodonSaveMarker,
   enrichPostsWithReplyContext as mastodonEnrichPostsWithReplyContext,
   groupSelfThreads as mastodonGroupSelfThreads,
   unfavoritePost as mastodonUnfavoritePost,
   unreblogPost as mastodonUnreblogPost,
 } from '../mastodon/api/timelines';
-
-// Type for marker response
-interface MarkerResponse {
-  home?: {
-    last_read_id: string;
-  };
-}
 
 // Re-export enrichPostsWithReplyContext with proper typing for backwards compatibility
 export const enrichPostsWithReplyContext = async (
@@ -60,35 +50,6 @@ const getLastPageID = (type = 'home'): string => lastPageIDs.get(type) || '';
 /** Set the lastPageID for a specific timeline type */
 const setLastPageID = (type: string, id: string): void => {
   lastPageIDs.set(type, id);
-};
-let savePlaceRunningFlag = true;
-
-// when the app unloads, call savePlace
-window.addEventListener('beforeunload', async () => {
-  await savePlace(getLastPageID('home'));
-});
-
-setInterval(() => {
-  savePlaceRunningFlag = false;
-}, 3000);
-
-export const savePlace = async (id: string) => {
-  console.log('intersected 3');
-  if (savePlaceRunningFlag === true) {
-    return;
-  }
-
-  savePlaceRunningFlag = true;
-
-  try {
-    const data = (await mastodonSaveMarker(id)) as MarkerResponse;
-    if (data && data.home?.last_read_id) {
-      setLastPageID('home', data.home.last_read_id);
-      console.log('saving place ran', data.home.last_read_id);
-    }
-  } catch (err) {
-    console.error('Error saving place:', err);
-  }
 };
 
 export const getHomeTimeline = async (): Promise<Post[]> => {
@@ -212,31 +173,6 @@ export const resetLastPageID = (type?: string): Promise<void> => {
     }
     resolve();
   });
-};
-
-export const getLastPlaceTimeline = async (): Promise<Post[] | undefined> => {
-  const last_read_id = sessionStorage.getItem(getLatestReadStorageKey());
-  if (last_read_id && last_read_id.length > 0) {
-    const data = (await mastodonGetHomeTimeline(
-      last_read_id
-    )) as unknown as Post[];
-
-    // Validate response is an array
-    if (!Array.isArray(data)) {
-      console.warn(
-        'getLastPlaceTimeline: Invalid response, expected array',
-        data
-      );
-      return undefined;
-    }
-
-    if (data.length > 0) {
-      setLastPageID('home', data[data.length - 1].id);
-    }
-
-    return data;
-  }
-  return undefined;
 };
 
 export const getPaginatedHomeTimeline = async (

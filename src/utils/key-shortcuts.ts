@@ -59,7 +59,16 @@ export function init() {
   });
 
   hotkeys('escape', () => {
-    handleEscape();
+    const active = document.activeElement;
+    const isInDialog =
+      active?.closest('dialog') ||
+      active?.closest('[role="dialog"]') ||
+      active?.closest('[role="menu"]') ||
+      active?.closest('[role="listbox"]') ||
+      active?.closest('[role="combobox"]');
+    if (!isInDialog) {
+      handleEscape();
+    }
   });
 
   // Period to refresh timeline

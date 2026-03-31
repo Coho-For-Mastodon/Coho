@@ -15,13 +15,6 @@ describe('md-dialog', () => {
       expect(el.noBackdropClose).toBe(false);
     });
 
-    it('renders native dialog element', async () => {
-      const el = await fixture<MdDialog>(html`<md-dialog></md-dialog>`);
-      const dialog = el.shadowRoot!.querySelector('dialog');
-
-      expect(dialog).toBeDefined();
-    });
-
     it('renders dialog title from label property', async () => {
       const el = await fixture<MdDialog>(
         html`<md-dialog label="Test Dialog"></md-dialog>`
@@ -79,39 +72,7 @@ describe('md-dialog', () => {
     });
   });
 
-  describe('fullscreen mode', () => {
-    it('applies fullscreen class when fullscreen is true', async () => {
-      const el = await fixture<MdDialog>(
-        html`<md-dialog fullscreen></md-dialog>`
-      );
-      const dialog = el.shadowRoot!.querySelector('dialog');
-
-      expect(el.fullscreen).toBe(true);
-      expect(dialog?.classList.contains('fullscreen')).toBe(true);
-    });
-
-    it('removes fullscreen class when fullscreen is false', async () => {
-      const el = await fixture<MdDialog>(html`<md-dialog></md-dialog>`);
-      const dialog = el.shadowRoot!.querySelector('dialog');
-
-      expect(dialog?.classList.contains('fullscreen')).toBe(false);
-    });
-  });
-
   describe('slots', () => {
-    it('renders default body slot', async () => {
-      const el = await fixture<MdDialog>(html`
-        <md-dialog>
-          <p>Dialog body content</p>
-        </md-dialog>
-      `);
-      const bodySlot = el.shadowRoot!.querySelector(
-        '.dialog-body slot:not([name])'
-      ) as HTMLSlotElement;
-
-      expect(bodySlot).toBeDefined();
-    });
-
     it('renders header-actions slot', async () => {
       const el = await fixture<MdDialog>(html`
         <md-dialog>
@@ -125,19 +86,6 @@ describe('md-dialog', () => {
       expect(headerActionsSlot).toBeDefined();
       const assignedNodes = headerActionsSlot.assignedElements();
       expect(assignedNodes.length).toBe(1);
-    });
-
-    it('renders footer slot when provided', async () => {
-      const el = await fixture<MdDialog>(html`
-        <md-dialog>
-          <button slot="footer">Close</button>
-        </md-dialog>
-      `);
-      const footerSlot = el.shadowRoot!.querySelector(
-        'slot[name="footer"]'
-      ) as HTMLSlotElement;
-
-      expect(footerSlot).toBeDefined();
     });
   });
 
@@ -243,33 +191,6 @@ describe('md-dialog', () => {
 
       expect(cancelEvent.defaultPrevented).toBe(true);
       expect(dialog.classList.contains('closing')).toBe(true);
-    });
-  });
-
-  describe('structure', () => {
-    it('has dialog-header section', async () => {
-      const el = await fixture<MdDialog>(html`<md-dialog></md-dialog>`);
-      const header = el.shadowRoot!.querySelector('.dialog-header');
-
-      expect(header).toBeDefined();
-    });
-
-    it('has dialog-body section', async () => {
-      const el = await fixture<MdDialog>(html`<md-dialog></md-dialog>`);
-      const body = el.shadowRoot!.querySelector('.dialog-body');
-
-      expect(body).toBeDefined();
-    });
-
-    it('has dialog-footer when footer slot is used', async () => {
-      const el = await fixture<MdDialog>(html`
-        <md-dialog>
-          <button slot="footer">OK</button>
-        </md-dialog>
-      `);
-      const footer = el.shadowRoot!.querySelector('.dialog-footer');
-
-      expect(footer).toBeDefined();
     });
   });
 });

@@ -24,6 +24,8 @@ export class OtterDrawer extends LitElement {
   private dragStartTime: number = 0;
   private dragPointerId: number | null = null;
 
+  private _previouslyFocused: HTMLElement | null = null;
+
   static styles = css`
     :host {
       --drawer-width: 400px;
@@ -268,6 +270,9 @@ export class OtterDrawer extends LitElement {
           ? 'dragging'
           : ''}"
         part="base"
+        role="dialog"
+        aria-modal="true"
+        aria-label="${this.label}"
       >
         ${this.placement === 'bottom'
           ? html`<div
@@ -323,9 +328,9 @@ export class OtterDrawer extends LitElement {
    */
   async show() {
     this.resetDragState();
+    this._previouslyFocused = document.activeElement as HTMLElement | null;
     this.open = true;
 
-    // Emit event for potential listeners
     this.dispatchEvent(
       new CustomEvent('otter-show', {
         bubbles: true,
@@ -333,8 +338,13 @@ export class OtterDrawer extends LitElement {
       })
     );
 
-    // Lock body scroll when drawer is open
     document.body.style.overflow = 'hidden';
+
+    await this.updateComplete;
+    const closeBtn = this.shadowRoot?.querySelector(
+      '.close-button'
+    ) as HTMLElement | null;
+    closeBtn?.focus();
 
     return Promise.resolve();
   }
@@ -346,7 +356,6 @@ export class OtterDrawer extends LitElement {
     this.resetDragState();
     this.open = false;
 
-    // Emit event for potential listeners
     this.dispatchEvent(
       new CustomEvent('otter-hide', {
         bubbles: true,
@@ -354,8 +363,12 @@ export class OtterDrawer extends LitElement {
       })
     );
 
-    // Restore body scroll
     document.body.style.overflow = '';
+
+    if (this._previouslyFocused) {
+      this._previouslyFocused.focus();
+      this._previouslyFocused = null;
+    }
 
     return Promise.resolve();
   }
@@ -379,6 +392,38 @@ export class OtterDrawer extends LitElement {
   private _handleKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape' && this.open) {
       this.hide();
+      return;
+    }
+
+    if (event.key === 'Tab' && this.open) {
+      this._trapFocus(event);
+    }
+  }
+
+  private _trapFocus(event: KeyboardEvent) {
+    const drawer = this.shadowRoot?.querySelector('.drawer') as HTMLElement;
+    if (!drawer) return;
+
+    const focusable = [
+      ...drawer.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      ),
+      ...(this.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), md-icon-button, md-button, md-menu-item, md-checkbox'
+      ) ?? []),
+    ].filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 

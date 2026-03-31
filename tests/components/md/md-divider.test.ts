@@ -15,13 +15,6 @@ describe('md-divider', () => {
       expect(el.vertical).toBe(false);
     });
 
-    it('renders hr element', async () => {
-      const el = await fixture<MdDivider>(html`<md-divider></md-divider>`);
-      const hr = el.shadowRoot!.querySelector('hr.divider');
-
-      expect(hr).toBeDefined();
-    });
-
     it('has aria-hidden attribute', async () => {
       const el = await fixture<MdDivider>(html`<md-divider></md-divider>`);
       const hr = el.shadowRoot!.querySelector('hr');

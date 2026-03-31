@@ -1,6 +1,6 @@
 import ImgWorker from '../utils/img-worker?worker';
 
-type BlurhashCallback = (id: string, dataUrl: string) => void;
+type BlurhashCallback = (id: string, objectUrl: string) => void;
 
 class BlurhashWorkerManager {
   private static instance: BlurhashWorkerManager;
@@ -23,49 +23,26 @@ class BlurhashWorkerManager {
 
     this.worker = new ImgWorker();
 
-    this.worker!.onmessage = (e) => {
-      const receiveTime = Date.now();
-      console.log('✓ Worker response received at', receiveTime, ':', e.data);
-      const { id, bitmap } = e.data;
+    this.worker.onmessage = (e) => {
+      const { id, blob } = e.data;
 
-      if (!bitmap) {
-        console.warn('⚠ No bitmap in response for id:', id);
-        return;
-      }
+      if (!blob) return;
 
-      const startConvert = Date.now();
-      // Convert bitmap to data URL
-      const canvas = document.createElement('canvas');
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-      const ctx = canvas.getContext('2d');
+      const objectUrl = URL.createObjectURL(blob);
 
-      if (!ctx) {
-        console.error('❌ Could not get canvas context');
-        return;
-      }
-
-      // Draw bitmap directly
-      ctx.drawImage(bitmap, 0, 0);
-      const dataUrl = canvas.toDataURL('image/png');
-      const endConvert = Date.now();
-
-      console.log('✓ Canvas conversion took', endConvert - startConvert, 'ms');
-      console.log('✓ Created data URL for', id);
-
-      // Call the registered callback
       const callback = this.callbacks.get(id);
       if (callback) {
-        callback(id, dataUrl);
+        callback(id, objectUrl);
         this.callbacks.delete(id);
+      } else {
+        // Callback was cancelled before the worker finished — clean up immediately
+        URL.revokeObjectURL(objectUrl);
       }
     };
 
-    this.worker!.onerror = (error) => {
-      console.error('❌ Worker error:', error);
+    this.worker.onerror = (error) => {
+      console.error('Blurhash worker error:', error);
     };
-
-    console.log('✓ Singleton blurhash worker initialized');
   }
 
   generateBlurhash(
@@ -75,24 +52,16 @@ class BlurhashWorkerManager {
     height: number,
     callback: BlurhashCallback
   ) {
-    if (!this.worker) {
-      console.error('❌ Worker not initialized');
-      return;
-    }
+    if (!this.worker) return;
 
-    // Store the callback
     this.callbacks.set(id, callback);
 
-    const sendTime = Date.now();
-    console.log('→ Sending to worker at', sendTime, 'for image', id);
+    this.worker.postMessage({ id, hash, width, height });
+  }
 
-    this.worker.postMessage({
-      id,
-      hash,
-      width,
-      height,
-      sendTime,
-    });
+  /** Remove a pending callback so the result is discarded when it arrives. */
+  cancel(id: string) {
+    this.callbacks.delete(id);
   }
 
   terminate() {
@@ -100,10 +69,8 @@ class BlurhashWorkerManager {
       this.worker.terminate();
       this.worker = null;
       this.callbacks.clear();
-      console.log('✓ Blurhash worker terminated');
     }
   }
 }
 
-// Export singleton instance getter
 export const getBlurhashWorker = () => BlurhashWorkerManager.getInstance();

@@ -26,6 +26,7 @@ import './md/md-segmented-button';
 import { Post } from '../interfaces/Post';
 import { Notification } from '../interfaces/Notification';
 import type { Account } from '../mastodon/types';
+import { getConversations } from '../services/messages';
 
 import { shouldDisableVirtualScroll } from '../utils/browser';
 
@@ -43,6 +44,7 @@ export class Notifications extends LitElement {
   @state() loadingMore: boolean = false;
   @state() hasMoreNotifications: boolean = true;
   @state() private isCheckingForNew: boolean = false;
+  @state() private openingDMId: string | null = null;
 
   private _observer: IntersectionObserver | null = null;
   private _loadObserver: IntersectionObserver | null = null;
@@ -218,6 +220,40 @@ export class Notifications extends LitElement {
         border-radius: var(--md-sys-shape-corner-medium);
         padding: 16px;
         transition: background 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .notification-card.dm-loading {
+        pointer-events: none;
+      }
+
+      .dm-loading-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.45);
+        border-radius: var(--md-sys-shape-corner-medium);
+        z-index: 1;
+        animation: fade-in 150ms ease-out;
+      }
+
+      .dm-loading-spinner {
+        width: 22px;
+        height: 22px;
+        border: 3px solid rgba(255, 255, 255, 0.25);
+        border-top-color: var(--md-sys-color-primary, #d0bcff);
+        border-radius: var(--md-sys-shape-corner-circle);
+        animation: spin 0.8s linear infinite;
+      }
+
+      .dm-loading-overlay span {
+        color: #fff;
+        font-size: var(--md-sys-typescale-body-medium-font-size, 0.9em);
+        font-weight: 500;
       }
 
       .notification-card:hover {
@@ -927,6 +963,32 @@ export class Notifications extends LitElement {
 
   async openPost(tweet: Post | undefined) {
     if (!tweet) return;
+
+    // If this is a direct message, open in the messages UI instead
+    if (tweet.visibility === 'direct') {
+      this.openingDMId = tweet.id;
+      try {
+        const convs = await getConversations();
+        // Prefer exact status match, fall back to 1:1 account match
+        const conv =
+          convs.find((c) => c.last_status?.id === tweet.id) ||
+          convs.find(
+            (c) =>
+              c.accounts.length === 1 && c.accounts[0].id === tweet.account.id
+          );
+        if (conv) {
+          await router.navigate(`/messages/${conv.id}`, {
+            state: { conversation: conv },
+          });
+          return;
+        }
+      } catch (err) {
+        console.error('[Notifications] Failed to find DM conversation:', err);
+      } finally {
+        this.openingDMId = null;
+      }
+    }
+
     // Dispatch event so parent can handle opening in dialog
     this.dispatchEvent(
       new CustomEvent('open', {
@@ -1357,11 +1419,19 @@ export class Notifications extends LitElement {
     const account = notification.account;
     const type = notification.type;
 
+    const isDMLoading = this.openingDMId === notification.status?.id;
+
     return html`
       <li
-        class="notification-card ${type}"
+        class="notification-card ${type} ${isDMLoading ? 'dm-loading' : ''}"
         @click="${() => this.openPost(notification.status)}"
       >
+        ${isDMLoading
+          ? html`<div class="dm-loading-overlay">
+              <div class="dm-loading-spinner"></div>
+              <span>${msg('Opening conversation…')}</span>
+            </div>`
+          : nothing}
         <div class="notification-header">
           <div class="notification-icon ${type}">
             ${this.getNotificationIcon(type)}
@@ -1467,6 +1537,7 @@ export class Notifications extends LitElement {
 
       <md-segmented-button
         .value="${this.activeSegment}"
+        aria-label="${msg('Notification filters')}"
         @segment-change="${(e: CustomEvent) =>
           (this.activeSegment = e.detail.value)}"
       >

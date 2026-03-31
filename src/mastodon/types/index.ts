@@ -80,3 +80,18 @@ export type {
 
 // Suggestion types
 export type { Suggestion, SuggestionSource } from './suggestion';
+
+// Preferences types
+export type { ServerPreferences } from './preferences';
+
+// Announcement types
+export type {
+  Announcement,
+  AnnouncementMention,
+  AnnouncementReaction,
+  AnnouncementStatusLink,
+  AnnouncementTag,
+} from './announcement';
+
+// Tag types (full entity with following state)
+export type { TagInfo, TagHistoryEntry } from './tag';
