@@ -68,6 +68,13 @@ export class AppIndex extends LitElement {
     // independent — run them in parallel so neither blocks the other.
     await Promise.all([this._initAuth(), this._loadPolyfills()]);
 
+    // If the user is already authenticated and sitting on the login page,
+    // redirect to /home before the router initializes so <app-login> never
+    // mounts — this prevents the login page from flashing on app launch.
+    if (getActiveAccount() && window.location.pathname === '/') {
+      history.replaceState(null, '', '/home');
+    }
+
     // Initialize router (loads initial route's lazy imports)
     await router.init();
 

@@ -134,18 +134,6 @@ export class AppLogin extends LitElement {
     }
   `;
 
-  async firstUpdated() {
-    await this.init();
-  }
-
-  private async init() {
-    const mod = await import('../services/auth-session');
-    await mod.bootstrapSession();
-    if (mod.getActiveAccount()) {
-      (await getRouter()).navigate(await this.getPostAuthRedirect());
-    }
-  }
-
   private async getPostAuthRedirect(): Promise<string> {
     const s = window.location.search;
     const p = new URLSearchParams(s);
