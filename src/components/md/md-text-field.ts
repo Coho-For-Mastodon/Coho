@@ -92,6 +92,11 @@ export class MdTextField extends LitElement {
         );
       }
 
+      input:focus-visible {
+        outline: 2px solid var(--md-sys-color-primary, #6750a4);
+        outline-offset: -2px;
+      }
+
       input:disabled {
         opacity: 0.38;
         cursor: not-allowed;
@@ -159,6 +164,11 @@ export class MdTextField extends LitElement {
             var(--md-sys-color-on-surface, #e6e0e9) 12%,
             var(--md-sys-color-surface-container-highest, #49454f)
           );
+        }
+
+        input:focus-visible {
+          outline: 2px solid var(--md-sys-color-primary, #6750a4);
+          outline-offset: -2px;
         }
 
         input:disabled {

@@ -79,16 +79,16 @@ export class AppIndex extends LitElement {
     // the login page) and provides no visual benefit for the first render.
     // Temporarily replace startViewTransition with a no-op passthrough so the
     // router's initial handleNavigation just updates the DOM directly.
-    const savedVT = document.startViewTransition?.bind(document);
-    if (savedVT) {
+    if ('startViewTransition' in document) {
+      const savedVT = document.startViewTransition.bind(document);
       (document as any).startViewTransition = (cb: () => void) => {
         cb();
         return { finished: Promise.resolve() };
       };
-    }
-    await router.init();
-    if (savedVT) {
+      await router.init();
       document.startViewTransition = savedVT;
+    } else {
+      await router.init();
     }
 
     // Ensure the initial route renders after init completes

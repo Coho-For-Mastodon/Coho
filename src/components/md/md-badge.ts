@@ -80,6 +80,11 @@ export class MdBadge extends LitElement {
         );
       }
 
+      .badge.clickable:focus-visible {
+        outline: 2px outline var(--md-sys-color-primary, #6750a4);
+        outline-offset: 2px;
+      }
+
       .badge.clickable:active {
         transform: scale(0.98);
       }

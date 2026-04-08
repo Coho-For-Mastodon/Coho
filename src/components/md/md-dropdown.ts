@@ -31,6 +31,11 @@ export class MdDropdown extends LitElement {
       display: inline-block;
     }
 
+    .trigger:focus-visible {
+      outline: 2px solid var(--md-sys-color-primary, #6750a4);
+      outline-offset: 2px;
+    }
+
     .trigger {
       display: inline-flex;
       cursor: pointer;

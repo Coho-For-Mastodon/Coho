@@ -47,6 +47,11 @@ export class MdMenuItem extends LitElement {
         color: var(--md-sys-color-on-secondary-container, #31111d);
       }
 
+      .menu-item:focus-visible {
+        outline: 2px solid var(--md-sys-color-primary, #6750a4);
+        outline-offset: -2px;
+      }
+
       :host([selected]) .check-icon {
         display: flex;
       }
@@ -281,6 +286,7 @@ export class MdMenuItem extends LitElement {
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <path
                   d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"

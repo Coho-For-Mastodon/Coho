@@ -82,6 +82,11 @@ export class MdTextArea extends LitElement {
         );
       }
 
+      textarea:focus-visible {
+        outline: 2px solid var(--md-sys-color-primary, #6750a4);
+        outline-offset: -2px;
+      }
+
       textarea:disabled {
         opacity: 0.38;
         cursor: not-allowed;
@@ -140,6 +145,11 @@ export class MdTextArea extends LitElement {
             var(--md-sys-color-on-surface, #e6e0e9) 12%,
             var(--md-sys-color-surface-container-highest, #49454f)
           );
+        }
+
+        textarea:focus-visible {
+          outline: 2px solid var(--md-sys-color-primary, #6750a4);
+          outline-offset: -2px;
         }
 
         textarea:disabled {

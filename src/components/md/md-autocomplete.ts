@@ -81,6 +81,11 @@ export class MdAutocomplete extends LitElement {
       );
     }
 
+    input:focus-visible {
+      outline: 2px solid var(--md-sys-color-primary, #6750a4);
+      outline-offset: -2px;
+    }
+
     input:focus {
       outline: none;
       background-color: color-mix(
