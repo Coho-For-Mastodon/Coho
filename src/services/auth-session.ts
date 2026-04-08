@@ -1,4 +1,3 @@
-import { del, set } from 'idb-keyval';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 
 const AUTH_SESSION_STORAGE_KEY = 'coho:auth-session';
@@ -211,6 +210,7 @@ async function cleanupPreviousAccountPushSubscription(): Promise<void> {
 async function exchangeActiveCredentialsWithIndexedDb(
   store: AuthSessionStore
 ): Promise<void> {
+  const { del, set } = await import('idb-keyval');
   const activeAccount = resolveActiveAccount(store);
 
   if (!activeAccount) {

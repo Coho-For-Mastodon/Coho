@@ -28,10 +28,7 @@ export class MdButton extends LitElement {
       :host {
         display: inline-block;
         background: transparent;
-      }
-
-      :host([disabled]) {
-        display: inline-block;
+        position: relative;
       }
 
       button {
@@ -76,6 +73,7 @@ export class MdButton extends LitElement {
       button:disabled {
         cursor: not-allowed;
         opacity: 0.38;
+        color: color-mix(in srgb, currentColor 38%, transparent);
       }
 
       /* Size variants */
@@ -120,9 +118,11 @@ export class MdButton extends LitElement {
           0 2px 6px 2px rgba(0, 0, 0, 0.15);
       }
 
-      button.filled:disabled {
+      button.filled:disabled,
+      button.elevated:disabled,
+      button.tonal:disabled,
+      button.fab:disabled {
         background: color-mix(in srgb, currentColor 12%, transparent);
-        color: color-mix(in srgb, currentColor 38%, transparent);
         box-shadow: none;
       }
 
@@ -135,18 +135,12 @@ export class MdButton extends LitElement {
 
       button.outlined:disabled {
         border-color: color-mix(in srgb, currentColor 12%, transparent);
-        color: color-mix(in srgb, currentColor 38%, transparent);
       }
 
       /* Text variant */
       button.text {
         background: transparent;
         color: var(--md-sys-color-primary, #6750a4);
-        box-shadow: none;
-      }
-
-      button.text:disabled {
-        color: color-mix(in srgb, currentColor 38%, transparent);
       }
 
       /* Elevated variant */
@@ -164,22 +158,10 @@ export class MdButton extends LitElement {
           0 2px 6px 2px rgba(0, 0, 0, 0.15);
       }
 
-      button.elevated:disabled {
-        background: color-mix(in srgb, currentColor 12%, transparent);
-        color: color-mix(in srgb, currentColor 38%, transparent);
-        box-shadow: none;
-      }
-
       /* Tonal variant */
       button.tonal {
         background: var(--md-sys-color-secondary-container, #e8def8);
         color: var(--md-sys-color-on-secondary-container, #1d192b);
-        box-shadow: none;
-      }
-
-      button.tonal:disabled {
-        background: color-mix(in srgb, currentColor 12%, transparent);
-        color: color-mix(in srgb, currentColor 38%, transparent);
       }
 
       /* FAB (Floating Action Button) variant */
@@ -214,12 +196,6 @@ export class MdButton extends LitElement {
         box-shadow:
           0 2px 3px rgba(0, 0, 0, 0.3),
           0 6px 10px 4px rgba(0, 0, 0, 0.15);
-      }
-
-      button.fab:disabled {
-        background: color-mix(in srgb, currentColor 12%, transparent);
-        color: color-mix(in srgb, currentColor 38%, transparent);
-        box-shadow: none;
       }
 
       /* Dark mode support */
@@ -270,10 +246,6 @@ export class MdButton extends LitElement {
       }
 
       /* Custom tooltip styles */
-      :host {
-        position: relative;
-      }
-
       :host([title]:hover)::after {
         content: attr(title);
         position: absolute;
@@ -290,7 +262,6 @@ export class MdButton extends LitElement {
         border-radius: var(--md-sys-shape-corner-extra-small);
         z-index: 10000;
         pointer-events: none;
-        opacity: 1;
         animation: tooltipFadeIn 0.15s ease-out;
       }
 

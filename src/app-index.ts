@@ -7,7 +7,6 @@ import { router } from './router/routes';
 import './config/localization.js';
 
 import './pages/app-login';
-import { bootstrapSession, getActiveAccount } from './services/auth-session';
 
 @customElement('app-index')
 export class AppIndex extends LitElement {
@@ -71,12 +70,26 @@ export class AppIndex extends LitElement {
     // If the user is already authenticated and sitting on the login page,
     // redirect to /home before the router initializes so <app-login> never
     // mounts — this prevents the login page from flashing on app launch.
+    const { getActiveAccount } = await import('./services/auth-session');
     if (getActiveAccount() && window.location.pathname === '/') {
       history.replaceState(null, '', '/home');
     }
 
-    // Initialize router (loads initial route's lazy imports)
+    // Skip view transition on the initial load — it hurts LCP (especially on
+    // the login page) and provides no visual benefit for the first render.
+    // Temporarily replace startViewTransition with a no-op passthrough so the
+    // router's initial handleNavigation just updates the DOM directly.
+    const savedVT = document.startViewTransition?.bind(document);
+    if (savedVT) {
+      (document as any).startViewTransition = (cb: () => void) => {
+        cb();
+        return { finished: Promise.resolve() };
+      };
+    }
     await router.init();
+    if (savedVT) {
+      document.startViewTransition = savedVT;
+    }
 
     // Ensure the initial route renders after init completes
     this.requestUpdate();
@@ -102,6 +115,7 @@ export class AppIndex extends LitElement {
   /** Bootstrap session and handle any native OAuth deep-link launch. */
   private async _initAuth() {
     try {
+      const { bootstrapSession } = await import('./services/auth-session');
       await bootstrapSession();
     } catch (error) {
       console.error('[App] Failed to bootstrap auth session', error);
@@ -216,9 +230,9 @@ export class AppIndex extends LitElement {
     }
   }
 
-  firstUpdated() {
+  async firstUpdated() {
     // Check initial authentication state
-    this.checkAuthenticationState();
+    await this.checkAuthenticationState();
     console.log('[App] isAuthenticated:', this.isAuthenticated);
 
     if (this.isAuthenticated) {
@@ -394,7 +408,8 @@ export class AppIndex extends LitElement {
    * Check if the user has valid authentication credentials
    * Sets isAuthenticated to true for returning users, false for new users
    */
-  private checkAuthenticationState() {
+  private async checkAuthenticationState() {
+    const { getActiveAccount } = await import('./services/auth-session');
     this.isAuthenticated = Boolean(
       getActiveAccount() ||
       (localStorage.getItem('accessToken') && localStorage.getItem('server'))

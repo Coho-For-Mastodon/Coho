@@ -143,6 +143,7 @@ export class MdCard extends LitElement {
 
     .card__header {
       padding: 16px;
+      padding-bottom: 0;
     }
 
     .card__header:empty {

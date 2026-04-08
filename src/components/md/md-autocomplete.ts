@@ -39,35 +39,12 @@ export class MdAutocomplete extends LitElement {
       width: 100%;
       position: relative;
 
-      /* Colors */
-      --_surface-container: var(--md-sys-color-surface-container, #f3edf7);
+      --_surface-container: var(--md-sys-color-surface-container);
       --_surface-container-highest: var(
-        --md-sys-color-surface-container-highest,
-        #e6e0e9
+        --md-sys-color-surface-container-highest
       );
-      --_on-surface: var(--md-sys-color-on-surface, #1d1b20);
-      --_on-surface-variant: var(--md-sys-color-on-surface-variant, #49454f);
-      --_primary: var(--md-sys-color-primary, #6750a4);
-      --_outline: var(--md-sys-color-outline, #79747e);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :host {
-        --_surface-container: var(--md-sys-color-surface-container, #2b2930);
-        --_surface-container-highest: var(
-          --md-sys-color-surface-container-highest,
-          #49454f
-        );
-        --_on-surface: var(--md-sys-color-on-surface, #e6e0e9);
-        --_on-surface-variant: var(--md-sys-color-on-surface-variant, #cac4d0);
-        --_primary: var(--md-sys-color-primary, #d0bcff);
-        --_outline: var(--md-sys-color-outline, #938f99);
-      }
-    }
-
-    .autocomplete-container {
-      position: relative;
-      width: 100%;
+      --_on-surface: var(--md-sys-color-on-surface);
+      --_on-surface-variant: var(--md-sys-color-on-surface-variant);
     }
 
     input {
@@ -106,8 +83,6 @@ export class MdAutocomplete extends LitElement {
 
     input:focus {
       outline: none;
-      border-bottom-color: var(--_primary);
-      border-bottom-width: 2px;
       background-color: color-mix(
         in srgb,
         var(--_on-surface) 12%,
@@ -115,7 +90,6 @@ export class MdAutocomplete extends LitElement {
       );
     }
 
-    /* Dropdown styles */
     .dropdown {
       position: absolute;
       top: 100%;
@@ -180,16 +154,7 @@ export class MdAutocomplete extends LitElement {
       white-space: nowrap;
     }
 
-    .loading-indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      color: var(--_on-surface-variant);
-      font-size: 14px;
-    }
-
-    .no-results {
+    .dropdown-status {
       padding: 16px;
       text-align: center;
       color: var(--_on-surface-variant);
@@ -315,49 +280,47 @@ export class MdAutocomplete extends LitElement {
       this._showDropdown && (this.options.length > 0 || this.loading);
 
     return html`
-      <div class="autocomplete-container">
-        <input
-          type="text"
-          .value="${this.value}"
-          placeholder="${this.placeholder}"
-          @input="${this._handleInput}"
-          @focus="${this._handleFocus}"
-          @blur="${this._handleBlur}"
-          @keydown="${this._handleKeyDown}"
-          autocomplete="off"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded="${showDropdown ? 'true' : 'false'}"
-          aria-haspopup="listbox"
-        />
-        <div class="dropdown ${showDropdown ? 'open' : ''}" role="listbox">
-          ${this.loading
-            ? html`<div class="loading-indicator">Loading...</div>`
-            : this.options.length === 0
-              ? html`<div class="no-results">No results found</div>`
-              : this.options.map(
-                  (option, index) => html`
-                    <div
-                      class="dropdown-item ${index === this._highlightedIndex
-                        ? 'highlighted'
-                        : ''}"
-                      role="option"
-                      aria-selected="${index === this._highlightedIndex
-                        ? 'true'
-                        : 'false'}"
-                      @click="${() => this._selectOption(option)}"
-                      @mouseenter="${() => (this._highlightedIndex = index)}"
-                    >
-                      <div class="item-label">${option.label}</div>
-                      ${option.description
-                        ? html`<div class="item-description">
-                            ${option.description}
-                          </div>`
-                        : null}
-                    </div>
-                  `
-                )}
-        </div>
+      <input
+        type="text"
+        .value="${this.value}"
+        placeholder="${this.placeholder}"
+        @input="${this._handleInput}"
+        @focus="${this._handleFocus}"
+        @blur="${this._handleBlur}"
+        @keydown="${this._handleKeyDown}"
+        autocomplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="${showDropdown ? 'true' : 'false'}"
+        aria-haspopup="listbox"
+      />
+      <div class="dropdown ${showDropdown ? 'open' : ''}" role="listbox">
+        ${this.loading
+          ? html`<div class="dropdown-status">Loading...</div>`
+          : this.options.length === 0
+            ? html`<div class="dropdown-status">No results found</div>`
+            : this.options.map(
+                (option, index) => html`
+                  <div
+                    class="dropdown-item ${index === this._highlightedIndex
+                      ? 'highlighted'
+                      : ''}"
+                    role="option"
+                    aria-selected="${index === this._highlightedIndex
+                      ? 'true'
+                      : 'false'}"
+                    @click="${() => this._selectOption(option)}"
+                    @mouseenter="${() => (this._highlightedIndex = index)}"
+                  >
+                    <div class="item-label">${option.label}</div>
+                    ${option.description
+                      ? html`<div class="item-description">
+                          ${option.description}
+                        </div>`
+                      : null}
+                  </div>
+                `
+              )}
       </div>
     `;
   }
