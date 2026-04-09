@@ -17,6 +17,7 @@ import {
   renderRegularTweet,
   renderReblog,
   renderThread,
+  renderThreadAncestors,
   TimelineItemHandlers,
   TimelineItemState,
 } from './timeline-renderers';
@@ -42,6 +43,9 @@ export class TimelineItem extends LitElement {
   @state() threadExpanded: boolean = false;
   @state() threadPosts: Post[] = [];
   @state() loadingThread: boolean = false;
+
+  /** Number of ancestor posts at the start of threadPosts. */
+  private _ancestorCount: number = 0;
 
   @state() settings: Settings | undefined;
 
@@ -741,6 +745,7 @@ export class TimelineItem extends LitElement {
         (post: Post) => post.id !== replyToId
       );
 
+      this._ancestorCount = filteredAncestors.length;
       this.threadPosts = [...filteredAncestors, ...descendants];
       this.threadExpanded = true;
     } catch (error) {
@@ -1589,6 +1594,8 @@ export class TimelineItem extends LitElement {
       loadingThread: this.loadingThread,
       threadExpanded: this.threadExpanded,
       threadPosts: this.threadPosts,
+      threadAncestors: this.threadPosts.slice(0, this._ancestorCount),
+      threadDescendants: this.threadPosts.slice(this._ancestorCount),
       isOnDeviceTranslateAvailable: this.isOnDeviceTranslateAvailable,
       guestMode: this.guestMode,
     };
@@ -1626,6 +1633,7 @@ export class TimelineItem extends LitElement {
     }
 
     return html`
+      ${renderThreadAncestors(state, handlers)}
       ${this.tweet.reblog
         ? renderReblog(state, handlers)
         : renderRegularTweet(state, handlers)}

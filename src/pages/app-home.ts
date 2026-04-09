@@ -764,6 +764,27 @@ export class AppHome extends LitElement {
     this.openNewDialog();
   };
 
+  private _handleReplyClicked = async (e: CustomEvent<{ tweet: Post }>) => {
+    e.preventDefault();
+    const post = e.detail.tweet;
+    if (!post) return;
+
+    if (!this.postDialogLoaded) {
+      if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
+        this.postDialogLoaded = true;
+      }
+    }
+
+    await this.overlays.show('post-dialog');
+    await customElements.whenDefined('post-dialog');
+    await this.updateComplete;
+
+    if (this.postDialog) {
+      await this.postDialog.updateComplete;
+      this.postDialog.openReplyDialog(post);
+    }
+  };
+
   // Tab name to loader key
   private static readonly tabConfig: Record<
     string,
@@ -1222,6 +1243,8 @@ export class AppHome extends LitElement {
               .lists="${this.lists}"
               @replies="${($event: RepliesEvent) =>
                 this.handleReplies($event.detail.data, $event.detail.id ?? '')}"
+              @reply-clicked="${(e: CustomEvent<{ tweet: Post }>) =>
+                this._handleReplyClicked(e)}"
             ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="media">

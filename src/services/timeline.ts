@@ -312,6 +312,9 @@ export const getReplies = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ accessToken, server, id }),
   });
+  if (!response.ok) {
+    throw new Error(`getReplies failed: ${response.status}`);
+  }
   const data = await response.json();
   return data;
 };

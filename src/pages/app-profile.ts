@@ -1411,6 +1411,13 @@ export class AppProfile extends LitElement {
     }
   }
 
+  private _handleReplyClicked(e: CustomEvent<{ tweet: Post }>) {
+    e.preventDefault();
+    const post = e.detail.tweet;
+    if (!post || !this.editPostDialog) return;
+    this.editPostDialog.openReplyDialog(post);
+  }
+
   handleOpenPost(tweet: Post) {
     // Open post in a fullscreen dialog instead of navigating to a new page
     this.postDetailDialog?.open(tweet);
@@ -1860,6 +1867,9 @@ export class AppProfile extends LitElement {
                               this.handleOpenPost(e.detail.tweet)}"
                             @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                               this.editPost(e.detail.tweet)}"
+                            @reply-clicked="${(
+                              e: CustomEvent<{ tweet: Post }>
+                            ) => this._handleReplyClicked(e)}"
                             @delete="${() => this.reloadPosts()}"
                             @pin-change="${(e: CustomEvent) =>
                               this.handlePinChange(e)}"
@@ -1895,6 +1905,9 @@ export class AppProfile extends LitElement {
                                 this.handleOpenPost(e.detail.tweet)}"
                               @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                                 this.editPost(e.detail.tweet)}"
+                              @reply-clicked="${(
+                                e: CustomEvent<{ tweet: Post }>
+                              ) => this._handleReplyClicked(e)}"
                               @delete="${() => this.reloadPosts()}"
                               @pin-change="${(e: CustomEvent) =>
                                 this.handlePinChange(e)}"
@@ -1935,6 +1948,9 @@ export class AppProfile extends LitElement {
                               this.handleOpenPost(e.detail.tweet)}"
                             @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                               this.editPost(e.detail.tweet)}"
+                            @reply-clicked="${(
+                              e: CustomEvent<{ tweet: Post }>
+                            ) => this._handleReplyClicked(e)}"
                             @delete="${() => this.reloadPosts()}"
                             @pin-change="${(e: CustomEvent) =>
                               this.handlePinChange(e)}"

@@ -20,9 +20,15 @@ export function buildThreadTree(
 ): ThreadNode[] {
   // Map parent ID → children posts
   const childrenMap = new Map<string, Post[]>();
+  const descendantIds = new Set(descendants.map((p) => p.id));
 
   for (const post of descendants) {
-    const parentId = post.in_reply_to_id || focalPostId;
+    // If parent is not in descendants and not the focal post, re-parent to focal
+    const rawParent = post.in_reply_to_id || focalPostId;
+    const parentId =
+      rawParent === focalPostId || descendantIds.has(rawParent)
+        ? rawParent
+        : focalPostId;
     const siblings = childrenMap.get(parentId);
     if (siblings) {
       siblings.push(post);

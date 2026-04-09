@@ -160,6 +160,8 @@ export interface TimelineItemState {
   loadingThread: boolean;
   threadExpanded: boolean;
   threadPosts: Post[];
+  threadAncestors: Post[];
+  threadDescendants: Post[];
   isOnDeviceTranslateAvailable: boolean;
   guestMode?: boolean;
 }
@@ -1002,16 +1004,88 @@ export function renderReblog(
   `;
 }
 
+export function renderThreadAncestors(
+  state: TimelineItemState,
+  handlers: TimelineItemHandlers
+) {
+  if (!state.threadExpanded || state.threadAncestors.length === 0) return null;
+
+  return html`
+    <div class="thread-continuation thread-ancestors">
+      ${state.threadAncestors.map(
+        (threadPost: Post) => html`
+          <md-card>
+            <div class="header-block" slot="header">
+              <user-profile
+                ?small="${true}"
+                .account="${threadPost.account}"
+              ></user-profile>
+            </div>
+            ${threadPost.sensitive
+              ? html`
+                  <div class="sensitive">
+                    <span>${msg('Sensitive Content')}</span>
+                    <p>
+                      ${threadPost.spoiler_text ||
+                      msg('No spoiler text provided')}
+                    </p>
+                    <md-button
+                      variant="text"
+                      pill
+                      @click="${() =>
+                        handlers.viewThreadSensitive(threadPost.id)}"
+                    >
+                      ${msg('View')}
+                      <md-icon slot="suffix" name="eye"></md-icon>
+                    </md-button>
+                  </div>
+                `
+              : html`<div
+                  @click="${(e: Event) =>
+                    handlers.handleContentClick(e, threadPost)}"
+                  .innerHTML="${parseEmojis(
+                    threadPost.content || '',
+                    threadPost.emojis || []
+                  )}"
+                ></div>`}
+            ${!threadPost.sensitive && threadPost.poll
+              ? html`<timeline-poll .post=${threadPost}></timeline-poll>`
+              : null}
+            ${!threadPost.sensitive &&
+            threadPost.media_attachments &&
+            threadPost.media_attachments.length > 0
+              ? html`
+                  <image-carousel .images="${threadPost.media_attachments}">
+                  </image-carousel>
+                `
+              : html``}
+            ${!threadPost.sensitive
+              ? renderLinkCard(
+                  threadPost.card,
+                  handlers.openLinkCard,
+                  (threadPost.media_attachments?.length ?? 0) > 0
+                )
+              : null}
+          </md-card>
+        `
+      )}
+    </div>
+    <div class="thread-line"></div>
+  `;
+}
+
 export function renderThread(
   state: TimelineItemState,
   handlers: TimelineItemHandlers
 ) {
-  if (!state.threadExpanded || state.threadPosts.length === 0) return null;
+  if (!state.threadExpanded || state.threadDescendants.length === 0)
+    return null;
+  const descendants = state.threadDescendants;
 
   return html`
     <div class="thread-line"></div>
     <div class="thread-continuation">
-      ${state.threadPosts.map(
+      ${descendants.map(
         (threadPost: Post) => html`
           <md-card>
             <div class="header-block" slot="header">

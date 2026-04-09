@@ -1,5 +1,5 @@
 import { LitElement, html, css, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { localized, msg, str } from '@lit/localize';
 import type { ThreadNode } from '../utils/thread-tree';
 import { MAX_THREAD_DEPTH } from '../utils/thread-tree';
@@ -26,6 +26,9 @@ import './timeline-poll';
 export class ThreadBranch extends LitElement {
   @property({ type: Object }) node!: ThreadNode;
   @property({ type: Boolean }) guestMode = false;
+
+  @state() private _deepRepliesExpanded = false;
+  @state() private _collapsedChildrenExpanded = false;
 
   static styles = css`
     :host {
@@ -114,6 +117,8 @@ export class ThreadBranch extends LitElement {
     }
 
     .continue-thread {
+      background: var(--md-sys-color-surface-container, #1e1e24);
+      border: none;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -134,6 +139,8 @@ export class ThreadBranch extends LitElement {
     }
 
     .more-replies {
+      background: var(--md-sys-color-surface-container, #1e1e24);
+      border: none;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -214,18 +221,76 @@ export class ThreadBranch extends LitElement {
               ? '3'
               : 'deep';
 
-    // Beyond max depth, show a "Continue this thread" link
+    // Beyond max depth, show post with a collapsed toggle for deeper replies
     if (depth >= MAX_THREAD_DEPTH) {
       return html`
         <div class="branch" data-depth="${depthAttr}">
-          <button
-            class="continue-thread"
-            style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 8px;"
-            @click=${() => this.handlePostClick(post)}
-          >
-            <md-icon name="arrow-forward"></md-icon>
-            ${msg('Continue this thread')}
-          </button>
+          <md-card @click=${() => this.handlePostClick(post)}>
+            <user-profile
+              ?small=${true}
+              .account=${post.account}
+            ></user-profile>
+
+            ${post.sensitive
+              ? html`
+                  <div class="sensitive">
+                    <span>${msg('Sensitive Content')}</span>
+                    <p>
+                      ${post.spoiler_text || msg('No spoiler text provided')}
+                    </p>
+                  </div>
+                `
+              : html`<div
+                  .innerHTML=${parseEmojis(
+                    post.content || '',
+                    post.emojis || []
+                  )}
+                ></div>`}
+            ${!post.sensitive && post.poll
+              ? html`<timeline-poll .post=${post}></timeline-poll>`
+              : nothing}
+            ${!post.sensitive &&
+            post.media_attachments &&
+            post.media_attachments.length > 0
+              ? html`<image-carousel
+                  .images=${post.media_attachments}
+                ></image-carousel>`
+              : nothing}
+
+            <div class="actions" slot="footer">
+              <md-button
+                variant="text"
+                pill
+                size="small"
+                @click=${(e: Event) => this.handleReplyClick(e, post)}
+              >
+                ${post.replies_count || ''}
+                <md-icon
+                  slot="suffix"
+                  src="/assets/chatbox-outline.svg"
+                ></md-icon>
+              </md-button>
+            </div>
+          </md-card>
+
+          ${children.length > 0
+            ? this._deepRepliesExpanded
+              ? html`<div class="children">
+                  ${this.renderChildren(children)}
+                </div>`
+              : html`
+                  <button
+                    class="continue-thread"
+                    @click=${(e: Event) => {
+                      e.stopPropagation();
+                      this._deepRepliesExpanded = true;
+                    }}
+                  >
+                    <md-icon name="arrow-forward"></md-icon>
+                    ${msg('Continue this thread')}
+                  </button>
+                `
+            : nothing}
         </div>
       `;
     }
@@ -284,10 +349,11 @@ export class ThreadBranch extends LitElement {
 
   private renderChildren(children: ThreadNode[]) {
     // At depth >= 2 with multiple children: show first child inline,
-    // collapse remaining with "N more replies" link
+    // collapse remaining with expandable "N more replies" link
     if (this.node.depth >= 2 && children.length > 1) {
       const firstChild = children[0];
-      const remainingCount = children.length - 1;
+      const remainingChildren = children.slice(1);
+      const remainingCount = remainingChildren.length;
 
       return html`
         <thread-branch
@@ -295,16 +361,31 @@ export class ThreadBranch extends LitElement {
           ?guestMode=${this.guestMode}
           @open=${(e: CustomEvent) => this.handlePostClick(e.detail.tweet)}
         ></thread-branch>
-        <button
-          class="more-replies"
-          style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 8px;"
-          @click=${() => this.handlePostClick(this.node.post)}
-        >
-          <md-icon name="chatbubbles"></md-icon>
-          ${remainingCount === 1
-            ? msg('1 more reply')
-            : msg(str`${remainingCount} more replies`)}
-        </button>
+        ${this._collapsedChildrenExpanded
+          ? remainingChildren.map(
+              (child) => html`
+                <thread-branch
+                  .node=${child}
+                  ?guestMode=${this.guestMode}
+                  @open=${(e: CustomEvent) =>
+                    this.handlePostClick(e.detail.tweet)}
+                ></thread-branch>
+              `
+            )
+          : html`
+              <button
+                class="more-replies"
+                @click=${(e: Event) => {
+                  e.stopPropagation();
+                  this._collapsedChildrenExpanded = true;
+                }}
+              >
+                <md-icon name="chatbubbles"></md-icon>
+                ${remainingCount === 1
+                  ? msg('1 more reply')
+                  : msg(str`${remainingCount} more replies`)}
+              </button>
+            `}
       `;
     }
 

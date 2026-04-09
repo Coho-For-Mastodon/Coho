@@ -77,6 +77,8 @@ function createState(
     loadingThread: false,
     threadExpanded: false,
     threadPosts: [],
+    threadAncestors: [],
+    threadDescendants: [],
     isOnDeviceTranslateAvailable: false,
     guestMode: false,
     ...overrides,
@@ -199,6 +201,7 @@ describe('timeline-renderers', () => {
     const state = createState({
       threadExpanded: true,
       threadPosts: [threadPost],
+      threadDescendants: [threadPost],
     });
 
     const root = await fixture<HTMLDivElement>(
