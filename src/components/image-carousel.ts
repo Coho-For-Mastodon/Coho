@@ -7,12 +7,27 @@ import {
   createIntersectionObserver,
   disconnectIntersectionObserver,
 } from '../utils/intersection-observer';
+import {
+  updateMediaSession,
+  clearMediaSession,
+  updateMediaSessionPosition,
+} from '../utils/media-session';
 import './md/md-audio-player';
 
 @localized()
 @customElement('image-carousel')
 export class ImageCarousel extends LitElement {
   @property({ type: Array }) images: MediaAttachment[] = [];
+
+  /** Title shown in OS media controls when playing video/audio */
+  @property({ type: String }) mediaTitle = '';
+
+  /** Artist shown in OS media controls */
+  @property({ type: String }) mediaArtist = '';
+
+  /** Artwork URL shown in OS media controls */
+  @property({ type: String }) mediaArtwork = '';
+
   @state() blurhashUrls: Map<string, string> = new Map();
   @state() currentIndex: number = 0;
 
@@ -286,6 +301,41 @@ export class ImageCarousel extends LitElement {
     }, 100);
   }
 
+  private _handleVideoPlay = (e: Event, attachment: MediaAttachment) => {
+    const video = e.target as HTMLVideoElement;
+    updateMediaSession({
+      title: this.mediaTitle || attachment.description || 'Video',
+      artist: this.mediaArtist,
+      artwork: this.mediaArtwork || attachment.preview_url || undefined,
+      onPlay: () => {
+        video.play().catch(() => {});
+      },
+      onPause: () => {
+        video.pause();
+      },
+      onStop: () => {
+        video.pause();
+        video.currentTime = 0;
+        clearMediaSession();
+      },
+      onSeekTo: (time: number) => {
+        video.currentTime = time;
+      },
+    });
+    updateMediaSessionPosition(video.currentTime, video.duration);
+  };
+
+  private _handleVideoPauseOrEnded = () => {
+    clearMediaSession();
+  };
+
+  private _handleVideoTimeUpdate = (e: Event) => {
+    const video = e.target as HTMLVideoElement;
+    if (!video.paused) {
+      updateMediaSessionPosition(video.currentTime, video.duration);
+    }
+  };
+
   async openInBox(image: MediaAttachment, event?: MouseEvent) {
     const target = event?.currentTarget as HTMLElement | null;
     const rect = target?.getBoundingClientRect();
@@ -360,6 +410,10 @@ export class ImageCarousel extends LitElement {
                   poster="${image.preview_url}"
                   src="${image.url}"
                   @loadeddata="${this._handleVideoLoaded}"
+                  @play="${(e: Event) => this._handleVideoPlay(e, image)}"
+                  @pause="${this._handleVideoPauseOrEnded}"
+                  @ended="${this._handleVideoPauseOrEnded}"
+                  @timeupdate="${this._handleVideoTimeUpdate}"
                 ></video>
               </div>
             `;
@@ -394,6 +448,9 @@ export class ImageCarousel extends LitElement {
                   src="${image.url}"
                   label="${image.description || msg('Audio')}"
                   preload="metadata"
+                  mediaTitle="${this.mediaTitle || image.description || ''}"
+                  mediaArtist="${this.mediaArtist}"
+                  mediaArtwork="${this.mediaArtwork}"
                 ></md-audio-player>
               </div>
             `;

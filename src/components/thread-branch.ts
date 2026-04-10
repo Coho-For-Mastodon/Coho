@@ -254,6 +254,8 @@ export class ThreadBranch extends LitElement {
             post.media_attachments.length > 0
               ? html`<image-carousel
                   .images=${post.media_attachments}
+                  .mediaArtist="${post.account.display_name}"
+                  .mediaArtwork="${post.account.avatar}"
                 ></image-carousel>`
               : nothing}
 
@@ -321,6 +323,8 @@ export class ThreadBranch extends LitElement {
           post.media_attachments.length > 0
             ? html`<image-carousel
                 .images=${post.media_attachments}
+                mediaArtist="${post.account.display_name}"
+                mediaArtwork="${post.account.avatar}"
               ></image-carousel>`
             : nothing}
 

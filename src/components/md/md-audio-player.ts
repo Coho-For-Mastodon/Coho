@@ -2,6 +2,11 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 import { mdSharedStyles } from './md-shared-styles';
+import {
+  updateMediaSession,
+  clearMediaSession,
+  updateMediaSessionPosition,
+} from '../../utils/media-session';
 import './md-icon';
 
 /**
@@ -28,6 +33,15 @@ export class MdAudioPlayer extends LitElement {
   /** Preload behavior */
   @property({ type: String }) preload: 'none' | 'metadata' | 'auto' =
     'metadata';
+
+  /** Title shown in OS media controls */
+  @property({ type: String }) mediaTitle = '';
+
+  /** Artist shown in OS media controls */
+  @property({ type: String }) mediaArtist = '';
+
+  /** Artwork URL shown in OS media controls */
+  @property({ type: String }) mediaArtwork = '';
 
   @state() private _playing = false;
   @state() private _currentTime = 0;
@@ -259,6 +273,7 @@ export class MdAudioPlayer extends LitElement {
     if (this._animationFrame) {
       cancelAnimationFrame(this._animationFrame);
     }
+    clearMediaSession();
     this.dispatchEvent(new Event('ended', { bubbles: true, composed: true }));
   };
 
@@ -270,6 +285,7 @@ export class MdAudioPlayer extends LitElement {
   private _updateProgress = () => {
     if (this._audio && this._playing) {
       this._currentTime = this._audio.currentTime;
+      updateMediaSessionPosition(this._currentTime, this._duration);
       this._animationFrame = requestAnimationFrame(this._updateProgress);
     }
   };
@@ -283,11 +299,13 @@ export class MdAudioPlayer extends LitElement {
       if (this._animationFrame) {
         cancelAnimationFrame(this._animationFrame);
       }
+      clearMediaSession();
       this.dispatchEvent(new Event('pause', { bubbles: true, composed: true }));
     } else {
       try {
         await this._audio.play();
         this._playing = true;
+        this._setupMediaSession();
         this._updateProgress();
         this.dispatchEvent(
           new Event('play', { bubbles: true, composed: true })
@@ -303,6 +321,39 @@ export class MdAudioPlayer extends LitElement {
         );
       }
     }
+  }
+
+  private _setupMediaSession() {
+    if (!this._audio) return;
+    const audio = this._audio;
+    updateMediaSession({
+      title: this.mediaTitle || this.label || msg('Audio'),
+      artist: this.mediaArtist,
+      artwork: this.mediaArtwork || undefined,
+      onPlay: () => {
+        audio.play().catch(() => {});
+        this._playing = true;
+        this._updateProgress();
+      },
+      onPause: () => {
+        audio.pause();
+        this._playing = false;
+        if (this._animationFrame) cancelAnimationFrame(this._animationFrame);
+      },
+      onStop: () => {
+        audio.pause();
+        audio.currentTime = 0;
+        this._playing = false;
+        this._currentTime = 0;
+        if (this._animationFrame) cancelAnimationFrame(this._animationFrame);
+        clearMediaSession();
+      },
+      onSeekTo: (time: number) => {
+        audio.currentTime = time;
+        this._currentTime = time;
+      },
+    });
+    updateMediaSessionPosition(this._currentTime, this._duration);
   }
 
   private _onSeek(e: Event) {

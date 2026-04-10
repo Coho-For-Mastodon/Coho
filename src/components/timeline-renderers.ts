@@ -238,7 +238,11 @@ export function renderReplyContext(
       state.tweet?.reply_to?.media_attachments &&
       state.tweet.reply_to.media_attachments.length > 0
         ? html`
-            <image-carousel .images="${state.tweet.reply_to.media_attachments}">
+            <image-carousel
+              .images="${state.tweet.reply_to.media_attachments}"
+              .mediaArtist="${state.tweet.reply_to.account.display_name}"
+              .mediaArtwork="${state.tweet.reply_to.account.avatar}"
+            >
             </image-carousel>
           `
         : html``}
@@ -504,7 +508,11 @@ export function renderRegularTweet(
         state.tweet.media_attachments &&
         state.tweet.media_attachments.length > 0
           ? html`
-              <image-carousel .images="${state.tweet.media_attachments}">
+              <image-carousel
+                .images="${state.tweet.media_attachments}"
+                mediaArtist="${state.tweet.account.display_name}"
+                mediaArtwork="${state.tweet.account.avatar}"
+              >
               </image-carousel>
             `
           : html``
@@ -667,7 +675,11 @@ export function renderThreadContinuation(
           threadPost.media_attachments &&
           threadPost.media_attachments.length > 0
             ? html`
-                <image-carousel .images="${threadPost.media_attachments}">
+                <image-carousel
+                  .images="${threadPost.media_attachments}"
+                  mediaArtist="${threadPost.account.display_name}"
+                  mediaArtwork="${threadPost.account.avatar}"
+                >
                 </image-carousel>
               `
             : html``}
@@ -937,7 +949,11 @@ export function renderReblog(
       state.tweet.reblog.media_attachments &&
       state.tweet.reblog.media_attachments.length > 0
         ? html`
-            <image-carousel .images="${state.tweet.reblog.media_attachments}">
+            <image-carousel
+              .images="${state.tweet.reblog.media_attachments}"
+              mediaArtist="${state.tweet.reblog.account.display_name}"
+              mediaArtwork="${state.tweet.reblog.account.avatar}"
+            >
             </image-carousel>
           `
         : html``}
@@ -1055,7 +1071,11 @@ export function renderThreadAncestors(
             threadPost.media_attachments &&
             threadPost.media_attachments.length > 0
               ? html`
-                  <image-carousel .images="${threadPost.media_attachments}">
+                  <image-carousel
+                    .images="${threadPost.media_attachments}"
+                    mediaArtist="${threadPost.account.display_name}"
+                    mediaArtwork="${threadPost.account.avatar}"
+                  >
                   </image-carousel>
                 `
               : html``}
@@ -1129,7 +1149,11 @@ export function renderThread(
             threadPost.media_attachments &&
             threadPost.media_attachments.length > 0
               ? html`
-                  <image-carousel .images="${threadPost.media_attachments}">
+                  <image-carousel
+                    .images="${threadPost.media_attachments}"
+                    mediaArtist="${threadPost.account.display_name}"
+                    mediaArtwork="${threadPost.account.avatar}"
+                  >
                   </image-carousel>
                 `
               : html``}
