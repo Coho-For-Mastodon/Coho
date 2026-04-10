@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property, query, state } from 'lit/decorators.js';
 
 export interface AutocompleteOption {
   value: string;
@@ -22,14 +22,26 @@ export class MdAutocomplete extends LitElement {
   @state() private _highlightedIndex = -1;
   @state() private _isFocused = false;
 
-  // When options change and input is focused, show the dropdown
+  @query('input') private _input!: HTMLInputElement;
+  @query('.dropdown') private _dropdown!: HTMLDivElement;
+
+  private _listboxId = `md-autocomplete-listbox-${Math.random().toString(36).slice(2, 9)}`;
+
   updated(changedProperties: Map<string, unknown>) {
     if (
-      changedProperties.has('options') &&
+      (changedProperties.has('options') || changedProperties.has('loading')) &&
       this._isFocused &&
-      this.options.length > 0
+      (this.options.length > 0 || this.loading)
     ) {
       this._showDropdown = true;
+    }
+
+    if (
+      changedProperties.has('options') ||
+      changedProperties.has('loading') ||
+      changedProperties.has('_showDropdown')
+    ) {
+      this._syncPopover();
     }
   }
 
@@ -96,23 +108,36 @@ export class MdAutocomplete extends LitElement {
     }
 
     .dropdown {
-      position: absolute;
-      top: 100%;
+      position: fixed;
+      inset: auto;
+      top: 0;
       left: 0;
-      right: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
+      width: 0;
       max-height: 300px;
       overflow-y: auto;
       background-color: var(--_surface-container);
-      border-radius: 0 0 12px 12px;
+      border-radius: 12px;
       box-shadow:
         0 2px 6px 2px rgba(0, 0, 0, 0.15),
         0 1px 2px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
-      display: none;
+      opacity: 0;
+      transform: scaleY(0.95);
+      transform-origin: var(--md-autocomplete-origin-y, top) left;
+      transition:
+        opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.15s cubic-bezier(0.2, 0, 0, 1);
     }
 
-    .dropdown.open {
-      display: block;
+    .dropdown:popover-open {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+
+    .dropdown::backdrop {
+      background: transparent;
     }
 
     .dropdown-item {
@@ -167,27 +192,8 @@ export class MdAutocomplete extends LitElement {
     }
   `;
 
-  connectedCallback() {
-    super.connectedCallback();
-    // Close dropdown when clicking outside
-    document.addEventListener('click', this._handleOutsideClick);
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    document.removeEventListener('click', this._handleOutsideClick);
-  }
-
-  private _handleOutsideClick = (e: Event) => {
-    // Use composedPath to properly handle Shadow DOM
-    const path = e.composedPath();
-    if (!path.includes(this)) {
-      this._showDropdown = false;
-      this._highlightedIndex = -1;
-    }
-  };
-
   private _handleInput(e: Event) {
+    e.stopPropagation();
     const input = e.target as HTMLInputElement;
     this.value = input.value;
     this._showDropdown = true;
@@ -204,11 +210,10 @@ export class MdAutocomplete extends LitElement {
 
   private _handleFocus() {
     this._isFocused = true;
-    // Always show dropdown on focus if there are options available
-    if (this.options.length > 0) {
+    if (this.options.length > 0 || this.loading) {
       this._showDropdown = true;
     }
-    // Emit focus event so parent can load initial options if needed
+
     this.dispatchEvent(
       new CustomEvent('focus', {
         bubbles: true,
@@ -219,6 +224,78 @@ export class MdAutocomplete extends LitElement {
 
   private _handleBlur() {
     this._isFocused = false;
+  }
+
+  private _handleDropdownToggle = (e: Event) => {
+    const { newState } = e as Event & { newState?: 'open' | 'closed' };
+    const isOpen = newState
+      ? newState === 'open'
+      : this._dropdown.matches(':popover-open');
+
+    if (isOpen) {
+      requestAnimationFrame(() => this._positionDropdown());
+    }
+
+    if (!isOpen) {
+      this._showDropdown = false;
+      this._highlightedIndex = -1;
+    }
+  };
+
+  private _shouldShowDropdown() {
+    return this._showDropdown && (this.options.length > 0 || this.loading);
+  }
+
+  private _syncPopover() {
+    if (!this.isConnected || !this._dropdown) return;
+
+    const shouldShow = this._shouldShowDropdown();
+    const isOpen = this._dropdown.matches(':popover-open');
+
+    if (shouldShow && !isOpen) {
+      this._dropdown.showPopover();
+      return;
+    }
+
+    if (!shouldShow && isOpen) {
+      this._dropdown.hidePopover();
+    }
+  }
+
+  private _positionDropdown() {
+    if (!this._input || !this._dropdown) return;
+
+    const inputRect = this._input.getBoundingClientRect();
+    const dropdownRect = this._dropdown.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const margin = 8;
+    const gap = 4;
+    const spaceBelow = viewportHeight - inputRect.bottom - margin;
+    const spaceAbove = inputRect.top - margin;
+    const width = Math.min(inputRect.width, viewportWidth - margin * 2);
+    const left = Math.max(
+      margin,
+      Math.min(inputRect.left, viewportWidth - width - margin)
+    );
+
+    let top = inputRect.bottom + gap;
+    let originY = 'top';
+
+    if (dropdownRect.height > spaceBelow && spaceAbove > spaceBelow) {
+      top = inputRect.top - dropdownRect.height - gap;
+      originY = 'bottom';
+    }
+
+    top = Math.max(
+      margin,
+      Math.min(top, viewportHeight - dropdownRect.height - margin)
+    );
+
+    this._dropdown.style.setProperty('--md-autocomplete-origin-y', originY);
+    this._dropdown.style.left = `${left}px`;
+    this._dropdown.style.top = `${top}px`;
+    this._dropdown.style.width = `${width}px`;
   }
 
   private _handleKeyDown(e: KeyboardEvent) {
@@ -281,8 +358,7 @@ export class MdAutocomplete extends LitElement {
   }
 
   render() {
-    const showDropdown =
-      this._showDropdown && (this.options.length > 0 || this.loading);
+    const showDropdown = this._shouldShowDropdown();
 
     return html`
       <input
@@ -296,10 +372,20 @@ export class MdAutocomplete extends LitElement {
         autocomplete="off"
         role="combobox"
         aria-autocomplete="list"
+        aria-controls="${this._listboxId}"
+        aria-activedescendant="${showDropdown && this._highlightedIndex >= 0
+          ? `${this._listboxId}-opt-${this._highlightedIndex}`
+          : ''}"
         aria-expanded="${showDropdown ? 'true' : 'false'}"
         aria-haspopup="listbox"
       />
-      <div class="dropdown ${showDropdown ? 'open' : ''}" role="listbox">
+      <div
+        class="dropdown"
+        role="listbox"
+        id="${this._listboxId}"
+        popover="auto"
+        @toggle=${this._handleDropdownToggle}
+      >
         ${this.loading
           ? html`<div class="dropdown-status">Loading...</div>`
           : this.options.length === 0
@@ -310,6 +396,7 @@ export class MdAutocomplete extends LitElement {
                     class="dropdown-item ${index === this._highlightedIndex
                       ? 'highlighted'
                       : ''}"
+                    id="${this._listboxId}-opt-${index}"
                     role="option"
                     aria-selected="${index === this._highlightedIndex
                       ? 'true'

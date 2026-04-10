@@ -4,8 +4,6 @@ import { customElement, property, query } from 'lit/decorators.js';
 /**
  * Material Design 3 Dropdown
  * Shows a popup surface when trigger is clicked. Content can be anything (md-menu, form, etc).
- *
- * The popup is hoisted to the document body to escape overflow clipping from parent containers.
  */
 @customElement('md-dropdown')
 export class MdDropdown extends LitElement {
@@ -18,12 +16,7 @@ export class MdDropdown extends LitElement {
   @property({ type: Number }) distance = 8;
 
   @query('slot[name="trigger"]') triggerSlot!: HTMLSlotElement;
-  @query('slot:not([name])') contentSlot!: HTMLSlotElement;
-
-  private _popupContainer: HTMLDivElement | null = null;
-  private _backdrop: HTMLDivElement | null = null;
-  private _movedElements: Element[] = [];
-  private _popupHost: HTMLElement | null = null;
+  @query('.popup') popup!: HTMLDivElement;
 
   static styles = css`
     :host {
@@ -39,29 +32,48 @@ export class MdDropdown extends LitElement {
     .trigger {
       display: inline-flex;
       cursor: pointer;
+      position: relative;
     }
 
-    .content-holder {
-      display: none;
+    .popup {
+      position: fixed;
+      inset: auto;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: inherit;
+      overflow: visible;
+      max-width: calc(100vw - 16px);
+      max-height: calc(100vh - 16px);
+      opacity: 0;
+      transform: scale(0.95);
+      transform-origin: var(--md-dropdown-origin-y, top)
+        var(--md-dropdown-origin-x, left);
+      transition:
+        opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.15s cubic-bezier(0.2, 0, 0, 1),
+        display 0.15s allow-discrete,
+        overlay 0.15s allow-discrete;
+      transition-behavior: allow-discrete;
+    }
+
+    .popup:popover-open {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    @starting-style {
+      .popup:popover-open {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+    }
+
+    .popup::backdrop {
+      background: transparent;
     }
   `;
-
-  connectedCallback() {
-    super.connectedCallback();
-    document.addEventListener('keydown', this._handleEscape);
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    document.removeEventListener('keydown', this._handleEscape);
-    this._cleanup();
-  }
-
-  private _handleEscape = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && this.open) {
-      this.hide();
-    }
-  };
 
   private _handleTriggerClick = (e: Event) => {
     e.stopPropagation();
@@ -73,63 +85,6 @@ export class MdDropdown extends LitElement {
     }
   };
 
-  private _createPopup() {
-    // Find the nearest open <dialog> ancestor (crossing shadow DOM boundaries)
-    // to stay within the top layer stacking context.
-    // Falls back to document.body when not inside a dialog.
-    const host = this._findAncestorDialog() ?? document.body;
-    this._popupHost = host as HTMLElement;
-
-    // Create backdrop
-    this._backdrop = document.createElement('div');
-    this._backdrop.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 99998;
-      background: transparent;
-    `;
-    this._backdrop.addEventListener('click', this._handleBackdropClick);
-    this._popupHost.appendChild(this._backdrop);
-
-    // Create popup container
-    this._popupContainer = document.createElement('div');
-    this._popupContainer.style.cssText = `
-      position: fixed;
-      z-index: 100000;
-      opacity: 0;
-      transform: scale(0.95);
-      transition: opacity 0.15s cubic-bezier(0.2, 0, 0, 1), transform 0.15s cubic-bezier(0.2, 0, 0, 1);
-    `;
-
-    // Move actual slotted elements to popup (preserves event handlers)
-    if (this.contentSlot) {
-      const elements = this.contentSlot.assignedElements();
-      this._movedElements = [...elements];
-      elements.forEach((el) => {
-        this._popupContainer!.appendChild(el);
-      });
-    }
-
-    // Listen for clicks inside popup to close dropdown
-    this._popupContainer.addEventListener('click', this._handlePopupClick);
-
-    this._popupHost.appendChild(this._popupContainer);
-
-    // Position and animate in
-    requestAnimationFrame(() => {
-      this._positionPopup();
-      requestAnimationFrame(() => {
-        if (this._popupContainer) {
-          this._popupContainer.style.opacity = '1';
-          this._popupContainer.style.transform = 'scale(1)';
-        }
-      });
-    });
-  }
-
   private _handlePopupClick = (e: Event) => {
     // Close dropdown when a menu item is clicked
     const target = e.target as HTMLElement;
@@ -139,53 +94,24 @@ export class MdDropdown extends LitElement {
     }
   };
 
-  private _cleanup() {
-    // Move elements back to their original slot
-    if (this._movedElements.length > 0) {
-      const holder = this.shadowRoot?.querySelector('.content-holder');
-      if (holder) {
-        this._movedElements.forEach((el) => {
-          this.appendChild(el);
-        });
-      }
-      this._movedElements = [];
-    }
-
-    if (this._backdrop) {
-      this._backdrop.removeEventListener('click', this._handleBackdropClick);
-      this._backdrop.remove();
-      this._backdrop = null;
-    }
-    if (this._popupContainer) {
-      this._popupContainer.removeEventListener('click', this._handlePopupClick);
-      this._popupContainer.remove();
-      this._popupContainer = null;
-    }
-    this._popupHost = null;
-  }
-
   show() {
-    this.open = true;
-    this._createPopup();
-    this.dispatchEvent(
-      new CustomEvent('md-dropdown-show', { bubbles: true, composed: true })
-    );
+    if (!this.open) {
+      this.open = true;
+    }
   }
 
   hide() {
-    this.open = false;
-    this._cleanup();
-    this.dispatchEvent(
-      new CustomEvent('md-dropdown-hide', { bubbles: true, composed: true })
-    );
+    if (this.open) {
+      this.open = false;
+    }
   }
 
   private _positionPopup() {
     const triggerEl = this.triggerSlot?.assignedElements()[0] as HTMLElement;
-    if (!triggerEl || !this._popupContainer) return;
+    if (!triggerEl || !this.popup) return;
 
     const rect = triggerEl.getBoundingClientRect();
-    const popupRect = this._popupContainer.getBoundingClientRect();
+    const popupRect = this.popup.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const margin = 8;
@@ -261,46 +187,62 @@ export class MdDropdown extends LitElement {
     // Set transform-origin based on computed placement for natural animation
     const originY = vertical === 'bottom' ? 'top' : 'bottom';
     const originX = horizontal === 'start' ? 'left' : 'right';
-    this._popupContainer.style.transformOrigin = `${originY} ${originX}`;
+    this.popup.style.setProperty('--md-dropdown-origin-y', originY);
+    this.popup.style.setProperty('--md-dropdown-origin-x', originX);
 
-    this._popupContainer.style.top = `${top}px`;
-    this._popupContainer.style.left = `${left}px`;
+    this.popup.style.top = `${top}px`;
+    this.popup.style.left = `${left}px`;
   }
 
-  /**
-   * Walk up the composed (flat) tree looking for an open `<dialog>` element.
-   * Uses `assignedSlot` to cross into shadow DOMs where content is slotted,
-   * and `ShadowRoot.host` to exit shadow DOMs.
-   */
-  private _findAncestorDialog(): HTMLDialogElement | null {
-    let node: Node | null = this as Node;
-    while (node) {
-      if (node instanceof HTMLDialogElement && node.open) {
-        return node;
-      }
-      if (node instanceof ShadowRoot) {
-        node = node.host;
-      } else if (node instanceof Element && node.assignedSlot) {
-        // Follow the composed tree through slot distribution
-        node = node.assignedSlot;
-      } else {
-        node = node.parentNode;
-      }
+  private _handleToggle = (e: Event) => {
+    const { newState } = e as Event & { newState?: 'open' | 'closed' };
+    const isOpen = newState
+      ? newState === 'open'
+      : this.popup.matches(':popover-open');
+
+    if (this.open !== isOpen) {
+      this.open = isOpen;
     }
-    return null;
+
+    if (isOpen) {
+      requestAnimationFrame(() => this._positionPopup());
+    }
+
+    this.dispatchEvent(
+      new CustomEvent(isOpen ? 'md-dropdown-show' : 'md-dropdown-hide', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  };
+
+  private _syncPopover() {
+    if (!this.isConnected || !this.popup) return;
+
+    const isOpen = this.popup.matches(':popover-open');
+    if (this.open && !isOpen) {
+      this.popup.showPopover();
+      return;
+    }
+
+    if (!this.open && isOpen) {
+      this.popup.hidePopover();
+    }
   }
 
-  private _handleBackdropClick = () => {
-    this.hide();
-  };
+  private _updateTriggerAria() {
+    const triggerEl = this.triggerSlot?.assignedElements()[0] as HTMLElement;
+    if (!triggerEl) return;
+
+    triggerEl.setAttribute('aria-expanded', String(this.open));
+    triggerEl.setAttribute('aria-haspopup', 'menu');
+    triggerEl.setAttribute('aria-controls', 'dropdown-popup');
+  }
 
   updated(changedProperties: Map<PropertyKey, unknown>) {
     if (changedProperties.has('open')) {
-      const triggerEl = this.triggerSlot?.assignedElements()[0] as HTMLElement;
-      if (triggerEl) {
-        triggerEl.setAttribute('aria-expanded', String(this.open));
-        triggerEl.setAttribute('aria-haspopup', 'true');
-      }
+      this._syncPopover();
+      this._updateTriggerAria();
     }
   }
 
@@ -309,7 +251,13 @@ export class MdDropdown extends LitElement {
       <div class="trigger" @click=${this._handleTriggerClick}>
         <slot name="trigger"></slot>
       </div>
-      <div class="content-holder">
+      <div
+        id="dropdown-popup"
+        class="popup"
+        popover="auto"
+        @toggle=${this._handleToggle}
+        @click=${this._handlePopupClick}
+      >
         <slot></slot>
       </div>
     `;

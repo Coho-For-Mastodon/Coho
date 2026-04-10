@@ -240,6 +240,7 @@ export class PostComposer extends LitElement {
   @query('md-text-area') private textArea!: MdTextArea;
   @query('media-edit-dialog')
   private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
+  @query('#emoji-trigger') private _emojiButton!: HTMLElement;
 
   static styles = [
     spinAnimation,
@@ -284,39 +285,6 @@ export class PostComposer extends LitElement {
           left: anchor(left);
           right: auto;
           margin-top: 6px;
-        }
-      }
-
-      .emoji-button-anchor {
-        anchor-name: --emoji-button;
-      }
-
-      emoji-picker {
-        position: absolute;
-        bottom: calc(100% + 4px);
-        right: 0;
-      }
-
-      /* Flip below when not enough space above */
-      @position-try --flip-below {
-        bottom: auto;
-        top: anchor(bottom);
-        margin-bottom: 0;
-        margin-top: 6px;
-      }
-
-      @supports (position-anchor: --emoji-button) {
-        emoji-picker {
-          position: fixed;
-          position-anchor: --emoji-button;
-          /* Default: above button, right-aligned */
-          bottom: anchor(top);
-          right: anchor(right);
-          left: auto;
-          margin-bottom: 6px;
-          /* Flip below if needed */
-          position-try-fallbacks: --flip-below;
-          position-try-order: most-height;
         }
       }
 
@@ -2784,11 +2752,10 @@ export class PostComposer extends LitElement {
   }
 
   private _renderEmojiPicker() {
-    if (!this.emojiPickerOpen) return nothing;
-
     return html`
       <emoji-picker
         .open=${this.emojiPickerOpen}
+        .anchorElement=${this._emojiButton ?? null}
         @emoji-select=${(e: CustomEvent) => this._onEmojiSelect(e)}
         @emoji-picker-close=${() => (this.emojiPickerOpen = false)}
       ></emoji-picker>
@@ -2859,7 +2826,8 @@ export class PostComposer extends LitElement {
         ></md-icon-button>
 
         <md-icon-button
-          class="mobile-icon-button emoji-button-anchor"
+          id="emoji-trigger"
+          class="mobile-icon-button"
           label=${msg('Emoji')}
           src="/assets/happy-outline.svg"
           .variant=${this.emojiPickerOpen ? 'filled-tonal' : 'standard'}

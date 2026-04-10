@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property, query, state } from 'lit/decorators.js';
 import { mdSharedStyles } from './md-shared-styles.js';
 import './md-icon.js';
 
@@ -23,6 +23,8 @@ export class MdSelect extends LitElement {
   @state() private _open = false;
   @state() private _options: MdOption[] = [];
   @state() private _highlightedIndex = -1;
+
+  @query('.dropdown') private _dropdown!: HTMLDivElement;
 
   private _listboxId = `md-select-listbox-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -48,6 +50,7 @@ export class MdSelect extends LitElement {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        anchor-name: --md-select-trigger;
         min-height: 26px;
         padding: 8px 16px;
         border-radius: var(--md-sys-shape-corner-extra-small)
@@ -181,10 +184,15 @@ export class MdSelect extends LitElement {
       }
 
       .dropdown {
-        position: absolute;
-        top: calc(100% + 4px);
-        left: 0;
-        right: 0;
+        position: fixed;
+        position-anchor: --md-select-trigger;
+        inset: auto;
+        top: anchor(bottom);
+        left: anchor(left);
+        margin: 4px 0 0 0;
+        padding: 0;
+        border: none;
+        width: anchor-size(width);
         max-height: 280px;
         overflow-y: auto;
         background: var(--md-sys-color-surface-container, #f3edf7);
@@ -192,43 +200,37 @@ export class MdSelect extends LitElement {
         box-shadow:
           0px 1px 2px rgba(0, 0, 0, 0.3),
           0px 2px 6px 2px rgba(0, 0, 0, 0.15);
-        z-index: 1000;
         opacity: 0;
         transform: scaleY(0);
         transform-origin: top;
         transition:
           opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
-          transform 0.15s cubic-bezier(0.2, 0, 0, 1);
-        pointer-events: none;
+          transform 0.15s cubic-bezier(0.2, 0, 0, 1),
+          display 0.15s allow-discrete,
+          overlay 0.15s allow-discrete;
+        transition-behavior: allow-discrete;
       }
 
-      .dropdown.open {
+      .dropdown:popover-open {
         opacity: 1;
         transform: scaleY(1);
-        pointer-events: auto;
+      }
+
+      @starting-style {
+        .dropdown:popover-open {
+          opacity: 0;
+          transform: scaleY(0.95);
+        }
       }
 
       :host([icon-only]) .dropdown {
-        left: 0;
-        right: auto;
         width: max-content;
         min-width: 200px;
         max-width: min(280px, calc(100vw - 24px));
       }
 
-      .backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 999;
+      .dropdown::backdrop {
         background: transparent;
-        display: none;
-      }
-
-      .backdrop.open {
-        display: block;
       }
 
       ::slotted(md-option) {
@@ -332,11 +334,19 @@ export class MdSelect extends LitElement {
     const slot = this.shadowRoot?.querySelector('slot');
     if (slot) {
       const assignedElements = slot.assignedElements() as MdOption[];
-      this._options = assignedElements.filter(
+      const nextOptions = assignedElements.filter(
         (el) => el.tagName === 'MD-OPTION'
       );
 
-      this._options.forEach((option, index) => {
+      const optionsChanged =
+        nextOptions.length !== this._options.length ||
+        nextOptions.some((option, index) => option !== this._options[index]);
+
+      if (optionsChanged) {
+        this._options = nextOptions;
+      }
+
+      nextOptions.forEach((option, index) => {
         if (!this._optionClickHandlers.has(option)) {
           const handler = () => this._handleOptionClick(option);
           this._optionClickHandlers.set(option, handler);
@@ -442,15 +452,8 @@ export class MdSelect extends LitElement {
       this._close();
     } else {
       this._open = true;
-      this.dispatchEvent(
-        new CustomEvent('md-select-open', { bubbles: true, composed: true })
-      );
     }
   }
-
-  private _handleBackdropClick = () => {
-    this._close();
-  };
 
   private _handleOptionClick(option: MdOption) {
     if (option.disabled) return;
@@ -472,9 +475,38 @@ export class MdSelect extends LitElement {
 
   private _close() {
     this._open = false;
+  }
+
+  private _handleDropdownToggle = (e: Event) => {
+    const { newState } = e as Event & { newState?: 'open' | 'closed' };
+    const isOpen = newState
+      ? newState === 'open'
+      : this._dropdown.matches(':popover-open');
+
+    if (this._open !== isOpen) {
+      this._open = isOpen;
+    }
+
     this.dispatchEvent(
-      new CustomEvent('md-select-close', { bubbles: true, composed: true })
+      new CustomEvent(isOpen ? 'md-select-open' : 'md-select-close', {
+        bubbles: true,
+        composed: true,
+      })
     );
+  };
+
+  private _syncPopover() {
+    if (!this.isConnected || !this._dropdown) return;
+
+    const isOpen = this._dropdown.matches(':popover-open');
+    if (this._open && !isOpen) {
+      this._dropdown.showPopover();
+      return;
+    }
+
+    if (!this._open && isOpen) {
+      this._dropdown.hidePopover();
+    }
   }
 
   private _getDisplayLabel(): string {
@@ -536,19 +568,22 @@ export class MdSelect extends LitElement {
         </div>
 
         <div
-          class="backdrop ${this._open ? 'open' : ''}"
-          @click=${this._handleBackdropClick}
-        ></div>
-
-        <div
-          class="dropdown ${this._open ? 'open' : ''}"
+          class="dropdown"
           role="listbox"
           id="${this._listboxId}"
+          popover="auto"
+          @toggle=${this._handleDropdownToggle}
         >
           <slot @slotchange=${this._updateOptions}></slot>
         </div>
       </div>
     `;
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('_open')) {
+      this._syncPopover();
+    }
   }
 }
 

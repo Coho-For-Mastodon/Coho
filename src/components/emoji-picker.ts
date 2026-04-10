@@ -1,5 +1,6 @@
-import { LitElement, html, css, nothing } from 'lit';
-import { customElement, state, property } from 'lit/decorators.js';
+import { LitElement, html, css } from 'lit';
+import { customElement, state, property, query } from 'lit/decorators.js';
+import type { PropertyValues } from 'lit';
 import { localized, msg } from '@lit/localize';
 
 import './md/md-text-field';
@@ -11,25 +12,22 @@ import { getPickerEmojis, type EmojiCategory } from '../services/custom-emojis';
 @customElement('emoji-picker')
 export class EmojiPicker extends LitElement {
   @property({ type: Boolean }) open = false;
+  @property({ attribute: false }) anchorElement: HTMLElement | null = null;
 
   @state() private _categories: EmojiCategory[] = [];
   @state() private _query = '';
 
-  private _onDocumentClick = (e: MouseEvent) => {
-    const path = e.composedPath();
-    if (!path.includes(this)) {
-      this._emitClose();
-    }
-  };
+  @query('.picker') private _pickerEl!: HTMLElement;
 
   static styles = css`
     :host {
-      display: block;
-      position: absolute;
-      z-index: 100;
+      display: contents;
     }
 
     .picker {
+      margin: 0;
+      padding: 0;
+      border: none;
       background: var(--md-sys-color-surface-container, #f3edf7);
       border-radius: var(--md-sys-shape-corner-large, 16px);
       box-shadow:
@@ -38,21 +36,36 @@ export class EmojiPicker extends LitElement {
       width: 320px;
       max-width: calc(100vw - 32px);
       max-height: 360px;
+      min-height: 120px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      animation: pickerFadeIn 0.15s ease-out;
+      position: fixed;
+      inset: auto;
+
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity 0.15s ease-out,
+        transform 0.15s ease-out,
+        display 0.15s ease-out allow-discrete,
+        overlay 0.15s ease-out allow-discrete;
     }
 
-    @keyframes pickerFadeIn {
-      from {
+    .picker:not(:popover-open) {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    @starting-style {
+      .picker:popover-open {
         opacity: 0;
         transform: translateY(4px);
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    }
+
+    .picker::backdrop {
+      background: transparent;
     }
 
     .search {
@@ -130,23 +143,62 @@ export class EmojiPicker extends LitElement {
     }
   `;
 
-  updated(changed: Map<string, unknown>) {
-    if (changed.has('open')) {
+  updated(changed: PropertyValues) {
+    if (changed.has('open') || changed.has('anchorElement')) {
       if (this.open) {
         this._categories = getPickerEmojis();
         this._query = '';
-        requestAnimationFrame(() => {
-          document.addEventListener('click', this._onDocumentClick, true);
-        });
-      } else {
-        document.removeEventListener('click', this._onDocumentClick, true);
       }
+      this._syncPopover();
     }
   }
 
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    document.removeEventListener('click', this._onDocumentClick, true);
+  private _syncPopover() {
+    const el = this._pickerEl;
+    if (!el) return;
+
+    if (this.open && !el.matches(':popover-open')) {
+      this._positionPicker();
+      el.showPopover();
+    } else if (!this.open && el.matches(':popover-open')) {
+      el.hidePopover();
+    }
+  }
+
+  private _positionPicker() {
+    const el = this._pickerEl;
+    if (!el) return;
+
+    // Use the provided anchor element, or fall back to previous sibling / host
+    const anchor =
+      this.anchorElement ??
+      (this.previousElementSibling as HTMLElement | null) ??
+      this;
+    const anchorRect = anchor.getBoundingClientRect();
+    const pickerWidth = 320;
+    const pickerHeight = 360;
+
+    // Default: above the anchor, right-aligned to anchor's right edge
+    let top = anchorRect.top - pickerHeight - 4;
+    let left = anchorRect.right - pickerWidth;
+
+    // Flip below if not enough space above
+    if (top < 8) {
+      top = anchorRect.bottom + 6;
+    }
+
+    // Clamp horizontally
+    left = Math.max(8, Math.min(left, window.innerWidth - pickerWidth - 8));
+
+    el.style.top = `${top}px`;
+    el.style.left = `${left}px`;
+  }
+
+  private _handleToggle(e: ToggleEvent) {
+    if (e.newState === 'closed' && this.open) {
+      this.open = false;
+      this._emitClose();
+    }
   }
 
   private _emitClose() {
@@ -189,12 +241,10 @@ export class EmojiPicker extends LitElement {
   }
 
   render() {
-    if (!this.open) return nothing;
-
     const categories = this._filteredCategories();
 
     return html`
-      <div class="picker">
+      <div class="picker" popover="auto" @toggle=${this._handleToggle}>
         <div class="search">
           <md-text-field
             placeholder=${msg('Search emoji...')}

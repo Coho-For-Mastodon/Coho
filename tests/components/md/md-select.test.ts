@@ -1,10 +1,23 @@
-import { describe, it, expect, vi } from 'vitest';
-import { fixture, html, elementUpdated } from '../../test-utils';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+import {
+  cleanupFixtures,
+  fixture,
+  html,
+  elementUpdated,
+} from '../../test-utils';
 import '../../../src/components/md/md-select';
 import '../../../src/components/md/md-option';
 import type { MdSelect } from '../../../src/components/md/md-select';
 
+async function waitForPopover(): Promise<void> {
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
+
 describe('md-select', () => {
+  beforeEach(() => {
+    cleanupFixtures();
+  });
+
   describe('rendering', () => {
     it('renders with default properties', async () => {
       const el = await fixture<MdSelect>(html`<md-select></md-select>`);
@@ -89,12 +102,12 @@ describe('md-select', () => {
       const selectInput = el.shadowRoot!.querySelector(
         '.select-input'
       ) as HTMLElement;
+      const dropdown = el.shadowRoot!.querySelector('.dropdown') as HTMLElement;
 
       selectInput.click();
       await elementUpdated(el);
 
-      const dropdown = el.shadowRoot!.querySelector('.dropdown');
-      expect(dropdown?.classList.contains('open')).toBe(false);
+      expect(dropdown.matches(':popover-open')).toBe(false);
     });
   });
 
@@ -138,12 +151,13 @@ describe('md-select', () => {
       const selectInput = el.shadowRoot!.querySelector(
         '.select-input'
       ) as HTMLElement;
+      const dropdown = el.shadowRoot!.querySelector('.dropdown') as HTMLElement;
 
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
-      const dropdown = el.shadowRoot!.querySelector('.dropdown');
-      expect(dropdown?.classList.contains('open')).toBe(true);
+      expect(dropdown.matches(':popover-open')).toBe(true);
     });
 
     it('closes dropdown on second click', async () => {
@@ -155,18 +169,20 @@ describe('md-select', () => {
       const selectInput = el.shadowRoot!.querySelector(
         '.select-input'
       ) as HTMLElement;
+      const dropdown = el.shadowRoot!.querySelector('.dropdown') as HTMLElement;
 
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
-      const dropdown = el.shadowRoot!.querySelector('.dropdown');
-      expect(dropdown?.classList.contains('open')).toBe(false);
+      expect(dropdown.matches(':popover-open')).toBe(false);
     });
 
-    it('closes dropdown on backdrop click', async () => {
+    it('syncs close state when the native popover closes', async () => {
       const el = await fixture<MdSelect>(html`
         <md-select>
           <md-option value="1">Option 1</md-option>
@@ -175,16 +191,20 @@ describe('md-select', () => {
       const selectInput = el.shadowRoot!.querySelector(
         '.select-input'
       ) as HTMLElement;
+      const dropdown = el.shadowRoot!.querySelector(
+        '.dropdown'
+      ) as HTMLDivElement;
 
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
-      const backdrop = el.shadowRoot!.querySelector('.backdrop') as HTMLElement;
-      backdrop.click();
+      dropdown.hidePopover();
       await elementUpdated(el);
+      await waitForPopover();
 
-      const dropdown = el.shadowRoot!.querySelector('.dropdown');
-      expect(dropdown?.classList.contains('open')).toBe(false);
+      expect(dropdown.matches(':popover-open')).toBe(false);
+      expect(selectInput.getAttribute('aria-expanded')).toBe('false');
     });
 
     it('adds open class to select-input when dropdown is open', async () => {
@@ -199,6 +219,7 @@ describe('md-select', () => {
 
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
       expect(selectInput.classList.contains('open')).toBe(true);
     });
@@ -218,19 +239,52 @@ describe('md-select', () => {
       // Open first
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
       // Then close with Escape (dispatched on document)
       document.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
       );
       await elementUpdated(el);
+      await waitForPopover();
 
-      const dropdown = el.shadowRoot!.querySelector('.dropdown');
-      expect(dropdown?.classList.contains('open')).toBe(false);
+      const dropdown = el.shadowRoot!.querySelector('.dropdown') as HTMLElement;
+      expect(dropdown.matches(':popover-open')).toBe(false);
     });
   });
 
   describe('events', () => {
+    it('dispatches open and close events from the popover lifecycle', async () => {
+      const el = await fixture<MdSelect>(html`
+        <md-select>
+          <md-option value="1">Option 1</md-option>
+          <md-option value="2">Option 2</md-option>
+        </md-select>
+      `);
+      const selectInput = el.shadowRoot!.querySelector(
+        '.select-input'
+      ) as HTMLElement;
+      const dropdown = el.shadowRoot!.querySelector(
+        '.dropdown'
+      ) as HTMLDivElement;
+      const openHandler = vi.fn();
+      const closeHandler = vi.fn();
+
+      el.addEventListener('md-select-open', openHandler);
+      el.addEventListener('md-select-close', closeHandler);
+
+      selectInput.click();
+      await elementUpdated(el);
+      await waitForPopover();
+
+      dropdown.hidePopover();
+      await elementUpdated(el);
+      await waitForPopover();
+
+      expect(openHandler).toHaveBeenCalledTimes(1);
+      expect(closeHandler).toHaveBeenCalledTimes(1);
+    });
+
     it('dispatches change event when option is selected', async () => {
       const el = await fixture<MdSelect>(html`
         <md-select>
@@ -248,11 +302,13 @@ describe('md-select', () => {
       ) as HTMLElement;
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
       // Select option
       const option = el.querySelector('md-option[value="2"]') as HTMLElement;
       option.click();
       await elementUpdated(el);
+      await waitForPopover();
 
       expect(changeHandler).toHaveBeenCalled();
     });
@@ -271,6 +327,7 @@ describe('md-select', () => {
 
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
       // The icon rotation is handled by CSS when .select-input.open is set
       expect(selectInput.classList.contains('open')).toBe(true);
@@ -306,6 +363,7 @@ describe('md-select', () => {
 
       selectInput.click();
       await elementUpdated(el);
+      await waitForPopover();
 
       expect(selectInput.getAttribute('aria-expanded')).toBe('true');
     });
