@@ -23,7 +23,11 @@ import {
   replayQueuedRequests,
   type BackgroundSyncConfig,
 } from './sw/background-sync';
-import { handlePush, handleNotificationClick } from './sw/notifications';
+import {
+  handlePush,
+  handleNotificationClick,
+  handlePushSubscriptionChange,
+} from './sw/notifications';
 import { handlePeriodicSync } from './sw/periodic-sync';
 import { handleWidgetInstall } from './sw/widgets';
 
@@ -86,6 +90,10 @@ self.addEventListener('push', (event: PushEvent) => handlePush(event));
 self.addEventListener('notificationclick', (event: NotificationEvent) =>
   handleNotificationClick(event)
 );
+self.addEventListener('pushsubscriptionchange', ((event: Event) =>
+  handlePushSubscriptionChange(
+    event as import('./sw/types').PushSubscriptionChangeEvent
+  )) as EventListener);
 
 // Periodic sync (timeline + notifications)
 self.addEventListener('periodicsync', (event: Event) =>

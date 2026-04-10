@@ -11,6 +11,7 @@ import type {
   MastodonPushPayload,
   NotificationAction,
   NotificationData,
+  PushSubscriptionChangeEvent,
 } from './types';
 
 declare const self: CohoServiceWorkerGlobalScope;
@@ -172,6 +173,86 @@ export function handlePush(event: PushEvent): void {
           notificationType: payload.notification_type,
           notificationId: payload.notification_id,
         });
+      }
+    })()
+  );
+}
+
+// ============================================================================
+// Push Subscription Change Handler
+// ============================================================================
+
+/**
+ * Handle browser-initiated push subscription changes.
+ * Re-subscribes and updates the Mastodon server with the new endpoint
+ * so push notifications continue working.
+ */
+export function handlePushSubscriptionChange(
+  event: PushSubscriptionChangeEvent
+): void {
+  event.waitUntil(
+    (async () => {
+      try {
+        // Use the new subscription if the browser already created one,
+        // otherwise re-subscribe with the old subscription's options.
+        let newSub = event.newSubscription;
+        if (!newSub) {
+          const options = event.oldSubscription?.options ?? {
+            userVisibleOnly: true,
+          };
+          newSub = await self.registration.pushManager.subscribe(options);
+        }
+
+        const subJSON = newSub.toJSON();
+        const { server, headers } = await getAuthHeaders();
+
+        // Update Mastodon with the new push endpoint and keys
+        const response = await fetch(
+          `https://${server}/api/v1/push/subscription`,
+          {
+            method: 'POST',
+            headers: new Headers({
+              'Authorization': headers.get('Authorization') || '',
+              'Content-Type': 'application/json',
+            }),
+            body: JSON.stringify({
+              subscription: {
+                endpoint: subJSON.endpoint,
+                keys: {
+                  p256dh: subJSON.keys?.p256dh,
+                  auth: subJSON.keys?.auth,
+                },
+              },
+              data: {
+                alerts: {
+                  follow: true,
+                  reblog: true,
+                  favourite: true,
+                  mention: true,
+                  poll: true,
+                  follow_request: true,
+                  status: true,
+                  update: true,
+                },
+                policy: 'all',
+              },
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          console.error(
+            '[SW] Push subscription update failed:',
+            response.status,
+            response.statusText
+          );
+        } else {
+          console.log('[SW] Push subscription updated successfully');
+        }
+      } catch (error) {
+        // Network failure or missing credentials — the foreground health
+        // check will retry on next app open.
+        console.error('[SW] Failed to handle subscription change:', error);
       }
     })()
   );

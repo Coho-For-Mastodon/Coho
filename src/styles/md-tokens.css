@@ -193,6 +193,43 @@
   }
 }
 
+/*
+ * Progressive enhancement: use contrast-color() for automatic accessible
+ * foreground colors. When the primary color is changed dynamically via
+ * applyThemeColor(), these "on-*" tokens will reactively switch between
+ * black and white to maintain contrast — no JS calculation needed.
+ *
+ * Only applied to primary/secondary/tertiary/error tokens where the
+ * background can change dynamically. Surface and container "on-*" tokens
+ * are left hardcoded because they use carefully tuned grays or tinted
+ * color-mix() values that contrast-color() (black/white only) can't match.
+ */
+@supports (color: contrast-color(red)) {
+  :root {
+    --md-sys-color-on-primary: contrast-color(var(--md-sys-color-primary));
+    --md-sys-color-on-secondary: contrast-color(var(--md-sys-color-secondary));
+    --md-sys-color-on-tertiary: contrast-color(var(--md-sys-color-tertiary));
+    --md-sys-color-on-error: contrast-color(var(--md-sys-color-error));
+    --md-sys-color-inverse-on-surface: contrast-color(
+      var(--md-sys-color-inverse-surface)
+    );
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --md-sys-color-on-primary: contrast-color(var(--md-sys-color-primary));
+      --md-sys-color-on-secondary: contrast-color(
+        var(--md-sys-color-secondary)
+      );
+      --md-sys-color-on-tertiary: contrast-color(var(--md-sys-color-tertiary));
+      --md-sys-color-on-error: contrast-color(var(--md-sys-color-error));
+      --md-sys-color-inverse-on-surface: contrast-color(
+        var(--md-sys-color-inverse-surface)
+      );
+    }
+  }
+}
+
 /* Typography Scale (MD3) */
 :root {
   /* Display */

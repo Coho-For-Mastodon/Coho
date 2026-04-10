@@ -103,6 +103,12 @@ export interface PeriodicSyncEvent extends ExtendableEvent {
   tag: string;
 }
 
+/** Push subscription change event (not yet in all TS libs) */
+export interface PushSubscriptionChangeEvent extends ExtendableEvent {
+  readonly oldSubscription: PushSubscription | null;
+  readonly newSubscription: PushSubscription | null;
+}
+
 // ============================================================================
 // Extended ServiceWorkerGlobalScope
 // ============================================================================
