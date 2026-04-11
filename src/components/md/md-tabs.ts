@@ -61,6 +61,8 @@ export class MdTabs extends LitElement {
   private _tabsId = `md-tabs-${++tabsIdCounter}`;
 
   private _observer: MutationObserver;
+  private _mobileQuery = window.matchMedia('(max-width: 820px)');
+  private _isMobile = this._mobileQuery.matches;
 
   @query('slot[name="nav"]') private navSlot!: HTMLSlotElement;
   @query('slot:not([name])') private panelSlot!: HTMLSlotElement;
@@ -68,7 +70,6 @@ export class MdTabs extends LitElement {
   constructor() {
     super();
     this._observer = new MutationObserver(() => {
-      // Debounce updates if needed, but for now simple call is fine
       this._updatePanels();
     });
   }
@@ -172,21 +173,13 @@ export class MdTabs extends LitElement {
       display: block;
     }
 
-    /* Dark mode */
+    /* Dark mode - update border fallback */
     @media (prefers-color-scheme: dark) {
       :host([orientation='horizontal']) .tab-bar {
-        background: transparent;
         border-color: var(
           --md-sys-color-outline-variant,
           var(--sl-color-neutral-700)
         );
-      }
-
-      :host([orientation='horizontal'][placement='bottom']) .tab-bar {
-      }
-
-      :host([orientation='vertical']) .tab-bar {
-        background: transparent;
       }
     }
 
@@ -227,13 +220,13 @@ export class MdTabs extends LitElement {
       'tab-selected',
       this._handleTabSelected as EventListener
     );
-    // Observe light DOM for changes (including nested tabs in wrappers like home-tabs-nav)
     this._observer.observe(this, {
       childList: true,
       subtree: true,
-      attributes: false, // We handle attributes in updatePanels, looking for structural changes here
+      attributes: false,
       characterData: false,
     });
+    this._mobileQuery.addEventListener('change', this._handleMobileChange);
   }
 
   disconnectedCallback() {
@@ -243,7 +236,13 @@ export class MdTabs extends LitElement {
       this._handleTabSelected as EventListener
     );
     this._observer.disconnect();
+    this._mobileQuery.removeEventListener('change', this._handleMobileChange);
   }
+
+  private _handleMobileChange = (e: MediaQueryListEvent) => {
+    this._isMobile = e.matches;
+    this._updatePanels();
+  };
 
   firstUpdated() {
     // Set initial active tab
@@ -328,9 +327,19 @@ export class MdTabs extends LitElement {
 
     // Update tabs active state and data attributes for Firefox
     tabs.forEach((tab, index) => {
-      // Set orientation and placement data attributes for Firefox compatibility
       tab.setAttribute('data-orientation', this.orientation);
       tab.setAttribute('data-placement', this.placement);
+
+      // Stacked layout: vertical, bottom placement, or mobile bottom nav
+      const isStacked =
+        this.orientation === 'vertical' ||
+        this.placement === 'bottom' ||
+        (this.orientation === 'horizontal' && this._isMobile);
+      if (isStacked) {
+        tab.setAttribute('data-stacked', '');
+      } else {
+        tab.removeAttribute('data-stacked');
+      }
 
       // Set unique IDs for accessibility linking
       const tabId = `${this._tabsId}-tab-${index}`;

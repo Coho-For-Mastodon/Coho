@@ -61,37 +61,6 @@ export class MdTabPanel extends LitElement {
       }
     }
 
-    /* Vertical tabs - slide from left/right */
-    :host-context(md-tabs[orientation='vertical']) {
-      animation: slideFromLeft 0.3s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    @keyframes slideFromLeft {
-      from {
-        opacity: 0;
-        transform: translateX(-16px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    :host-context(md-tabs[orientation='vertical'][placement='end']) {
-      animation: slideFromRight 0.3s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    @keyframes slideFromRight {
-      from {
-        opacity: 0;
-        transform: translateX(16px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
     /* Mobile: reduce padding */
     @media (max-width: 820px) {
       .panel-content {
