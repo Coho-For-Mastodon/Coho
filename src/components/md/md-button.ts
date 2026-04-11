@@ -13,10 +13,9 @@ export class MdButton extends LitElement {
     | 'filled'
     | 'outlined'
     | 'text'
-    | 'elevated'
     | 'tonal'
     | 'fab' = 'filled';
-  @property({ type: String }) size: 'small' | 'medium' | 'large' = 'medium';
+  @property({ type: String }) size: 'small' | 'medium' = 'medium';
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) pill = false;
   @property({ type: String }) type: 'button' | 'submit' | 'reset' = 'button';
@@ -91,13 +90,6 @@ export class MdButton extends LitElement {
         border-radius: var(--md-sys-shape-corner-extra-large);
       }
 
-      button.large {
-        height: 56px;
-        padding: 0 32px;
-        font-size: var(--md-sys-typescale-body-large-font-size);
-        border-radius: var(--md-sys-shape-corner-extra-large);
-      }
-
       /* Pill shape override */
       button.pill {
         border-radius: var(--md-sys-shape-corner-full);
@@ -143,21 +135,6 @@ export class MdButton extends LitElement {
         color: var(--md-sys-color-primary, #6750a4);
       }
 
-      /* Elevated variant */
-      button.elevated {
-        background: var(--md-sys-color-surface-container-low, #f7f2fa);
-        color: var(--md-sys-color-primary, #6750a4);
-        box-shadow:
-          0 1px 2px rgba(0, 0, 0, 0.3),
-          0 1px 3px 1px rgba(0, 0, 0, 0.15);
-      }
-
-      button.elevated:hover {
-        box-shadow:
-          0 1px 2px rgba(0, 0, 0, 0.3),
-          0 2px 6px 2px rgba(0, 0, 0, 0.15);
-      }
-
       /* Tonal variant */
       button.tonal {
         background: var(--md-sys-color-secondary-container, #e8def8);
@@ -186,51 +163,10 @@ export class MdButton extends LitElement {
         border-radius: var(--md-sys-shape-corner-medium);
       }
 
-      button.fab.large {
-        width: 96px;
-        height: 96px;
-        border-radius: var(--md-sys-shape-corner-extra-large);
-      }
-
       button.fab:hover {
         box-shadow:
           0 2px 3px rgba(0, 0, 0, 0.3),
           0 6px 10px 4px rgba(0, 0, 0, 0.15);
-      }
-
-      /* Dark mode support */
-      @media (prefers-color-scheme: dark) {
-        button.filled {
-          background: var(--md-sys-color-primary, #d0bcff);
-          color: var(--md-sys-color-on-primary, #381e72);
-        }
-
-        button.outlined {
-          color: var(--md-sys-color-primary, #d0bcff);
-          border-color: var(--md-sys-color-outline, #938f99);
-        }
-
-        button.text {
-          color: var(--md-sys-color-primary, #d0bcff);
-        }
-
-        button.elevated {
-          background: var(--md-sys-color-surface-container-low, #1d1b20);
-          color: var(--md-sys-color-primary, #d0bcff);
-        }
-
-        button.tonal {
-          background: var(--md-sys-color-secondary-container, #4a4458);
-          color: var(--md-sys-color-on-secondary-container, #e8def8);
-        }
-
-        button.fab {
-          background: var(
-            --md-sys-color-primary,
-            var(--sl-color-primary-600, #d0bcff)
-          );
-          color: var(--md-sys-color-on-primary, #381e72);
-        }
       }
 
       /* Ripple effect */
@@ -313,8 +249,10 @@ export class MdButton extends LitElement {
       animation: ripple 600ms cubic-bezier(0.4, 0, 0.2, 1);
     `;
 
+    ripple.addEventListener('animationend', () => ripple.remove(), {
+      once: true,
+    });
     button.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
   }
 
   render() {

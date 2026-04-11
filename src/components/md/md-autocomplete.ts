@@ -25,7 +25,7 @@ export class MdAutocomplete extends LitElement {
   @query('input') private _input!: HTMLInputElement;
   @query('.dropdown') private _dropdown!: HTMLDivElement;
 
-  private _listboxId = `md-autocomplete-listbox-${Math.random().toString(36).slice(2, 9)}`;
+  private _listboxId = 'autocomplete-listbox';
 
   updated(changedProperties: Map<string, unknown>) {
     if (
@@ -66,11 +66,7 @@ export class MdAutocomplete extends LitElement {
       border: none;
       border-radius: 52px;
       background-color: var(--_surface-container-highest);
-      font-family:
-        'Roboto',
-        system-ui,
-        -apple-system,
-        sans-serif;
+      font-family: inherit;
       font-size: var(--md-sys-typescale-body-large-font-size);
       font-weight: 400;
       line-height: 24px;
@@ -226,17 +222,10 @@ export class MdAutocomplete extends LitElement {
     this._isFocused = false;
   }
 
-  private _handleDropdownToggle = (e: Event) => {
-    const { newState } = e as Event & { newState?: 'open' | 'closed' };
-    const isOpen = newState
-      ? newState === 'open'
-      : this._dropdown.matches(':popover-open');
-
-    if (isOpen) {
+  private _handleDropdownToggle = (e: ToggleEvent) => {
+    if (e.newState === 'open') {
       requestAnimationFrame(() => this._positionDropdown());
-    }
-
-    if (!isOpen) {
+    } else {
       this._showDropdown = false;
       this._highlightedIndex = -1;
     }
@@ -347,14 +336,6 @@ export class MdAutocomplete extends LitElement {
         composed: true,
       })
     );
-
-    this.dispatchEvent(
-      new CustomEvent('change', {
-        detail: { value: option.value },
-        bubbles: true,
-        composed: true,
-      })
-    );
   }
 
   render() {
@@ -388,31 +369,29 @@ export class MdAutocomplete extends LitElement {
       >
         ${this.loading
           ? html`<div class="dropdown-status">Loading...</div>`
-          : this.options.length === 0
-            ? html`<div class="dropdown-status">No results found</div>`
-            : this.options.map(
-                (option, index) => html`
-                  <div
-                    class="dropdown-item ${index === this._highlightedIndex
-                      ? 'highlighted'
-                      : ''}"
-                    id="${this._listboxId}-opt-${index}"
-                    role="option"
-                    aria-selected="${index === this._highlightedIndex
-                      ? 'true'
-                      : 'false'}"
-                    @click="${() => this._selectOption(option)}"
-                    @mouseenter="${() => (this._highlightedIndex = index)}"
-                  >
-                    <div class="item-label">${option.label}</div>
-                    ${option.description
-                      ? html`<div class="item-description">
-                          ${option.description}
-                        </div>`
-                      : null}
-                  </div>
-                `
-              )}
+          : this.options.map(
+              (option, index) => html`
+                <div
+                  class="dropdown-item ${index === this._highlightedIndex
+                    ? 'highlighted'
+                    : ''}"
+                  id="${this._listboxId}-opt-${index}"
+                  role="option"
+                  aria-selected="${index === this._highlightedIndex
+                    ? 'true'
+                    : 'false'}"
+                  @click="${() => this._selectOption(option)}"
+                  @mouseenter="${() => (this._highlightedIndex = index)}"
+                >
+                  <div class="item-label">${option.label}</div>
+                  ${option.description
+                    ? html`<div class="item-description">
+                        ${option.description}
+                      </div>`
+                    : null}
+                </div>
+              `
+            )}
       </div>
     `;
   }

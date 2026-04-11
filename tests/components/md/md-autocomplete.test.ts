@@ -105,10 +105,8 @@ describe('md-autocomplete', () => {
     `);
     const input = el.shadowRoot!.querySelector('input') as HTMLInputElement;
     const selectHandler = vi.fn();
-    const changeHandler = vi.fn();
 
     el.addEventListener('select', selectHandler);
-    el.addEventListener('change', changeHandler);
 
     input.dispatchEvent(new FocusEvent('focus'));
     await elementUpdated(el);
@@ -127,7 +125,6 @@ describe('md-autocomplete', () => {
 
     expect(el.value).toBe('mastodon.social');
     expect(selectHandler).toHaveBeenCalledTimes(1);
-    expect(changeHandler).toHaveBeenCalledTimes(1);
   });
 
   it('shows loading content in the popover', async () => {
