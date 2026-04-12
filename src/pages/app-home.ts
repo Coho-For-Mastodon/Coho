@@ -782,6 +782,14 @@ export class AppHome extends LitElement {
     dialog?.openReplyDialog(post);
   };
 
+  private _handleQuoteClicked = async (e: CustomEvent<{ tweet: Post }>) => {
+    const post = e.detail.tweet;
+    if (!post) return;
+
+    const dialog = await this._ensurePostDialog();
+    dialog?.openQuoteDialog(post);
+  };
+
   // Tab name to loader key
   private static readonly tabConfig: Record<
     string,
@@ -1250,6 +1258,8 @@ export class AppHome extends LitElement {
                 this.handleReplies($event.detail.data, $event.detail.id ?? '')}"
               @reply-clicked="${(e: CustomEvent<{ tweet: Post }>) =>
                 this._handleReplyClicked(e)}"
+              @quote-clicked="${(e: CustomEvent<{ tweet: Post }>) =>
+                this._handleQuoteClicked(e)}"
             ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="media">

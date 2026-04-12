@@ -35,6 +35,8 @@ export class NotificationPreferencesDialog extends LitElement {
     follow_request: true,
     status: true,
     update: true,
+    quote: true,
+    quoted_update: true,
   };
 
   @state() private _policy: PushPolicy = 'all';

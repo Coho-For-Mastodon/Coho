@@ -7,6 +7,33 @@ import { Account, Emoji } from './account';
 import { MediaAttachment } from './media';
 import type { FilterResult } from './filter';
 
+export type QuoteState =
+  | 'pending'
+  | 'accepted'
+  | 'rejected'
+  | 'revoked'
+  | 'deleted'
+  | 'unauthorized'
+  | 'blocked_account'
+  | 'blocked_domain'
+  | 'muted_account';
+
+export interface Quote {
+  state: QuoteState;
+  quoted_status: Status | null;
+}
+
+export interface ShallowQuote {
+  state: QuoteState;
+  quoted_status_id: string | null;
+}
+
+export interface QuoteApproval {
+  automatic: string[];
+  manual: string[];
+  current_user: 'automatic' | 'manual' | 'denied' | 'unknown';
+}
+
 export interface Status {
   id: string;
   created_at: string;
@@ -20,6 +47,7 @@ export interface Status {
   replies_count: number;
   reblogs_count: number;
   favourites_count: number;
+  quotes_count?: number;
   favourited: boolean;
   reblogged: boolean;
   muted: boolean;
@@ -27,6 +55,8 @@ export interface Status {
   pinned: boolean;
   content: string;
   reblog: Status | null;
+  quote?: Quote | ShallowQuote | null;
+  quote_approval?: QuoteApproval;
   application: Application | null;
   account: Account;
   media_attachments: MediaAttachment[];

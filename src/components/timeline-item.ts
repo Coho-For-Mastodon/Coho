@@ -722,6 +722,18 @@ export class TimelineItem extends LitElement {
           opacity: 1;
         }
       }
+
+      .quote-placeholder {
+        padding: 12px 16px;
+        font-style: italic;
+        color: var(--md-sys-color-on-surface-variant, #938f99);
+        font-size: 0.875rem;
+      }
+
+      /* Hide Mastodon fallback "RE:" inline quote links */
+      .quote-inline {
+        display: none !important;
+      }
     `,
   ];
 
@@ -817,6 +829,11 @@ export class TimelineItem extends LitElement {
         // Mute/unmute conversation
         event.preventDefault();
         this.muteConversation();
+        break;
+      case 'q':
+        // Quote post
+        event.preventDefault();
+        this.quotePost(this.tweet.reblog || this.tweet);
         break;
       default:
         break;
@@ -1209,6 +1226,21 @@ export class TimelineItem extends LitElement {
     }
   }
 
+  quotePost(post: Post) {
+    if (this.guestMode) {
+      showGuestActionToast('quote posts');
+      return;
+    }
+
+    this.dispatchEvent(
+      new CustomEvent('quote-clicked', {
+        detail: { tweet: post },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   // async analyzeStatus(tweet: Post | null) {
   //     if (tweet) {
   //         const { analyzeStatusText, analyzeStatusImage } = await import('../services/ai');
@@ -1556,6 +1588,7 @@ export class TimelineItem extends LitElement {
       bookmark: (id: string) => this.bookmark(id),
       favorite: (id: string) => this.favorite(id),
       reblog: (id: string) => this.reblog(id),
+      quotePost: (post: Post) => this.quotePost(post),
       togglePin: () => this.togglePin(),
       muteConversation: () => this.muteConversation(),
       addToList: (account: Account) => this.addToList(account),

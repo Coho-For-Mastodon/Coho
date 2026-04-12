@@ -25,6 +25,10 @@ export type {
   StatusContext,
   ScheduledStatus,
   ScheduledStatusParams,
+  Quote,
+  ShallowQuote,
+  QuoteApproval,
+  QuoteState,
 } from './status';
 
 // Media types

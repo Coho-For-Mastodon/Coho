@@ -440,6 +440,19 @@ export class PostDetail extends LitElement {
     }
   }
 
+  handleQuoteClick(e: CustomEvent<{ tweet: Post }>) {
+    const post = e.detail.tweet;
+    if (!post) return;
+
+    this.dispatchEvent(
+      new CustomEvent('quote-clicked', {
+        detail: { tweet: post },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   private async handleOpenPost(e: CustomEvent<{ tweet: Post }>) {
     const tweet = e.detail.tweet;
     if (!tweet) return;
@@ -546,6 +559,8 @@ export class PostDetail extends LitElement {
                     this.handleOpenPost(e)}"
                   @reply-clicked="${(e: CustomEvent) =>
                     this.handleReplyClick(e)}"
+                  @quote-clicked="${(e: CustomEvent<{ tweet: Post }>) =>
+                    this.handleQuoteClick(e)}"
                   @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                     this.handleEditPost(e.detail.tweet)}"
                 ></timeline-item>
@@ -566,6 +581,8 @@ export class PostDetail extends LitElement {
               @open="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleOpenPost(e)}"
               @reply-clicked="${(e: CustomEvent) => this.handleReplyClick(e)}"
+              @quote-clicked="${(e: CustomEvent<{ tweet: Post }>) =>
+                this.handleQuoteClick(e)}"
               @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                 this.handleEditPost(e.detail.tweet)}"
             ></timeline-item>

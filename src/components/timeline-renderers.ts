@@ -20,6 +20,7 @@ import '../components/md/md-menu-item';
 // Lazy-loaded: only needed when posts have media or polls
 let _carouselLoaded = false;
 let _pollLoaded = false;
+let _quotedPostLoaded = false;
 
 function ensureCarousel(): void {
   if (!_carouselLoaded) {
@@ -32,6 +33,13 @@ function ensurePoll(): void {
   if (!_pollLoaded) {
     _pollLoaded = true;
     import('../components/timeline-poll');
+  }
+}
+
+function ensureQuotedPost(): void {
+  if (!_quotedPostLoaded) {
+    _quotedPostLoaded = true;
+    import('../components/quoted-post');
   }
 }
 
@@ -128,6 +136,56 @@ export function renderLinkCard(
   `;
 }
 
+/**
+ * Renders a quoted post embed (or placeholder) for a status that has a quote.
+ * Only displays the full embed when the quote state is "accepted".
+ */
+function renderQuote(post: Post | undefined): TemplateResult | typeof nothing {
+  if (!post?.quote) return nothing;
+
+  const quote = post.quote;
+  if (!('state' in quote)) return nothing;
+
+  if (
+    quote.state === 'accepted' &&
+    'quoted_status' in quote &&
+    quote.quoted_status
+  ) {
+    ensureQuotedPost();
+    return html`<quoted-post .post=${quote.quoted_status}></quoted-post>`;
+  }
+
+  // Placeholders for non-displayable quote states
+  switch (quote.state) {
+    case 'accepted':
+      // Accepted but no quoted_status — should not happen normally
+      return nothing;
+    case 'pending':
+      return html`<div class="quote-placeholder">
+        ${msg('Quote pending approval')}
+      </div>`;
+    case 'rejected':
+      return html`<div class="quote-placeholder">
+        ${msg('Quote was rejected')}
+      </div>`;
+    case 'revoked':
+      return html`<div class="quote-placeholder">
+        ${msg('Quote was revoked')}
+      </div>`;
+    case 'deleted':
+      return html`<div class="quote-placeholder">
+        ${msg('Quoted post was deleted')}
+      </div>`;
+    case 'unauthorized':
+    case 'blocked_account':
+    case 'blocked_domain':
+    case 'muted_account':
+      return html`<div class="quote-placeholder">
+        ${msg('Hidden due to your filters')}
+      </div>`;
+  }
+}
+
 export interface TimelineItemHandlers {
   viewSensitive: () => void;
   viewThreadSensitive: (id: string) => void;
@@ -136,6 +194,7 @@ export interface TimelineItemHandlers {
   bookmark: (id: string) => void;
   favorite: (id: string) => void;
   reblog: (id: string) => void;
+  quotePost: (post: Post) => void;
   togglePin: () => void;
   muteConversation: () => void;
   addToList: (account: Account) => void;
@@ -546,6 +605,7 @@ export function renderRegularTweet(
             )
           : null
       }
+      ${renderQuote(state.tweet)}
 
       <div class="actions" slot="footer">
         ${
@@ -621,6 +681,26 @@ export function renderRegularTweet(
                 >${state.tweet?.reblogs_count}
                 <md-icon slot="suffix" name="repeat"></md-icon
               ></md-button>`
+            : null
+        }
+        ${
+          !state.guestMode &&
+          state.tweet?.quote_approval?.current_user !== 'denied'
+            ? html`<md-button
+                variant="text"
+                style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+                pill
+                size="small"
+                aria-label="${msg('Quote')}"
+                @click="${() => {
+                  if (state.tweet) handlers.quotePost(state.tweet);
+                }}"
+              >
+                <md-icon
+                  slot="suffix"
+                  src="/assets/quote-outline.svg"
+                ></md-icon>
+              </md-button>`
             : null
         }
       </div>
@@ -712,6 +792,7 @@ export function renderThreadContinuation(
                 (threadPost.media_attachments?.length ?? 0) > 0
               )
             : null}
+          ${renderQuote(threadPost)}
           <div class="actions" slot="footer">
             <md-button
               variant="text"
@@ -769,6 +850,25 @@ export function renderThreadContinuation(
                   >${threadPost.reblogs_count}
                   <md-icon slot="suffix" name="repeat"></md-icon
                 ></md-button>`
+              : null}
+            ${!state.guestMode &&
+            threadPost.quote_approval?.current_user !== 'denied'
+              ? html`<md-button
+                  variant="text"
+                  style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+                  pill
+                  size="small"
+                  aria-label="${msg('Quote')}"
+                  @click="${(e: Event) => {
+                    e.stopPropagation();
+                    handlers.quotePost(threadPost);
+                  }}"
+                >
+                  <md-icon
+                    slot="suffix"
+                    src="/assets/quote-outline.svg"
+                  ></md-icon>
+                </md-button>`
               : null}
           </div>
         </md-card>
@@ -988,6 +1088,7 @@ export function renderReblog(
             (state.tweet.reblog.media_attachments?.length ?? 0) > 0
           )
         : null}
+      ${renderQuote(state.tweet?.reblog)}
 
       <div class="actions" slot="footer">
         ${state.show === true
@@ -1038,6 +1139,21 @@ export function renderReblog(
               >${state.tweet.reblog.reblogs_count}
               <md-icon slot="suffix" name="repeat"></md-icon
             ></md-button>`
+          : null}
+        ${!state.guestMode &&
+        state.tweet?.reblog?.quote_approval?.current_user !== 'denied'
+          ? html`<md-button
+              variant="text"
+              style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+              pill
+              size="small"
+              aria-label="${msg('Quote')}"
+              @click="${() => {
+                if (state.tweet?.reblog) handlers.quotePost(state.tweet.reblog);
+              }}"
+            >
+              <md-icon slot="suffix" src="/assets/quote-outline.svg"></md-icon>
+            </md-button>`
           : null}
       </div>
     </md-card>

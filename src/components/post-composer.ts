@@ -81,6 +81,7 @@ export interface ComposerSubmitEvent {
   } | null;
   scheduledAt: string | null;
   replyToId: string | null;
+  quotedStatusId: string | null;
 }
 
 /**
@@ -99,6 +100,11 @@ export class PostComposer extends LitElement {
    * The post being replied to, if any. When set, the composer shows a "replying to" indicator.
    */
   @property({ type: Object }) replyTo: Post | null = null;
+
+  /**
+   * The post being quoted. When set, a quote preview is shown and media/poll are disabled.
+   */
+  @property({ type: Object }) quotedPost: Post | null = null;
 
   /**
    * Whether this composer is in compact mode (for inline replies).
@@ -2156,6 +2162,7 @@ export class PostComposer extends LitElement {
         poll: pollPayload,
         scheduledAt,
         replyToId: this.replyTo?.id ?? null,
+        quotedStatusId: this.quotedPost?.id ?? null,
       };
 
       this.dispatchEvent(
@@ -2238,7 +2245,8 @@ export class PostComposer extends LitElement {
             spoilerText,
             this.visibility,
             undefined,
-            scheduledAt ?? undefined
+            scheduledAt ?? undefined,
+            this.quotedPost?.id
           );
         } else if (pollPayload) {
           await publishPollPost(
@@ -2257,7 +2265,8 @@ export class PostComposer extends LitElement {
             spoilerText,
             this.visibility,
             undefined,
-            scheduledAt ?? undefined
+            scheduledAt ?? undefined,
+            this.quotedPost?.id
           );
         }
       } catch (error) {
@@ -2349,6 +2358,7 @@ export class PostComposer extends LitElement {
     this.publishSuccess = false;
     this.replyTo = null;
     this.editingPost = null;
+    this.quotedPost = null;
     this._setActiveAttachment(null);
     this.editDialogOpen = false;
 
@@ -2637,6 +2647,23 @@ export class PostComposer extends LitElement {
     `;
   }
 
+  private _renderQuoteIndicator() {
+    if (!this.quotedPost) return nothing;
+
+    return html`
+      <div class="replying-to-indicator">
+        <span>${msg(str`Quoting @${this.quotedPost.account.acct}`)}</span>
+        <md-icon-button
+          label=${msg('Dismiss')}
+          src="/assets/close-outline.svg"
+          @click=${() => {
+            this.quotedPost = null;
+          }}
+        ></md-icon-button>
+      </div>
+    `;
+  }
+
   private _renderMentionPicker() {
     if (!this.mentionOpen) return nothing;
 
@@ -2841,6 +2868,7 @@ export class PostComposer extends LitElement {
           src="/assets/attach-outline.svg"
           @click="${() => this.attachFile()}"
           ?disabled=${this.pollEnabled ||
+          this.quotedPost != null ||
           this.attachments.length >= this.maxMediaAttachments}
         ></md-icon-button>
 
@@ -2863,15 +2891,16 @@ export class PostComposer extends LitElement {
                       src="/assets/calendar-outline.svg"
                     ></md-icon>
                     ${this.scheduleEnabled
-                      ? msg('Disable scheduling')
-                      : msg('Enable scheduling')}
+                      ? msg('Edit scheduled time')
+                      : msg('Schedule post')}
                   </md-menu-item>
                 `
               : nothing}
 
             <md-menu-item
               .selected=${this.pollEnabled}
-              ?disabled=${this.attachments.length > 0}
+              ?disabled=${this.attachments.length > 0 ||
+              this.quotedPost != null}
               @click=${() => this._togglePoll()}
             >
               <md-icon
@@ -3330,10 +3359,11 @@ export class PostComposer extends LitElement {
   render() {
     return html`
       <div class="composer-wrapper">
-        ${this._renderReplyIndicator()} ${this._renderTextArea()}
-        ${this._renderActions()} ${this._renderSensitiveWarning()}
-        ${this._renderPoll()} ${this._renderSchedule()}
-        ${this._renderAttachments()} ${this._renderFooter()}
+        ${this._renderReplyIndicator()} ${this._renderQuoteIndicator()}
+        ${this._renderTextArea()} ${this._renderActions()}
+        ${this._renderSensitiveWarning()} ${this._renderPoll()}
+        ${this._renderSchedule()} ${this._renderAttachments()}
+        ${this._renderFooter()}
       </div>
 
       ${this._renderDraftPickerDialog()}
