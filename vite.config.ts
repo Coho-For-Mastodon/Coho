@@ -316,6 +316,11 @@ export default defineConfig({
             if (id.includes('/node_modules/idb-keyval')) {
               return 'vendor-idb-keyval';
             }
+
+            //tslib
+            if (id.includes('/node_modules/tslib')) {
+              return 'vendor-tslib';
+            }
           }
         },
       },

@@ -557,6 +557,7 @@ describe('md-tabs accessibility', () => {
         </md-tabs>
       `);
       await elementUpdated(el);
+      await el.updateComplete;
 
       const tabBar = el.shadowRoot!.querySelector('.tab-bar')!;
       tabBar.dispatchEvent(
@@ -578,6 +579,7 @@ describe('md-tabs accessibility', () => {
         </md-tabs>
       `);
       await elementUpdated(el);
+      await el.updateComplete;
 
       const tabBar = el.shadowRoot!.querySelector('.tab-bar')!;
       tabBar.dispatchEvent(
@@ -599,6 +601,7 @@ describe('md-tabs accessibility', () => {
         </md-tabs>
       `);
       await elementUpdated(el);
+      await el.updateComplete;
 
       const tabBar = el.shadowRoot!.querySelector('.tab-bar')!;
       tabBar.dispatchEvent(
@@ -620,6 +623,7 @@ describe('md-tabs accessibility', () => {
         </md-tabs>
       `);
       await elementUpdated(el);
+      await el.updateComplete;
 
       const tabBar = el.shadowRoot!.querySelector('.tab-bar')!;
       tabBar.dispatchEvent(
@@ -641,6 +645,7 @@ describe('md-tabs accessibility', () => {
         </md-tabs>
       `);
       await elementUpdated(el);
+      await el.updateComplete;
 
       const tabBar = el.shadowRoot!.querySelector('.tab-bar')!;
       tabBar.dispatchEvent(
@@ -662,6 +667,7 @@ describe('md-tabs accessibility', () => {
         </md-tabs>
       `);
       await elementUpdated(el);
+      await el.updateComplete;
 
       const tabBar = el.shadowRoot!.querySelector('.tab-bar')!;
       tabBar.dispatchEvent(
@@ -685,6 +691,7 @@ describe('md-tabs accessibility', () => {
         </md-tabs>
       `);
       await elementUpdated(el);
+      await el.updateComplete;
 
       const tabBar = el.shadowRoot!.querySelector('.tab-bar')!;
       tabBar.dispatchEvent(
