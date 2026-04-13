@@ -10,12 +10,7 @@ import {
   resetLastPageID,
 } from '../services/timeline';
 import { Post } from '../interfaces/Post';
-import {
-  saveTimelineCache,
-  getTimelineCache,
-  updateCacheScrollPosition,
-  clearTimelineCache,
-} from '../services/timeline-cache';
+
 import { filterTimelinePosts } from '../services/filters';
 import { spinAnimation } from '../styles/animations';
 import type { FilterContext } from '../mastodon/types';
@@ -61,22 +56,35 @@ interface ImageAnalyzeData {
   };
 }
 
-import '../components/md/md-dialog';
-import '../components/md/md-button';
 import '../components/md/md-icon';
 import '../components/md/md-skeleton-card';
-import '../components/md/md-divider';
 import '@lit-labs/virtualizer';
 import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 import type { RenderItemFunction } from '@lit-labs/virtualizer/virtualize.js';
 
 import '../components/timeline-item';
-import '../components/search';
-import '../components/md/md-select';
-import '../components/md/md-option';
-import '../components/md/md-dropdown';
-import '../components/md/md-menu';
-import '../components/md/md-menu-item';
+
+// Lazy-loaded MD3 components: only needed on user interaction
+let _headerComponentsLoaded = false;
+let _dialogComponentsLoaded = false;
+
+function ensureHeaderComponents(): void {
+  if (!_headerComponentsLoaded) {
+    _headerComponentsLoaded = true;
+    import('../components/md/md-dropdown');
+    import('../components/md/md-menu');
+    import('../components/md/md-menu-item');
+    import('../components/md/md-divider');
+  }
+}
+
+function ensureDialogComponents(): void {
+  if (!_dialogComponentsLoaded) {
+    _dialogComponentsLoaded = true;
+    import('../components/md/md-dialog');
+    import('../components/md/md-button');
+  }
+}
 
 import { router } from '../router/routes';
 
@@ -85,8 +93,6 @@ export class Timeline extends LitElement {
   @state() timeline: Post[] = [];
   @state() loadingData: boolean = false;
   @state() lastScrollPosition: number = 0;
-
-  @state() imgPreview: string | undefined = undefined;
 
   @state() analyzeData: AnalyzeEntity[] | null = null;
   @state() imageDesc: string | undefined = undefined;
@@ -286,20 +292,6 @@ export class Timeline extends LitElement {
       #learn-more-header {
         padding-top: 0;
         margin-top: 0;
-      }
-
-      #img-preview {
-        --width: 80vw;
-      }
-
-      #img-preview::part(panel) {
-        height: 90vh;
-      }
-
-      #img-preview img {
-        width: 100%;
-        height: max-content;
-        border-radius: var(--md-sys-shape-corner-small);
       }
 
       lit-virtualizer,
@@ -563,9 +555,14 @@ export class Timeline extends LitElement {
   firstUpdated() {
     // Pull-to-refresh setup moved to updated() to handle conditional rendering
     this._setupKeyboardNavigation();
+
+    // Lazy-load header dropdown components if header is shown
+    if (this.header) {
+      ensureHeaderComponents();
+    }
   }
 
-  disconnectedCallback() {
+  async disconnectedCallback() {
     super.disconnectedCallback();
     this._observer?.disconnect();
     this._cleanupKeyboardNavigation();
@@ -577,6 +574,7 @@ export class Timeline extends LitElement {
     // Save timeline to cache when navigating away
     if (this.timeline.length > 0) {
       console.log('Saving timeline to cache on disconnect');
+      const { saveTimelineCache } = await import('../services/timeline-cache');
       saveTimelineCache(
         this.timelineType,
         this.timeline,
@@ -615,8 +613,9 @@ export class Timeline extends LitElement {
     window.addEventListener('refresh-timeline', this._handleRefreshEvent);
   }
 
-  private _handleRefreshEvent = () => {
+  private _handleRefreshEvent = async () => {
     if (this.isConnected && this.autoLoad) {
+      const { clearTimelineCache } = await import('../services/timeline-cache');
       clearTimelineCache(this.timelineType);
       this.refreshTimeline(true);
     }
@@ -1017,6 +1016,7 @@ export class Timeline extends LitElement {
     }
 
     // Check cache first
+    const { getTimelineCache } = await import('../services/timeline-cache');
     const cachedTimeline = getTimelineCache(this.timelineType);
     if (cachedTimeline && cachedTimeline.data.length > 0) {
       console.log('Restoring timeline from cache');
@@ -1062,8 +1062,11 @@ export class Timeline extends LitElement {
         let scrollTimeout: number;
         virtualizer.addEventListener('scroll', () => {
           clearTimeout(scrollTimeout);
-          scrollTimeout = window.setTimeout(() => {
+          scrollTimeout = window.setTimeout(async () => {
             this.lastScrollPosition = virtualizer.scrollTop;
+
+            const { updateCacheScrollPosition } =
+              await import('../services/timeline-cache');
             updateCacheScrollPosition(
               this.timelineType,
               this.lastScrollPosition
@@ -1151,6 +1154,7 @@ export class Timeline extends LitElement {
     this.pendingNewPosts = [];
 
     if (skipCache) {
+      const { clearTimelineCache } = await import('../services/timeline-cache');
       clearTimelineCache(this.timelineType);
       await resetLastPageID(this.timelineType);
     }
@@ -1159,6 +1163,7 @@ export class Timeline extends LitElement {
 
     // Save current timeline data before refreshing
     if (!skipCache && this.timeline.length > 0) {
+      const { saveTimelineCache } = await import('../services/timeline-cache');
       saveTimelineCache(
         this.timelineType,
         this.timeline,
@@ -1166,186 +1171,58 @@ export class Timeline extends LitElement {
       );
     }
 
+    const rawPosts = await this._fetchTimelinePosts();
+    if (rawPosts.length === 0) return;
+
+    this.timeline = [];
+    await this.updateComplete;
+
+    // Deduplicate by post ID
+    const uniquePosts = Array.from(
+      new Map(rawPosts.map((post: Post) => [post.id, post])).values()
+    ) as Post[];
+
+    // Enrich posts with reply context and apply filters
+    this.timeline = filterTimelinePosts(
+      await enrichPostsWithReplyContext(groupSelfThreads(uniquePosts)),
+      this._filterContext
+    );
+
+    // Save to cache after successful fetch
+    const { saveTimelineCache } = await import('../services/timeline-cache');
+    saveTimelineCache(this.timelineType, this.timeline, 0);
+
+    this.requestUpdate();
+  }
+
+  /** Fetch raw posts for the current timeline type. */
+  private async _fetchTimelinePosts(): Promise<Post[]> {
     switch (this.timelineType) {
+      case 'for you':
+      case 'home and some trending':
+        return mixTimeline('home');
+      case 'home':
+        return getPaginatedHomeTimeline('home');
+      case 'local': {
+        const { getPublicTimeline } = await import('../services/timeline');
+        return getPublicTimeline(true);
+      }
+      case 'federated': {
+        if (this.guestMode) return getPreviewTimeline();
+        const { getPublicTimeline } = await import('../services/timeline');
+        return getPublicTimeline(false);
+      }
+      case 'media': {
+        const posts = await getPaginatedHomeTimeline('home');
+        return posts.filter((post: Post) => post.media_attachments.length > 0);
+      }
       default: {
         if (this.timelineType.startsWith('list:')) {
           const listId = this.timelineType.split(':')[1];
           const { getListTimeline } = await import('../services/lists');
-          const listTimeline = await getListTimeline(listId);
-
-          this.timeline = [];
-          await this.updateComplete;
-
-          const uniqueList = Array.from(
-            new Map(listTimeline.map((post: Post) => [post.id, post])).values()
-          ) as Post[];
-
-          this.timeline = filterTimelinePosts(
-            await enrichPostsWithReplyContext(groupSelfThreads(uniqueList)),
-            this._filterContext
-          );
-
-          saveTimelineCache(this.timelineType, this.timeline, 0);
-
-          this.requestUpdate();
+          return getListTimeline(listId);
         }
-        break;
-      }
-      case 'for you': {
-        const timelineDataMix = await mixTimeline('home');
-        console.log('timelineData', timelineDataMix);
-
-        this.timeline = [];
-        await this.updateComplete;
-
-        // Deduplicate by post ID
-        const uniqueMix = Array.from(
-          new Map(timelineDataMix.map((post: Post) => [post.id, post])).values()
-        ) as Post[];
-
-        // Enrich posts with reply context and apply filters
-        this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(groupSelfThreads(uniqueMix)),
-          this._filterContext
-        );
-
-        // Save to cache after successful fetch
-        saveTimelineCache(this.timelineType, this.timeline, 0);
-
-        this.requestUpdate();
-        break;
-      }
-      case 'home and some trending': {
-        const timelineDataMix2 = await mixTimeline('home');
-        console.log('timelineData', timelineDataMix2);
-
-        this.timeline = [];
-        await this.updateComplete;
-
-        // Deduplicate by post ID
-        const uniqueMix2 = Array.from(
-          new Map(
-            timelineDataMix2.map((post: Post) => [post.id, post])
-          ).values()
-        ) as Post[];
-
-        // Enrich posts with reply context and apply filters
-        this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(groupSelfThreads(uniqueMix2)),
-          this._filterContext
-        );
-
-        // Save to cache after successful fetch
-        saveTimelineCache(this.timelineType, this.timeline, 0);
-
-        this.requestUpdate();
-        break;
-      }
-      case 'home': {
-        const timelineData = await getPaginatedHomeTimeline('home');
-
-        this.timeline = [];
-        await this.updateComplete;
-
-        // Deduplicate by post ID
-        const uniqueHome = Array.from(
-          new Map(timelineData.map((post: Post) => [post.id, post])).values()
-        ) as Post[];
-
-        // Enrich posts with reply context and apply filters
-        this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(groupSelfThreads(uniqueHome)),
-          this._filterContext
-        );
-
-        // Save to cache after successful fetch
-        saveTimelineCache(this.timelineType, this.timeline, 0);
-
-        this.requestUpdate();
-        break;
-      }
-      case 'local': {
-        const { getPublicTimeline } = await import('../services/timeline');
-        const timelineDataLocal = await getPublicTimeline(true);
-        console.log(timelineDataLocal);
-
-        this.timeline = [];
-        await this.updateComplete;
-
-        // Deduplicate by post ID
-        const uniquePub = Array.from(
-          new Map(
-            timelineDataLocal.map((post: Post) => [post.id, post])
-          ).values()
-        ) as Post[];
-
-        // Enrich posts with reply context and apply filters
-        this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(groupSelfThreads(uniquePub)),
-          this._filterContext
-        );
-
-        // Save to cache after successful fetch
-        saveTimelineCache(this.timelineType, this.timeline, 0);
-
-        this.requestUpdate();
-        break;
-      }
-      case 'federated': {
-        let timelineDataFed: Post[] = [];
-        if (this.guestMode) {
-          timelineDataFed = await getPreviewTimeline();
-        } else {
-          const { getPublicTimeline } = await import('../services/timeline');
-          timelineDataFed = await getPublicTimeline(false);
-        }
-
-        this.timeline = [];
-        await this.updateComplete;
-
-        // Deduplicate by post ID
-        const uniqueFed = Array.from(
-          new Map(timelineDataFed.map((post: Post) => [post.id, post])).values()
-        ) as Post[];
-
-        // Enrich posts with reply context and apply filters
-        this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(groupSelfThreads(uniqueFed)),
-          this._filterContext
-        );
-
-        // Save to cache after successful fetch
-        saveTimelineCache(this.timelineType, this.timeline, 0);
-
-        this.requestUpdate();
-        break;
-      }
-      case 'media': {
-        console.log('media timeline');
-        const timelineDataMedia = await getPaginatedHomeTimeline('home');
-
-        // filter out tweets that don't have media
-        const mediaFiltered = (timelineDataMedia as Array<Post>).filter(
-          (tweet: Post) => tweet.media_attachments.length > 0
-        );
-        console.log(mediaFiltered);
-
-        // Deduplicate by post ID
-        const uniqueMedia = Array.from(
-          new Map(mediaFiltered.map((post: Post) => [post.id, post])).values()
-        ) as Post[];
-
-        // Enrich posts with reply context and apply filters
-        this.timeline = filterTimelinePosts(
-          await enrichPostsWithReplyContext(groupSelfThreads(uniqueMedia)),
-          this._filterContext
-        );
-
-        // Save to cache after successful fetch
-        saveTimelineCache(this.timelineType, this.timeline, 0);
-
-        this.requestUpdate();
-        break;
+        return [];
       }
     }
   }
@@ -1412,6 +1289,7 @@ export class Timeline extends LitElement {
 
     this.timeline = [...this.timeline, ...enrichedNewPosts];
 
+    const { saveTimelineCache } = await import('../services/timeline-cache');
     // Update cache with new data
     saveTimelineCache(
       this.timelineType,
@@ -1504,6 +1382,8 @@ export class Timeline extends LitElement {
           groupSelfThreads(newPosts)
         );
         this.pendingNewPosts = enrichedNewPosts;
+        // Ensure md-button is loaded before the "new posts" button renders
+        ensureDialogComponents();
         console.log(`Found ${enrichedNewPosts.length} new posts`);
       } else {
         console.log('No new posts found');
@@ -1523,7 +1403,7 @@ export class Timeline extends LitElement {
    * Show pending new posts by prepending them to the timeline.
    * Called when user clicks the "X new posts" button.
    */
-  public showPendingPosts() {
+  public async showPendingPosts() {
     if (this.pendingNewPosts.length === 0) {
       return;
     }
@@ -1541,6 +1421,7 @@ export class Timeline extends LitElement {
     this.pendingNewPosts = [];
 
     // Update cache with new data
+    const { saveTimelineCache } = await import('../services/timeline-cache');
     saveTimelineCache(this.timelineType, this.timeline, 0);
 
     console.log(
@@ -1574,6 +1455,9 @@ export class Timeline extends LitElement {
     imageData: ImageAnalyzeData | null,
     tweet: Post
   ) {
+    // Ensure md-dialog and md-button are loaded before showing
+    ensureDialogComponents();
+
     this.analyzeData = null;
     this.imageDesc = undefined;
     this.analyzeTweet = null;
@@ -1666,20 +1550,6 @@ export class Timeline extends LitElement {
 
   render() {
     return html`
-      <md-dialog
-        id="img-preview"
-        .open=${!!this.imgPreview}
-        label="Image Preview"
-      >
-        ${this.imgPreview
-          ? html`<img
-              src="${this.imgPreview}"
-              alt="Image preview"
-              style="width:100%;border-radius:var(--md-sys-shape-corner-small);"
-            />`
-          : null}
-      </md-dialog>
-
       ${this.header
         ? html`<div id="timeline-header">
             <md-dropdown>
@@ -1755,7 +1625,9 @@ export class Timeline extends LitElement {
             <md-icon-button
               id="refresh-manual-button"
               circle
-              @click="${() => {
+              @click="${async () => {
+                const { clearTimelineCache } =
+                  await import('../services/timeline-cache');
                 clearTimelineCache(this.timelineType);
                 this.refreshTimeline(true);
               }}"

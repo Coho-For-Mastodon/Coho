@@ -1,9 +1,16 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
+import { isServer } from 'lit';
 
 import type { TabChangeDetail } from '../../types/events';
 import type { MdTab } from './md-tab';
 import type { MdTabPanel } from './md-tab-panel';
+
+// Feature detection for the focusgroup HTML attribute.
+// When supported, the browser handles arrow-key navigation and tab-stop
+// collapsing for composite widgets, replacing manual roving tabindex JS.
+const supportsNativeFocusgroup =
+  !isServer && 'focusgroup' in HTMLElement.prototype;
 
 // Counter for generating unique IDs across all md-tabs instances
 let tabsIdCounter = 0;
@@ -60,18 +67,14 @@ export class MdTabs extends LitElement {
   /** Unique ID for this tabs instance (used for aria-controls/aria-labelledby) */
   private _tabsId = `md-tabs-${++tabsIdCounter}`;
 
-  private _observer: MutationObserver;
+  private _observer: MutationObserver | undefined;
+  private _mobileQuery: MediaQueryList | undefined;
+  private _isMobile = false;
+  private _fallbackKeydownHandler?: (e: KeyboardEvent) => void;
+  private _fallbackReady: Promise<void> = Promise.resolve();
 
   @query('slot[name="nav"]') private navSlot!: HTMLSlotElement;
   @query('slot:not([name])') private panelSlot!: HTMLSlotElement;
-
-  constructor() {
-    super();
-    this._observer = new MutationObserver(() => {
-      // Debounce updates if needed, but for now simple call is fine
-      this._updatePanels();
-    });
-  }
 
   static styles = css`
     :host {
@@ -172,21 +175,13 @@ export class MdTabs extends LitElement {
       display: block;
     }
 
-    /* Dark mode */
+    /* Dark mode - update border fallback */
     @media (prefers-color-scheme: dark) {
       :host([orientation='horizontal']) .tab-bar {
-        background: transparent;
         border-color: var(
           --md-sys-color-outline-variant,
           var(--sl-color-neutral-700)
         );
-      }
-
-      :host([orientation='horizontal'][placement='bottom']) .tab-bar {
-      }
-
-      :host([orientation='vertical']) .tab-bar {
-        background: transparent;
       }
     }
 
@@ -227,13 +222,20 @@ export class MdTabs extends LitElement {
       'tab-selected',
       this._handleTabSelected as EventListener
     );
-    // Observe light DOM for changes (including nested tabs in wrappers like home-tabs-nav)
+    if (!this._observer) {
+      this._observer = new MutationObserver(() => {
+        this._updatePanels();
+      });
+    }
     this._observer.observe(this, {
       childList: true,
       subtree: true,
-      attributes: false, // We handle attributes in updatePanels, looking for structural changes here
+      attributes: false,
       characterData: false,
     });
+    this._mobileQuery = window.matchMedia('(max-width: 820px)');
+    this._isMobile = this._mobileQuery.matches;
+    this._mobileQuery.addEventListener('change', this._handleMobileChange);
   }
 
   disconnectedCallback() {
@@ -242,8 +244,22 @@ export class MdTabs extends LitElement {
       'tab-selected',
       this._handleTabSelected as EventListener
     );
-    this._observer.disconnect();
+    this._observer?.disconnect();
+    this._mobileQuery?.removeEventListener('change', this._handleMobileChange);
+    if (this._fallbackKeydownHandler) {
+      this.shadowRoot
+        ?.querySelector('.tab-bar')
+        ?.removeEventListener(
+          'keydown',
+          this._fallbackKeydownHandler as EventListener
+        );
+    }
   }
+
+  private _handleMobileChange = (e: MediaQueryListEvent) => {
+    this._isMobile = e.matches;
+    this._updatePanels();
+  };
 
   firstUpdated() {
     // Set initial active tab
@@ -257,6 +273,49 @@ export class MdTabs extends LitElement {
       }
     }
     this._updatePanels();
+
+    if (!supportsNativeFocusgroup) {
+      this._fallbackReady = this._installFallbackKeyboardNav();
+    }
+  }
+
+  /** Include the lazy-loaded fallback in updateComplete so consumers can await it. */
+  protected override async getUpdateComplete(): Promise<boolean> {
+    const result = await super.getUpdateComplete();
+    await this._fallbackReady;
+    return result;
+  }
+
+  /**
+   * Lazy-load and install WAI-ARIA keyboard navigation as a fallback
+   * for browsers that don't support the native focusgroup attribute.
+   */
+  private async _installFallbackKeyboardNav() {
+    const { createTablistKeydownHandler } =
+      await import('./md-tabs-keyboard-fallback.js');
+    this._fallbackKeydownHandler = createTablistKeydownHandler({
+      getTabs: () => this._getTabs(),
+      getActivePanel: () => this._activePanel,
+      getOrientation: () => this.orientation,
+      activate: (panel, tab) => {
+        this._activePanel = panel;
+        this._updatePanels();
+        tab.focus();
+        this.dispatchEvent(
+          new CustomEvent<TabChangeDetail>('tab-change', {
+            detail: { panel },
+            bubbles: true,
+            composed: true,
+          })
+        );
+      },
+    });
+    this.shadowRoot
+      ?.querySelector('.tab-bar')
+      ?.addEventListener(
+        'keydown',
+        this._fallbackKeydownHandler as EventListener
+      );
   }
 
   updated(changedProperties: Map<string, unknown>) {
@@ -328,9 +387,19 @@ export class MdTabs extends LitElement {
 
     // Update tabs active state and data attributes for Firefox
     tabs.forEach((tab, index) => {
-      // Set orientation and placement data attributes for Firefox compatibility
       tab.setAttribute('data-orientation', this.orientation);
       tab.setAttribute('data-placement', this.placement);
+
+      // Stacked layout: vertical, bottom placement, or mobile bottom nav
+      const isStacked =
+        this.orientation === 'vertical' ||
+        this.placement === 'bottom' ||
+        (this.orientation === 'horizontal' && this._isMobile);
+      if (isStacked) {
+        tab.setAttribute('data-stacked', '');
+      } else {
+        tab.removeAttribute('data-stacked');
+      }
 
       // Set unique IDs for accessibility linking
       const tabId = `${this._tabsId}-tab-${index}`;
@@ -341,12 +410,25 @@ export class MdTabs extends LitElement {
       const isActive = tab.panel === this._activePanel;
       if (isActive) {
         tab.setAttribute('active', '');
-        // Only the active tab should be in the tab order (roving tabindex)
-        tab.setAttribute('tabindex', '0');
+        if (supportsNativeFocusgroup) {
+          // focusgroup + nomemory: re-entry always focuses the focusgroupstart element
+          tab.setAttribute('focusgroupstart', '');
+          // All tabs need tabindex="0" so the browser can discover them as
+          // focusgroup participants (custom elements aren't natively focusable).
+          // The browser collapses them into a single Tab stop automatically.
+          tab.setAttribute('tabindex', '0');
+        } else {
+          // Fallback: roving tabindex — only the active tab is in the tab order
+          tab.setAttribute('tabindex', '0');
+        }
       } else {
         tab.removeAttribute('active');
-        // Inactive tabs are not in the tab order
-        tab.setAttribute('tabindex', '-1');
+        if (supportsNativeFocusgroup) {
+          tab.removeAttribute('focusgroupstart');
+          tab.setAttribute('tabindex', '0');
+        } else {
+          tab.setAttribute('tabindex', '-1');
+        }
       }
     });
 
@@ -366,63 +448,24 @@ export class MdTabs extends LitElement {
   }
 
   /**
-   * Handle keyboard navigation within the tablist
-   * Implements WAI-ARIA tab pattern: Arrow keys, Home, End
+   * Auto-activate a tab when it receives focus via native focusgroup arrow navigation.
+   * This preserves the automatic activation pattern (arrow moves focus AND activates).
    */
-  private _handleTablistKeyDown(e: KeyboardEvent) {
-    const tabs = this._getTabs().filter((tab) => !tab.disabled);
-    if (tabs.length === 0) return;
+  private _handleTabFocused(e: FocusEvent) {
+    const target = e.composedPath()[0] as HTMLElement;
+    if (target?.tagName?.toLowerCase() !== 'md-tab') return;
+    const tab = target as unknown as MdTab;
+    if (tab.disabled || tab.panel === this._activePanel) return;
 
-    const isHorizontal = this.orientation === 'horizontal';
-    const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
-    const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
-
-    let handled = false;
-    let targetTab: MdTab | undefined;
-
-    const currentIndex = tabs.findIndex(
-      (tab) => tab.panel === this._activePanel
+    this._activePanel = tab.panel;
+    this._updatePanels();
+    this.dispatchEvent(
+      new CustomEvent<TabChangeDetail>('tab-change', {
+        detail: { panel: tab.panel },
+        bubbles: true,
+        composed: true,
+      })
     );
-
-    switch (e.key) {
-      case prevKey:
-        // Move to previous tab (wrap around)
-        targetTab = tabs[(currentIndex - 1 + tabs.length) % tabs.length];
-        handled = true;
-        break;
-      case nextKey:
-        // Move to next tab (wrap around)
-        targetTab = tabs[(currentIndex + 1) % tabs.length];
-        handled = true;
-        break;
-      case 'Home':
-        // Move to first tab
-        targetTab = tabs[0];
-        handled = true;
-        break;
-      case 'End':
-        // Move to last tab
-        targetTab = tabs[tabs.length - 1];
-        handled = true;
-        break;
-    }
-
-    if (handled && targetTab) {
-      e.preventDefault();
-      // Activate the tab (automatic activation pattern)
-      this._activePanel = targetTab.panel;
-      this._updatePanels();
-      // Focus the tab button
-      targetTab.focus();
-      // Emit tab-change event
-      this.dispatchEvent(
-        new CustomEvent<TabChangeDetail>('tab-change', {
-          detail: { panel: targetTab.panel },
-          bubbles: true,
-          composed: true,
-        })
-      );
-    }
   }
 
   render() {
@@ -431,7 +474,12 @@ export class MdTabs extends LitElement {
         class="tab-bar"
         role="tablist"
         aria-orientation="${this.orientation}"
-        @keydown="${this._handleTablistKeyDown}"
+        focusgroup=${supportsNativeFocusgroup
+          ? this.orientation === 'vertical'
+            ? 'tablist nomemory block'
+            : 'tablist nomemory'
+          : nothing}
+        @focusin=${supportsNativeFocusgroup ? this._handleTabFocused : nothing}
       >
         <slot name="nav" @slotchange="${() => this._updatePanels()}"></slot>
       </div>

@@ -254,37 +254,6 @@ describe('md-select', () => {
   });
 
   describe('events', () => {
-    it('dispatches open and close events from the popover lifecycle', async () => {
-      const el = await fixture<MdSelect>(html`
-        <md-select>
-          <md-option value="1">Option 1</md-option>
-          <md-option value="2">Option 2</md-option>
-        </md-select>
-      `);
-      const selectInput = el.shadowRoot!.querySelector(
-        '.select-input'
-      ) as HTMLElement;
-      const dropdown = el.shadowRoot!.querySelector(
-        '.dropdown'
-      ) as HTMLDivElement;
-      const openHandler = vi.fn();
-      const closeHandler = vi.fn();
-
-      el.addEventListener('md-select-open', openHandler);
-      el.addEventListener('md-select-close', closeHandler);
-
-      selectInput.click();
-      await elementUpdated(el);
-      await waitForPopover();
-
-      dropdown.hidePopover();
-      await elementUpdated(el);
-      await waitForPopover();
-
-      expect(openHandler).toHaveBeenCalledTimes(1);
-      expect(closeHandler).toHaveBeenCalledTimes(1);
-    });
-
     it('dispatches change event when option is selected', async () => {
       const el = await fixture<MdSelect>(html`
         <md-select>

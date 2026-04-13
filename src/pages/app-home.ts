@@ -4,14 +4,10 @@ import { msg } from '@lit/localize';
 import { localized } from '@lit/localize';
 
 // Core components needed for initial render
-import '../components/timeline';
 import '../components/md/md-tabs';
 import '../components/md/md-tab';
 import '../components/md/md-tab-panel';
-import '../components/md/md-icon';
-import '../components/md/md-button';
 import '../components/offline-notify';
-import '../components/home-sidebar';
 import '../components/home-tabs-nav';
 import '../components/header';
 
@@ -162,6 +158,16 @@ export class AppHome extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
+
+    // Eagerly start loading the timeline component (non-blocking).
+    // Vite will preload this chunk so the download starts immediately.
+    // The <app-timeline> element upgrades automatically once defined.
+    import('../components/timeline');
+
+    const bigScreenQuery = window.matchMedia('(min-width: 821px)');
+    if (bigScreenQuery.matches) {
+      import('../components/home-sidebar');
+    }
 
     // Restore sidebar data synchronously from sessionStorage
     // so the first render already has content — no skeleton flash.
@@ -463,32 +469,32 @@ export class AppHome extends LitElement {
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }
 
-  async openNewDialog(
-    shareName?: string,
-    origin?: { x: number; y: number },
-    shareText?: string
-  ) {
-    // Lazy load post-dialog component
+  /**
+   * Lazily load the post-dialog component and add it to the DOM.
+   * Returns the dialog instance (or null).
+   */
+  private async _ensurePostDialog(): Promise<PostDialog | null> {
     if (!this.postDialogLoaded) {
       if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
         this.postDialogLoaded = true;
       }
     }
-
-    // Add dialog to DOM
     await this.overlays.show('post-dialog');
-
-    // Wait for the custom element to be defined and upgraded
     await customElements.whenDefined('post-dialog');
-
-    // Wait for Lit to update the DOM with the upgraded element
     await this.updateComplete;
-
-    // Wait for the post-dialog's own shadow DOM to render
     if (this.postDialog) {
       await this.postDialog.updateComplete;
-      await this.postDialog.openNewDialog(shareName, origin, shareText);
     }
+    return this.postDialog || null;
+  }
+
+  async openNewDialog(
+    shareName?: string,
+    origin?: { x: number; y: number },
+    shareText?: string
+  ) {
+    const dialog = await this._ensurePostDialog();
+    await dialog?.openNewDialog(shareName, origin, shareText);
   }
 
   async openSettingsDrawer() {
@@ -510,17 +516,17 @@ export class AppHome extends LitElement {
   }
 
   async openAccountSwitcherDialog(origin?: { x: number; y: number }) {
-    if (this.isGuestMode) {
-      return;
-    }
+    if (this.isGuestMode) return;
 
-    await Promise.all([
-      import('../components/md/md-dialog'),
-      import('../components/account-manager'),
-    ]);
-    await this.overlays.show('account-switcher-dialog');
-    await customElements.whenDefined('account-manager');
-    await this.updateComplete;
+    await this._openOverlay(
+      'account-switcher-dialog',
+      () =>
+        Promise.all([
+          import('../components/md/md-dialog'),
+          import('../components/account-manager'),
+        ]),
+      'account-manager'
+    );
 
     if (this.accountSwitcherDialog) {
       this.accountSwitcherDialog.setOpenOrigin(origin);
@@ -601,15 +607,31 @@ export class AppHome extends LitElement {
     this.lists = event.detail.lists;
   };
 
+  /**
+   * Shared helper: import a component, add its overlay to the DOM, and wait for it to be ready.
+   */
+  private async _openOverlay(
+    overlayId: string,
+    importFn: () => Promise<unknown>,
+    tagName: string
+  ): Promise<void> {
+    await importFn();
+    await this.overlays.show(overlayId);
+    await customElements.whenDefined(tagName);
+    await this.updateComplete;
+  }
+
   private async openListsDialog() {
     if (this.isGuestMode) return;
 
     const { ensureListsDialogLoaded } = await import('../utils/list-dialogs');
     await ensureListsDialogLoaded();
 
-    await this.overlays.show('lists-dialog');
-    await customElements.whenDefined('lists-dialog');
-    await this.updateComplete;
+    await this._openOverlay(
+      'lists-dialog',
+      () => Promise.resolve(),
+      'lists-dialog'
+    );
     this.listsDialog?.show();
   }
 
@@ -622,9 +644,11 @@ export class AppHome extends LitElement {
       await import('../utils/list-dialogs');
     await ensureListMembershipDialogLoaded();
 
-    await this.overlays.show('list-membership-dialog');
-    await customElements.whenDefined('list-membership-dialog');
-    await this.updateComplete;
+    await this._openOverlay(
+      'list-membership-dialog',
+      () => Promise.resolve(),
+      'list-membership-dialog'
+    );
     this.listMembershipDialog?.show(account);
   }
 
@@ -635,23 +659,21 @@ export class AppHome extends LitElement {
 
   private async openFiltersDialog() {
     if (this.isGuestMode) return;
-
-    await import('../components/filters-dialog');
-
-    await this.overlays.show('filters-dialog');
-    await customElements.whenDefined('filters-dialog');
-    await this.updateComplete;
+    await this._openOverlay(
+      'filters-dialog',
+      () => import('../components/filters-dialog'),
+      'filters-dialog'
+    );
     this.filtersDialog?.show();
   }
 
   private async openScheduledStatusesDialog() {
     if (this.isGuestMode) return;
-
-    await import('../components/scheduled-statuses-dialog');
-
-    await this.overlays.show('scheduled-statuses-dialog');
-    await customElements.whenDefined('scheduled-statuses-dialog');
-    await this.updateComplete;
+    await this._openOverlay(
+      'scheduled-statuses-dialog',
+      () => import('../components/scheduled-statuses-dialog'),
+      'scheduled-statuses-dialog'
+    );
     this.scheduledStatusesDialog?.show();
   }
 
@@ -708,21 +730,8 @@ export class AppHome extends LitElement {
   }
 
   async handleEditPost(tweet: Post) {
-    // Lazy load post-dialog component
-    if (!this.postDialogLoaded) {
-      if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
-        this.postDialogLoaded = true;
-      }
-    }
-
-    await this.overlays.show('post-dialog');
-    await customElements.whenDefined('post-dialog');
-    await this.updateComplete;
-
-    if (this.postDialog) {
-      await this.postDialog.updateComplete;
-      this.postDialog.openEditDialog(tweet);
-    }
+    const dialog = await this._ensurePostDialog();
+    dialog?.openEditDialog(tweet);
   }
 
   async disconnectedCallback() {
@@ -769,20 +778,8 @@ export class AppHome extends LitElement {
     const post = e.detail.tweet;
     if (!post) return;
 
-    if (!this.postDialogLoaded) {
-      if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
-        this.postDialogLoaded = true;
-      }
-    }
-
-    await this.overlays.show('post-dialog');
-    await customElements.whenDefined('post-dialog');
-    await this.updateComplete;
-
-    if (this.postDialog) {
-      await this.postDialog.updateComplete;
-      this.postDialog.openReplyDialog(post);
-    }
+    const dialog = await this._ensurePostDialog();
+    dialog?.openReplyDialog(post);
   };
 
   // Tab name to loader key
@@ -808,6 +805,14 @@ export class AppHome extends LitElement {
     // Handle specific side effects (like notifications) here or in controller callback
     if (tabName === 'notifications') {
       await this.handleNotificationsSideEffects();
+    }
+
+    // Tabs that reuse an already-loaded component (app-timeline) — just mark as loaded
+    if (tabName === 'media' || tabName === 'custom') {
+      if (!this.loadedTabs.has(tabName)) {
+        this.loadedTabs = new Set(this.loadedTabs).add(tabName);
+      }
+      return;
     }
 
     const config = AppHome.tabConfig[tabName];
@@ -1248,13 +1253,15 @@ export class AppHome extends LitElement {
             ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="media">
-            <app-timeline
-              timelineType="media"
-              .lists="${this.lists}"
-              @manage-lists="${() => this.openListsDialog()}"
-              @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
-                this.openListMembershipDialog(event.detail.account)}"
-            ></app-timeline>
+            ${this.loadedTabs.has('media')
+              ? html`<app-timeline
+                  timelineType="media"
+                  .lists="${this.lists}"
+                  @manage-lists="${() => this.openListsDialog()}"
+                  @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
+                    this.openListMembershipDialog(event.detail.account)}"
+                ></app-timeline>`
+              : nothing}
           </md-tab-panel>
           <md-tab-panel name="messages">
             ${this.loadedTabs.has('messages')
@@ -1262,13 +1269,15 @@ export class AppHome extends LitElement {
               : nothing}
           </md-tab-panel>
           <md-tab-panel name="custom">
-            <app-timeline
-              timelineType="federated"
-              .lists="${this.lists}"
-              @manage-lists="${() => this.openListsDialog()}"
-              @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
-                this.openListMembershipDialog(event.detail.account)}"
-            ></app-timeline>
+            ${this.loadedTabs.has('custom')
+              ? html`<app-timeline
+                  timelineType="federated"
+                  .lists="${this.lists}"
+                  @manage-lists="${() => this.openListsDialog()}"
+                  @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
+                    this.openListMembershipDialog(event.detail.account)}"
+                ></app-timeline>`
+              : nothing}
           </md-tab-panel>
           <md-tab-panel name="bookmarks">
             ${this.loadedTabs.has('bookmarks')

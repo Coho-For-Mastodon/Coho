@@ -31,23 +31,35 @@ export class OfflineNotify extends LitElement {
 
   constructor() {
     super();
+    this.network_status = true;
+  }
 
-    window.addEventListener('offline', () => {
-      this.network_status = false;
+  connectedCallback() {
+    super.connectedCallback();
 
-      this.showOfflineToast();
-    });
-
-    window.addEventListener('online', () => {
-      if (this.network_status === false) {
-        this.network_status = true;
-
-        this.showBackOnlineToast();
-      }
-    });
-
+    window.addEventListener('offline', this._handleOffline);
+    window.addEventListener('online', this._handleOnline);
     this.network_status = navigator.onLine;
   }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+
+    window.removeEventListener('offline', this._handleOffline);
+    window.removeEventListener('online', this._handleOnline);
+  }
+
+  private _handleOffline = () => {
+    this.network_status = false;
+    this.showOfflineToast();
+  };
+
+  private _handleOnline = () => {
+    if (this.network_status === false) {
+      this.network_status = true;
+      this.showBackOnlineToast();
+    }
+  };
 
   showOfflineToast() {
     if (this.offlineToast) {

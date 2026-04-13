@@ -317,7 +317,8 @@ export default defineConfig({
               return 'vendor-idb-keyval';
             }
 
-            // Separate tslib for better caching (stable dependency)
+            // Keep tslib in a dedicated chunk so shared TypeScript helper code can
+            // be cached independently instead of being duplicated across vendor bundles.
             if (id.includes('/node_modules/tslib')) {
               return 'vendor-tslib';
             }

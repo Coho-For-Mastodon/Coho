@@ -93,7 +93,7 @@ CPU-heavy tasks are offloaded to Web Workers to keep the main thread responsive:
 
 - **Custom SW builds**: Vite builds the SW separately for dev and production with inlined dependencies.
 - **Template minification**: Custom plugins minify Lit `html`` and `css`` templates.
-- **SSR login shell**: `scripts/ssr-login.mjs` can pre-render the login view and inject it into `dist/index.html` for faster LCP.
+- **SSR shells**: `scripts/ssr-shells.mjs` pre-renders the login and home shells via Lit SSR and injects them into `dist/index.html` for faster LCP.
 
 ## Data Flow (Typical Request)
 

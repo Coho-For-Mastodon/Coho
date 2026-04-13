@@ -21,7 +21,6 @@ import {
   TimelineItemHandlers,
   TimelineItemState,
 } from './timeline-renderers';
-import './report-dialog';
 import type { ReportSubmitDetail } from './report-dialog';
 import { handleStatusContentClick } from '../utils/content-links';
 
@@ -1482,7 +1481,10 @@ export class TimelineItem extends LitElement {
     this.reportAccountId = accountId;
     this.reportAccountAcct = accountAcct;
     this.reportStatusId = statusId;
-    this.showReportDialog = true;
+    // Lazy-load report dialog on first use
+    import('./report-dialog').then(() => {
+      this.showReportDialog = true;
+    });
   }
 
   async handleReportSubmit(e: CustomEvent<ReportSubmitDetail>) {

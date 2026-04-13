@@ -12,12 +12,28 @@ import '../components/user-profile';
 import '../components/md/md-card';
 import '../components/md/md-icon';
 import '../components/md/md-icon-button';
-import '../components/image-carousel';
 import '../components/md/md-button';
 import '../components/md/md-dropdown';
 import '../components/md/md-menu';
 import '../components/md/md-menu-item';
-import '../components/timeline-poll';
+
+// Lazy-loaded: only needed when posts have media or polls
+let _carouselLoaded = false;
+let _pollLoaded = false;
+
+function ensureCarousel(): void {
+  if (!_carouselLoaded) {
+    _carouselLoaded = true;
+    import('../components/image-carousel');
+  }
+}
+
+function ensurePoll(): void {
+  if (!_pollLoaded) {
+    _pollLoaded = true;
+    import('../components/timeline-poll');
+  }
+}
 
 /**
  * Returns a provider label for display, preferring the explicit providerName
@@ -232,19 +248,21 @@ export function renderReplyContext(
             )}"
           ></div>`}
       ${!state.tweet?.reply_to?.sensitive && state.tweet?.reply_to?.poll
-        ? html`<timeline-poll .post=${state.tweet.reply_to}></timeline-poll>`
+        ? (ensurePoll(),
+          html`<timeline-poll .post=${state.tweet.reply_to}></timeline-poll>`)
         : null}
       ${!state.tweet?.reply_to?.sensitive &&
       state.tweet?.reply_to?.media_attachments &&
       state.tweet.reply_to.media_attachments.length > 0
-        ? html`
+        ? (ensureCarousel(),
+          html`
             <image-carousel
               .images="${state.tweet.reply_to.media_attachments}"
               .mediaArtist="${state.tweet.reply_to.account.display_name}"
               .mediaArtwork="${state.tweet.reply_to.account.avatar}"
             >
             </image-carousel>
-          `
+          `)
         : html``}
 
       <div class="actions" slot="footer">
@@ -498,7 +516,8 @@ export function renderRegularTweet(
 
       ${
         !state.tweet?.sensitive && state.tweet?.poll
-          ? html`<timeline-poll .post=${state.tweet}></timeline-poll>`
+          ? (ensurePoll(),
+            html`<timeline-poll .post=${state.tweet}></timeline-poll>`)
           : null
       }
 
@@ -507,14 +526,15 @@ export function renderRegularTweet(
         state.tweet &&
         state.tweet.media_attachments &&
         state.tweet.media_attachments.length > 0
-          ? html`
+          ? (ensureCarousel(),
+            html`
               <image-carousel
                 .images="${state.tweet.media_attachments}"
                 mediaArtist="${state.tweet.account.display_name}"
                 mediaArtwork="${state.tweet.account.avatar}"
               >
               </image-carousel>
-            `
+            `)
           : html``
       }
       ${
@@ -669,19 +689,21 @@ export function renderThreadContinuation(
                 )}"
               ></div>`}
           ${!threadPost.sensitive && threadPost.poll
-            ? html`<timeline-poll .post=${threadPost}></timeline-poll>`
+            ? (ensurePoll(),
+              html`<timeline-poll .post=${threadPost}></timeline-poll>`)
             : null}
           ${!threadPost.sensitive &&
           threadPost.media_attachments &&
           threadPost.media_attachments.length > 0
-            ? html`
+            ? (ensureCarousel(),
+              html`
                 <image-carousel
                   .images="${threadPost.media_attachments}"
                   mediaArtist="${threadPost.account.display_name}"
                   mediaArtwork="${threadPost.account.avatar}"
                 >
                 </image-carousel>
-              `
+              `)
             : html``}
           ${!threadPost.sensitive
             ? renderLinkCard(
@@ -943,19 +965,21 @@ export function renderReblog(
       ></div>
 
       ${!state.tweet.reblog.sensitive && state.tweet.reblog.poll
-        ? html`<timeline-poll .post=${state.tweet.reblog}></timeline-poll>`
+        ? (ensurePoll(),
+          html`<timeline-poll .post=${state.tweet.reblog}></timeline-poll>`)
         : null}
       ${!state.tweet.reblog.sensitive &&
       state.tweet.reblog.media_attachments &&
       state.tweet.reblog.media_attachments.length > 0
-        ? html`
+        ? (ensureCarousel(),
+          html`
             <image-carousel
               .images="${state.tweet.reblog.media_attachments}"
               mediaArtist="${state.tweet.reblog.account.display_name}"
               mediaArtwork="${state.tweet.reblog.account.avatar}"
             >
             </image-carousel>
-          `
+          `)
         : html``}
       ${!state.tweet.reblog.sensitive
         ? renderLinkCard(
@@ -1065,19 +1089,21 @@ export function renderThreadAncestors(
                   )}"
                 ></div>`}
             ${!threadPost.sensitive && threadPost.poll
-              ? html`<timeline-poll .post=${threadPost}></timeline-poll>`
+              ? (ensurePoll(),
+                html`<timeline-poll .post=${threadPost}></timeline-poll>`)
               : null}
             ${!threadPost.sensitive &&
             threadPost.media_attachments &&
             threadPost.media_attachments.length > 0
-              ? html`
+              ? (ensureCarousel(),
+                html`
                   <image-carousel
                     .images="${threadPost.media_attachments}"
                     mediaArtist="${threadPost.account.display_name}"
                     mediaArtwork="${threadPost.account.avatar}"
                   >
                   </image-carousel>
-                `
+                `)
               : html``}
             ${!threadPost.sensitive
               ? renderLinkCard(

@@ -80,10 +80,8 @@ export class MdTab extends LitElement {
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* Vertical orientation (side nav) - stacked icon/label layout like MD3 nav rail */
-      :host([data-orientation='vertical']) .tab-inner,
-      :host([data-orientation='horizontal'][data-placement='bottom'])
-        .tab-inner {
+      /* Stacked layout (vertical, bottom placement, or mobile) */
+      :host([data-stacked]) .tab-inner {
         flex-direction: column;
         justify-content: center;
         align-items: center;
@@ -103,10 +101,8 @@ export class MdTab extends LitElement {
         width: 80px;
       }
 
-      /* Icon container with pill background for vertical nav and mobile bottom nav */
-      :host([data-orientation='vertical']) .icon-container,
-      :host([data-orientation='horizontal'][data-placement='bottom'])
-        .icon-container {
+      /* Icon container with pill background for stacked layout */
+      :host([data-stacked]) .icon-container {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -116,9 +112,7 @@ export class MdTab extends LitElement {
         transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
       }
 
-      :host([data-orientation='vertical']:hover) .icon-container,
-      :host([data-orientation='horizontal'][data-placement='bottom']:hover)
-        .icon-container {
+      :host([data-stacked]:hover) .icon-container {
         background: color-mix(
           in srgb,
           var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600)) 8%,
@@ -126,9 +120,7 @@ export class MdTab extends LitElement {
         );
       }
 
-      :host([active][data-orientation='vertical']) .icon-container,
-      :host([active][data-orientation='horizontal'][data-placement='bottom'])
-        .icon-container {
+      :host([active][data-stacked]) .icon-container {
         background: var(
           --md-sys-color-secondary-container,
           color-mix(
@@ -182,19 +174,17 @@ export class MdTab extends LitElement {
         border-radius: inherit;
       }
 
-      /* Only show hover overlay for horizontal tabs */
-      :host(:not([data-orientation='vertical'])) .tab-inner:hover::before {
+      /* Only show hover overlay for non-stacked tabs */
+      :host(:not([data-stacked])) .tab-inner:hover::before {
         opacity: 0.08;
       }
 
-      :host(:not([data-orientation='vertical'])) .tab-inner:active::before {
+      :host(:not([data-stacked])) .tab-inner:active::before {
         opacity: 0.12;
       }
 
-      /* Disable overlay for vertical tabs - hover is on icon-container instead */
-      :host([data-orientation='vertical']) .tab-inner::before,
-      :host([data-orientation='horizontal'][data-placement='bottom'])
-        .tab-inner::before {
+      /* Hide overlay for stacked tabs - hover is on icon-container instead */
+      :host([data-stacked]) .tab-inner::before {
         display: none;
       }
 
@@ -209,19 +199,10 @@ export class MdTab extends LitElement {
         pointer-events: none;
       }
 
-      /* Active indicator - MD3 pill shape */
+      /* Active indicator - only shown for non-stacked horizontal tabs */
       .indicator {
+        display: none;
         position: absolute;
-        background: var(--md-sys-color-primary, var(--sl-color-primary-600));
-        transition:
-          transform 0.2s cubic-bezier(0.2, 0, 0, 1),
-          opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-        opacity: 0;
-        transform: scaleX(0);
-      }
-
-      /* Horizontal indicator (bottom) - centered pill */
-      :host([data-orientation='horizontal']) .indicator {
         bottom: 0;
         left: 50%;
         transform: translateX(-50%) scaleX(0);
@@ -231,93 +212,25 @@ export class MdTab extends LitElement {
         height: 3px;
         border-radius: var(--md-sys-shape-corner-extra-small)
           var(--md-sys-shape-corner-extra-small) 0 0;
+        background: var(--md-sys-color-primary, var(--sl-color-primary-600));
+        transition:
+          transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+          opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
+        opacity: 0;
       }
 
-      /* Horizontal bottom placement indicator (top) - Hidden for mobile style pill */
-      :host([data-orientation='horizontal'][data-placement='bottom'])
-        .indicator {
-        display: none;
+      :host(:not([data-stacked])) .indicator {
+        display: block;
       }
 
-      /* Vertical indicator - hidden since we use background highlight instead */
-      :host([data-orientation='vertical']) .indicator {
-        display: none;
-      }
-
-      :host([data-orientation='vertical'][data-placement='end']) .indicator {
-        display: none;
-      }
-
-      /* Vertical active state - handled by icon-container pill, no full background */
-      :host([active][data-orientation='vertical']) .tab-inner,
-      :host([active][data-orientation='horizontal'][data-placement='bottom'])
-        .tab-inner {
+      /* Stacked active state - handled by icon-container pill */
+      :host([active][data-stacked]) .tab-inner {
         background: transparent;
       }
 
       :host([active]) .indicator {
         opacity: 1;
         transform: translateX(-50%) scaleX(1);
-      }
-
-      /* Mobile - force bottom nav styling for horizontal tabs */
-      @media (max-width: 820px) {
-        :host([data-orientation='horizontal']) .tab-inner {
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          gap: 4px;
-          padding: 12px 2px 12px;
-          min-height: 56px;
-          width: 100%;
-          font-size: 11px;
-          line-height: 16px;
-          letter-spacing: 0.1px;
-          border-radius: var(--md-sys-shape-corner-none);
-          background: transparent;
-        }
-
-        :host([data-orientation='horizontal']) .icon-container {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 64px;
-          height: 32px;
-          border-radius: var(--md-sys-shape-corner-large);
-          transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
-        }
-
-        :host([data-orientation='horizontal']:hover) .icon-container {
-          background: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600))
-              8%,
-            transparent
-          );
-        }
-
-        :host([active][data-orientation='horizontal']) .icon-container {
-          background: var(
-            --md-sys-color-secondary-container,
-            color-mix(
-              in srgb,
-              var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
-              transparent
-            )
-          );
-        }
-
-        :host([data-orientation='horizontal']) .tab-inner::before {
-          display: none;
-        }
-
-        :host([data-orientation='horizontal']) .indicator {
-          display: none;
-        }
-
-        :host([active][data-orientation='horizontal']) .tab-inner {
-          background: transparent;
-        }
       }
 
       /* Dark mode */
