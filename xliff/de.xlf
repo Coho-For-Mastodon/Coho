@@ -1372,12 +1372,6 @@
 <trans-unit id="s631e99e3378de0e5">
   <source>Post visibility</source>
 </trans-unit>
-<trans-unit id="s9cee87877ea38b43">
-  <source>Disable scheduling</source>
-</trans-unit>
-<trans-unit id="s0d2b3ac838c2ee38">
-  <source>Enable scheduling</source>
-</trans-unit>
 <trans-unit id="sb9cb95c3c3e5de68">
   <source>Write your content warning here</source>
 </trans-unit>
@@ -2094,6 +2088,45 @@
 </trans-unit>
 <trans-unit id="s5c9d1ed02acbea87">
   <source>Search categories</source>
+</trans-unit>
+<trans-unit id="s4d22ab02f280b2fa">
+  <source>Quoting @<x id="0" equiv-text="${this.quotedPost.account.acct}"/></source>
+</trans-unit>
+<trans-unit id="sb29af0c6d1e99137">
+  <source>Edit scheduled time</source>
+</trans-unit>
+<trans-unit id="sc6505c200d5765bd">
+  <source>Quoted post</source>
+</trans-unit>
+<trans-unit id="s9437abb4c77022b3">
+  <source>Contains a quote post</source>
+</trans-unit>
+<trans-unit id="sca1c8b0f0c380a9f">
+  <source>Quote pending approval</source>
+</trans-unit>
+<trans-unit id="s1eab2016c70bf51c">
+  <source>Quote was rejected</source>
+</trans-unit>
+<trans-unit id="s5877dbdec4dd2cf0">
+  <source>Quote was revoked</source>
+</trans-unit>
+<trans-unit id="sa4d739e9fe06fc7d">
+  <source>Quoted post was deleted</source>
+</trans-unit>
+<trans-unit id="s02270207a1d6273c">
+  <source>Hidden due to your filters</source>
+</trans-unit>
+<trans-unit id="s055621949c43fddb">
+  <source>Request to quote</source>
+</trans-unit>
+<trans-unit id="s70a5d875c5467e57">
+  <source>Quote</source>
+</trans-unit>
+<trans-unit id="s547158dfb16a56e9">
+  <source>Author will manually review</source>
+</trans-unit>
+<trans-unit id="sb04cf41e36c8572c">
+  <source>Quotes</source>
 </trans-unit>
 </body>
 </file>
