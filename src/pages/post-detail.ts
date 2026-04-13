@@ -406,7 +406,7 @@ export class PostDetail extends LitElement {
       this.loadingQuotes = true;
       try {
         const quotesResult = await getQuotesOf(this.tweet.id);
-        this.quotes = Array.isArray(quotesResult) ? quotesResult : [];
+        this.quotes = quotesResult;
       } catch {
         this.quotes = [];
       } finally {

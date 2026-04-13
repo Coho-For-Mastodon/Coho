@@ -478,7 +478,6 @@ export class TimelineItem extends LitElement {
         align-items: center;
         justify-content: flex-start;
         gap: 4px;
-      }
 
       .actions md-button {
         background: transparent;
