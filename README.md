@@ -33,7 +33,7 @@ Stay in Coho when you tap `@mentions` or `#hashtags` — we route to the right p
 
 ### Cross Platform
 
-Install Coho on any device — iOS, Android, Windows, macOS, or Linux. It's a PWA with full offline support.
+Install Coho on any device — iOS, Android, Windows, macOS, or Linux. It's a [Progressive Web App](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/What_is_a_progressive_web_app)
 
 ### Theming
 
