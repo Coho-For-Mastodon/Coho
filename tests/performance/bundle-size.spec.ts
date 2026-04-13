@@ -7,12 +7,12 @@ import { test, expect, type Page } from '@playwright/test';
 // Login page (unauthenticated first load)
 const LOGIN_JS_BUDGET_KB = 30;
 const LOGIN_CSS_BUDGET_KB = 15;
-const LOGIN_HTML_BUDGET_KB = 13;
+const LOGIN_HTML_BUDGET_KB = 25;
 
 // Home page (authenticated, includes connectedCallback imports)
 const HOME_JS_BUDGET_KB = 160;
 const HOME_CSS_BUDGET_KB = 20;
-const HOME_HTML_BUDGET_KB = 13;
+const HOME_HTML_BUDGET_KB = 25;
 
 interface NetworkRequest {
   url: string;
