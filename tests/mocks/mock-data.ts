@@ -2,6 +2,50 @@
 const MOCK_TIMESTAMP = '2025-01-01T12:00:00.000Z';
 const MOCK_TIMESTAMP_EARLIER = '2025-01-01T11:55:00.000Z';
 
+/**
+ * Generate N mock posts with sequential IDs and descending timestamps.
+ * Post 0 starts at MOCK_TIMESTAMP, each subsequent post is 5 minutes earlier.
+ */
+export function generateMockPosts(
+  count: number,
+  account = mockAccount,
+  idPrefix = 'post_mock_'
+) {
+  const base = new Date(MOCK_TIMESTAMP).getTime();
+  return Array.from({ length: count }, (_, i) => ({
+    id: `${idPrefix}${i + 1}`,
+    created_at: new Date(base - i * 5 * 60 * 1000).toISOString(),
+    in_reply_to_id: null,
+    in_reply_to_account_id: null,
+    sensitive: false,
+    spoiler_text: '',
+    visibility: 'public' as const,
+    uri: `https://tech.lgbt/users/coho/statuses/${idPrefix}${i + 1}`,
+    url: `https://tech.lgbt/@coho/${idPrefix}${i + 1}`,
+    replies_count: Math.max(0, 3 - i),
+    reblogs_count: Math.max(0, 2 - i),
+    favourites_count: Math.max(0, 5 - i),
+    favourited: false,
+    reblogged: false,
+    muted: false,
+    bookmarked: false,
+    pinned: false,
+    content: `<p>Mock post number ${i + 1}.</p>`,
+    reblog: null,
+    application: { name: 'Coho Test Harness', website: null },
+    account,
+    media_attachments: [] as never[],
+    mentions: [] as never[],
+    tags: [] as never[],
+    emojis: [] as never[],
+    card: null,
+    poll: null,
+    reply_to: null,
+    ancestors: [] as never[],
+    thread_continuation: [] as never[],
+  }));
+}
+
 const mockAccount = {
   id: 'acct_mock_1',
   username: 'coho',
@@ -69,6 +113,37 @@ const secondaryPost = {
 };
 
 export const mockTimelinePosts = [basePost, secondaryPost];
+
+/**
+ * Expanded timeline with 15 posts for pagination testing.
+ * First two entries are basePost and secondaryPost (same IDs/content)
+ * so existing tests referencing their text still pass.
+ */
+export const mockExpandedTimeline = [
+  basePost,
+  secondaryPost,
+  ...generateMockPosts(13, mockAccount, 'post_gen_').map((p, i) => ({
+    ...p,
+    // Start timestamps after secondaryPost
+    created_at: new Date(
+      new Date(MOCK_TIMESTAMP_EARLIER).getTime() - (i + 1) * 5 * 60 * 1000
+    ).toISOString(),
+  })),
+];
+
+/**
+ * Second page of posts for pagination (older than everything in mockExpandedTimeline).
+ */
+export const mockTimelinePageTwo = generateMockPosts(
+  10,
+  mockAccount,
+  'post_page2_'
+).map((p, i) => ({
+  ...p,
+  created_at: new Date(
+    new Date(MOCK_TIMESTAMP_EARLIER).getTime() - (15 + i) * 5 * 60 * 1000
+  ).toISOString(),
+}));
 
 export const mockBookmarks = [
   {
@@ -304,3 +379,30 @@ export const mockEditHistory = [
     emojis: [],
   },
 ];
+
+export const mockCreatedPost = {
+  ...basePost,
+  id: 'post_created_1',
+  created_at: '2025-01-01T12:05:00.000Z',
+  content: '<p>This is a newly created post!</p>',
+  replies_count: 0,
+  reblogs_count: 0,
+  favourites_count: 0,
+};
+
+export const mockOAuthApp = {
+  id: 'app_mock_1',
+  name: 'Coho',
+  website: 'https://coho.app',
+  redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
+  client_id: 'mock-client-id',
+  client_secret: 'mock-client-secret',
+  vapid_key: 'mock-vapid-key',
+};
+
+export const mockOAuthToken = {
+  access_token: 'mock-access-token',
+  token_type: 'Bearer',
+  scope: 'read write follow push',
+  created_at: 1672531200,
+};

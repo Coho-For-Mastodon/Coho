@@ -1,6 +1,11 @@
 import { Account, Emoji } from '../types/interfaces/Account';
 import { MediaAttachment } from '../types/interfaces/MediaAttachment';
 import type { FilterResult } from '../mastodon/types/filter';
+import type {
+  Quote,
+  ShallowQuote,
+  QuoteApproval,
+} from '../mastodon/types/status';
 
 // create an interface for a post in the mastodon api
 export interface Post {
@@ -71,6 +76,9 @@ export interface Post {
   } | null;
   edited_at?: string | null;
   filtered?: FilterResult[];
+  quote?: Quote | ShallowQuote | null;
+  quote_approval?: QuoteApproval;
+  quotes_count?: number;
   reply_to?: Post;
   ancestors?: Post[];
   thread_continuation?: Post[]; // Posts that continue this thread

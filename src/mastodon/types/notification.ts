@@ -23,6 +23,8 @@ export type NotificationType =
   | 'poll'
   | 'status'
   | 'update'
+  | 'quote'
+  | 'quoted_update'
   | 'admin.sign_up'
   | 'admin.report';
 
@@ -45,4 +47,6 @@ export interface PushAlerts {
   follow_request: boolean;
   status: boolean;
   update: boolean;
+  quote: boolean;
+  quoted_update: boolean;
 }

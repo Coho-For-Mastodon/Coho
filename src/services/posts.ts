@@ -38,6 +38,41 @@ export async function getRebloggedBy(id: string): Promise<Account[]> {
   return response.json();
 }
 
+export async function getQuotesOf(id: string): Promise<Post[]> {
+  const server = getServer();
+  const accessToken = getAccessToken();
+  const response = await fetch(
+    `https://${server}/api/v1/statuses/${id}/quotes`,
+    {
+      method: 'GET',
+      headers: new Headers({
+        Authorization: `Bearer ${accessToken}`,
+      }),
+    }
+  );
+  if (!response.ok) return [];
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
+
+export async function revokeQuote(
+  statusId: string,
+  quotingStatusId: string
+): Promise<Post> {
+  const server = getServer();
+  const accessToken = getAccessToken();
+  const response = await fetch(
+    `https://${server}/api/v1/statuses/${statusId}/quotes/${quotingStatusId}/revoke`,
+    {
+      method: 'POST',
+      headers: new Headers({
+        Authorization: `Bearer ${accessToken}`,
+      }),
+    }
+  );
+  return response.json();
+}
+
 export interface EditPostParams {
   status: string;
   media_ids?: string[];
@@ -268,7 +303,8 @@ export async function publishPost(
   spoilerText: string = '',
   visibility: string = 'public',
   poll?: { options: string[]; expiresIn: number; multiple: boolean },
-  scheduledAt?: string
+  scheduledAt?: string,
+  quotedStatusId?: string
 ): Promise<PostPublishResult> {
   const server = getServer();
   const accessToken = getAccessToken();
@@ -280,6 +316,15 @@ export async function publishPost(
   // Mastodon constraint: media and poll are mutually exclusive.
   if (poll && ids && ids.length > 0) {
     throw new Error('Cannot publish a post with both media and a poll.');
+  }
+
+  // Mastodon constraint: quotes cannot have media or polls.
+  if (quotedStatusId && ((ids && ids.length > 0) || poll)) {
+    throw new Error('Cannot publish a quote post with media or a poll.');
+  }
+
+  if (quotedStatusId) {
+    formData.append('quoted_status_id', quotedStatusId);
   }
 
   if (!poll && ids && ids.length > 0) {

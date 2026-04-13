@@ -1418,6 +1418,12 @@ export class AppProfile extends LitElement {
     this.editPostDialog.openReplyDialog(post);
   }
 
+  private _handleQuoteClicked(e: CustomEvent<{ tweet: Post }>) {
+    const post = e.detail.tweet;
+    if (!post || !this.editPostDialog) return;
+    this.editPostDialog.openQuoteDialog(post);
+  }
+
   handleOpenPost(tweet: Post) {
     // Open post in a fullscreen dialog instead of navigating to a new page
     this.postDetailDialog?.open(tweet);
@@ -1870,6 +1876,9 @@ export class AppProfile extends LitElement {
                             @reply-clicked="${(
                               e: CustomEvent<{ tweet: Post }>
                             ) => this._handleReplyClicked(e)}"
+                            @quote-clicked="${(
+                              e: CustomEvent<{ tweet: Post }>
+                            ) => this._handleQuoteClicked(e)}"
                             @delete="${() => this.reloadPosts()}"
                             @pin-change="${(e: CustomEvent) =>
                               this.handlePinChange(e)}"
@@ -1908,6 +1917,9 @@ export class AppProfile extends LitElement {
                               @reply-clicked="${(
                                 e: CustomEvent<{ tweet: Post }>
                               ) => this._handleReplyClicked(e)}"
+                              @quote-clicked="${(
+                                e: CustomEvent<{ tweet: Post }>
+                              ) => this._handleQuoteClicked(e)}"
                               @delete="${() => this.reloadPosts()}"
                               @pin-change="${(e: CustomEvent) =>
                                 this.handlePinChange(e)}"
@@ -1951,6 +1963,9 @@ export class AppProfile extends LitElement {
                             @reply-clicked="${(
                               e: CustomEvent<{ tweet: Post }>
                             ) => this._handleReplyClicked(e)}"
+                            @quote-clicked="${(
+                              e: CustomEvent<{ tweet: Post }>
+                            ) => this._handleQuoteClicked(e)}"
                             @delete="${() => this.reloadPosts()}"
                             @pin-change="${(e: CustomEvent) =>
                               this.handlePinChange(e)}"

@@ -196,6 +196,15 @@ export class PostDialog extends LitElement {
     });
   }
 
+  public openQuoteDialog(post: Post) {
+    this.updateComplete.then(() => {
+      if (this.composer) {
+        this.composer.quotedPost = post;
+      }
+      this.notifyDialog?.show();
+    });
+  }
+
   public openEditDialog(post: Post) {
     this.isEditing = true;
     this.updateComplete.then(() => {
