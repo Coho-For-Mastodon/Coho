@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
+import { isServer } from 'lit';
 
 import type { TabChangeDetail } from '../../types/events';
 import type { MdTab } from './md-tab';
@@ -8,7 +9,8 @@ import type { MdTabPanel } from './md-tab-panel';
 // Feature detection for the focusgroup HTML attribute.
 // When supported, the browser handles arrow-key navigation and tab-stop
 // collapsing for composite widgets, replacing manual roving tabindex JS.
-const supportsNativeFocusgroup = 'focusgroup' in HTMLElement.prototype;
+const supportsNativeFocusgroup =
+  !isServer && 'focusgroup' in HTMLElement.prototype;
 
 // Counter for generating unique IDs across all md-tabs instances
 let tabsIdCounter = 0;
@@ -65,21 +67,14 @@ export class MdTabs extends LitElement {
   /** Unique ID for this tabs instance (used for aria-controls/aria-labelledby) */
   private _tabsId = `md-tabs-${++tabsIdCounter}`;
 
-  private _observer: MutationObserver;
-  private _mobileQuery = window.matchMedia('(max-width: 820px)');
-  private _isMobile = this._mobileQuery.matches;
+  private _observer: MutationObserver | undefined;
+  private _mobileQuery: MediaQueryList | undefined;
+  private _isMobile = false;
   private _fallbackKeydownHandler?: (e: KeyboardEvent) => void;
   private _fallbackReady: Promise<void> = Promise.resolve();
 
   @query('slot[name="nav"]') private navSlot!: HTMLSlotElement;
   @query('slot:not([name])') private panelSlot!: HTMLSlotElement;
-
-  constructor() {
-    super();
-    this._observer = new MutationObserver(() => {
-      this._updatePanels();
-    });
-  }
 
   static styles = css`
     :host {
@@ -227,12 +222,19 @@ export class MdTabs extends LitElement {
       'tab-selected',
       this._handleTabSelected as EventListener
     );
+    if (!this._observer) {
+      this._observer = new MutationObserver(() => {
+        this._updatePanels();
+      });
+    }
     this._observer.observe(this, {
       childList: true,
       subtree: true,
       attributes: false,
       characterData: false,
     });
+    this._mobileQuery = window.matchMedia('(max-width: 820px)');
+    this._isMobile = this._mobileQuery.matches;
     this._mobileQuery.addEventListener('change', this._handleMobileChange);
   }
 
@@ -242,8 +244,8 @@ export class MdTabs extends LitElement {
       'tab-selected',
       this._handleTabSelected as EventListener
     );
-    this._observer.disconnect();
-    this._mobileQuery.removeEventListener('change', this._handleMobileChange);
+    this._observer?.disconnect();
+    this._mobileQuery?.removeEventListener('change', this._handleMobileChange);
     if (this._fallbackKeydownHandler) {
       this.shadowRoot
         ?.querySelector('.tab-bar')

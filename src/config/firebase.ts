@@ -14,6 +14,7 @@ const PRODUCTION_BASE_URL = `https://${FIREBASE_REGION}-${FIREBASE_PROJECT_ID}.c
 const LOCAL_BASE_URL = `http://127.0.0.1:5001/${FIREBASE_PROJECT_ID}/${FIREBASE_REGION}`;
 
 const isLocal =
+  typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1') &&
   import.meta.env.MODE !== 'test' &&
