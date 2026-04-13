@@ -10,6 +10,10 @@ import {
   mockAccountProfile,
   mockInstanceInfo,
   mockTrendingTags,
+  mockMediaAttachment,
+  mockCreatedPost,
+  mockOAuthApp,
+  mockOAuthToken,
 } from '../mocks/mock-data';
 
 // Re-export mock data for use in tests
@@ -77,6 +81,95 @@ export async function setupApiMocks(page: Page) {
     } else {
       route.fulfill({ status: 404, json: { error: 'Not found' } });
     }
+  });
+
+  // Status action endpoints (must be registered before generic statuses/*)
+  await page.route('**/api/v1/statuses/*/favourite', (route) => {
+    const url = route.request().url();
+    const id = url.split('/statuses/')[1]?.split('/')[0];
+    const post =
+      mockTimelinePosts.find((p) => p.id === id) || mockTimelinePosts[0];
+    route.fulfill({
+      json: {
+        ...post,
+        favourited: true,
+        favourites_count: (post.favourites_count || 0) + 1,
+      },
+    });
+  });
+
+  await page.route('**/api/v1/statuses/*/unfavourite', (route) => {
+    const url = route.request().url();
+    const id = url.split('/statuses/')[1]?.split('/')[0];
+    const post =
+      mockTimelinePosts.find((p) => p.id === id) || mockTimelinePosts[0];
+    route.fulfill({ json: { ...post, favourited: false } });
+  });
+
+  await page.route('**/api/v1/statuses/*/reblog', (route) => {
+    const url = route.request().url();
+    const id = url.split('/statuses/')[1]?.split('/')[0];
+    const post =
+      mockTimelinePosts.find((p) => p.id === id) || mockTimelinePosts[0];
+    route.fulfill({
+      json: {
+        ...post,
+        reblogged: true,
+        reblogs_count: (post.reblogs_count || 0) + 1,
+      },
+    });
+  });
+
+  await page.route('**/api/v1/statuses/*/unreblog', (route) => {
+    const url = route.request().url();
+    const id = url.split('/statuses/')[1]?.split('/')[0];
+    const post =
+      mockTimelinePosts.find((p) => p.id === id) || mockTimelinePosts[0];
+    route.fulfill({ json: { ...post, reblogged: false } });
+  });
+
+  await page.route('**/api/v1/statuses/*/bookmark', (route) => {
+    const url = route.request().url();
+    const id = url.split('/statuses/')[1]?.split('/')[0];
+    const post =
+      mockTimelinePosts.find((p) => p.id === id) || mockTimelinePosts[0];
+    route.fulfill({ json: { ...post, bookmarked: true } });
+  });
+
+  await page.route('**/api/v1/statuses/*/unbookmark', (route) => {
+    const url = route.request().url();
+    const id = url.split('/statuses/')[1]?.split('/')[0];
+    const post =
+      mockTimelinePosts.find((p) => p.id === id) || mockTimelinePosts[0];
+    route.fulfill({ json: { ...post, bookmarked: false } });
+  });
+
+  // Create new status
+  await page.route('**/api/v1/statuses', (route) => {
+    if (route.request().method() === 'POST') {
+      route.fulfill({ json: mockCreatedPost });
+    } else {
+      route.fallback();
+    }
+  });
+
+  // Media upload
+  await page.route('**/api/v2/media', (route) => {
+    if (route.request().method() === 'POST') {
+      route.fulfill({ json: mockMediaAttachment });
+    } else {
+      route.fallback();
+    }
+  });
+
+  // OAuth app registration
+  await page.route('**/api/v1/apps', (route) => {
+    route.fulfill({ json: mockOAuthApp });
+  });
+
+  // OAuth token exchange
+  await page.route('**/oauth/token', (route) => {
+    route.fulfill({ json: mockOAuthToken });
   });
 
   // Status endpoints

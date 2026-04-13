@@ -304,3 +304,30 @@ export const mockEditHistory = [
     emojis: [],
   },
 ];
+
+export const mockCreatedPost = {
+  ...basePost,
+  id: 'post_created_1',
+  created_at: '2025-01-01T12:05:00.000Z',
+  content: '<p>This is a newly created post!</p>',
+  replies_count: 0,
+  reblogs_count: 0,
+  favourites_count: 0,
+};
+
+export const mockOAuthApp = {
+  id: 'app_mock_1',
+  name: 'Coho',
+  website: 'https://coho.app',
+  redirect_uri: 'urn:ietf:wg:oauth:2.0:oob',
+  client_id: 'mock-client-id',
+  client_secret: 'mock-client-secret',
+  vapid_key: 'mock-vapid-key',
+};
+
+export const mockOAuthToken = {
+  access_token: 'mock-access-token',
+  token_type: 'Bearer',
+  scope: 'read write follow push',
+  created_at: 1672531200,
+};
