@@ -14,21 +14,21 @@ export class TabController implements ReactiveController {
   constructor(host: ReactiveControllerHost) {
     this.host = host;
     host.addController(this);
+  }
 
+  hostConnected() {
     // Initialize tabs state based on screen size
-    if (window.matchMedia('(max-width: 820px)').matches) {
+    const mq = window.matchMedia('(max-width: 820px)');
+    if (mq.matches) {
       this.tabsOrientation = 'horizontal';
       this.tabsPlacement = 'bottom';
     } else {
       this.tabsOrientation = 'vertical';
       this.tabsPlacement = 'start';
     }
-  }
+    this.host.requestUpdate();
 
-  hostConnected() {
-    window
-      .matchMedia('(max-width: 820px)')
-      .addEventListener('change', this.handleMediaChange);
+    mq.addEventListener('change', this.handleMediaChange);
   }
 
   hostDisconnected() {
