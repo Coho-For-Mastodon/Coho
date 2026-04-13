@@ -685,13 +685,20 @@ export function renderRegularTweet(
         }
         ${
           !state.guestMode &&
-          state.tweet?.quote_approval?.current_user !== 'denied'
+          state.tweet?.quote_approval?.current_user !== 'denied' &&
+          state.tweet?.quote_approval?.current_user !== 'unknown'
             ? html`<md-button
                 variant="text"
                 style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
                 pill
                 size="small"
-                aria-label="${msg('Quote')}"
+                aria-label="${state.tweet?.quote_approval?.current_user ===
+                'manual'
+                  ? msg('Request to quote')
+                  : msg('Quote')}"
+                title="${state.tweet?.quote_approval?.current_user === 'manual'
+                  ? msg('Author will manually review')
+                  : ''}"
                 @click="${() => {
                   if (state.tweet) handlers.quotePost(state.tweet);
                 }}"
@@ -852,13 +859,20 @@ export function renderThreadContinuation(
                 ></md-button>`
               : null}
             ${!state.guestMode &&
-            threadPost.quote_approval?.current_user !== 'denied'
+            threadPost.quote_approval?.current_user !== 'denied' &&
+            threadPost.quote_approval?.current_user !== 'unknown'
               ? html`<md-button
                   variant="text"
                   style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
                   pill
                   size="small"
-                  aria-label="${msg('Quote')}"
+                  aria-label="${threadPost.quote_approval?.current_user ===
+                  'manual'
+                    ? msg('Request to quote')
+                    : msg('Quote')}"
+                  title="${threadPost.quote_approval?.current_user === 'manual'
+                    ? msg('Author will manually review')
+                    : ''}"
                   @click="${(e: Event) => {
                     e.stopPropagation();
                     handlers.quotePost(threadPost);
@@ -1141,13 +1155,21 @@ export function renderReblog(
             ></md-button>`
           : null}
         ${!state.guestMode &&
-        state.tweet?.reblog?.quote_approval?.current_user !== 'denied'
+        state.tweet?.reblog?.quote_approval?.current_user !== 'denied' &&
+        state.tweet?.reblog?.quote_approval?.current_user !== 'unknown'
           ? html`<md-button
               variant="text"
               style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
               pill
               size="small"
-              aria-label="${msg('Quote')}"
+              aria-label="${state.tweet?.reblog?.quote_approval
+                ?.current_user === 'manual'
+                ? msg('Request to quote')
+                : msg('Quote')}"
+              title="${state.tweet?.reblog?.quote_approval?.current_user ===
+              'manual'
+                ? msg('Author will manually review')
+                : ''}"
               @click="${() => {
                 if (state.tweet?.reblog) handlers.quotePost(state.tweet.reblog);
               }}"

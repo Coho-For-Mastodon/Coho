@@ -50,7 +50,9 @@ export async function getQuotesOf(id: string): Promise<Post[]> {
       }),
     }
   );
-  return response.json();
+  if (!response.ok) return [];
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function revokeQuote(

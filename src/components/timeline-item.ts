@@ -476,8 +476,8 @@ export class TimelineItem extends LitElement {
       .actions {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        gap: 6px;
+        justify-content: flex-start;
+        gap: 4px;
       }
 
       .actions md-button {
@@ -681,7 +681,6 @@ export class TimelineItem extends LitElement {
 
         .actions {
           width: 100%;
-          justify-content: space-between;
         }
 
         .boost-indicator .booster-name {

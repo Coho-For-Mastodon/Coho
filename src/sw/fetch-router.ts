@@ -44,6 +44,12 @@ export function handleFetch(
 
   // Navigation
   if (request.mode === 'navigate') {
+    // Let the reload trampoline page load directly — it must NOT receive
+    // the SPA shell or the redirect back to the app will never execute.
+    if (url.pathname === '/reload.html') {
+      return;
+    }
+
     event.respondWith(navigationHandler(request, CACHE_NAMES.pages));
     return;
   }

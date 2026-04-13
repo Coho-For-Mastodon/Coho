@@ -18,6 +18,7 @@ import './md/md-menu-item.js';
 import './media-edit-dialog.js';
 import './md/md-skeleton.js';
 import './handwriting-dialog.js';
+import './quoted-post.js';
 
 import type { MdTextArea } from './md/md-text-area.js';
 
@@ -2664,6 +2665,12 @@ export class PostComposer extends LitElement {
     `;
   }
 
+  private _renderQuotePreview() {
+    if (!this.quotedPost) return nothing;
+
+    return html` <quoted-post .post=${this.quotedPost} preview></quoted-post> `;
+  }
+
   private _renderMentionPicker() {
     if (!this.mentionOpen) return nothing;
 
@@ -3360,10 +3367,10 @@ export class PostComposer extends LitElement {
     return html`
       <div class="composer-wrapper">
         ${this._renderReplyIndicator()} ${this._renderQuoteIndicator()}
-        ${this._renderTextArea()} ${this._renderActions()}
-        ${this._renderSensitiveWarning()} ${this._renderPoll()}
-        ${this._renderSchedule()} ${this._renderAttachments()}
-        ${this._renderFooter()}
+        ${this._renderTextArea()} ${this._renderQuotePreview()}
+        ${this._renderActions()} ${this._renderSensitiveWarning()}
+        ${this._renderPoll()} ${this._renderSchedule()}
+        ${this._renderAttachments()} ${this._renderFooter()}
       </div>
 
       ${this._renderDraftPickerDialog()}

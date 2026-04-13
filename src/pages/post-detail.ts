@@ -13,7 +13,7 @@ import { Post } from '../interfaces/Post';
 import { getReplies } from '../services/timeline';
 import { buildThreadTree, type ThreadNode } from '../utils/thread-tree';
 
-import { getPostDetail } from '../services/posts';
+import { getPostDetail, getQuotesOf } from '../services/posts';
 import type { PostComposer } from '../components/post-composer';
 import type { PostDialog } from '../components/post-dialog';
 import { router, type AppNavigationState } from '../router/routes';
@@ -31,6 +31,8 @@ export class PostDetail extends LitElement {
   @state() loadingThread = false;
   @state() error: string | null = null;
   @state() isGuestMode = false;
+  @state() quotes: Post[] = [];
+  @state() loadingQuotes = false;
 
   @property({ type: Object }) passed_tweet: Post | null = null;
 
@@ -333,6 +335,7 @@ export class PostDetail extends LitElement {
         this.tweet = this.passed_tweet;
         this.replyTree = [];
         this.ancestors = [];
+        this.quotes = [];
         // Ensure replies load even if passed_tweet is set after firstUpdated.
         void this.loadReplies();
       }
@@ -397,6 +400,17 @@ export class PostDetail extends LitElement {
         }
       } finally {
         this.loadingThread = false;
+      }
+
+      // Load quotes for this post
+      this.loadingQuotes = true;
+      try {
+        const quotesResult = await getQuotesOf(this.tweet.id);
+        this.quotes = Array.isArray(quotesResult) ? quotesResult : [];
+      } catch {
+        this.quotes = [];
+      } finally {
+        this.loadingQuotes = false;
       }
     }
   }
@@ -464,6 +478,7 @@ export class PostDetail extends LitElement {
       this.replyingTo = null;
       this.replyTree = [];
       this.ancestors = [];
+      this.quotes = [];
       await this.loadReplies();
 
       const scroller = this.renderRoot?.querySelector(
@@ -588,25 +603,48 @@ export class PostDetail extends LitElement {
             ></timeline-item>
           </section>
 
-          <section class="replies-section">
-            ${this.loadingThread || this.replyTree.length > 0
-              ? html`<h2 class="replies-title">${msg('Replies')}</h2>`
-              : nothing}
-            ${this.loadingThread
-              ? html`<md-skeleton-card count="3"></md-skeleton-card>`
-              : nothing}
-            ${this.replyTree.map(
-              (node) => html`
-                <thread-branch
-                  .node=${node}
-                  ?guestMode=${this.isGuestMode}
-                  @open=${(e: CustomEvent<{ tweet: Post }>) =>
-                    this.handleOpenPost(e)}
-                  @reply-clicked=${(e: CustomEvent) => this.handleReplyClick(e)}
-                ></thread-branch>
+          ${this.quotes.length > 0
+            ? html`
+                <section class="replies-section">
+                  <h2 class="replies-title">${msg('Quotes')}</h2>
+                  ${this.quotes.map(
+                    (quotePost) => html`
+                      <timeline-item
+                        .tweet=${quotePost}
+                        ?guestMode=${this.isGuestMode}
+                        @open=${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.handleOpenPost(e)}
+                        @reply-clicked=${(e: CustomEvent) =>
+                          this.handleReplyClick(e)}
+                        @quote-clicked=${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.handleQuoteClick(e)}
+                        @edit=${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.handleEditPost(e.detail.tweet)}
+                      ></timeline-item>
+                    `
+                  )}
+                </section>
               `
-            )}
-          </section>
+            : nothing}
+          ${this.replyTree.length > 0
+            ? html`
+                <section class="replies-section">
+                  <h2 class="replies-title">${msg('Replies')}</h2>
+                  ${this.replyTree.map(
+                    (node) => html`
+                      <thread-branch
+                        .node=${node}
+                        ?guestMode=${this.isGuestMode}
+                        @open=${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.handleOpenPost(e)}
+                        @reply-clicked=${(e: CustomEvent) =>
+                          this.handleReplyClick(e)}
+                      ></thread-branch>
+                    `
+                  )}
+                </section>
+              `
+            : nothing}
         </div>
 
         ${this.isGuestMode

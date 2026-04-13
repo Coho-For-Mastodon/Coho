@@ -15,10 +15,17 @@ import './user-profile';
 export class QuotedPost extends LitElement {
   @property({ type: Object }) post: Post | undefined;
 
+  /** When true, disables click-to-navigate (for use inside the composer). */
+  @property({ type: Boolean }) preview = false;
+
   static styles = css`
     :host {
       display: block;
       margin-top: 10px;
+    }
+
+    :host([preview]) {
+      margin-top: 0;
     }
 
     .quote-card {
@@ -174,9 +181,10 @@ export class QuotedPost extends LitElement {
     return html`
       <div
         class="quote-card"
+        style=${this.preview ? 'cursor: default;' : ''}
         @click=${(e: Event) => {
           e.stopPropagation();
-          this._navigate();
+          if (!this.preview) this._navigate();
         }}
         role="article"
         aria-label=${msg('Quoted post')}
