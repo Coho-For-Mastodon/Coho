@@ -88,7 +88,9 @@ export class AppIndex extends LitElement {
     // router's initial handleNavigation just updates the DOM directly.
     if ('startViewTransition' in document) {
       const savedVT = document.startViewTransition.bind(document);
-      (document as any).startViewTransition = (cb: () => void) => {
+      (document as unknown as Record<string, unknown>).startViewTransition = (
+        cb: () => void
+      ) => {
         cb();
         return { finished: Promise.resolve() };
       };
@@ -402,6 +404,7 @@ export class AppIndex extends LitElement {
       const WidgetBridge = registerPlugin('WidgetBridge');
       const server = localStorage.getItem('server') || 'mastodon.social';
       const accessToken = localStorage.getItem('accessToken') || '';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (WidgetBridge as any).setCredentials({ server, accessToken });
     } catch {
       // Widget bridge not available — ignore

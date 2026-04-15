@@ -17,6 +17,7 @@ export async function syncCredentialsToWearOS(): Promise<boolean> {
     const acct = localStorage.getItem('acct') || '';
     if (!server || !accessToken) return false;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (WearSyncBridge as any).syncCredentials({
       server,
       accessToken,

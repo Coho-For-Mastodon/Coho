@@ -1,6 +1,7 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
-import { Account, Post } from '../types';
+import type { Account } from '../types';
+import type { Post } from '../../interfaces/Post';
 import type { FamiliarFollowersResult } from '../types/account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../../config/firebase';
 import { get, set } from 'idb-keyval';

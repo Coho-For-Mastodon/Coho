@@ -35,12 +35,14 @@ const ece = require('http_ece');
 
 const WEB_PUSH_ENCODINGS = new Set(['aesgcm', 'aes128gcm']);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node emit() signature uses any
 const _origEmit: (...args: any[]) => boolean = http.Server.prototype.emit;
 
 http.Server.prototype.emit = function (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node emit() signature uses any
   this: any,
   event: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node emit() signature uses any
   ...args: any[]
 ): boolean {
   if (event === 'request') {

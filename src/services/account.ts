@@ -1,6 +1,6 @@
 import { set, get } from 'idb-keyval';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
-import { Account } from '../types/interfaces/Account';
+import type { Account } from '../mastodon/types/account';
 import type {
   CredentialAccount,
   UpdateCredentialsParams,

@@ -7,7 +7,7 @@ import {
 
 export const getBookmarks = async (): Promise<Post[]> => {
   const data = await mastodonGetBookmarks();
-  return data as unknown as Post[];
+  return data;
 };
 
 export const addBookmark = mastodonAddBookmark;

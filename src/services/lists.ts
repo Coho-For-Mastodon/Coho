@@ -1,4 +1,5 @@
-import type { List, ListRepliesPolicy, Account, Post } from '../mastodon/types';
+import type { List, ListRepliesPolicy, Account } from '../mastodon/types';
+import type { Post } from '../interfaces/Post';
 import {
   getLists as mastodonGetLists,
   createList as mastodonCreateList,
@@ -55,5 +56,5 @@ export const getListTimeline = async (
   id: string,
   maxId?: string
 ): Promise<Post[]> => {
-  return mastodonGetListTimeline(id, maxId) as Promise<Post[]>;
+  return mastodonGetListTimeline(id, maxId);
 };

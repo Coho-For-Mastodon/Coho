@@ -1,6 +1,7 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
-import { Post, TrendingTag, TrendingLink } from '../types';
+import type { Post } from '../../interfaces/Post';
+import type { TrendingTag, TrendingLink } from '../types';
 
 // Cache for reply parent posts to avoid duplicate fetches
 const replyParentCache = new Map<string, Post>();

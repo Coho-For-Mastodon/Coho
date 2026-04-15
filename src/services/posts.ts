@@ -1,8 +1,8 @@
 import { fileOpen } from 'browser-fs-access';
 import { addMedia } from './media';
-import { Account } from '../types/interfaces/Account';
+import type { Account } from '../mastodon/types/account';
 import { Post, PostPublishResult } from '../interfaces/Post';
-import { MediaAttachment } from '../types/interfaces/MediaAttachment';
+import type { MediaAttachment } from '../mastodon/types/media';
 import { getServer, getAccessToken } from './auth-context';
 
 export async function getFavouritedBy(id: string): Promise<Account[]> {

@@ -19,7 +19,7 @@ export const getNotifications = async (
   limit: number = 20
 ): Promise<MastodonNotification[]> => {
   const data = await mastodonGetNotifications(maxId, limit);
-  return data as unknown as MastodonNotification[];
+  return data;
 };
 
 export const clearNotifications = mastodonClearNotifications;
@@ -178,8 +178,7 @@ export const subToPush = async () => {
       const minInterval = 12 * 60 * 60 * 1000;
 
       if (registration) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (registration as any).periodicSync.register('get-notifications', {
+        await registration.periodicSync.register('get-notifications', {
           minInterval,
         });
       }

@@ -22,15 +22,12 @@ import {
 export const enrichPostsWithReplyContext = async (
   posts: Post[]
 ): Promise<Post[]> => {
-  // Cast to any to avoid type issues between Status and Post
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return mastodonEnrichPostsWithReplyContext(posts as any) as unknown as Post[];
+  return mastodonEnrichPostsWithReplyContext(posts);
 };
 
 // Re-export groupSelfThreads for thread grouping in timelines
 export const groupSelfThreads = (posts: Post[]): Post[] => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return mastodonGroupSelfThreads(posts as any) as unknown as Post[];
+  return mastodonGroupSelfThreads(posts);
 };
 
 // Re-export type
@@ -73,7 +70,7 @@ export const mixTimeline = async (type = 'home'): Promise<Post[]> => {
   const [homeResult, trendingResult, searchedResult] = await Promise.allSettled(
     [
       getPaginatedHomeTimeline(type),
-      getTrendingStatuses() as unknown as Promise<Post[]>,
+      getTrendingStatuses(),
       addSomeInterestFinds(),
     ]
   );
@@ -141,9 +138,7 @@ export const addSomeInterestFinds = async (): Promise<Post[]> => {
 
 // Wrapper for preview timeline with pagination state
 export const getPreviewTimeline = async (): Promise<Post[]> => {
-  const data = (await mastodonGetPreviewTimeline(
-    lastPreviewPageID || undefined
-  )) as unknown as Post[];
+  const data = await mastodonGetPreviewTimeline(lastPreviewPageID || undefined);
 
   // Validate response is an array
   if (!Array.isArray(data)) {
@@ -258,7 +253,7 @@ export const getPublicTimeline = async (
   local: boolean = false,
   maxId?: string
 ): Promise<Post[]> => {
-  return mastodonGetPublicTimeline(local, maxId) as unknown as Promise<Post[]>;
+  return mastodonGetPublicTimeline(local, maxId);
 };
 
 // Use Firebase function for boostPost (favorite) - this route has background sync support
@@ -369,9 +364,9 @@ export const votePoll = async (
   // Mastodon returns a JSON error body on non-2xx responses; don't let that
   // poison UI state by treating it as a Poll object.
   if (!response.ok) {
+    const errorBody = data as Record<string, unknown>;
     const message =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (data as any)?.error ||
+      (typeof errorBody?.error === 'string' ? errorBody.error : null) ||
       `Failed to vote in poll (HTTP ${response.status})`;
     const err = new Error(message) as Error & { status?: number };
     err.status = response.status;
@@ -407,12 +402,10 @@ async function handlePeriodic(): Promise<unknown> {
     await navigator.serviceWorker.ready;
   if ('periodicSync' in registration) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tags = await (registration as any).periodicSync.getTags();
+      const tags = await registration.periodicSync.getTags();
 
       if (tags.includes('timeline-sync') === false) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (registration as any).periodicSync.register('timeline-sync', {
+        await registration.periodicSync.register('timeline-sync', {
           // An interval of one day.
           minInterval: 24 * 60 * 60 * 1000,
         });

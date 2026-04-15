@@ -112,8 +112,6 @@ export class AppExplore extends LitElement {
       try {
         const { initAuth } = await import('../services/account');
         await initAuth(serverURL);
-
-        // (window as any).appInsights.setAuthenticatedUserContext(validatedId);
       } catch (err) {
         console.error(err);
       }

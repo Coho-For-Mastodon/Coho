@@ -1,6 +1,6 @@
 import { getClientConfig } from '../config/client';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../../config/firebase';
-import { Post } from '../types';
+import type { Post } from '../../interfaces/Post';
 
 export const getBookmarks = async (): Promise<Post[]> => {
   const { url, accessToken } = getClientConfig();
