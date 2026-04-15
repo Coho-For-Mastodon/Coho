@@ -1,8 +1,7 @@
 import { set, get } from 'idb-keyval';
 import type { Emoji } from '../mastodon/types/account';
 import { getCustomEmojis as fetchCustomEmojis } from '../mastodon/api/custom-emojis';
-
-const getServer = () => localStorage.getItem('server') || '';
+import { getServer } from './auth-context';
 
 let emojiList: Emoji[] | null = null;
 let emojiMap: Map<string, Emoji> | null = null;

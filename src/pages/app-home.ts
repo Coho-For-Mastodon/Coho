@@ -279,7 +279,6 @@ export class AppHome extends LitElement {
     );
 
     const tabData = effectiveParams.get('tab');
-    console.log('tabData', tabData);
 
     // Restore tab from sessionStorage if no URL param override
     let tabToOpen = tabData;
@@ -512,7 +511,6 @@ export class AppHome extends LitElement {
     const { getInstanceInfo } = await import('../services/account');
 
     this.instanceInfo = await getInstanceInfo();
-    console.log('instanceInfo', this.instanceInfo);
   }
 
   async openAccountSwitcherDialog(origin?: { x: number; y: number }) {
@@ -688,7 +686,6 @@ export class AppHome extends LitElement {
   }
 
   async showSummary($event: HandleSummaryEvent) {
-    console.log('show summary', $event.detail.data);
     const summary = $event.detail.data;
     this.summary = summary;
 
@@ -736,7 +733,6 @@ export class AppHome extends LitElement {
 
   async disconnectedCallback() {
     super.disconnectedCallback();
-    console.log('home disconnected');
 
     // Persist sidebar data so the next mount restores instantly
     if (this.user) {
@@ -945,22 +941,12 @@ export class AppHome extends LitElement {
   }
 
   async handleTranslating(_event: HandleTranslatingEvent) {
-    console.log('handle translating event received');
     await import('../components/md/md-toast');
     // Add toast to DOM first
     await this.overlays.show('translation-toast');
     // Show translation toast
-    console.log(
-      'Toast element:',
-      this.translationToast,
-      'Open:',
-      this.translationToast?.open
-    );
     if (this.translationToast) {
       this.translationToast.show();
-      console.log('After show(), Open:', this.translationToast.open);
-    } else {
-      console.error('Toast element not found!');
     }
   }
 

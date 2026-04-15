@@ -27,7 +27,7 @@ export async function getAllMedia() {
     }
     promises.push(entry.getFile());
   }
-  console.log(await Promise.all(promises));
+  const result = await Promise.all(promises);
 
-  return await Promise.all(promises);
+  return result;
 }

@@ -40,7 +40,7 @@ declare const self: CohoServiceWorkerGlobalScope;
 // Expose idb-keyval on self for external access (e.g., from devtools)
 self.idbKeyval = { get, set };
 
-// Log build version for debugging
+// Log build version for debugging (kept for SW diagnostics)
 console.log('[SW] Build version:', VERSION);
 
 // Background sync configuration (shared by fetch router and sync handler)
@@ -71,7 +71,6 @@ self.addEventListener('fetch', (event) => handleFetch(event, syncConfig));
 // Background sync replay
 self.addEventListener('sync', (event: Event) => {
   const syncEvent = event as ExtendableEvent & { tag: string };
-  console.log('[SW] Sync event received:', syncEvent.tag);
 
   if (syncEvent.tag === SYNC_TAG) {
     syncEvent.waitUntil(

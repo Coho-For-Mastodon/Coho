@@ -56,7 +56,6 @@ export class AppMedia extends LitElement {
 
   async firstUpdated() {
     const files = await getAllMedia();
-    console.log(files);
 
     this.media = files;
   }

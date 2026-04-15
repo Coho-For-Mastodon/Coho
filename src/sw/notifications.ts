@@ -247,7 +247,7 @@ export function handlePushSubscriptionChange(
             response.statusText
           );
         } else {
-          console.log('[SW] Push subscription updated successfully');
+          // Push subscription updated successfully
         }
       } catch (error) {
         // Network failure or missing credentials — the foreground health

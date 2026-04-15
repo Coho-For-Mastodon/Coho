@@ -46,7 +46,6 @@ export async function canPreload(): Promise<boolean> {
   // Check if user is authenticated
   const accessToken = localStorage.getItem('accessToken');
   if (!accessToken) {
-    console.log('[Preload] Skipped: Not authenticated');
     return false;
   }
 
@@ -54,7 +53,6 @@ export async function canPreload(): Promise<boolean> {
   const { getSettings } = await import('./settings');
   const settings = await getSettings();
   if (settings.data_saver) {
-    console.log('[Preload] Skipped: Data saver enabled');
     return false;
   }
 
@@ -70,7 +68,6 @@ export async function canPreload(): Promise<boolean> {
       conn?.effectiveType === '2g' ||
       conn?.effectiveType === '3g'
     ) {
-      console.log('[Preload] Skipped: Poor network conditions');
       return false;
     }
   }
@@ -117,9 +114,9 @@ export function getPreloadedNotifications(): MastodonNotification[] | null {
       return null;
     }
 
-    console.log('[Preload] Notifications cache hit', { count: data.length });
     return data;
-  } catch {
+  } catch (error) {
+    console.warn('[Preload] Notification cache retrieval failed:', error);
     return null;
   }
 }
@@ -139,9 +136,9 @@ export function getPreloadedBookmarks(): Post[] | null {
       return null;
     }
 
-    console.log('[Preload] Bookmarks cache hit', { count: data.length });
     return data;
-  } catch {
+  } catch (error) {
+    console.warn('[Preload] Bookmarks cache retrieval failed:', error);
     return null;
   }
 }
@@ -161,9 +158,9 @@ export function getPreloadedFavorites(): Post[] | null {
       return null;
     }
 
-    console.log('[Preload] Favorites cache hit', { count: data.length });
     return data;
-  } catch {
+  } catch (error) {
+    console.warn('[Preload] Favorites cache retrieval failed:', error);
     return null;
   }
 }
@@ -190,7 +187,6 @@ function saveToCache<T>(key: string, data: T): void {
 async function preloadNotifications(): Promise<void> {
   // Check if already cached and fresh
   if (getPreloadedNotifications()) {
-    console.log('[Preload] Notifications already cached');
     return;
   }
 
@@ -198,7 +194,6 @@ async function preloadNotifications(): Promise<void> {
     const { getNotifications } = await import('./notifications');
     const data = await getNotifications();
     saveToCache(getPreloadNotificationsKey(), data);
-    console.log('[Preload] Notifications preloaded', { count: data.length });
   } catch (error) {
     console.warn('[Preload] Failed to preload notifications:', error);
   }
@@ -210,7 +205,6 @@ async function preloadNotifications(): Promise<void> {
 async function preloadBookmarks(): Promise<void> {
   // Check if already cached and fresh
   if (getPreloadedBookmarks()) {
-    console.log('[Preload] Bookmarks already cached');
     return;
   }
 
@@ -218,7 +212,6 @@ async function preloadBookmarks(): Promise<void> {
     const { getBookmarks } = await import('./bookmarks');
     const data = await getBookmarks();
     saveToCache(getPreloadBookmarksKey(), data);
-    console.log('[Preload] Bookmarks preloaded', { count: data.length });
   } catch (error) {
     console.warn('[Preload] Failed to preload bookmarks:', error);
   }
@@ -230,7 +223,6 @@ async function preloadBookmarks(): Promise<void> {
 async function preloadFavorites(): Promise<void> {
   // Check if already cached and fresh
   if (getPreloadedFavorites()) {
-    console.log('[Preload] Favorites already cached');
     return;
   }
 
@@ -238,7 +230,6 @@ async function preloadFavorites(): Promise<void> {
     const { getFavorites } = await import('./favorites');
     const data = await getFavorites();
     saveToCache(getPreloadFavoritesKey(), data);
-    console.log('[Preload] Favorites preloaded', { count: data.length });
   } catch (error) {
     console.warn('[Preload] Failed to preload favorites:', error);
   }
@@ -285,7 +276,6 @@ export function schedulePreload(): Promise<void> {
       if (queueIndex < preloadQueue.length) {
         requestIdleCallbackPolyfill(processNextItem, { timeout: 5000 });
       } else {
-        console.log('[Preload] All preload tasks scheduled');
         // Wait for all tasks to actually finish, then resolve
         Promise.all(taskPromises).then(() => resolve());
       }
@@ -305,7 +295,6 @@ export function clearPreloadCache(): void {
   sessionStorage.removeItem(getPreloadNotificationsKey());
   sessionStorage.removeItem(getPreloadBookmarksKey());
   sessionStorage.removeItem(getPreloadFavoritesKey());
-  console.log('[Preload] Cache cleared');
 }
 
 /**
@@ -321,7 +310,6 @@ export function invalidatePreloadCache(
     favorites: getPreloadFavoritesKey(),
   };
   sessionStorage.removeItem(keyMap[type]);
-  console.log(`[Preload] ${type} cache invalidated`);
 }
 
 /**
@@ -338,13 +326,13 @@ export async function initPreload(): Promise<void> {
   }
 
   // Add a small delay to ensure critical resources are loaded
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const POST_LOAD_SETTLE_MS = 2000;
+  await new Promise((resolve) => setTimeout(resolve, POST_LOAD_SETTLE_MS));
 
   const shouldPreload = await canPreload();
   if (!shouldPreload) {
     return;
   }
 
-  console.log('[Preload] Starting idle-time preload...');
   await schedulePreload();
 }

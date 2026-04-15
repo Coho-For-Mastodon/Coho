@@ -16,26 +16,7 @@ export { pushRelay, pushRelayPush } from './push-relay';
 // Define the secret
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
 
-// Helper to enable CORS
-const allowedOrigins = [
-  'https://coho.place',
-  'https://coho-mastodon.web.app',
-  'http://localhost:3000',
-  // Capacitor Android WebView origin (androidScheme: 'https' in capacitor.config.ts)
-  'https://localhost',
-];
-
-const applyCors = (
-  request: { headers: { origin?: string } },
-  response: { set: (key: string, value: string) => void }
-) => {
-  const origin = request.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    response.set('Access-Control-Allow-Origin', origin);
-  }
-  response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-};
+import { applyCors } from './cors';
 
 // ============================================================================
 // Server URL Validation (SSRF Protection)

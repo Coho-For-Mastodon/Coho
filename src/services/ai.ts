@@ -123,19 +123,12 @@ export const translate = async (
       throw new Error('Translator API not available');
     }
 
-    console.log(
-      'Checking translator capabilities for',
-      sourceLanguage,
-      'to',
-      targetLanguage
-    );
     const translatorCapabilities = await window.Translator.availability({
       sourceLanguage,
       targetLanguage,
     });
 
     const canTranslate = translatorCapabilities;
-    console.log('canTranslate', canTranslate);
 
     if (canTranslate !== 'available' && canTranslate !== 'downloadable') {
       throw new Error(
@@ -151,7 +144,6 @@ export const translate = async (
 
     // Translate the text
     const translatedText = await translator.translate(prompt);
-    console.log('Translated text:', translatedText);
 
     // Clean up
     translator.destroy();
@@ -270,8 +262,8 @@ export const proofread = async (
     const proofreader = await Proofreader.create({
       expectedInputLanguages: ['en'],
       monitor(m) {
-        m.addEventListener('downloadprogress', (e) => {
-          console.log(`Proofreader model download: ${e.loaded * 100}%`);
+        m.addEventListener('downloadprogress', (_e) => {
+          // Model download in progress
         });
       },
     });
@@ -387,8 +379,6 @@ export const generateAltText = async (
 
     // Fallback to Cloud Function
     try {
-      console.log('Falling back to cloud function for alt text generation...');
-
       // Convert Blob to base64 if needed, or if it's a URL we might handle it differently
       // But for the cloud function, usually we send the prompt and maybe image data
       // For now, let's assume the cloud function handles this similar to createAPost or createImage
@@ -679,7 +669,6 @@ const getWhisperWorker = (): Promise<Worker> => {
     }
 
     // Create new worker
-    console.log('Creating Whisper worker...');
     whisperWorker = new Worker(
       new URL('./whisper-worker.ts', import.meta.url),
       { type: 'module' }
@@ -689,7 +678,6 @@ const getWhisperWorker = (): Promise<Worker> => {
       const { type, id, text, error } = event.data;
 
       if (type === 'ready') {
-        console.log('Whisper worker script ready');
         return;
       }
 
@@ -771,10 +759,7 @@ const ensureWhisperModelReady = async (worker: Worker): Promise<void> => {
 const transcribeWithTransformers = async (
   audioBlob: Blob
 ): Promise<string | null> => {
-  console.log('Transcribing with transformers.js (worker)...');
-
   // Convert audio on main thread (AudioContext not available in workers)
-  console.log('Converting audio for Whisper...');
   const audioData = await convertAudioForWhisper(audioBlob);
 
   const worker = await getWhisperWorker();
@@ -804,15 +789,7 @@ const TRANSCRIPTION_PROMPT =
 const transcribeWithPromptAPI = async (
   audioBlob: Blob
 ): Promise<string | null> => {
-  console.log(
-    'Transcribing audio blob:',
-    audioBlob.size,
-    'bytes, type:',
-    audioBlob.type
-  );
-
   const params = await LanguageModel.params();
-  console.log('LanguageModel params:', params);
 
   const session = await LanguageModel.create({
     expectedInputs: [{ type: 'audio' }],
@@ -854,12 +831,10 @@ const transcribeWithPromptAPI = async (
     const stream = session.promptStreaming(messages);
 
     for await (const chunk of stream) {
-      console.log('Transcription chunk:', chunk);
       // Chunks are individual tokens, concatenate them
       result += chunk;
     }
 
-    console.log('Final transcription result:', result);
     return result.trim();
   } finally {
     session.destroy();
@@ -894,53 +869,3 @@ export const transcribeAudio = async (
     return null;
   }
 };
-
-// export const analyzeStatusImage = async (image: string) => {
-//     const response = await fetch(`${visionEndpoint}/computervision/imageanalysis:analyze?api-version=2022-10-12-preview&features=Read,Description`, {
-//         method: "POST",
-//         headers: new Headers({
-//             "Content-Type": "application/json",
-//             "Ocp-Apim-Subscription-Key": visionKey
-//         }),
-//         body: JSON.stringify({
-//             url: image
-//         })
-//     });
-
-//     const data = await response.json();
-//     console.log(data);
-
-//     return data;
-// }
-
-// export const analyzeStatusText = async (text: string) => {
-//     const response = await fetch(`${endpoint}/language/:analyze-text?api-version=2022-05-01`, {
-//         method: "POST",
-//         headers: new Headers({
-//             "Content-Type": "application/json",
-//             "Ocp-Apim-Subscription-Key": key
-//         }),
-//         body: JSON.stringify(
-//             {
-//                 "kind": "EntityLinking",
-//                 "parameters": {
-//                     "modelVersion": "latest"
-//                 },
-//                 "analysisInput": {
-//                     "documents": [
-//                         {
-//                             "id": "1",
-//                             "language": "en",
-//                             "text": text
-//                         }
-//                     ]
-//                 }
-//             }
-//         )
-//     })
-
-//     const data = await response.json();
-//     console.log(data);
-
-//     return data;
-// }

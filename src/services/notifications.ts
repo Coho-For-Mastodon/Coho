@@ -72,10 +72,9 @@ export const subToPush = async () => {
     if (appResponse.ok) {
       const appData = await appResponse.json();
       vapidKey = appData.vapid_key;
-      console.log('Got VAPID key from app credentials:', vapidKey);
     }
-  } catch (error) {
-    console.log('Could not get VAPID key from app credentials:', error);
+  } catch (_error) {
+    // VAPID key unavailable from app credentials — try fallback
   }
 
   // Fallback: Try to get existing subscription from Mastodon API which contains the server_key
@@ -94,25 +93,18 @@ export const subToPush = async () => {
       if (existingSubResponse.ok) {
         const existingSub = await existingSubResponse.json();
         vapidKey = existingSub.server_key;
-        console.log('Got VAPID key from existing subscription:', vapidKey);
       }
-    } catch (error) {
-      console.log('No existing subscription found:', error);
+    } catch (_error) {
+      // No existing subscription available
     }
   }
 
   // If we have the VAPID key, create a browser push subscription
   if (vapidKey) {
-    console.log(
-      'Creating push subscription with VAPID key:',
-      vapidKey,
-      registration
-    );
     subscription = await registration?.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidKey),
     });
-    console.log('Created push subscription:', subscription);
   } else {
     // Check if browser already has a subscription
     subscription = await registration?.pushManager.getSubscription();
@@ -161,13 +153,11 @@ export const subToPush = async () => {
     }),
   });
   const res = await response.json();
-  console.log('subToPush', res);
 
   const doWeHavePermission = Notification.permission === 'granted';
   let permission: NotificationPermission | undefined;
 
   if (!doWeHavePermission) {
-    console.log('Requesting notification permission from user...');
     permission = await Notification.requestPermission();
   } else {
     permission = 'granted';
@@ -194,7 +184,7 @@ export const subToPush = async () => {
         });
       }
     } catch {
-      console.log('Periodic Sync could not be registered!');
+      // Periodic Sync registration not supported
     }
   }
 };
@@ -266,7 +256,6 @@ export const modifyPush = async (options: {
   }
 
   const res = await response.json();
-  console.log('modifyPush', res);
   return res;
 };
 
@@ -296,8 +285,7 @@ export const unsubToPush = async () => {
     }),
     body: JSON.stringify(subscription),
   });
-  const res = await response.json();
-  console.log('unsubToPush', res);
+  await response.json();
 
   await subscription.unsubscribe();
 };

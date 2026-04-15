@@ -13,14 +13,10 @@ import { CACHE_NAMES } from './constants';
  * and redirects to the compose view.
  */
 export async function shareTargetHandler(event: FetchEvent): Promise<Response> {
-  console.log('[SW] shareTargetHandler invoked');
-
   try {
     const formData = await event.request.formData();
     const mediaFiles = formData.getAll('image') as File[];
     const cache = await caches.open(CACHE_NAMES.share);
-
-    console.log('[SW] Share target received', mediaFiles.length, 'files');
 
     if (mediaFiles.length === 0) {
       console.warn('[SW] Share target: No files received in form data');
@@ -31,14 +27,6 @@ export async function shareTargetHandler(event: FetchEvent): Promise<Response> {
 
     for (const file of mediaFiles) {
       const cacheKey = `/_share/${encodeURIComponent(file.name)}`;
-      console.log(
-        '[SW] Caching file with key:',
-        cacheKey,
-        'size:',
-        file.size,
-        'type:',
-        file.type
-      );
       await cache.put(
         cacheKey,
         new Response(file, {
@@ -56,7 +44,6 @@ export async function shareTargetHandler(event: FetchEvent): Promise<Response> {
       params.append('name', name);
     }
     const redirectUrl = `/home?${params.toString()}`;
-    console.log('[SW] Redirecting to:', redirectUrl);
     return Response.redirect(redirectUrl, 303);
   } catch (error) {
     console.error('[SW] shareTargetHandler error:', error);

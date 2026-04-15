@@ -21,10 +21,7 @@ import {
   upsertAccountFromOAuth,
 } from './auth-session';
 import { getAccountScopedIdbKey } from '../utils/account-scoped-storage';
-
-// Helper functions to always get fresh values from localStorage
-const getAccessToken = () => localStorage.getItem('accessToken') || '';
-const getServer = () => localStorage.getItem('server') || '';
+import { getServer, getAccessToken } from './auth-context';
 const normalizeServer = (server: string) =>
   server.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
@@ -132,28 +129,6 @@ export const editAccount = async (
   return data as CredentialAccount;
 };
 
-/**
- * Legacy editAccount function for backwards compatibility
- * @deprecated Use editAccount(params: UpdateCredentialsParams) instead
- */
-export const editAccountLegacy = async (
-  display_name: string,
-  note: string,
-  locked: string,
-  bot: string,
-  avatar: File | string,
-  header: File | string
-) => {
-  return editAccount({
-    display_name,
-    note,
-    locked: locked === 'true',
-    bot: bot === 'true',
-    avatar: avatar instanceof File ? avatar : undefined,
-    header: header instanceof File ? header : undefined,
-  });
-};
-
 export const getPeers = async () => {
   const response = await fetch(`https://mastodon.social/api/v1/instance/peers`);
   const data = await response.json();
@@ -252,21 +227,18 @@ export const getCurrentUser = async (): Promise<Account | undefined> => {
     });
 
     return currentUser;
-  } catch (err) {
-    console.log('[getCurrentUser] Network error, trying cache:', err);
-
-    // Try to get cached user from IndexedDB when offline
+  } catch {
+    // Network error — try to get cached user from IndexedDB when offline
     try {
       const cachedUser = (await get(getCurrentUserCacheKey())) as
         | Account
         | undefined;
       if (cachedUser) {
-        console.log('[getCurrentUser] Using cached user data');
         currentUser = cachedUser;
         return cachedUser;
       }
-    } catch (cacheErr) {
-      console.log('[getCurrentUser] Cache retrieval failed:', cacheErr);
+    } catch {
+      // Cache retrieval also failed
     }
 
     // No cached data available
@@ -313,22 +285,18 @@ export const getAccount = async (id: string): Promise<Account | undefined> => {
     // Cache the profile to IndexedDB for offline access
     if (data && data.id) {
       await set(cacheKey, data);
-      console.log('[getAccount] Profile cached for offline access');
     }
 
     return data as Account;
-  } catch (err) {
-    console.log('[getAccount] Network error, trying cache:', err);
-
-    // Try to get cached profile from IndexedDB when offline
+  } catch {
+    // Network error — try cached profile from IndexedDB
     try {
       const cachedProfile = (await get(cacheKey)) as Account | undefined;
       if (cachedProfile) {
-        console.log('[getAccount] Using cached profile data');
         return cachedProfile;
       }
-    } catch (cacheErr) {
-      console.log('[getAccount] Cache retrieval failed:', cacheErr);
+    } catch {
+      // Cache retrieval also failed
     }
 
     // No cached data available
@@ -385,22 +353,18 @@ export const getUsersPosts = async (
     // Cache posts to IndexedDB for offline access
     if (Array.isArray(data)) {
       await set(cacheKey, data);
-      console.log('[getUsersPosts] Posts cached for offline access');
     }
 
     return data;
-  } catch (err) {
-    console.log('[getUsersPosts] Network error, trying cache:', err);
-
-    // Try to get cached posts from IndexedDB when offline
+  } catch {
+    // Network error — try cached posts from IndexedDB
     try {
       const cachedPosts = await get(cacheKey);
       if (cachedPosts) {
-        console.log('[getUsersPosts] Using cached posts data');
         return cachedPosts;
       }
-    } catch (cacheErr) {
-      console.log('[getUsersPosts] Cache retrieval failed:', cacheErr);
+    } catch {
+      // Cache retrieval also failed
     }
 
     // Return empty array if no cached data
@@ -419,11 +383,10 @@ export const getPinnedPosts = async (id: string) => {
     try {
       const cachedPosts = await get(cacheKey);
       if (cachedPosts) {
-        console.log('[getPinnedPosts] Using cached posts data');
         return cachedPosts;
       }
-    } catch (cacheErr) {
-      console.log('[getPinnedPosts] Cache retrieval failed:', cacheErr);
+    } catch {
+      // Cache retrieval failed
     }
     return [];
   };
@@ -431,7 +394,6 @@ export const getPinnedPosts = async (id: string) => {
   const cacheIfValid = async (data: unknown) => {
     if (Array.isArray(data)) {
       await set(cacheKey, data);
-      console.log('[getPinnedPosts] Posts cached for offline access');
       return data;
     }
     return null;
@@ -454,8 +416,8 @@ export const getPinnedPosts = async (id: string) => {
     const data = await response.json();
     const cached = await cacheIfValid(data);
     if (cached) return cached;
-  } catch (err) {
-    console.log('[getPinnedPosts] Function error, trying direct API:', err);
+  } catch {
+    // Function error — trying direct API
   }
 
   try {
@@ -477,8 +439,8 @@ export const getPinnedPosts = async (id: string) => {
     const data = await apiResponse.json();
     const cached = await cacheIfValid(data);
     if (cached) return cached;
-  } catch (err) {
-    console.log('[getPinnedPosts] Direct API error, trying cache:', err);
+  } catch {
+    // Direct API error — falling back to cache
   }
 
   return tryCache();

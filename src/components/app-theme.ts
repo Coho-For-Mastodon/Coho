@@ -143,7 +143,6 @@ export class AppTheme extends LitElement {
     super.connectedCallback();
 
     this.settings = await getSettings();
-    console.log('this.settings', this.settings);
 
     // On Android Capacitor, device color always wins
     const deviceColor = await getAndroidDynamicColor();

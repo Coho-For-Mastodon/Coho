@@ -94,12 +94,9 @@ export async function queueRequest(
   queue.push(queuedRequest);
   await saveSyncQueue(config, queue);
 
-  console.log('[SW] Queued request for background sync:', request.url);
-
   // Register for background sync
   try {
     await config.registration.sync.register(config.syncTag);
-    console.log('[SW] Background sync registered');
   } catch (err) {
     console.warn('[SW] Background sync registration failed:', err);
   }
@@ -116,11 +113,8 @@ export async function replayQueuedRequests(
 ): Promise<void> {
   const queue = await getSyncQueue(config);
   if (queue.length === 0) {
-    console.log('[SW] No queued requests to replay');
     return;
   }
-
-  console.log('[SW] Replaying', queue.length, 'queued requests');
 
   // Refresh the auth token once before replaying the batch
   let freshAuthHeader: string | null = null;
@@ -155,7 +149,7 @@ export async function replayQueuedRequests(
       const response = await fetch(queuedRequest.url, init);
 
       if (response.ok) {
-        console.log('[SW] Successfully replayed:', queuedRequest.url);
+        // Successfully replayed
       } else {
         console.warn(
           '[SW] Replay failed with status:',
@@ -177,7 +171,7 @@ export async function replayQueuedRequests(
   await saveSyncQueue(config, failedRequests);
 
   if (failedRequests.length > 0) {
-    console.log('[SW] Re-queued', failedRequests.length, 'failed requests');
+    console.warn('[SW] Re-queued', failedRequests.length, 'failed requests');
   }
 }
 
@@ -195,10 +189,6 @@ export async function networkWithBackgroundSync(
     return response;
   } catch {
     // Network error — queue for background sync
-    console.log(
-      '[SW] Network error, queuing for background sync:',
-      request.url
-    );
     await queueRequest(config, request);
 
     // Return a synthetic response so the UI can update optimistically

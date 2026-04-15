@@ -3,10 +3,7 @@ import { addMedia } from './media';
 import { Account } from '../types/interfaces/Account';
 import { Post, PostPublishResult } from '../interfaces/Post';
 import { MediaAttachment } from '../types/interfaces/MediaAttachment';
-
-// Helper functions to always get fresh values from localStorage
-const getServer = () => localStorage.getItem('server') || '';
-const getAccessToken = () => localStorage.getItem('accessToken') || '';
+import { getServer, getAccessToken } from './auth-context';
 
 export async function getFavouritedBy(id: string): Promise<Account[]> {
   const server = getServer();
@@ -497,9 +494,6 @@ export async function uploadMediaFromURL(
   return data;
 }
 
-/** @deprecated Use uploadMediaFromURL instead */
-export const uploadImageFromURL = uploadMediaFromURL;
-
 export async function uploadMediaBlob(blob: Blob): Promise<MediaAttachment> {
   const server = getServer();
   const accessToken = getAccessToken();
@@ -522,9 +516,6 @@ export async function uploadMediaBlob(blob: Blob): Promise<MediaAttachment> {
 
   return data;
 }
-
-/** @deprecated Use uploadMediaBlob instead */
-export const uploadImageFromBlob = uploadMediaBlob;
 
 export async function pickMedia(): Promise<File[]> {
   try {

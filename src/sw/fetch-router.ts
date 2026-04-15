@@ -37,7 +37,6 @@ export function handleFetch(
   // POST form submissions have request.mode === 'navigate', so if we check
   // navigation first, share target requests would be incorrectly handled.
   if (url.pathname === '/share' && request.method === 'POST') {
-    console.log('[SW] Share target POST intercepted');
     event.respondWith(shareTargetHandler(event));
     return;
   }

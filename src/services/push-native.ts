@@ -11,6 +11,7 @@
 
 import { PushNotifications } from '@capacitor/push-notifications';
 import { getClientConfig } from '../mastodon/config/client';
+import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 
 // ---------------------------------------------------------------------------
 // Relay Configuration
@@ -23,8 +24,7 @@ import { getClientConfig } from '../mastodon/config/client';
  */
 function getRelayBaseUrl(): string {
   return (
-    localStorage.getItem('pushRelayBaseUrl') ||
-    'https://us-central1-coho-mastodon.cloudfunctions.net'
+    localStorage.getItem('pushRelayBaseUrl') || FIREBASE_FUNCTIONS_BASE_URL
   );
 }
 
@@ -48,15 +48,11 @@ const FCM_TOKEN_KEY = 'pushRelayFcmToken';
  * 4. Sends that endpoint to Mastodon via POST /api/v1/push/subscription
  */
 export async function subToPushNative(): Promise<void> {
-  console.log('[NativePush] Starting subscription...');
-
   // 1. Request permission
   let permResult = await PushNotifications.checkPermissions();
-  console.log('[NativePush] Permission status:', permResult.receive);
 
   if (permResult.receive === 'prompt') {
     permResult = await PushNotifications.requestPermissions();
-    console.log('[NativePush] Permission after request:', permResult.receive);
   }
   if (permResult.receive !== 'granted') {
     throw new Error('Push notification permission denied');
@@ -78,7 +74,6 @@ export async function subToPushNative(): Promise<void> {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
-        console.log('[NativePush] FCM token received');
         resolve(token.value);
       });
 
@@ -90,9 +85,7 @@ export async function subToPushNative(): Promise<void> {
         reject(new Error(err.error || 'FCM registration failed'));
       });
 
-      console.log('[NativePush] Listeners ready, calling register()...');
       await PushNotifications.register();
-      console.log('[NativePush] register() returned');
     };
 
     setup().catch((err) => {
@@ -105,11 +98,9 @@ export async function subToPushNative(): Promise<void> {
   });
 
   localStorage.setItem(FCM_TOKEN_KEY, fcmToken);
-  console.log('[NativePush] FCM token stored, registering with relay...');
 
   // 3. Register with the relay
   const relayUrl = `${getRelayBaseUrl()}/pushRelay`;
-  console.log('[NativePush] Registering with relay...');
 
   let relayResponse: Response;
   try {
@@ -122,8 +113,6 @@ export async function subToPushNative(): Promise<void> {
     console.error('[NativePush] Relay fetch failed:', fetchErr);
     throw fetchErr;
   }
-
-  console.log('[NativePush] Relay response status:', relayResponse.status);
 
   if (!relayResponse.ok) {
     const errBody = await relayResponse.text().catch(() => '');
@@ -180,8 +169,6 @@ export async function subToPushNative(): Promise<void> {
       `Mastodon push subscription failed: ${mastodonResponse.status}`
     );
   }
-
-  console.log('[NativePush] Subscribed via relay', relay.registrationId);
 }
 
 // ---------------------------------------------------------------------------
@@ -202,7 +189,7 @@ export async function unsubToPushNative(): Promise<void> {
       },
     });
   } catch {
-    console.log('[NativePush] Mastodon unsub failed (may already be gone)');
+    // Mastodon unsub may already be gone — ignore
   }
 
   // Delete from relay
@@ -217,7 +204,7 @@ export async function unsubToPushNative(): Promise<void> {
         }),
       });
     } catch {
-      console.log('[NativePush] Relay unsub failed');
+      // Relay unsub failed — non-critical
     }
     localStorage.removeItem(RELAY_REGISTRATION_ID_KEY);
   }
@@ -225,7 +212,6 @@ export async function unsubToPushNative(): Promise<void> {
   localStorage.removeItem(FCM_TOKEN_KEY);
 
   await PushNotifications.removeAllListeners();
-  console.log('[NativePush] Unsubscribed');
 }
 
 // ---------------------------------------------------------------------------
@@ -342,8 +328,6 @@ export function setupNativePushListeners(): void {
   );
   // Foreground notification received
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('[NativePush] Foreground notification received');
-
     const data = notification.data as Record<string, string> | undefined;
     if (!data) return;
 
@@ -363,8 +347,6 @@ export function setupNativePushListeners(): void {
   PushNotifications.addListener(
     'pushNotificationActionPerformed',
     async (action) => {
-      console.log('[NativePush] Notification tap');
-
       const data = action.notification.data as
         | Record<string, string>
         | undefined;
@@ -386,8 +368,6 @@ export function setupNativePushListeners(): void {
 
     // Skip if this is the initial registration (no relay yet) or token unchanged
     if (!registrationId || token.value === previousToken) return;
-
-    console.log('[NativePush] FCM token refreshed, re-registering');
 
     // Clean up old relay registration
     if (registrationId) {

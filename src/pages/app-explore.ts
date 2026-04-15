@@ -91,10 +91,7 @@ export class AppExplore extends LitElement {
   ];
 
   async firstUpdated() {
-    console.log('first updated');
-
     const data = await getPreviewTimeline();
-    console.log(data);
 
     this.timeline = data;
   }

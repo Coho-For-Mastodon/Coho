@@ -36,8 +36,9 @@ export const groupSelfThreads = (posts: Post[]): Post[] => {
 // Re-export type
 export type { Post };
 
-// Helper functions to always get fresh values from localStorage
-const getAccessToken = () => localStorage.getItem('accessToken') || '';
+import { getAccessToken } from './auth-context';
+
+// timeline.ts uses mastodon.social as fallback for preview/guest mode
 const getServer = () => localStorage.getItem('server') || 'mastodon.social';
 
 // Pagination state - scoped per timeline type to prevent cross-contamination
@@ -121,8 +122,6 @@ export const addSomeInterestFinds = async (): Promise<Post[]> => {
     );
     const data = await response.json();
 
-    console.log('interest data', data);
-
     if (data.accounts && data.accounts.length > 0) {
       // get statuses from account
       const account =
@@ -181,8 +180,8 @@ export const getPaginatedHomeTimeline = async (
 ): Promise<Post[]> => {
   try {
     handlePeriodic();
-  } catch (err) {
-    console.log(err);
+  } catch {
+    // Periodic sync registration is best-effort
   }
 
   const accessToken = getAccessToken();

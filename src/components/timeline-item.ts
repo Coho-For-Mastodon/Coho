@@ -1239,33 +1239,6 @@ export class TimelineItem extends LitElement {
     );
   }
 
-  // async analyzeStatus(tweet: Post | null) {
-  //     if (tweet) {
-  //         const { analyzeStatusText, analyzeStatusImage } = await import('../services/ai');
-  //         const data = await analyzeStatusText(tweet.reblog ? tweet.reblog.content : tweet.content);
-
-  //         let imageData: string | null = null;
-  //         const imageURL = tweet.reblog ? tweet.reblog.media_attachments[0] ? tweet.reblog.media_attachments[0].preview_url : null : tweet.media_attachments[0] ? tweet.media_attachments[0]?.preview_url : null;
-
-  //         if (imageURL) {
-  //             imageData = await analyzeStatusImage(imageURL);
-  //         }
-
-  //         if (data) {
-  //             console.log(data);
-
-  //             this.dispatchEvent(new CustomEvent('analyze', {
-  //                 detail: {
-  //                     data,
-  //                     imageData: imageData ? imageData : null,
-  //                     tweet
-  //                 }
-  //             }));
-  //         }
-  //     }
-
-  // }
-
   async shareStatus(tweet: Post | null) {
     await shareStatusAction(tweet);
   }
@@ -1397,8 +1370,6 @@ export class TimelineItem extends LitElement {
     const summaryData = await summarize(text);
 
     if (summaryData) {
-      console.log(summaryData);
-
       this.dispatchEvent(
         new CustomEvent('summarize', {
           detail: {
@@ -1430,8 +1401,6 @@ export class TimelineItem extends LitElement {
     const translateData = await translate(text, 'en-us', statusId);
 
     if (translateData) {
-      console.log(translateData);
-
       this.dispatchEvent(
         new CustomEvent('summarize', {
           detail: {

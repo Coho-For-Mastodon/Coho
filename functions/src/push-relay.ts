@@ -13,6 +13,7 @@
 import { onRequest, type Request } from 'firebase-functions/v2/https';
 import type { Response } from 'express';
 import * as logger from 'firebase-functions/logger';
+import { applyCors } from './cors';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 import * as http from 'http';
@@ -67,29 +68,6 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 const COLLECTION = 'push-relay-registrations';
-
-// ---------------------------------------------------------------------------
-// CORS (same list used by the rest of the functions)
-// ---------------------------------------------------------------------------
-
-const allowedOrigins = [
-  'https://coho.place',
-  'https://coho-mastodon.web.app',
-  'http://localhost:3000',
-  'https://localhost', // Capacitor Android WebView
-];
-
-function applyCors(
-  request: { headers: { origin?: string } },
-  response: { set: (key: string, value: string) => void }
-) {
-  const origin = request.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    response.set('Access-Control-Allow-Origin', origin);
-  }
-  response.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-}
 
 // ---------------------------------------------------------------------------
 // Crypto helpers
