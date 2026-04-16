@@ -156,6 +156,8 @@ export class TimelineItem extends LitElement {
         padding: 8px 12px;
         margin: -10px -10px 10px -10px;
         background: transparent;
+        border: none;
+        outline: none;
         border-radius: var(--md-sys-shape-corner-medium)
           var(--md-sys-shape-corner-medium) 0 0;
         font-size: var(--md-sys-typescale-body-small-font-size);
