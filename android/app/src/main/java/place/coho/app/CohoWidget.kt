@@ -57,7 +57,17 @@ class CohoWidget : GlanceAppWidget() {
         val allUrls = timelinePosts.map { it.avatarUrl } + notifications.map { it.avatarUrl }
         for (url in allUrls.distinct()) {
             if (url.isNotBlank()) {
-                CohoDataFetcher.downloadAvatar(url, avatarSize)?.let { avatarCache[url] = it }
+                CohoDataFetcher.downloadAvatar(context, url, avatarSize)?.let { avatarCache[url] = it }
+            }
+        }
+
+        // Download media thumbnails for timeline posts with image attachments
+        val thumbSize = (80 * context.resources.displayMetrics.density).toInt()
+        val mediaCache = mutableMapOf<String, Bitmap>()
+        for (post in timelinePosts) {
+            val url = post.mediaPreviewUrl
+            if (!url.isNullOrBlank()) {
+                CohoDataFetcher.downloadAvatar(context, url, thumbSize)?.let { mediaCache[url] = it }
             }
         }
 
@@ -67,7 +77,8 @@ class CohoWidget : GlanceAppWidget() {
                     isAuthenticated = isAuthenticated,
                     timelinePosts = timelinePosts,
                     notifications = notifications,
-                    avatarCache = avatarCache
+                    avatarCache = avatarCache,
+                    mediaCache = mediaCache
                 )
             }
         }
@@ -78,7 +89,8 @@ class CohoWidget : GlanceAppWidget() {
         isAuthenticated: Boolean,
         timelinePosts: List<TimelinePost>,
         notifications: List<WidgetNotification>,
-        avatarCache: Map<String, Bitmap>
+        avatarCache: Map<String, Bitmap>,
+        mediaCache: Map<String, Bitmap>
     ) {
         val prefs = currentState<Preferences>()
         val selectedTab = prefs[CohoWidgetKeys.SELECTED_TAB] ?: CohoWidgetKeys.TAB_TIMELINE
@@ -91,15 +103,40 @@ class CohoWidget : GlanceAppWidget() {
                 .padding(12.dp)
         ) {
             // Header
-            Text(
-                text = "Coho",
-                style = TextStyle(
-                    color = GlanceTheme.colors.primary,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = GlanceModifier.padding(bottom = 8.dp, start = 4.dp)
-            )
+            Row(
+                modifier = GlanceModifier.fillMaxWidth().padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Coho",
+                    style = TextStyle(
+                        color = GlanceTheme.colors.primary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = GlanceModifier.defaultWeight().padding(start = 4.dp)
+                )
+                Box(
+                    modifier = GlanceModifier
+                        .size(32.dp)
+                        .background(GlanceTheme.colors.primary)
+                        .cornerRadius(16.dp)
+                        .clickable(actionRunCallback<DeepLinkAction>(
+                            actionParametersOf(DeepLinkUrlKey to "https://localhost/home?newPost=1")
+                        )),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "+",
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onPrimary,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    )
+                }
+            }
 
             // Tab bar
             TabBar(selectedTab = selectedTab)
@@ -114,7 +151,7 @@ class CohoWidget : GlanceAppWidget() {
                     } else if (timelinePosts.isEmpty()) {
                         EmptyState("No posts yet")
                     } else {
-                        TimelineList(timelinePosts, avatarCache)
+                        TimelineList(timelinePosts, avatarCache, mediaCache)
                     }
                 }
                 CohoWidgetKeys.TAB_NOTIFICATIONS -> {
@@ -139,7 +176,7 @@ class CohoWidget : GlanceAppWidget() {
                 .padding(2.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TabButton("Timeline", CohoWidgetKeys.TAB_TIMELINE, selectedTab,
+            TabButton("Home", CohoWidgetKeys.TAB_TIMELINE, selectedTab,
                 GlanceModifier.defaultWeight())
             Spacer(modifier = GlanceModifier.width(4.dp))
             TabButton("Notifications", CohoWidgetKeys.TAB_NOTIFICATIONS, selectedTab,
@@ -239,16 +276,16 @@ class CohoWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun TimelineList(posts: List<TimelinePost>, avatarCache: Map<String, Bitmap>) {
+    private fun TimelineList(posts: List<TimelinePost>, avatarCache: Map<String, Bitmap>, mediaCache: Map<String, Bitmap>) {
         LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
             items(posts, itemId = { it.id.hashCode().toLong() }) { post ->
-                TimelineItem(post, avatarCache[post.avatarUrl])
+                TimelineItem(post, avatarCache[post.avatarUrl], post.mediaPreviewUrl?.let { mediaCache[it] })
             }
         }
     }
 
     @Composable
-    private fun TimelineItem(post: TimelinePost, avatar: Bitmap?) {
+    private fun TimelineItem(post: TimelinePost, avatar: Bitmap?, thumbnail: Bitmap?) {
         Row(
             modifier = GlanceModifier
                 .fillMaxWidth()
@@ -290,15 +327,26 @@ class CohoWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.width(8.dp))
 
             Column(modifier = GlanceModifier.defaultWeight()) {
-                Text(
-                    text = post.authorName,
-                    style = TextStyle(
-                        color = GlanceTheme.colors.onSurface,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    maxLines = 1
-                )
+                Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = post.authorName,
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onSurface,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        maxLines = 1,
+                        modifier = GlanceModifier.defaultWeight()
+                    )
+                    Spacer(modifier = GlanceModifier.width(4.dp))
+                    Text(
+                        text = CohoDataFetcher.relativeTime(post.createdAt),
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onSurfaceVariant,
+                            fontSize = 11.sp
+                        )
+                    )
+                }
                 Text(
                     text = post.content,
                     style = TextStyle(
@@ -307,6 +355,18 @@ class CohoWidget : GlanceAppWidget() {
                     ),
                     maxLines = 2
                 )
+                if (thumbnail != null) {
+                    Spacer(modifier = GlanceModifier.height(4.dp))
+                    Image(
+                        provider = ImageProvider(thumbnail),
+                        contentDescription = null,
+                        modifier = GlanceModifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .cornerRadius(8.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             }
         }
     }
@@ -381,6 +441,14 @@ class CohoWidget : GlanceAppWidget() {
                             fontSize = 12.sp
                         ),
                         maxLines = 1
+                    )
+                    Spacer(modifier = GlanceModifier.width(4.dp))
+                    Text(
+                        text = CohoDataFetcher.relativeTime(notif.createdAt),
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onSurfaceVariant,
+                            fontSize = 11.sp
+                        )
                     )
                 }
                 if (!notif.statusContent.isNullOrBlank()) {

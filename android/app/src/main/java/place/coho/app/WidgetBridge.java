@@ -27,6 +27,7 @@ public class WidgetBridge extends Plugin {
                 .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(PREF_SERVER, server).apply();
 
+        CohoWidgetReceiver.scheduleWidgetUpdates(getContext());
         WidgetRefreshHelper.INSTANCE.refreshWidgets(getContext());
         call.resolve();
     }
@@ -42,6 +43,8 @@ public class WidgetBridge extends Plugin {
                 .putString(PREF_ACCESS_TOKEN, accessToken)
                 .apply();
 
+        // Ensure the periodic WorkManager job is scheduled (handles reinstalls)
+        CohoWidgetReceiver.scheduleWidgetUpdates(getContext());
         WidgetRefreshHelper.INSTANCE.refreshWidgets(getContext());
         call.resolve();
     }

@@ -1,5 +1,6 @@
 package place.coho.app
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import kotlinx.coroutines.Dispatchers
@@ -7,9 +8,14 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 data class TimelinePost(
     val id: String,
@@ -17,7 +23,8 @@ data class TimelinePost(
     val authorInitial: String,
     val avatarUrl: String,
     val content: String,
-    val createdAt: String
+    val createdAt: String,
+    val mediaPreviewUrl: String?
 )
 
 data class WidgetNotification(
@@ -79,10 +86,22 @@ object CohoDataFetcher {
 
     /**
      * Download a bitmap from a URL, scaled to the given size.
+     * Caches decoded bitmaps to disk for 24 hours to avoid re-downloading on every widget refresh.
      * Returns null on any error.
      */
-    suspend fun downloadAvatar(urlString: String, sizePx: Int): Bitmap? =
+    suspend fun downloadAvatar(context: Context, urlString: String, sizePx: Int): Bitmap? =
         withContext(Dispatchers.IO) {
+            if (urlString.isBlank()) return@withContext null
+
+            val cacheDir = File(context.cacheDir, "widget_avatars").also { it.mkdirs() }
+            val cacheFile = File(cacheDir, "${md5Hex(urlString)}_$sizePx.png")
+
+            // Serve from disk cache if < 24 hours old
+            if (cacheFile.exists() && System.currentTimeMillis() - cacheFile.lastModified() < 86_400_000L) {
+                BitmapFactory.decodeFile(cacheFile.absolutePath)?.let { return@withContext it }
+            }
+
+            // Download fresh copy
             var conn: HttpURLConnection? = null
             try {
                 val url = URL(urlString)
@@ -93,7 +112,17 @@ object CohoDataFetcher {
                 if (conn.responseCode != 200) return@withContext null
                 val raw = BitmapFactory.decodeStream(conn.inputStream)
                     ?: return@withContext null
-                Bitmap.createScaledBitmap(raw, sizePx, sizePx, true)
+                val scaled = Bitmap.createScaledBitmap(raw, sizePx, sizePx, true)
+                if (scaled != raw) raw.recycle()
+
+                // Persist to disk cache (best-effort)
+                try {
+                    cacheFile.outputStream().use { out ->
+                        scaled.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    }
+                } catch (_: Exception) { }
+
+                scaled
             } catch (_: Exception) {
                 null
             } finally {
@@ -114,13 +143,21 @@ object CohoDataFetcher {
         val content = stripHtml(contentSource.optString("content", ""))
         if (content.isBlank()) return null
 
+        val mediaAttachments = contentSource.optJSONArray("media_attachments")
+        val mediaPreviewUrl = if (mediaAttachments != null && mediaAttachments.length() > 0) {
+            val first = mediaAttachments.getJSONObject(0)
+            if (first.optString("type") == "image") first.optString("preview_url", "").ifBlank { null }
+            else null
+        } else null
+
         return TimelinePost(
             id = obj.optString("id", ""),
             authorName = displayName,
             authorInitial = displayName.firstOrNull()?.uppercase() ?: "?",
             avatarUrl = avatarUrl,
             content = content.take(200),
-            createdAt = obj.optString("created_at", "")
+            createdAt = obj.optString("created_at", ""),
+            mediaPreviewUrl = mediaPreviewUrl
         )
     }
 
@@ -159,6 +196,40 @@ object CohoDataFetcher {
         "status" -> "posted"
         "update" -> "edited a post"
         else -> type
+    }
+
+    /** Stable, collision-resistant filename key for a URL. */
+    private fun md5Hex(input: String): String {
+        val digest = MessageDigest.getInstance("MD5").digest(input.toByteArray(Charsets.UTF_8))
+        return digest.joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Format an ISO 8601 timestamp as a human-readable relative string.
+     * E.g. "now", "5m", "3h", "2d", "Apr 10".
+     */
+    fun relativeTime(isoString: String): String {
+        if (isoString.isBlank()) return ""
+        return try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }
+            val date = sdf.parse(isoString.take(19)) ?: return ""
+            val diff = System.currentTimeMillis() - date.time
+            when {
+                diff < 60_000L -> "now"
+                diff < 3_600_000L -> "${diff / 60_000}m"
+                diff < 86_400_000L -> "${diff / 3_600_000}h"
+                diff < 7 * 86_400_000L -> "${diff / 86_400_000}d"
+                else -> {
+                    val months = arrayOf("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+                    val cal = Calendar.getInstance().apply { time = date }
+                    "${months[cal.get(Calendar.MONTH)]} ${cal.get(Calendar.DAY_OF_MONTH)}"
+                }
+            }
+        } catch (_: Exception) {
+            ""
+        }
     }
 
     /** Strip HTML tags and decode common entities to get plain text. */
