@@ -71,7 +71,13 @@ export interface ApiClientConfig {
 
 const DEFAULT_CONFIG: Required<ApiClientConfig> = {
   timeout: 30000, // 30 seconds
-  retries: 2,
+  retries:
+    typeof window !== 'undefined' &&
+    (window as unknown as Record<string, unknown>).__TEST_API_RETRIES !==
+      undefined
+      ? ((window as unknown as Record<string, unknown>)
+          .__TEST_API_RETRIES as number)
+      : 2,
   retryDelay: 1000, // 1 second
 };
 
@@ -144,18 +150,9 @@ function fetchWithTimeout(
       reject(new NetworkError(`Request timed out after ${timeout}ms`));
     }, timeout);
 
-    // set up retries https://github.com/explainers-by-googlers/fetch-retry/tree/main
     fetch(url, {
       ...options,
       signal: controller.signal,
-      // @ts-expect-error - fetch-retry is not typed yet
-      retryOptions: {
-        maxAttempts: 3, // Max 3 retries (4 total attempts)
-        initialDelay: 500, // Start with 500ms delay
-        maxAge: 120000, // Give up after 2 minutes total retry time
-        retryAfterUnload: false, // Allow retries to continue even if page closes
-        retryNonIdempotent: true,
-      },
     })
       .then((response) => {
         clearTimeout(timeoutId);
@@ -202,6 +199,8 @@ export interface ApiFetchOptions extends RequestInit {
   retries?: number;
   /** Whether to handle 401 by redirecting to login (default: true) */
   handleUnauthorized?: boolean;
+  /** Return the raw Response without checking response.ok (default: false) */
+  skipResponseCheck?: boolean;
 }
 
 /**
@@ -222,6 +221,7 @@ export async function apiFetch(
     timeout = DEFAULT_CONFIG.timeout,
     retries = DEFAULT_CONFIG.retries,
     handleUnauthorized: shouldHandleUnauthorized = true,
+    skipResponseCheck = false,
     ...fetchOptions
   } = options;
 
@@ -245,6 +245,11 @@ export async function apiFetch(
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await fetchWithTimeout(url, finalOptions, timeout);
+
+      // Return raw response when caller handles status codes
+      if (skipResponseCheck) {
+        return response;
+      }
 
       // Handle successful responses
       if (response.ok) {

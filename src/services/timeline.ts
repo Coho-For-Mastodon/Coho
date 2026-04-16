@@ -33,10 +33,11 @@ export const groupSelfThreads = (posts: Post[]): Post[] => {
 // Re-export type
 export type { Post };
 
-import { getAccessToken } from './auth-context';
+import { apiFetch, buildMastodonUrl } from '../utils/api-client';
 
 // timeline.ts uses mastodon.social as fallback for preview/guest mode
 const getServer = () => localStorage.getItem('server') || 'mastodon.social';
+const getAccessToken = () => localStorage.getItem('accessToken') || '';
 
 // Pagination state - scoped per timeline type to prevent cross-contamination
 const lastPageIDs = new Map<string, string>();
@@ -53,16 +54,16 @@ const setLastPageID = (type: string, id: string): void => {
 export const getHomeTimeline = async (): Promise<Post[]> => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(
+  const response = await apiFetch(
     `${FIREBASE_FUNCTIONS_BASE_URL}/getTimelinePaginated`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken, server }),
+      skipAuth: true,
     }
   );
-  const data = await response.json();
-  return data;
+  return response.json();
 };
 
 export const mixTimeline = async (type = 'home'): Promise<Post[]> => {
@@ -105,18 +106,16 @@ export const addSomeInterestFinds = async (): Promise<Post[]> => {
     const interest = interests[Math.floor(Math.random() * interests.length)];
 
     const accessToken = getAccessToken();
-    const server = getServer();
-    const headers = new Headers({
-      Authorization: `Bearer ${accessToken}`,
+    const url = buildMastodonUrl('/api/v2/search', {
+      q: interest,
+      resolve: true,
+      limit: 5,
+      type: 'accounts',
     });
 
-    const response = await fetch(
-      `https://${server}/api/v2/search?q=${interest}&resolve=true&limit=5&type=accounts`,
-      {
-        method: 'GET',
-        headers: accessToken.length > 0 ? headers : new Headers({}),
-      }
-    );
+    const response = await apiFetch(url, {
+      skipAuth: !accessToken,
+    });
     const data = await response.json();
 
     if (data.accounts && data.accounts.length > 0) {
@@ -180,10 +179,6 @@ export const getPaginatedHomeTimeline = async (
   }
 
   const accessToken = getAccessToken();
-  const server = getServer();
-  const headers = new Headers({
-    Authorization: `Bearer ${accessToken}`,
-  });
 
   // Normalize type
   if (type === 'for you') {
@@ -192,26 +187,19 @@ export const getPaginatedHomeTimeline = async (
 
   // Use provided maxId, fall back to lastPageID for this type, or fetch from beginning
   const effectiveMaxId = maxId || getLastPageID(type);
-  const fetchUrl =
-    effectiveMaxId && effectiveMaxId.length > 0
-      ? `https://${server}/api/v1/timelines/${type}?limit=10&max_id=${effectiveMaxId}`
-      : `https://${server}/api/v1/timelines/${type}?limit=10`;
+  const params: Record<string, string | number | boolean | undefined> = {
+    limit: 10,
+  };
+  if (effectiveMaxId && effectiveMaxId.length > 0) {
+    params.max_id = effectiveMaxId;
+  }
 
-  const response = await fetch(fetchUrl, {
-    method: 'GET',
-    headers: accessToken.length > 0 ? headers : new Headers({}),
+  const url = buildMastodonUrl(`/api/v1/timelines/${type}`, params);
+  const response = await apiFetch(url, {
+    skipAuth: !accessToken,
   });
 
   const data = await response.json();
-
-  // Validate response is an array (API errors return objects like {error: '...'})
-  if (!Array.isArray(data)) {
-    console.warn(
-      'getPaginatedHomeTimeline: Invalid response, expected array',
-      data
-    );
-    return [];
-  }
 
   if (data.length > 0) {
     setLastPageID(type, data[data.length - 1].id);
@@ -226,23 +214,18 @@ export const getPaginatedHomeTimeline = async (
  * Does not update lastPageID to avoid interfering with normal pagination.
  */
 export const prefetchNextPage = (maxId: string, type = 'home'): void => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const headers = new Headers({
-    Authorization: `Bearer ${accessToken}`,
-  });
-
   if (type.startsWith('list:')) {
     return;
   }
 
-  const fetchUrl = `https://${server}/api/v1/timelines/${type}?limit=10&max_id=${maxId}`;
+  const url = buildMastodonUrl(`/api/v1/timelines/${type}`, {
+    limit: 10,
+    max_id: maxId,
+  });
 
   // Fire-and-forget fetch - SW will cache the response
-  fetch(fetchUrl, {
-    method: 'GET',
-    headers,
-    priority: 'low',
+  apiFetch(url, {
+    priority: 'low' as RequestPriority,
   }).catch(() => {
     // Silently ignore prefetch errors
   });
@@ -261,15 +244,13 @@ export const boostPost = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
   // Use Firebase function URL so service worker can queue for background sync when offline
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/boost`, {
+  const response = await apiFetch(`${FIREBASE_FUNCTIONS_BASE_URL}/boost`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ accessToken, server, id }),
+    skipAuth: true,
   });
-  const data = await response.json();
-  return data;
+  return response.json();
 };
 
 export const unboostPost = async (id: string) => {
@@ -280,15 +261,13 @@ export const unboostPost = async (id: string) => {
 export const reblogPost = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/reblog`, {
+  const response = await apiFetch(`${FIREBASE_FUNCTIONS_BASE_URL}/reblog`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ accessToken, server, id }),
+    skipAuth: true,
   });
-  const data = await response.json();
-  return data;
+  return response.json();
 };
 
 export const unreblogPost = async (id: string) => {
@@ -301,34 +280,26 @@ export const getReplies = async (
 ): Promise<{ ancestors: Post[]; descendants: Post[] }> => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getReplies`, {
+  const response = await apiFetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getReplies`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ accessToken, server, id }),
+    skipAuth: true,
   });
-  if (!response.ok) {
-    throw new Error(`getReplies failed: ${response.status}`);
-  }
-  const data = await response.json();
-  return data;
+  return response.json();
 };
 
 export const reply = async (id: string, replyContent: string) => {
-  const accessToken = getAccessToken();
-  const server = getServer();
   const formData = new FormData();
   formData.append('status', replyContent);
   formData.append('in_reply_to_id', id);
 
-  const response = await fetch(`https://${server}/api/v1/statuses`, {
+  const url = buildMastodonUrl('/api/v1/statuses');
+  const response = await apiFetch(url, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
     body: formData,
   });
-  const data = await response.json();
-  return data;
+  return response.json();
 };
 
 /**
@@ -339,41 +310,18 @@ export const votePoll = async (
   pollId: string,
   choices: number[]
 ): Promise<NonNullable<Post['poll']>> => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const headers = new Headers({
-    Authorization: `Bearer ${accessToken}`,
-  });
-
   const formData = new FormData();
   for (const choice of choices) {
     formData.append('choices[]', String(choice));
   }
 
-  const response = await fetch(
-    `https://${server}/api/v1/polls/${pollId}/votes`,
-    {
-      method: 'POST',
-      headers: accessToken.length > 0 ? headers : new Headers({}),
-      body: formData,
-    }
-  );
+  const url = buildMastodonUrl(`/api/v1/polls/${pollId}/votes`);
+  const response = await apiFetch(url, {
+    method: 'POST',
+    body: formData,
+  });
 
-  const data = await response.json();
-
-  // Mastodon returns a JSON error body on non-2xx responses; don't let that
-  // poison UI state by treating it as a Poll object.
-  if (!response.ok) {
-    const errorBody = data as Record<string, unknown>;
-    const message =
-      (typeof errorBody?.error === 'string' ? errorBody.error : null) ||
-      `Failed to vote in poll (HTTP ${response.status})`;
-    const err = new Error(message) as Error & { status?: number };
-    err.status = response.status;
-    throw err;
-  }
-
-  return data;
+  return response.json();
 };
 
 // Use mastodon library's getMediaTimeline
@@ -382,13 +330,13 @@ export const mediaTimeline = mastodonGetMediaTimeline;
 export const searchTimeline = async (query: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/search`, {
+  const response = await apiFetch(`${FIREBASE_FUNCTIONS_BASE_URL}/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ accessToken, server, query }),
+    skipAuth: true,
   });
-  const data = await response.json();
-  return data;
+  return response.json();
 };
 
 // Use mastodon library's getHashtagTimeline

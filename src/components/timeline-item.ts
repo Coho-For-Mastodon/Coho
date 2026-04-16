@@ -732,6 +732,23 @@ export class TimelineItem extends LitElement {
       .quote-inline {
         display: none !important;
       }
+
+      /* Extracted from inline styles in timeline-renderers.ts */
+      .link-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+
+      .button-reset {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        width: 100%;
+      }
     `,
   ];
 

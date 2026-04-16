@@ -3,71 +3,39 @@ import { addMedia } from './media';
 import type { Account } from '../mastodon/types/account';
 import { Post, PostPublishResult } from '../interfaces/Post';
 import type { MediaAttachment } from '../mastodon/types/media';
-import { getServer, getAccessToken } from './auth-context';
+import {
+  apiFetch,
+  buildMastodonUrl,
+  fetchMastodonJson,
+} from '../utils/api-client';
 
 export async function getFavouritedBy(id: string): Promise<Account[]> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/favourited_by`,
-    {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
-  );
-  return response.json();
+  return fetchMastodonJson<Account[]>(`/api/v1/statuses/${id}/favourited_by`);
 }
 
 export async function getRebloggedBy(id: string): Promise<Account[]> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/reblogged_by`,
-    {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
-  );
-  return response.json();
+  return fetchMastodonJson<Account[]>(`/api/v1/statuses/${id}/reblogged_by`);
 }
 
 export async function getQuotesOf(id: string): Promise<Post[]> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/quotes`,
-    {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
-  );
-  if (!response.ok) return [];
-  const data = await response.json();
-  return Array.isArray(data) ? data : [];
+  try {
+    const data = await fetchMastodonJson<Post[]>(
+      `/api/v1/statuses/${id}/quotes`
+    );
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function revokeQuote(
   statusId: string,
   quotingStatusId: string
 ): Promise<Post> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${statusId}/quotes/${quotingStatusId}/revoke`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
+  return fetchMastodonJson<Post>(
+    `/api/v1/statuses/${statusId}/quotes/${quotingStatusId}/revoke`,
+    { method: 'POST' }
   );
-  return response.json();
 }
 
 export interface EditPostParams {
@@ -82,8 +50,6 @@ export async function editPost(
   id: string,
   params: EditPostParams
 ): Promise<Post> {
-  const server = getServer();
-  const accessToken = getAccessToken();
   const formData = new FormData();
   formData.append('status', params.status);
   if (params.media_ids !== undefined) {
@@ -100,160 +66,55 @@ export async function editPost(
   if (params.visibility) {
     formData.append('visibility', params.visibility);
   }
-  const response = await fetch(`https://${server}/api/v1/statuses/${id}`, {
-    method: 'PUT',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to edit post: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  const url = buildMastodonUrl(`/api/v1/statuses/${id}`);
+  const response = await apiFetch(url, { method: 'PUT', body: formData });
+  return response.json();
 }
 
 export async function getStatusSource(
   id: string
 ): Promise<{ id: string; text: string; spoiler_text: string }> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/source`,
-    {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch status source: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson(`/api/v1/statuses/${id}/source`);
 }
 
 export async function deletePost(id: string): Promise<Post> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(`https://${server}/api/v1/statuses/${id}`, {
+  return fetchMastodonJson<Post>(`/api/v1/statuses/${id}`, {
     method: 'DELETE',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
-
-  const data = await response.json();
-  return data;
 }
 
 export async function pinPost(id: string): Promise<Post> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(`https://${server}/api/v1/statuses/${id}/pin`, {
+  return fetchMastodonJson<Post>(`/api/v1/statuses/${id}/pin`, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
-
-  const data = await response.json();
-  return data;
 }
 
 export async function unpinPost(id: string): Promise<Post> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/unpin`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
-  );
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson<Post>(`/api/v1/statuses/${id}/unpin`, {
+    method: 'POST',
+  });
 }
 
 export async function muteConversation(id: string): Promise<Post> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(`https://${server}/api/v1/statuses/${id}/mute`, {
+  return fetchMastodonJson<Post>(`/api/v1/statuses/${id}/mute`, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
   });
-
-  const data = await response.json();
-  return data;
 }
 
 export async function unmuteConversation(id: string): Promise<Post> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/unmute`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
-  );
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson<Post>(`/api/v1/statuses/${id}/unmute`, {
+    method: 'POST',
+  });
 }
 
 export async function getEditHistory(
   id: string
 ): Promise<import('../mastodon/types/status').StatusEdit[]> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/history`,
-    {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch edit history: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson(`/api/v1/statuses/${id}/history`);
 }
 
 export async function getPostDetail(id: string): Promise<Post> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(`https://${server}/api/v1/statuses/${id}`, {
-    method: 'GET',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to load post: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson<Post>(`/api/v1/statuses/${id}`);
 }
 
 interface PostTranslation {
@@ -266,31 +127,13 @@ export async function translateStatus(
   id: string,
   language?: string
 ): Promise<PostTranslation> {
-  const server = getServer();
-  const accessToken = getAccessToken();
   const formData = new FormData();
-
   if (language) {
     formData.append('lang', language);
   }
-
-  const response = await fetch(
-    `https://${server}/api/v1/statuses/${id}/translate`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-      body: formData,
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to translate post: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
+  const url = buildMastodonUrl(`/api/v1/statuses/${id}/translate`);
+  const response = await apiFetch(url, { method: 'POST', body: formData });
+  return response.json();
 }
 
 export async function publishPost(
@@ -303,8 +146,6 @@ export async function publishPost(
   scheduledAt?: string,
   quotedStatusId?: string
 ): Promise<PostPublishResult> {
-  const server = getServer();
-  const accessToken = getAccessToken();
   const formData = new FormData();
 
   formData.append('status', post && post.length > 0 ? post : '');
@@ -350,17 +191,9 @@ export async function publishPost(
     }
   }
 
-  // make a fetch request to post a status using the mastodon api
-  const response = await fetch(`https://${server}/api/v1/statuses`, {
-    method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-    body: formData,
-  });
-
-  const data = await response.json();
-  return data;
+  const url = buildMastodonUrl('/api/v1/statuses');
+  const response = await apiFetch(url, { method: 'POST', body: formData });
+  return response.json();
 }
 
 /**
@@ -393,8 +226,6 @@ export async function replyToPost(
   visibility?: string,
   scheduledAt?: string
 ): Promise<PostPublishResult> {
-  const server = getServer();
-  const accessToken = getAccessToken();
   const formData = new FormData();
 
   formData.append('in_reply_to_id', id);
@@ -416,17 +247,9 @@ export async function replyToPost(
     }
   }
 
-  // make a fetch request to post a status using the mastodon api
-  const response = await fetch(`https://${server}/api/v1/statuses`, {
-    method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-    body: formData,
-  });
-
-  const data = await response.json();
-  return data;
+  const url = buildMastodonUrl('/api/v1/statuses');
+  const response = await apiFetch(url, { method: 'POST', body: formData });
+  return response.json();
 }
 
 /**
@@ -438,8 +261,7 @@ export async function replyToPost(
 export async function waitForMediaProcessing(
   id: string
 ): Promise<MediaAttachment> {
-  const server = getServer();
-  const accessToken = getAccessToken();
+  const url = buildMastodonUrl(`/api/v1/media/${id}`);
 
   let delay = 1000;
   const maxDelay = 8000;
@@ -449,9 +271,7 @@ export async function waitForMediaProcessing(
   while (Date.now() - start < maxElapsed) {
     await new Promise((r) => setTimeout(r, delay));
 
-    const res = await fetch(`https://${server}/api/v1/media/${id}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const res = await apiFetch(url, { skipResponseCheck: true });
 
     if (res.status === 200) {
       return res.json();
@@ -473,16 +293,12 @@ export async function waitForMediaProcessing(
 export async function uploadMediaFromURL(
   url: string
 ): Promise<MediaAttachment> {
-  const server = getServer();
-  const accessToken = getAccessToken();
-  const response = await fetch(`https://${server}/api/v2/media`, {
+  const apiUrl = buildMastodonUrl('/api/v2/media');
+  const response = await apiFetch(apiUrl, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-    body: JSON.stringify({
-      url: url,
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+    skipResponseCheck: true,
   });
 
   const data: MediaAttachment = await response.json();
@@ -495,17 +311,14 @@ export async function uploadMediaFromURL(
 }
 
 export async function uploadMediaBlob(blob: Blob): Promise<MediaAttachment> {
-  const server = getServer();
-  const accessToken = getAccessToken();
   const formData = new FormData();
   formData.append('file', blob);
 
-  const response = await fetch(`https://${server}/api/v2/media`, {
+  const apiUrl = buildMastodonUrl('/api/v2/media');
+  const response = await apiFetch(apiUrl, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
     body: formData,
+    skipResponseCheck: true,
   });
 
   const data: MediaAttachment = await response.json();
@@ -530,17 +343,14 @@ export async function pickMedia(): Promise<File[]> {
 }
 
 export async function uploadMediaFile(file: File): Promise<MediaAttachment> {
-  const server = getServer();
-  const accessToken = getAccessToken();
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`https://${server}/api/v2/media`, {
+  const apiUrl = buildMastodonUrl('/api/v2/media');
+  const response = await apiFetch(apiUrl, {
     method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
     body: formData,
+    skipResponseCheck: true,
   });
 
   let data: MediaAttachment = await response.json();
@@ -561,21 +371,16 @@ export async function uploadImageAsFormData(): Promise<MediaAttachment[]> {
 
   let uploaded: MediaAttachment[] = [];
 
-  const server = getServer();
-  const accessToken = getAccessToken();
-
-  // loop through the files and upload them
+  const apiUrl = buildMastodonUrl('/api/v2/media');
 
   for (let i = 0; i < files.length; i++) {
     const formData = new FormData();
     formData.append('file', files[i]);
 
-    const response = await fetch(`https://${server}/api/v2/media`, {
+    const response = await apiFetch(apiUrl, {
       method: 'POST',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
       body: formData,
+      skipResponseCheck: true,
     });
 
     let data: MediaAttachment = await response.json();
@@ -596,19 +401,10 @@ export async function updateMedia(
   id: string,
   description: string
 ): Promise<MediaAttachment> {
-  const server = getServer();
-  const accessToken = getAccessToken();
   const formData = new FormData();
   formData.append('description', description);
 
-  const response = await fetch(`https://${server}/api/v1/media/${id}`, {
-    method: 'PUT',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-    body: formData,
-  });
-
-  const data = await response.json();
-  return data;
+  const url = buildMastodonUrl(`/api/v1/media/${id}`);
+  const response = await apiFetch(url, { method: 'PUT', body: formData });
+  return response.json();
 }
