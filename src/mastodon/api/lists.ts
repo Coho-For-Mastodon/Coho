@@ -1,6 +1,7 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
 import type { List, Account } from '../types';
+import type { Post } from '../../interfaces/Post';
 
 export const getLists = async (): Promise<List[]> => {
   const { url } = getClientConfig();
@@ -112,7 +113,7 @@ export const removeAccountsFromList = async (
 export const getListTimeline = async (
   id: string,
   maxId?: string
-): Promise<import('../types').Post[]> => {
+): Promise<Post[]> => {
   const { url } = getClientConfig();
   let fetchUrl = `https://${url}/api/v1/timelines/list/${id}?limit=10`;
   if (maxId) {
@@ -123,5 +124,5 @@ export const getListTimeline = async (
     method: 'GET',
   });
   const data = await response.json();
-  return data as import('../types').Post[];
+  return data as Post[];
 };

@@ -1121,8 +1121,6 @@ export class AppProfile extends LitElement {
         ? getPinnedPosts(this.user.id)
         : Promise.resolve(this.pinnedPosts),
     ]);
-    console.log(postsData);
-
     this.posts = postsData;
     if (this.activeSegment === 'posts') {
       this.pinnedPosts = Array.isArray(pinnedPostsData) ? pinnedPostsData : [];

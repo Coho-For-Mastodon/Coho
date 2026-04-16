@@ -1,6 +1,7 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
-import { Account, Post } from '../types';
+import type { Account } from '../types';
+import type { Post } from '../../interfaces/Post';
 import type { FamiliarFollowersResult } from '../types/account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../../config/firebase';
 import { get, set } from 'idb-keyval';
@@ -101,23 +102,17 @@ export const getCurrentUser = async (): Promise<Account> => {
 
     return currentUser;
   } catch (err) {
-    console.log('[mastodon/getCurrentUser] Network error, trying cache:', err);
-
-    // Try to get cached user from IndexedDB when offline
+    // Network error — try to get cached user from IndexedDB when offline
     try {
       const cachedUser = (await get(getCurrentUserCacheKey())) as
         | Account
         | undefined;
       if (cachedUser) {
-        console.log('[mastodon/getCurrentUser] Using cached user data');
         currentUser = cachedUser;
         return cachedUser;
       }
-    } catch (cacheErr) {
-      console.log(
-        '[mastodon/getCurrentUser] Cache retrieval failed:',
-        cacheErr
-      );
+    } catch {
+      // Cache retrieval also failed
     }
 
     // Re-throw if no cached data available

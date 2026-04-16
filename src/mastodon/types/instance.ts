@@ -20,6 +20,8 @@ export interface Instance {
   configuration: InstanceConfiguration;
   contact_account: unknown;
   rules: InstanceRule[];
+  /** Pleroma/Akkoma compat: character limit when configuration.statuses is absent */
+  max_toot_chars?: number;
 }
 
 export interface InstanceUrls {

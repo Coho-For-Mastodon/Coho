@@ -33,6 +33,10 @@ export {
  * Sets up API mocking using Playwright route interception
  */
 export async function setupApiMocks(page: Page) {
+  // Disable apiFetch retries in e2e tests to avoid retry delays causing flakiness
+  await page.addInitScript(() => {
+    (window as unknown as Record<string, unknown>).__TEST_API_RETRIES = 0;
+  });
   // Timeline endpoints
   await page.route('**/api/v1/timelines/home*', (route) => {
     route.fulfill({ json: mockTimelinePosts });
@@ -87,6 +91,43 @@ export async function setupApiMocks(page: Page) {
   });
 
   // Status action endpoints (must be registered before generic statuses/*)
+  // Firebase function routes for favourite (boost) and reblog
+  await page.route('**/boost', (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      const post =
+        mockTimelinePosts.find((p) => p.id === body?.id) ||
+        mockTimelinePosts[0];
+      route.fulfill({
+        json: {
+          ...post,
+          favourited: true,
+          favourites_count: (post.favourites_count || 0) + 1,
+        },
+      });
+    } else {
+      route.fallback();
+    }
+  });
+
+  await page.route('**/reblog', (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      const post =
+        mockTimelinePosts.find((p) => p.id === body?.id) ||
+        mockTimelinePosts[0];
+      route.fulfill({
+        json: {
+          ...post,
+          reblogged: true,
+          reblogs_count: (post.reblogs_count || 0) + 1,
+        },
+      });
+    } else {
+      route.fallback();
+    }
+  });
+
   await page.route('**/api/v1/statuses/*/favourite', (route) => {
     const url = route.request().url();
     const id = url.split('/statuses/')[1]?.split('/')[0];
@@ -440,6 +481,33 @@ export async function setupStatefulApiMocks(page: Page) {
   });
 
   // --- Stateful action endpoints (before generic statuses/*) ---
+  // Firebase function routes for favourite (boost) and reblog
+  await page.route('**/boost', (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      const post =
+        posts.get(body?.id) || posts.get(mockExpandedTimeline[0].id)!;
+      post.favourited = true;
+      post.favourites_count = (post.favourites_count || 0) + 1;
+      route.fulfill({ json: { ...post } });
+    } else {
+      route.fallback();
+    }
+  });
+
+  await page.route('**/reblog', (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      const post =
+        posts.get(body?.id) || posts.get(mockExpandedTimeline[0].id)!;
+      post.reblogged = true;
+      post.reblogs_count = (post.reblogs_count || 0) + 1;
+      route.fulfill({ json: { ...post } });
+    } else {
+      route.fallback();
+    }
+  });
+
   await page.route('**/api/v1/statuses/*/favourite', (route) => {
     const id = route.request().url().split('/statuses/')[1]?.split('/')[0];
     const post = posts.get(id) || posts.get(mockExpandedTimeline[0].id)!;

@@ -182,7 +182,6 @@ export class MediaTimeline extends LitElement {
     const updatedTimeline = (timelineDataMedia as Post[]).filter(
       (tweet: Post) => tweet.media_attachments.length > 0
     );
-    console.log(timelineDataMedia);
 
     this.timeline = updatedTimeline;
   }
@@ -193,14 +192,11 @@ export class MediaTimeline extends LitElement {
     const updatedTimeline = (timelineData as Post[]).filter(
       (tweet: Post) => tweet.media_attachments.length > 0
     );
-    console.log(timelineData);
 
     this.timeline = [...this.timeline, ...updatedTimeline];
   }
 
   handleReplies(data: Array<Post>) {
-    console.log('reply', data);
-
     // fire custom event
     this.dispatchEvent(
       new CustomEvent('replies', {

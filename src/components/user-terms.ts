@@ -43,9 +43,6 @@ export class UserTerms extends LitElement {
     const checkbox = e.target as MdCheckbox;
     const value = checkbox.value;
 
-    console.log('checkbox', checkbox);
-    console.log('value', value);
-
     if (checkbox.checked) {
       this._interests.push(value);
     } else {
@@ -54,8 +51,6 @@ export class UserTerms extends LitElement {
         this._interests.splice(index, 1);
       }
     }
-
-    console.log('interests', this._interests);
 
     // dedupe this._interests
     this._interests = [...new Set(this._interests)];

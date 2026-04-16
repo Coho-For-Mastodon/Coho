@@ -1,10 +1,11 @@
 import { set, get } from 'idb-keyval';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
-import { Account } from '../types/interfaces/Account';
+import type { Account, Relationship } from '../mastodon/types/account';
 import type {
   CredentialAccount,
   UpdateCredentialsParams,
 } from '../mastodon/types/account';
+import type { Instance } from '../mastodon/types/instance';
 import {
   lookupAccountByAcct,
   searchAccounts as mastodonSearchAccounts,
@@ -21,10 +22,14 @@ import {
   upsertAccountFromOAuth,
 } from './auth-session';
 import { getAccountScopedIdbKey } from '../utils/account-scoped-storage';
+import {
+  apiFetch,
+  buildMastodonUrl,
+  fetchMastodonJson,
+} from '../utils/api-client';
 
-// Helper functions to always get fresh values from localStorage
-const getAccessToken = () => localStorage.getItem('accessToken') || '';
 const getServer = () => localStorage.getItem('server') || '';
+const getAccessToken = () => localStorage.getItem('accessToken') || '';
 const normalizeServer = (server: string) =>
   server.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
@@ -105,24 +110,10 @@ export const editAccount = async (
     formData.append('source[language]', params.source.language);
   }
 
-  const response = await fetch(
-    `https://${server}/api/v1/accounts/update_credentials`,
-    {
-      method: 'PATCH',
-      headers: new Headers({
-        // Note: Don't set Content-Type for FormData - browser sets it with boundary
-        Authorization: `Bearer ${accessToken}`,
-      }),
-      body: formData,
-    }
+  const response = await apiFetch(
+    buildMastodonUrl('/api/v1/accounts/update_credentials'),
+    { method: 'PATCH', body: formData }
   );
-
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
-  }
 
   const data = await response.json();
 
@@ -132,30 +123,11 @@ export const editAccount = async (
   return data as CredentialAccount;
 };
 
-/**
- * Legacy editAccount function for backwards compatibility
- * @deprecated Use editAccount(params: UpdateCredentialsParams) instead
- */
-export const editAccountLegacy = async (
-  display_name: string,
-  note: string,
-  locked: string,
-  bot: string,
-  avatar: File | string,
-  header: File | string
-) => {
-  return editAccount({
-    display_name,
-    note,
-    locked: locked === 'true',
-    bot: bot === 'true',
-    avatar: avatar instanceof File ? avatar : undefined,
-    header: header instanceof File ? header : undefined,
-  });
-};
-
 export const getPeers = async () => {
-  const response = await fetch(`https://mastodon.social/api/v1/instance/peers`);
+  const response = await apiFetch(
+    'https://mastodon.social/api/v1/instance/peers',
+    { skipAuth: true }
+  );
   const data = await response.json();
 
   // return first 300
@@ -166,11 +138,15 @@ export const checkFollowing = async (id: string) => {
   try {
     const accessToken = getAccessToken();
     const server = getServer();
-    const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/isFollowing`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken, server, id }),
-    });
+    const response = await apiFetch(
+      `${FIREBASE_FUNCTIONS_BASE_URL}/isFollowing`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken, server, id }),
+        skipAuth: true,
+      }
+    );
     const data = await response.json();
 
     return data;
@@ -196,21 +172,9 @@ export const getCredentials = async (): Promise<CredentialAccount> => {
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(
-    `https://${server}/api/v1/accounts/verify_credentials`,
-    {
-      method: 'GET',
-      headers: new Headers({
-        Authorization: `Bearer ${accessToken}`,
-      }),
-    }
+  return fetchMastodonJson<CredentialAccount>(
+    '/api/v1/accounts/verify_credentials'
   );
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
-  return response.json();
 };
 
 export const getCurrentUser = async (): Promise<Account | undefined> => {
@@ -219,27 +183,11 @@ export const getCurrentUser = async (): Promise<Account | undefined> => {
     return currentUser;
   }
 
-  const accessToken = getAccessToken();
-  const server = getServer();
-
   try {
-    const response = await fetch(
-      'https://' + server + '/api/v1/accounts/verify_credentials',
-      {
-        method: 'GET',
-        headers: new Headers({
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        }),
-      }
+    const data = await fetchMastodonJson<Account>(
+      '/api/v1/accounts/verify_credentials'
     );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    currentUser = data as Account;
+    currentUser = data;
 
     // Persist to localStorage and IndexedDB for offline access
     localStorage.setItem('currentUserID', currentUser.id);
@@ -252,21 +200,18 @@ export const getCurrentUser = async (): Promise<Account | undefined> => {
     });
 
     return currentUser;
-  } catch (err) {
-    console.log('[getCurrentUser] Network error, trying cache:', err);
-
-    // Try to get cached user from IndexedDB when offline
+  } catch {
+    // Network error — try to get cached user from IndexedDB when offline
     try {
       const cachedUser = (await get(getCurrentUserCacheKey())) as
         | Account
         | undefined;
       if (cachedUser) {
-        console.log('[getCurrentUser] Using cached user data');
         currentUser = cachedUser;
         return cachedUser;
       }
-    } catch (cacheErr) {
-      console.log('[getCurrentUser] Cache retrieval failed:', cacheErr);
+    } catch {
+      // Cache retrieval also failed
     }
 
     // No cached data available
@@ -275,21 +220,9 @@ export const getCurrentUser = async (): Promise<Account | undefined> => {
 };
 
 export const unfollowUser = async (id: string) => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(
-    `https://${server}/api/v1/accounts/${id}/unfollow`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      }),
-    }
-  );
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson(`/api/v1/accounts/${id}/unfollow`, {
+    method: 'POST',
+  });
 };
 
 export const getAccount = async (id: string): Promise<Account | undefined> => {
@@ -298,37 +231,33 @@ export const getAccount = async (id: string): Promise<Account | undefined> => {
   const cacheKey = getProfileCacheKey(id);
 
   try {
-    const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getAccount`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken, server, id }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    const response = await apiFetch(
+      `${FIREBASE_FUNCTIONS_BASE_URL}/getAccount`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken, server, id }),
+        skipAuth: true,
+      }
+    );
 
     const data = await response.json();
 
     // Cache the profile to IndexedDB for offline access
     if (data && data.id) {
       await set(cacheKey, data);
-      console.log('[getAccount] Profile cached for offline access');
     }
 
     return data as Account;
-  } catch (err) {
-    console.log('[getAccount] Network error, trying cache:', err);
-
-    // Try to get cached profile from IndexedDB when offline
+  } catch {
+    // Network error — try cached profile from IndexedDB
     try {
       const cachedProfile = (await get(cacheKey)) as Account | undefined;
       if (cachedProfile) {
-        console.log('[getAccount] Using cached profile data');
         return cachedProfile;
       }
-    } catch (cacheErr) {
-      console.log('[getAccount] Cache retrieval failed:', cacheErr);
+    } catch {
+      // Cache retrieval also failed
     }
 
     // No cached data available
@@ -370,37 +299,30 @@ export const getUsersPosts = async (
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bodyParams),
+      skipAuth: true,
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
 
     const data = await response.json();
 
     // Cache posts to IndexedDB for offline access
     if (Array.isArray(data)) {
       await set(cacheKey, data);
-      console.log('[getUsersPosts] Posts cached for offline access');
     }
 
     return data;
-  } catch (err) {
-    console.log('[getUsersPosts] Network error, trying cache:', err);
-
-    // Try to get cached posts from IndexedDB when offline
+  } catch {
+    // Network error — try cached posts from IndexedDB
     try {
       const cachedPosts = await get(cacheKey);
       if (cachedPosts) {
-        console.log('[getUsersPosts] Using cached posts data');
         return cachedPosts;
       }
-    } catch (cacheErr) {
-      console.log('[getUsersPosts] Cache retrieval failed:', cacheErr);
+    } catch {
+      // Cache retrieval also failed
     }
 
     // Return empty array if no cached data
@@ -419,11 +341,10 @@ export const getPinnedPosts = async (id: string) => {
     try {
       const cachedPosts = await get(cacheKey);
       if (cachedPosts) {
-        console.log('[getPinnedPosts] Using cached posts data');
         return cachedPosts;
       }
-    } catch (cacheErr) {
-      console.log('[getPinnedPosts] Cache retrieval failed:', cacheErr);
+    } catch {
+      // Cache retrieval failed
     }
     return [];
   };
@@ -431,7 +352,6 @@ export const getPinnedPosts = async (id: string) => {
   const cacheIfValid = async (data: unknown) => {
     if (Array.isArray(data)) {
       await set(cacheKey, data);
-      console.log('[getPinnedPosts] Posts cached for offline access');
       return data;
     }
     return null;
@@ -442,43 +362,34 @@ export const getPinnedPosts = async (id: string) => {
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accessToken, server, id }),
+      skipAuth: true,
     });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
 
     const data = await response.json();
     const cached = await cacheIfValid(data);
     if (cached) return cached;
-  } catch (err) {
-    console.log('[getPinnedPosts] Function error, trying direct API:', err);
+  } catch {
+    // Function error — trying direct API
   }
 
   try {
-    const headers = accessToken
-      ? { Authorization: `Bearer ${accessToken}` }
-      : undefined;
-    const apiResponse = await fetch(
-      `https://${server}/api/v1/accounts/${id}/statuses?pinned=true&limit=40`,
-      {
-        method: 'GET',
-        headers,
-      }
+    const apiResponse = await apiFetch(
+      buildMastodonUrl(`/api/v1/accounts/${id}/statuses`, {
+        pinned: true,
+        limit: 40,
+      }),
+      { skipAuth: !accessToken }
     );
-
-    if (!apiResponse.ok) {
-      throw new Error(`HTTP ${apiResponse.status}`);
-    }
 
     const data = await apiResponse.json();
     const cached = await cacheIfValid(data);
     if (cached) return cached;
-  } catch (err) {
-    console.log('[getPinnedPosts] Direct API error, trying cache:', err);
+  } catch {
+    // Direct API error — falling back to cache
   }
 
   return tryCache();
@@ -487,52 +398,47 @@ export const getPinnedPosts = async (id: string) => {
 export const getUsersFollowers = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getFollowers`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ accessToken, server, id }),
-  });
-  const data = await response.json();
-  return data;
+  const response = await apiFetch(
+    `${FIREBASE_FUNCTIONS_BASE_URL}/getFollowers`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, server, id }),
+      skipAuth: true,
+    }
+  );
+  return response.json();
 };
 
 export const getFollowing = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getFollowing`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ accessToken, server, id }),
-  });
-  const data = await response.json();
-  return data;
+  const response = await apiFetch(
+    `${FIREBASE_FUNCTIONS_BASE_URL}/getFollowing`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken, server, id }),
+      skipAuth: true,
+    }
+  );
+  return response.json();
 };
 
 export const followUser = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/follow`, {
+  const response = await apiFetch(`${FIREBASE_FUNCTIONS_BASE_URL}/follow`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ accessToken, server, id }),
+    skipAuth: true,
   });
-  const data = await response.json();
-  return data;
+  return response.json();
 };
 
-export const getInstanceInfo = async () => {
-  // This function doesn't exist in the old server either, calling Mastodon API directly
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(`https://${server}/api/v1/instance`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  const data = await response.json();
-  return data;
+export const getInstanceInfo = async (): Promise<Instance> => {
+  return fetchMastodonJson<Instance>('/api/v1/instance');
 };
 
 // ============================================================================
@@ -547,14 +453,15 @@ export const initAuth = async (serverURL: string) => {
     ? 'coho://auth/callback'
     : `${location.origin}/auth/callback`;
 
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/authenticate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      server: normalizedServer,
-      redirect_uri,
-    }),
-  });
+  const response = await apiFetch(
+    `${FIREBASE_FUNCTIONS_BASE_URL}/authenticate`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ server: normalizedServer, redirect_uri }),
+      skipAuth: true,
+    }
+  );
 
   const data = await response.json();
 
@@ -564,21 +471,15 @@ export const initAuth = async (serverURL: string) => {
 
 export const authToClient = async (code: string, state: string) => {
   try {
-    const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/getClient`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code,
-        state,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `Token exchange failed (HTTP ${response.status})`
-      );
-    }
+    const response = await apiFetch(
+      `${FIREBASE_FUNCTIONS_BASE_URL}/getClient`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, state }),
+        skipAuth: true,
+      }
+    );
 
     const data = await response.json();
 
@@ -611,91 +512,34 @@ export const authToClient = async (code: string, state: string) => {
   }
 };
 
-export const isFollowingMe = async (id: string) => {
-  // check if you are following a user
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(
-    'https://' + server + `/api/v1/accounts/relationships?id=${id}`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
+export const isFollowingMe = async (id: string): Promise<Relationship[]> => {
+  return fetchMastodonJson<Relationship[]>(
+    `/api/v1/accounts/relationships`,
+    undefined,
+    { id }
   );
-
-  const data = await response.json();
-  return data;
 };
 
 export const muteUser = async (id: string) => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(`https://${server}/api/v1/accounts/${id}/mute`, {
-    method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
-    }),
-  });
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson(`/api/v1/accounts/${id}/mute`, { method: 'POST' });
 };
 
 export const unmuteUser = async (id: string) => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(
-    `https://${server}/api/v1/accounts/${id}/unmute`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      }),
-    }
-  );
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson(`/api/v1/accounts/${id}/unmute`, {
+    method: 'POST',
+  });
 };
 
 export const blockUser = async (id: string) => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(
-    `https://${server}/api/v1/accounts/${id}/block`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      }),
-    }
-  );
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson(`/api/v1/accounts/${id}/block`, {
+    method: 'POST',
+  });
 };
 
 export const unblockUser = async (id: string) => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await fetch(
-    `https://${server}/api/v1/accounts/${id}/unblock`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      }),
-    }
-  );
-
-  const data = await response.json();
-  return data;
+  return fetchMastodonJson(`/api/v1/accounts/${id}/unblock`, {
+    method: 'POST',
+  });
 };
 
 export interface ReportOptions {
@@ -709,8 +553,6 @@ export const reportUser = async (
   accountId: string,
   options: ReportOptions = {}
 ) => {
-  const accessToken = getAccessToken();
-  const server = getServer();
   const formData = new FormData();
   formData.append('account_id', accountId);
 
@@ -727,16 +569,9 @@ export const reportUser = async (
     formData.append('forward', options.forward.toString());
   }
 
-  const response = await fetch(`https://${server}/api/v1/reports`, {
-    method: 'POST',
-    headers: new Headers({
-      Authorization: `Bearer ${accessToken}`,
-    }),
-    body: formData,
-  });
-
-  const data = await response.json();
-  return data;
+  const url = buildMastodonUrl('/api/v1/reports');
+  const response = await apiFetch(url, { method: 'POST', body: formData });
+  return response.json();
 };
 
 export const searchAccounts = async (query: string, limit = 6) => {
@@ -749,21 +584,17 @@ async function fetchAccountListPage(
   endpoint: 'blocks' | 'mutes',
   maxId?: string
 ): Promise<Account[]> {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const params = new URLSearchParams({
-    limit: String(BLOCK_MUTE_PAGE_LIMIT),
-  });
+  const params: Record<string, string | number | boolean | undefined> = {
+    limit: BLOCK_MUTE_PAGE_LIMIT,
+  };
   if (maxId) {
-    params.set('max_id', maxId);
+    params.max_id = maxId;
   }
-  const response = await fetch(
-    `https://${server}/api/v1/${endpoint}?${params.toString()}`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }
+  const data = await fetchMastodonJson<unknown>(
+    `/api/v1/${endpoint}`,
+    undefined,
+    params
   );
-  const data = await response.json();
   return Array.isArray(data) ? data : [];
 }
 

@@ -654,10 +654,7 @@ export class Notifications extends LitElement {
             await import('../services/preload');
           const preloaded = getPreloadedNotifications();
 
-          console.log('preloaded notifications', preloaded);
-
           if (preloaded && preloaded.length > 0) {
-            console.log('[Notifications] Using preloaded data');
             if ('scheduler' in window) {
               await scheduler.yield();
             }
@@ -673,7 +670,6 @@ export class Notifications extends LitElement {
             if ('scheduler' in window) {
               await scheduler.yield();
             }
-            console.log(notificationsData);
             this.notifications = notificationsData;
           }
 
@@ -915,13 +911,11 @@ export class Notifications extends LitElement {
     await clearNotifications();
 
     const notificationsData = await getNotifications();
-    console.log(notificationsData);
 
     this.notifications = notificationsData;
   }
 
   async sub(flag: boolean) {
-    console.log('flag', flag);
     const { subToPush, unsubToPush } =
       await import('../services/notifications');
 
@@ -929,11 +923,10 @@ export class Notifications extends LitElement {
       await unsubToPush();
     } else {
       try {
-        console.log('subscribing to push');
         await subToPush();
         this.subbed = true;
       } catch (err) {
-        console.log(err);
+        console.warn('[Notifications] Push subscription failed:', err);
       }
     }
   }

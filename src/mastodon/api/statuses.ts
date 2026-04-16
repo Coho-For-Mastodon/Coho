@@ -1,6 +1,7 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
-import { Account, Post, ScheduledStatus } from '../types';
+import type { Account, ScheduledStatus } from '../types';
+import type { Post } from '../../interfaces/Post';
 import type { StatusEdit } from '../types/status';
 
 export async function getFavouritedBy(id: string): Promise<Account[]> {

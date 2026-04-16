@@ -88,7 +88,9 @@ export class AppIndex extends LitElement {
     // router's initial handleNavigation just updates the DOM directly.
     if ('startViewTransition' in document) {
       const savedVT = document.startViewTransition.bind(document);
-      (document as any).startViewTransition = (cb: () => void) => {
+      (document as unknown as Record<string, unknown>).startViewTransition = (
+        cb: () => void
+      ) => {
         cb();
         return { finished: Promise.resolve() };
       };
@@ -176,7 +178,6 @@ export class AppIndex extends LitElement {
   async handleInitTheme() {
     const { getSettings } = await import('./services/settings');
     const settings = await getSettings();
-    console.log('settings', settings);
 
     const { applyThemeColor } = await import('./utils/theme-color');
 
@@ -240,7 +241,6 @@ export class AppIndex extends LitElement {
   async firstUpdated() {
     // Check initial authentication state
     await this.checkAuthenticationState();
-    console.log('[App] isAuthenticated:', this.isAuthenticated);
 
     if (this.isAuthenticated) {
       // Sync localStorage credentials to IndexedDB for service worker access
@@ -314,34 +314,24 @@ export class AppIndex extends LitElement {
    */
   private imagePreviewInitialized = false;
   private initLazyImagePreview() {
-    console.log('[App] Setting up lazy image preview listener');
     const handler = async (e: Event) => {
-      console.log(
-        '[App] preview-image event received',
-        (e as CustomEvent).detail
-      );
       if (this.imagePreviewInitialized) {
-        console.log('[App] Already initialized, skipping');
         return;
       }
       this.imagePreviewInitialized = true;
 
       // Import the component (registers the custom element)
       await import('./components/image-preview-dialog');
-      console.log('[App] image-preview-dialog imported');
 
       // Wait for the custom element to be defined
       await customElements.whenDefined('image-preview-dialog');
-      console.log('[App] Custom element defined');
 
       // Create and append the dialog to the shadow root
       const dialog = document.createElement('image-preview-dialog');
       document.body?.appendChild(dialog);
-      console.log('[App] Dialog appended to shadow root');
 
       // Wait a frame to ensure connectedCallback has run and listener is registered
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      console.log('[App] Re-dispatching event');
 
       // Re-dispatch the original event so the dialog can handle it
       window.dispatchEvent(
@@ -390,7 +380,6 @@ export class AppIndex extends LitElement {
   private async syncCredentialsToIndexedDB() {
     const { syncActiveToIndexedDb } = await import('./services/auth-session');
     await syncActiveToIndexedDb();
-    console.log('[App] Synced credentials to IndexedDB');
 
     // Sync server URL to native SharedPreferences for the Android widget
     this.syncServerToNativeWidget();
@@ -415,6 +404,7 @@ export class AppIndex extends LitElement {
       const WidgetBridge = registerPlugin('WidgetBridge');
       const server = localStorage.getItem('server') || 'mastodon.social';
       const accessToken = localStorage.getItem('accessToken') || '';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (WidgetBridge as any).setCredentials({ server, accessToken });
     } catch {
       // Widget bridge not available — ignore
@@ -430,10 +420,6 @@ export class AppIndex extends LitElement {
     this.isAuthenticated = Boolean(
       getActiveAccount() ||
       (localStorage.getItem('accessToken') && localStorage.getItem('server'))
-    );
-    console.log(
-      '[App] Authentication state:',
-      this.isAuthenticated ? 'authenticated' : 'new user'
     );
   }
 

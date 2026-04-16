@@ -6,7 +6,7 @@
  */
 
 import type { CohoServiceWorkerGlobalScope } from './types';
-import { CACHE_NAMES, VERSION } from './constants';
+import { CACHE_NAMES } from './constants';
 
 declare const self: CohoServiceWorkerGlobalScope;
 
@@ -15,12 +15,10 @@ declare const self: CohoServiceWorkerGlobalScope;
  * so the app can load offline immediately after installation.
  */
 export function handleInstall(event: ExtendableEvent): void {
-  console.log('[SW] Installing new version:', VERSION);
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAMES.pages);
       await cache.addAll(['/', '/index.html', '/manifest.json']);
-      console.log('[SW] Precached critical assets');
     })()
   );
 }
@@ -30,7 +28,6 @@ export function handleInstall(event: ExtendableEvent): void {
  * all open clients so the new SW takes effect immediately.
  */
 export function handleActivate(event: ExtendableEvent): void {
-  console.log('[SW] Activating new version:', VERSION);
   event.waitUntil(
     (async () => {
       const cacheNames = await caches.keys();
@@ -40,7 +37,6 @@ export function handleActivate(event: ExtendableEvent): void {
           // Delete old caches that don't match current version
           // But keep shareTarget (not versioned)
           if (!validCaches.includes(cacheName) && cacheName !== 'shareTarget') {
-            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
           return Promise.resolve();

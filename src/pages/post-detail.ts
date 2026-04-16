@@ -316,7 +316,6 @@ export class PostDetail extends LitElement {
         // Some legacy links may use '+' for spaces in query encoding.
         const normalizedQuery = query.replace(/\+/g, '%20');
         const decoded = JSON.parse(decodeURIComponent(normalizedQuery));
-        console.log('decoded', decoded);
 
         this.tweet = decoded;
       } catch (err) {
@@ -357,7 +356,6 @@ export class PostDetail extends LitElement {
       try {
         // get post replies
         const replies = await getReplies(this.tweet.id);
-        console.log('replies', replies);
 
         // Build a tree structure for replies
         if (this.tweet) {
@@ -423,8 +421,8 @@ export class PostDetail extends LitElement {
         text: this.tweet?.content,
         url: this.tweet?.url,
       });
-    } // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
+    }
+    // @ts-expect-error - window.Capacitor is a runtime global not in TS types
     else if (window.Capacitor) {
       const { Share } = await import('@capacitor/share');
       await Share.share({

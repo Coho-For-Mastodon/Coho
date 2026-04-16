@@ -38,13 +38,11 @@ export class Bookmarks extends LitElement {
           const preloaded = getPreloadedBookmarks();
 
           if (preloaded && preloaded.length > 0) {
-            console.log('[Bookmarks] Using preloaded data');
             this.bookmarks = preloaded;
           } else {
             // Fallback to fetching if no preloaded data
             const { getBookmarks } = await import('../services/bookmarks');
             const bookmarksData = await getBookmarks();
-            console.log(bookmarksData);
             this.bookmarks = bookmarksData;
           }
 

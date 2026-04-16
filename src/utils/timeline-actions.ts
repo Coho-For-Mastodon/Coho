@@ -23,8 +23,8 @@ export async function shareStatus(tweet: Post | undefined | null) {
       // User cancelled or share failed, ignore
       console.warn('Share failed:', err);
     }
-  } // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
+  }
+  // @ts-expect-error - window.Capacitor is a runtime global not in TS types
   else if (window.Capacitor) {
     const { Share } = await import('@capacitor/share');
     await Share.share({

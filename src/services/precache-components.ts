@@ -104,7 +104,6 @@ function drainQueue(queue: PrecacheTask[]): void {
 
   const processNext = (_deadline: IdleDeadline): void => {
     if (index >= queue.length) {
-      console.log('[Precache] All component precache tasks complete');
       return;
     }
 
@@ -115,8 +114,6 @@ function drainQueue(queue: PrecacheTask[]): void {
 
     if (index < queue.length) {
       idleCallback(processNext, { timeout: 10000 });
-    } else {
-      console.log('[Precache] All component precache tasks complete');
     }
   };
 
@@ -131,13 +128,14 @@ function drainQueue(queue: PrecacheTask[]): void {
 export async function initComponentPrecache(): Promise<void> {
   // Delay before starting — the caller already waits for data preloading
   // to finish, so this just adds breathing room before fetching chunks.
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+  const PRECACHE_STARTUP_DELAY_MS = 5000;
+  await new Promise((resolve) =>
+    setTimeout(resolve, PRECACHE_STARTUP_DELAY_MS)
+  );
 
   const tier = await getPrecacheTier();
-  console.log(`[Precache] Network tier: ${tier}`);
 
   if (tier === 'none') {
-    console.log('[Precache] Skipped: data saver enabled');
     return;
   }
 
@@ -147,6 +145,5 @@ export async function initComponentPrecache(): Promise<void> {
     tasks.push(...getExtendedTasks());
   }
 
-  console.log(`[Precache] Queuing ${tasks.length} component precache tasks`);
   drainQueue(tasks);
 }

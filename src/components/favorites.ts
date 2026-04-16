@@ -58,7 +58,6 @@ export class Favorites extends LitElement {
     const preloaded = getPreloadedFavorites();
 
     if (preloaded && preloaded.length > 0) {
-      console.log('[Favorites] Using preloaded data');
       this.favorites = preloaded;
     }
 

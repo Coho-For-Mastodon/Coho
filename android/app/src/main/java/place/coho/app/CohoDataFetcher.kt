@@ -38,7 +38,7 @@ object CohoDataFetcher {
     /**
      * Fetch home timeline posts. Requires authentication.
      */
-    suspend fun fetchHomeTimeline(server: String, token: String, limit: Int = 5): List<TimelinePost> =
+    suspend fun fetchHomeTimeline(server: String, token: String, limit: Int = 15): List<TimelinePost> =
         withContext(Dispatchers.IO) {
             if (token.isBlank()) return@withContext emptyList()
             val json = httpGet(
@@ -59,7 +59,7 @@ object CohoDataFetcher {
     /**
      * Fetch recent notifications. Requires authentication.
      */
-    suspend fun fetchNotifications(server: String, token: String, limit: Int = 5): List<WidgetNotification> =
+    suspend fun fetchNotifications(server: String, token: String, limit: Int = 15): List<WidgetNotification> =
         withContext(Dispatchers.IO) {
             if (token.isBlank()) return@withContext emptyList()
             val json = httpGet(

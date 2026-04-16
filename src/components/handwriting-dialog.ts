@@ -340,12 +340,6 @@ export class HandwritingDialog extends LitElement {
       const result = await worker.recognize(dataUrl);
 
       const text = result.data.text.trim();
-      console.log(
-        'Tesseract recognition:',
-        text,
-        'confidence:',
-        result.data.confidence
-      );
 
       return text || null;
     } catch (error) {

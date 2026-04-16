@@ -54,6 +54,3 @@ export const deleteConversation = async (id: string): Promise<void> => {
     method: 'DELETE',
   });
 };
-
-/** @deprecated Use getConversations instead */
-export const getMessages = getConversations;

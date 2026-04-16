@@ -1,5 +1,5 @@
-import { Account, Emoji } from '../types/interfaces/Account';
-import { MediaAttachment } from '../types/interfaces/MediaAttachment';
+import type { Account, Emoji } from '../mastodon/types/account';
+import type { MediaAttachment } from '../mastodon/types/media';
 import type { FilterResult } from '../mastodon/types/filter';
 import type {
   Quote,

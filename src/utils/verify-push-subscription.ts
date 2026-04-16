@@ -17,7 +17,7 @@ export async function verifyPushSubscription() {
     if (!serverSub) return; // No server subscription — user may not have set up push
 
     if (browserSub.endpoint !== serverSub.endpoint) {
-      console.log('[App] Push endpoint mismatch — re-syncing with server');
+      // Push endpoint mismatch — re-sync with server
       const { getClientConfig } = await import('../mastodon/config/client');
       const { url, accessToken } = getClientConfig();
       const subJSON = browserSub.toJSON();
@@ -42,7 +42,7 @@ export async function verifyPushSubscription() {
           },
         }),
       });
-      console.log('[App] Push subscription re-synced successfully');
+      // re-sync successful
     }
   } catch (error) {
     // Non-critical — log and continue

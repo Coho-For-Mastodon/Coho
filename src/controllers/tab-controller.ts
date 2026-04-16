@@ -89,7 +89,6 @@ export class TabController implements ReactiveController {
     loadCallback?: (name: string) => Promise<void>,
     sideEffectsCallback?: (name: string) => Promise<void>
   ) {
-    console.log('tab name', name);
     await this.switchToTab(name, false, loadCallback, sideEffectsCallback);
   }
 

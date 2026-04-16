@@ -114,7 +114,6 @@ export async function withOptimisticUpdate<T>(
     // for background sync, so we should keep the optimistic update
     if (!navigator.onLine) {
       // Request was queued for background sync, keep the optimistic update
-      console.log('[Optimistic] Offline - request queued for background sync');
       return { success: true, data: undefined, rolledBack: false };
     }
 

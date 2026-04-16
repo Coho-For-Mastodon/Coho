@@ -35,10 +35,6 @@ export function saveTimelineCache(
       getTimelineCacheKey(timelineType),
       JSON.stringify(cache)
     );
-    console.log(`Timeline cache saved for ${timelineType}`, {
-      posts: data.length,
-      scrollPosition,
-    });
   } catch (error) {
     console.error('Failed to save timeline cache:', error);
   }
@@ -62,16 +58,9 @@ export function getTimelineCache(timelineType: string): TimelineCache | null {
     // Check if cache is still valid
     const isExpired = Date.now() - cache.timestamp > CACHE_DURATION;
     if (isExpired) {
-      console.log(`Timeline cache expired for ${timelineType}`);
       clearTimelineCache(timelineType);
       return null;
     }
-
-    console.log(`Timeline cache hit for ${timelineType}`, {
-      posts: cache.data.length,
-      age: Math.round((Date.now() - cache.timestamp) / 1000) + 's',
-      scrollPosition: cache.scrollPosition,
-    });
 
     return cache;
   } catch (error) {
@@ -88,7 +77,6 @@ export function clearTimelineCache(timelineType?: string): void {
   try {
     if (timelineType) {
       sessionStorage.removeItem(getTimelineCacheKey(timelineType));
-      console.log(`Timeline cache cleared for ${timelineType}`);
     } else {
       const timelineCachePrefix =
         getAccountScopedSessionStorageKey('timeline_cache:');
@@ -100,7 +88,6 @@ export function clearTimelineCache(timelineType?: string): void {
           sessionStorage.removeItem(key);
         }
       });
-      console.log('All timeline caches cleared');
     }
   } catch (error) {
     console.error('Failed to clear timeline cache:', error);

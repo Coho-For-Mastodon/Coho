@@ -12,19 +12,11 @@ export async function shareTarget(
     // Build the expected cache key (must match SW's format)
     const expectedKey = `/_share/${encodeURIComponent(decodedName)}`;
 
-    console.log('[Share Target] Looking for cache key:', expectedKey);
-    console.log(
-      '[Share Target] Available cache keys:',
-      (await cache.keys()).map((r) => r.url)
-    );
-
     const response = await cache.match(expectedKey);
 
     if (response) {
-      console.log('[Share Target] Found cached file');
       return { success: true, decodedName };
     } else {
-      console.log('[Share Target] No cached file found');
       return {
         success: false,
         decodedName,

@@ -91,10 +91,7 @@ export class AppExplore extends LitElement {
   ];
 
   async firstUpdated() {
-    console.log('first updated');
-
     const data = await getPreviewTimeline();
-    console.log(data);
 
     this.timeline = data;
   }
@@ -115,8 +112,6 @@ export class AppExplore extends LitElement {
       try {
         const { initAuth } = await import('../services/account');
         await initAuth(serverURL);
-
-        // (window as any).appInsights.setAuthenticatedUserContext(validatedId);
       } catch (err) {
         console.error(err);
       }

@@ -63,9 +63,6 @@ export async function uploadMediaFromURL(
   return data;
 }
 
-/** @deprecated Use uploadMediaFromURL instead */
-export const uploadImageFromURL = uploadMediaFromURL;
-
 export async function uploadMediaBlob(blob: Blob): Promise<MediaAttachment> {
   const { url: serverUrl, accessToken } = getClientConfig();
   const formData = new FormData();
@@ -87,9 +84,6 @@ export async function uploadMediaBlob(blob: Blob): Promise<MediaAttachment> {
 
   return data;
 }
-
-/** @deprecated Use uploadMediaBlob instead */
-export const uploadImageFromBlob = uploadMediaBlob;
 
 export async function uploadMediaFile(file: File): Promise<MediaAttachment> {
   const { url: serverUrl, accessToken } = getClientConfig();

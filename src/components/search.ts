@@ -189,7 +189,6 @@ export class Search extends LitElement {
             const { searchTimeline } = await import('../services/timeline');
             const searchData = await searchTimeline('Mastodon');
             if (requestId !== this._requestId) return;
-            console.log('searchData', searchData);
             console.debug(
               `[perf] explore initial search ${Math.round(performance.now() - startedAt)}ms`
             );
@@ -256,8 +255,6 @@ export class Search extends LitElement {
   }
 
   async handleSearch(value: string) {
-    console.log(value);
-
     const startedAt = performance.now();
     const requestId = ++this._requestId;
     this.setLoading(true);
@@ -265,7 +262,6 @@ export class Search extends LitElement {
       const { searchTimeline } = await import('../services/timeline');
       const searchData = await searchTimeline(value);
       if (requestId !== this._requestId) return;
-      console.log('searchData', searchData);
       console.debug(
         `[perf] explore user search ${Math.round(performance.now() - startedAt)}ms`
       );

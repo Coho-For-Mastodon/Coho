@@ -1,6 +1,6 @@
 import { getClientConfig } from '../config/client';
 import { apiFetch } from '../../utils/api-client';
-import { Notification } from '../types';
+import type { Notification } from '../../interfaces/Notification';
 import { getAccountScopedLocalStorageKey } from '../../utils/account-scoped-storage';
 
 const getLastReadNotificationKey = () =>

@@ -223,16 +223,9 @@ export class PostDialog extends LitElement {
 
     const expectedKey = `/_share/${encodeURIComponent(decodedName)}`;
 
-    console.log('[Share Target Dialog] Looking for cache key:', expectedKey);
-    console.log(
-      '[Share Target Dialog] Available cache keys:',
-      (await cache.keys()).map((r) => r.url)
-    );
-
     const response = await cache.match(expectedKey);
 
     if (response) {
-      console.log('[Share Target Dialog] Found cached file, uploading...');
       const blob = await response.blob();
 
       const data = await uploadMediaBlob(blob);
@@ -250,9 +243,6 @@ export class PostDialog extends LitElement {
       }
 
       await cache.delete(expectedKey);
-      console.log('[Share Target Dialog] Cached file cleaned up');
-    } else {
-      console.log('[Share Target Dialog] No cached file found');
     }
   }
 

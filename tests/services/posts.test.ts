@@ -30,7 +30,7 @@ describe('posts service', () => {
 
     it('throws an error when post is not found', async () => {
       await expect(getPostDetail('nonexistent_post')).rejects.toThrow(
-        'Failed to load post'
+        'Record not found'
       );
     });
 
@@ -93,7 +93,7 @@ describe('posts service', () => {
 
     it('throws an error when post is not found', async () => {
       await expect(getEditHistory('nonexistent_post')).rejects.toThrow(
-        'Failed to fetch edit history'
+        'Record not found'
       );
     });
   });

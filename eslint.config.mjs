@@ -65,9 +65,8 @@ export default tseslint.config(
   },
   {
     rules: {
-      // Keep these a bit lighter for now (we can tighten later)
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',

@@ -13,6 +13,7 @@
 import { onRequest, type Request } from 'firebase-functions/v2/https';
 import type { Response } from 'express';
 import * as logger from 'firebase-functions/logger';
+import { applyCors } from './cors';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 import * as http from 'http';
@@ -34,12 +35,14 @@ const ece = require('http_ece');
 
 const WEB_PUSH_ENCODINGS = new Set(['aesgcm', 'aes128gcm']);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node emit() signature uses any
 const _origEmit: (...args: any[]) => boolean = http.Server.prototype.emit;
 
 http.Server.prototype.emit = function (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node emit() signature uses any
   this: any,
   event: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node emit() signature uses any
   ...args: any[]
 ): boolean {
   if (event === 'request') {
@@ -67,29 +70,6 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 const COLLECTION = 'push-relay-registrations';
-
-// ---------------------------------------------------------------------------
-// CORS (same list used by the rest of the functions)
-// ---------------------------------------------------------------------------
-
-const allowedOrigins = [
-  'https://coho.place',
-  'https://coho-mastodon.web.app',
-  'http://localhost:3000',
-  'https://localhost', // Capacitor Android WebView
-];
-
-function applyCors(
-  request: { headers: { origin?: string } },
-  response: { set: (key: string, value: string) => void }
-) {
-  const origin = request.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    response.set('Access-Control-Allow-Origin', origin);
-  }
-  response.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-}
 
 // ---------------------------------------------------------------------------
 // Crypto helpers

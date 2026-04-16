@@ -1,4 +1,4 @@
-import { Emoji } from '../types/interfaces/Account';
+import type { Emoji } from '../mastodon/types/account';
 import { getCustomEmojiMap } from '../services/custom-emojis';
 
 const SHORTCODE_RE = /:([a-zA-Z0-9_]+):/g;

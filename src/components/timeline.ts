@@ -573,7 +573,6 @@ export class Timeline extends LitElement {
 
     // Save timeline to cache when navigating away
     if (this.timeline.length > 0) {
-      console.log('Saving timeline to cache on disconnect');
       const { saveTimelineCache } = await import('../services/timeline-cache');
       saveTimelineCache(
         this.timelineType,
@@ -1002,8 +1001,6 @@ export class Timeline extends LitElement {
       const { get } = await import('idb-keyval');
       const savedTimelineType = await get('timelineType');
 
-      console.log('saved timeline type', savedTimelineType);
-
       if (savedTimelineType) {
         const migratedTimelineType =
           savedTimelineType === 'public' ? 'federated' : savedTimelineType;
@@ -1019,7 +1016,6 @@ export class Timeline extends LitElement {
     const { getTimelineCache } = await import('../services/timeline-cache');
     const cachedTimeline = getTimelineCache(this.timelineType);
     if (cachedTimeline && cachedTimeline.data.length > 0) {
-      console.log('Restoring timeline from cache');
       this.timeline = cachedTimeline.data;
       this.loadingData = false;
 
@@ -1031,10 +1027,6 @@ export class Timeline extends LitElement {
         ) as HTMLElement;
         if (virtualizer && cachedTimeline.scrollPosition > 0) {
           virtualizer.scrollTop = cachedTimeline.scrollPosition;
-          console.log(
-            'Restored scroll position:',
-            cachedTimeline.scrollPosition
-          );
         }
       });
 
@@ -1042,7 +1034,6 @@ export class Timeline extends LitElement {
       this.checkForNewPosts();
     } else {
       // No cache, fetch fresh data
-      console.log('No cache found, fetching fresh timeline');
       await this.refreshTimeline();
     }
 
@@ -1158,8 +1149,6 @@ export class Timeline extends LitElement {
       clearTimelineCache(this.timelineType);
       await resetLastPageID(this.timelineType);
     }
-
-    console.log('refreshing timeline', this.timelineType);
 
     // Save current timeline data before refreshing
     if (!skipCache && this.timeline.length > 0) {
@@ -1308,7 +1297,6 @@ export class Timeline extends LitElement {
     }
 
     this.isCheckingForNewPosts = true;
-    console.log('Checking for new posts in background...');
 
     try {
       let freshPosts: Post[] = [];
@@ -1384,16 +1372,9 @@ export class Timeline extends LitElement {
         this.pendingNewPosts = enrichedNewPosts;
         // Ensure md-button is loaded before the "new posts" button renders
         ensureDialogComponents();
-        console.log(`Found ${enrichedNewPosts.length} new posts`);
-      } else {
-        console.log('No new posts found');
       }
-    } catch (error) {
-      // Silently fail - user still has cached content
-      console.log(
-        'Background check for new posts failed (likely offline):',
-        error
-      );
+    } catch {
+      // Silently fail — user still has cached content
     } finally {
       this.isCheckingForNewPosts = false;
     }
@@ -1423,17 +1404,9 @@ export class Timeline extends LitElement {
     // Update cache with new data
     const { saveTimelineCache } = await import('../services/timeline-cache');
     saveTimelineCache(this.timelineType, this.timeline, 0);
-
-    console.log(
-      'Showed pending posts, timeline now has',
-      this.timeline.length,
-      'posts'
-    );
   }
 
   handleReplies(data: Array<Post>) {
-    console.log('reply', data);
-
     // fire custom event
     this.dispatchEvent(
       new CustomEvent<RepliesDetail>('replies', {
@@ -1445,7 +1418,6 @@ export class Timeline extends LitElement {
   }
 
   async showImage(imageURL: string) {
-    console.log('show image', imageURL);
     // Navigate - the router handles view transitions internally
     await router.navigate(`/home/img-preview?src=${imageURL}`);
   }

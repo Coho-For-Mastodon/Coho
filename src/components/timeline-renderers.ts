@@ -83,13 +83,12 @@ export function renderLinkCard(
         href="${card.url}"
         target="_blank"
         rel="noopener noreferrer"
-        style="text-decoration: none; color: inherit; display: block;"
         @click="${(e: Event) => {
           e.preventDefault();
           e.stopPropagation();
           openLinkCard(card.url || '');
         }}"
-        class="link-card link-card--large"
+        class="link-card link-card--large link-card-link"
       >
         <img
           class="link-card-hero"
@@ -114,13 +113,12 @@ export function renderLinkCard(
       href="${card.url}"
       target="_blank"
       rel="noopener noreferrer"
-      style="text-decoration: none; color: inherit; display: block;"
       @click="${(e: Event) => {
         e.preventDefault();
         e.stopPropagation();
         openLinkCard(card.url || '');
       }}"
-      class="link-card"
+      class="link-card link-card-link"
     >
       <div class="link-card-icon">
         <img src="/assets/bookmark-outline.svg" alt="" />
@@ -897,8 +895,7 @@ export function renderThreadContinuation(
       ? html`
           <button
             type="button"
-            class="thread-show-more"
-            style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%;"
+            class="thread-show-more button-reset"
             @click="${() => handlers.openPost()}"
           >
             <md-icon name="chatbox"></md-icon>
@@ -922,8 +919,7 @@ export function renderReblog(
     <md-card slot="card">
       <button
         type="button"
-        class="boost-indicator"
-        style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; width: 100%;"
+        class="boost-indicator button-reset"
         @click="${(e: Event) => {
           e.stopPropagation();
           router.navigate(`/account?id=${state.tweet?.account.id}`, {
