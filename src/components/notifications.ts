@@ -1,4 +1,11 @@
-import { LitElement, html, css, nothing, PropertyValues } from 'lit';
+import {
+  LitElement,
+  html,
+  css,
+  nothing,
+  PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { msg, localized } from '@lit/localize';
 import { router } from '../router/routes';
@@ -10,10 +17,6 @@ import {
   disconnectIntersectionObserver,
 } from '../utils/intersection-observer';
 import { spinAnimation } from '../styles/animations';
-
-import '@lit-labs/virtualizer';
-import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
-import type { RenderItemFunction } from '@lit-labs/virtualizer/virtualize.js';
 
 import './user-profile';
 import './timeline-item';
@@ -27,8 +30,6 @@ import { Post } from '../interfaces/Post';
 import { Notification } from '../interfaces/Notification';
 import type { Account } from '../mastodon/types';
 import { getConversations } from '../services/messages';
-
-import { shouldDisableVirtualScroll } from '../utils/browser';
 
 @localized()
 @customElement('app-notifications')
@@ -149,7 +150,6 @@ export class Notifications extends LitElement {
         display: none;
       }
 
-      lit-virtualizer,
       .scroller-fallback {
         display: block;
         padding: 0;
@@ -161,7 +161,6 @@ export class Notifications extends LitElement {
         overflow-x: hidden;
       }
 
-      lit-virtualizer::-webkit-scrollbar,
       .scroller-fallback::-webkit-scrollbar {
         display: none;
       }
@@ -728,21 +727,20 @@ export class Notifications extends LitElement {
   updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
 
-    if (shouldDisableVirtualScroll()) {
-      this._setupInfiniteScroll();
-    }
+    this._setupInfiniteScroll();
   }
 
   private _setupInfiniteScroll() {
-    const trigger = this.shadowRoot?.querySelector(
-      '.panel.active .infinite-scroll-trigger'
-    );
     const root = this.shadowRoot?.querySelector(
       '.panel.active .scroller-fallback'
     );
+    if (!root) return;
 
-    if (!trigger || !root) return;
+    const items = root.querySelectorAll('.notification-wrapper');
+    const lastItem = items[items.length - 1];
+    if (!lastItem) return;
 
+    // Rebuild the observer when the active panel changes
     if (this._activeRoot !== root) {
       disconnectIntersectionObserver(this._observer);
       this._observer = createIntersectionObserver(
@@ -764,8 +762,9 @@ export class Notifications extends LitElement {
       this._activeRoot = root;
     }
 
-    disconnectIntersectionObserver(this._observer);
-    this._observer?.observe(trigger);
+    // Re-observe the current last item after each render
+    this._observer!.disconnect();
+    this._observer!.observe(lastItem);
   }
 
   async checkFollowStatuses() {
@@ -799,21 +798,6 @@ export class Notifications extends LitElement {
     });
     this.followingMap = newMap;
     this._applyFollowStatuses(results);
-  }
-
-  private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
-    const { last } = e;
-    const notifications = this.getFilteredNotifications();
-
-    // Load more when close to end (5 items)
-    if (
-      last >= notifications.length - 5 &&
-      !this.loadingMore &&
-      notifications.length > 0 &&
-      this.hasMoreNotifications
-    ) {
-      await this.loadMore();
-    }
   }
 
   private getFilteredNotifications(): Notification[] {
@@ -1478,10 +1462,10 @@ export class Notifications extends LitElement {
     return this.renderStatusNotification(notification);
   }
 
-  private _renderNotificationItem: RenderItemFunction<Notification> = (
+  private _renderNotificationItem = (
     notification: Notification,
     index: number
-  ) => {
+  ): TemplateResult => {
     const filteredNotifications = this.getFilteredNotifications();
     const isLastItem = index === filteredNotifications.length - 1;
 
@@ -1546,21 +1530,11 @@ export class Notifications extends LitElement {
 
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
         ${allNotifications.length > 0
-          ? shouldDisableVirtualScroll()
-            ? html`<div class="scroller-fallback">
-                ${allNotifications.map((n, i) =>
-                  this._renderNotificationItem(n, i)
-                )}
-                <div class="infinite-scroll-trigger" style="height: 1px;"></div>
-              </div>`
-            : html`
-                <lit-virtualizer
-                  scroller
-                  .items=${allNotifications}
-                  .renderItem=${this._renderNotificationItem}
-                  @visibilityChanged=${this._handleVisibilityChanged}
-                ></lit-virtualizer>
-              `
+          ? html`<div class="scroller-fallback">
+              ${allNotifications.map((n, i) =>
+                this._renderNotificationItem(n, i)
+              )}
+            </div>`
           : html`
               <div id="no">
                 <img src="/assets/notify-done.svg" alt="no notifications" />
@@ -1571,21 +1545,11 @@ export class Notifications extends LitElement {
 
       <div class="panel ${this.activeSegment === 'mentions' ? 'active' : ''}">
         ${mentionNotifications.length > 0
-          ? shouldDisableVirtualScroll()
-            ? html`<div class="scroller-fallback">
-                ${mentionNotifications.map((n, i) =>
-                  this._renderNotificationItem(n, i)
-                )}
-                <div class="infinite-scroll-trigger" style="height: 1px;"></div>
-              </div>`
-            : html`
-                <lit-virtualizer
-                  scroller
-                  .items=${mentionNotifications}
-                  .renderItem=${this._renderNotificationItem}
-                  @visibilityChanged=${this._handleVisibilityChanged}
-                ></lit-virtualizer>
-              `
+          ? html`<div class="scroller-fallback">
+              ${mentionNotifications.map((n, i) =>
+                this._renderNotificationItem(n, i)
+              )}
+            </div>`
           : html`
               <div id="no">
                 <img src="/assets/notify-done.svg" alt="no mentions" />
@@ -1596,21 +1560,11 @@ export class Notifications extends LitElement {
 
       <div class="panel ${this.activeSegment === 'follows' ? 'active' : ''}">
         ${followNotifications.length > 0
-          ? shouldDisableVirtualScroll()
-            ? html`<div class="scroller-fallback">
-                ${followNotifications.map((n, i) =>
-                  this._renderNotificationItem(n, i)
-                )}
-                <div class="infinite-scroll-trigger" style="height: 1px;"></div>
-              </div>`
-            : html`
-                <lit-virtualizer
-                  scroller
-                  .items=${followNotifications}
-                  .renderItem=${this._renderNotificationItem}
-                  @visibilityChanged=${this._handleVisibilityChanged}
-                ></lit-virtualizer>
-              `
+          ? html`<div class="scroller-fallback">
+              ${followNotifications.map((n, i) =>
+                this._renderNotificationItem(n, i)
+              )}
+            </div>`
           : html`
               <div id="no">
                 <img src="/assets/notify-done.svg" alt="no followers" />

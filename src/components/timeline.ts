@@ -1,4 +1,10 @@
-import { LitElement, html, css, PropertyValues } from 'lit';
+import {
+  LitElement,
+  html,
+  css,
+  PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import {
   getPreviewTimeline,
@@ -9,6 +15,7 @@ import {
   prefetchNextPage,
   resetLastPageID,
 } from '../services/timeline';
+import { isSlowConnection } from '../utils/network-monitor';
 import { Post } from '../interfaces/Post';
 
 import { filterTimelinePosts } from '../services/filters';
@@ -24,11 +31,7 @@ import type {
   OpenImageDetail,
 } from '../types/events';
 
-import { shouldDisableVirtualScroll } from '../utils/browser';
-import {
-  createIntersectionObserver,
-  disconnectIntersectionObserver,
-} from '../utils/intersection-observer';
+import { createIntersectionObserver } from '../utils/intersection-observer';
 
 // Keyboard navigation handler - dynamically imported to reduce initial bundle
 import type { default as HotkeysType } from 'hotkeys-js';
@@ -58,9 +61,6 @@ interface ImageAnalyzeData {
 
 import '../components/md/md-icon';
 import '../components/md/md-skeleton-card';
-import '@lit-labs/virtualizer';
-import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
-import type { RenderItemFunction } from '@lit-labs/virtualizer/virtualize.js';
 
 import '../components/timeline-item';
 
@@ -112,50 +112,42 @@ export class Timeline extends LitElement {
   private _hapticTriggered: boolean = false;
   private _prefetchedIds = new Set<string>();
 
-  // Bound render function for lit-virtualizer
-  private _renderTimelineItem: RenderItemFunction<Post> = (
-    tweet: Post,
-    index: number
-  ) => {
-    const isLastItem = index === this.timeline.length - 1;
-    const filterTitles = (tweet as Post & { _filterTitles?: string[] })
-      ._filterTitles;
-    return html`<li class="timeline-list-item">
-      <timeline-item
-        @open="${($event: CustomEvent) => this.handleOpen($event.detail.tweet)}"
-        @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
-          this.handleSummary($event)}"
-        @translating="${($event: CustomEvent<HandleTranslatingDetail>) =>
-          this.handleTranslating($event)}"
-        tweetID="${tweet.id}"
-        @delete="${() => this.refreshTimeline()}"
-        @edit="${($event: CustomEvent<{ tweet: Post }>) =>
-          this.handleEdit($event.detail.tweet)}"
-        @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
-          this.showAnalyze(
-            $event.detail.data as AnalyzeData,
-            $event.detail.imageData as ImageAnalyzeData | null,
-            $event.detail.tweet
-          )}"
-        @openimage="${($event: CustomEvent<OpenImageDetail>) =>
-          this.showImage($event.detail.imageURL)}"
-        ?show="${true}"
-        ?guestMode="${this.guestMode}"
-        ?focused="${index === this.focusedIndex}"
-        tabindex="${index === this.focusedIndex ? '0' : '-1'}"
-        @replies="${($event: CustomEvent<RepliesDetail>) =>
-          this.handleReplies($event.detail.data)}"
-        .tweet="${tweet}"
-        .filterTitles="${filterTitles ?? []}"
-      ></timeline-item>
-      ${isLastItem
-        ? html`<div id="load-more-indicator">
-            <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
-            <span>Loading more...</span>
-          </div>`
-        : null}
-    </li>`;
-  };
+  // Bound render function for timeline list
+  private _renderTimelineItem: (tweet: Post, index: number) => TemplateResult =
+    (tweet: Post, index: number) => {
+      const filterTitles = (tweet as Post & { _filterTitles?: string[] })
+        ._filterTitles;
+      return html`<li class="timeline-list-item">
+        <timeline-item
+          @open="${($event: CustomEvent) =>
+            this.handleOpen($event.detail.tweet)}"
+          @summarize="${($event: CustomEvent<HandleSummaryDetail>) =>
+            this.handleSummary($event)}"
+          @translating="${($event: CustomEvent<HandleTranslatingDetail>) =>
+            this.handleTranslating($event)}"
+          tweetID="${tweet.id}"
+          @delete="${() => this.refreshTimeline()}"
+          @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+            this.handleEdit($event.detail.tweet)}"
+          @analyze="${($event: CustomEvent<AnalyzeEventDetail>) =>
+            this.showAnalyze(
+              $event.detail.data as AnalyzeData,
+              $event.detail.imageData as ImageAnalyzeData | null,
+              $event.detail.tweet
+            )}"
+          @openimage="${($event: CustomEvent<OpenImageDetail>) =>
+            this.showImage($event.detail.imageURL)}"
+          ?show="${true}"
+          ?guestMode="${this.guestMode}"
+          ?focused="${index === this.focusedIndex}"
+          tabindex="${index === this.focusedIndex ? '0' : '-1'}"
+          @replies="${($event: CustomEvent<RepliesDetail>) =>
+            this.handleReplies($event.detail.data)}"
+          .tweet="${tweet}"
+          .filterTitles="${filterTitles ?? []}"
+        ></timeline-item>
+      </li>`;
+    };
 
   // Cached element references for pull-to-refresh performance
   private _refreshIndicator: HTMLElement | null = null;
@@ -294,7 +286,6 @@ export class Timeline extends LitElement {
         margin-top: 0;
       }
 
-      lit-virtualizer,
       .scroller-fallback {
         display: block;
         border-radius: var(--md-sys-shape-corner-small);
@@ -453,10 +444,6 @@ export class Timeline extends LitElement {
       }
 
       @media (max-width: 820px) {
-        lit-virtualizer {
-          height: 85vh;
-        }
-
         #timeline-header md-select {
           max-width: 100%;
         }
@@ -648,14 +635,11 @@ export class Timeline extends LitElement {
   }
 
   private _scrollToFocusedPost() {
-    const virtualizer = this.shadowRoot?.querySelector(
-      'lit-virtualizer'
-    ) as HTMLElement & {
-      scrollToIndex?: (index: number, position?: string) => void;
-    };
-
-    if (virtualizer?.scrollToIndex) {
-      virtualizer.scrollToIndex(this.focusedIndex, 'center');
+    const list = this.shadowRoot?.querySelector('#mainList');
+    const items = list?.querySelectorAll('.timeline-list-item');
+    const target = items?.[this.focusedIndex];
+    if (target) {
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
 
     // Also update the focused timeline-item
@@ -698,11 +682,9 @@ export class Timeline extends LitElement {
   updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
 
-    if (shouldDisableVirtualScroll()) {
-      this._setupInfiniteScroll();
-    }
+    this._setupInfiniteScroll();
 
-    // Setup pull-to-refresh when virtualizer becomes available
+    // Setup pull-to-refresh when list becomes available
     if (
       !this._pullToRefreshSetup &&
       !this.loadingData &&
@@ -712,11 +694,15 @@ export class Timeline extends LitElement {
     }
   }
 
-  private _setupInfiniteScroll() {
-    const trigger = this.shadowRoot?.querySelector('#infinite-scroll-trigger');
-    const root = this.shadowRoot?.querySelector('.scroller-fallback');
+  private _hasMorePosts = true;
 
-    if (!trigger || !root) return;
+  private _setupInfiniteScroll() {
+    const root = this.shadowRoot?.querySelector('#mainList');
+    if (!root) return;
+
+    const items = root.querySelectorAll('.timeline-list-item');
+    const lastItem = items[items.length - 1];
+    if (!lastItem) return;
 
     if (!this._observer) {
       this._observer = createIntersectionObserver(
@@ -724,9 +710,26 @@ export class Timeline extends LitElement {
           if (
             entries[0].isIntersecting &&
             !this.loadingData &&
+            this._hasMorePosts &&
             this.timeline.length > 0
           ) {
-            this.loadMore();
+            // Prefetch next page for home timeline
+            if (this.timelineType === 'home' && !this._isDataSaverEnabled()) {
+              const lastPostId = this.timeline[this.timeline.length - 1].id;
+              if (!this._prefetchedIds.has(lastPostId)) {
+                this._prefetchedIds.add(lastPostId);
+                prefetchNextPage(lastPostId, 'home');
+              }
+            }
+
+            const prevCount = this.timeline.length;
+            this.loadingData = true;
+            this.loadMore().finally(() => {
+              this.loadingData = false;
+              if (this.timeline.length === prevCount) {
+                this._hasMorePosts = false;
+              }
+            });
           }
         },
         {
@@ -737,24 +740,23 @@ export class Timeline extends LitElement {
       );
     }
 
-    // Always re-observe to ensure we're tracking the correct element
-    disconnectIntersectionObserver(this._observer);
-    this._observer.observe(trigger);
+    // Re-observe the current last item after each render
+    this._observer.disconnect();
+    this._observer.observe(lastItem);
   }
 
   private async _setupPullToRefresh() {
     // Prevent duplicate setup
     if (this._pullToRefreshSetup) return;
 
-    // Wait for lit-virtualizer to render
+    // Wait for list to render
     await this.updateComplete;
 
-    // Additional wait to ensure virtualizer is ready
+    // Additional wait to ensure list is ready
     await new Promise((resolve) => requestAnimationFrame(resolve));
 
-    // lit-virtualizer with scroller attribute is itself the scroll container
     const scrollContainer = this.shadowRoot?.querySelector(
-      shouldDisableVirtualScroll() ? '.scroller-fallback' : 'lit-virtualizer'
+      '#mainList'
     ) as HTMLElement;
 
     if (scrollContainer) {
@@ -784,7 +786,7 @@ export class Timeline extends LitElement {
   private _getScrollContainer(): HTMLElement | null {
     if (!this._scrollContainer) {
       this._scrollContainer = this.shadowRoot?.querySelector(
-        shouldDisableVirtualScroll() ? '.scroller-fallback' : 'lit-virtualizer'
+        '#mainList'
       ) as HTMLElement;
     }
     return this._scrollContainer;
@@ -1022,11 +1024,9 @@ export class Timeline extends LitElement {
       // Restore scroll position after render
       await this.updateComplete;
       requestAnimationFrame(() => {
-        const virtualizer = this.shadowRoot?.querySelector(
-          'lit-virtualizer'
-        ) as HTMLElement;
-        if (virtualizer && cachedTimeline.scrollPosition > 0) {
-          virtualizer.scrollTop = cachedTimeline.scrollPosition;
+        const list = this.shadowRoot?.querySelector('#mainList') as HTMLElement;
+        if (list && cachedTimeline.scrollPosition > 0) {
+          list.scrollTop = cachedTimeline.scrollPosition;
         }
       });
 
@@ -1040,21 +1040,18 @@ export class Timeline extends LitElement {
     // Setup scroll position tracking for caching
     window.requestIdleCallback(
       async () => {
-        const virtualizer = this.shadowRoot?.querySelector(
-          'lit-virtualizer'
-        ) as HTMLElement;
+        const list = this.shadowRoot?.querySelector('#mainList') as HTMLElement;
 
-        if (!virtualizer) {
-          console.warn('Virtualizer not found');
+        if (!list) {
           return;
         }
 
         // Track scroll position for caching
         let scrollTimeout: number;
-        virtualizer.addEventListener('scroll', () => {
+        list.addEventListener('scroll', () => {
           clearTimeout(scrollTimeout);
           scrollTimeout = window.setTimeout(async () => {
-            this.lastScrollPosition = virtualizer.scrollTop;
+            this.lastScrollPosition = list.scrollTop;
 
             const { updateCacheScrollPosition } =
               await import('../services/timeline-cache');
@@ -1069,58 +1066,9 @@ export class Timeline extends LitElement {
     );
   }
 
-  /** Check if data saver mode is enabled */
+  /** Check if connection is too slow for background prefetch */
   private _isDataSaverEnabled(): boolean {
-    const connection = (
-      navigator as Navigator & {
-        connection?: { saveData?: boolean };
-      }
-    ).connection;
-    return connection?.saveData === true;
-  }
-
-  /** Handle visibility changes from lit-virtualizer to trigger load more */
-  private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
-    if (!this.autoLoad) {
-      return;
-    }
-
-    // Skip all pagination work while a refresh is in flight
-    if (this.isRefreshing) {
-      return;
-    }
-
-    const { last } = e;
-
-    // Prefetch at 15 items from end (home timeline only, skip if data saver enabled)
-    if (
-      last >= this.timeline.length - 15 &&
-      this.timeline.length > 0 &&
-      this.timelineType === 'home' &&
-      !this._isDataSaverEnabled()
-    ) {
-      const lastPostId = this.timeline[this.timeline.length - 1].id;
-      if (!this._prefetchedIds.has(lastPostId)) {
-        this._prefetchedIds.add(lastPostId);
-        prefetchNextPage(lastPostId, 'home');
-      }
-    }
-
-    // Load more when we're close to the end
-    if (
-      last >= this.timeline.length - 5 &&
-      !this.loadingData &&
-      this.timeline.length > 0
-    ) {
-      // Set flag immediately to prevent concurrent loads
-      this.loadingData = true;
-
-      try {
-        await this.loadMore();
-      } finally {
-        this.loadingData = false;
-      }
-    }
+    return isSlowConnection();
   }
 
   public async refreshTimeline(skipCache: boolean = true) {
@@ -1131,6 +1079,7 @@ export class Timeline extends LitElement {
     // Guard against concurrent loads during refresh
     this.isRefreshing = true;
     this.loadingData = true;
+    this._hasMorePosts = true;
 
     try {
       await this._doRefreshTimeline(skipCache);
@@ -1390,11 +1339,9 @@ export class Timeline extends LitElement {
     }
 
     // Scroll to top first
-    const virtualizer = this.shadowRoot?.querySelector(
-      'lit-virtualizer'
-    ) as HTMLElement;
-    if (virtualizer) {
-      virtualizer.scrollTop = 0;
+    const list = this.shadowRoot?.querySelector('#mainList') as HTMLElement;
+    if (list) {
+      list.scrollTop = 0;
     }
 
     // Prepend new posts to timeline
@@ -1634,41 +1581,24 @@ export class Timeline extends LitElement {
         : null}
       ${this.loadingData && this.timeline.length === 0
         ? html`<md-skeleton-card count="5"></md-skeleton-card>`
-        : shouldDisableVirtualScroll()
-          ? html`
-              <ul
-                id="mainList"
-                part="list"
-                class="scroller-fallback scrollbar-hidden"
-              >
-                ${this.timeline.map((item, index) =>
-                  this._renderTimelineItem(item, index)
-                )}
-                <li
-                  id="infinite-scroll-trigger"
-                  style="height: 1px; list-style: none;"
-                ></li>
-                ${this.loadingData
-                  ? html`<li id="load-more-indicator" style="list-style: none;">
-                      <md-icon src="/assets/loading-indicator.svg"></md-icon>
-                      Loading more...
-                    </li>`
-                  : null}
-              </ul>
-            `
-          : html`
-              <lit-virtualizer
-                id="mainList"
-                part="list"
-                class="scrollbar-hidden"
-                role="list"
-                scroller
-                .items=${this.timeline}
-                .renderItem=${this._renderTimelineItem}
-                @visibilityChanged=${this._handleVisibilityChanged}
-              >
-              </lit-virtualizer>
-            `}
+        : html`
+            <ul
+              id="mainList"
+              part="list"
+              class="scroller-fallback scrollbar-hidden"
+              role="list"
+            >
+              ${this.timeline.map((item, index) =>
+                this._renderTimelineItem(item, index)
+              )}
+              ${this.loadingData
+                ? html`<li id="load-more-indicator" style="list-style: none;">
+                    <md-icon src="/assets/loading-indicator.svg"></md-icon>
+                    Loading more...
+                  </li>`
+                : null}
+            </ul>
+          `}
     `;
   }
 }

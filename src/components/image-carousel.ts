@@ -4,6 +4,10 @@ import { localized, msg } from '@lit/localize';
 import { getBlurhashWorker } from '../services/blurhash-worker';
 import type { MediaAttachment } from '../mastodon/types/media';
 import {
+  shouldUseReducedImageQuality,
+  onNetworkQualityChange,
+} from '../utils/network-monitor';
+import {
   createIntersectionObserver,
   disconnectIntersectionObserver,
 } from '../utils/intersection-observer';
@@ -30,10 +34,12 @@ export class ImageCarousel extends LitElement {
 
   @state() blurhashUrls: Map<string, string> = new Map();
   @state() currentIndex: number = 0;
+  @state() private _slowNetwork = false;
 
   private _videoObserver: IntersectionObserver | null = null;
   /** Track IDs sent to the worker so we can cancel on disconnect. */
   private _pendingBlurhashIds: Set<string> = new Set();
+  private _unsubscribeNetwork: (() => void) | null = null;
 
   static styles = [
     css`
@@ -144,6 +150,15 @@ export class ImageCarousel extends LitElement {
     `,
   ];
 
+  connectedCallback() {
+    super.connectedCallback();
+    // Initialise with the current quality and subscribe to future changes
+    this._slowNetwork = shouldUseReducedImageQuality();
+    this._unsubscribeNetwork = onNetworkQualityChange(() => {
+      this._slowNetwork = shouldUseReducedImageQuality();
+    });
+  }
+
   firstUpdated() {
     this.addEventListener('keydown', this._handleKeydown);
     this.setAttribute('tabindex', '0');
@@ -170,6 +185,21 @@ export class ImageCarousel extends LitElement {
 
   updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('images') && this.images.length > 0) {
+      // Revoke URLs for images that are no longer in the current set
+      const currentIds = new Set(this.images.map((img) => img.id));
+      const newMap = new Map(this.blurhashUrls);
+      let changed = false;
+      for (const [id, url] of this.blurhashUrls) {
+        if (!currentIds.has(id)) {
+          URL.revokeObjectURL(url);
+          newMap.delete(id);
+          changed = true;
+        }
+      }
+      if (changed) {
+        this.blurhashUrls = newMap;
+      }
+
       this.generateBlurhashes();
       this.updateComplete.then(() => this._observeVideos());
     }
@@ -177,6 +207,8 @@ export class ImageCarousel extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this._unsubscribeNetwork?.();
+    this._unsubscribeNetwork = null;
     this.removeEventListener('keydown', this._handleKeydown);
     disconnectIntersectionObserver(this._videoObserver);
     this._videoObserver = null;
@@ -188,11 +220,9 @@ export class ImageCarousel extends LitElement {
     }
     this._pendingBlurhashIds.clear();
 
-    // Revoke all object URLs to free memory
-    for (const url of this.blurhashUrls.values()) {
-      URL.revokeObjectURL(url);
-    }
-    this.blurhashUrls = new Map();
+    // Intentionally do NOT revoke blurhash URLs here. The virtualizer may
+    // reconnect this element for the same post, and revoking forces the worker
+    // to regenerate them on every scroll. URLs are revoked when `images` changes.
   }
 
   private _observeVideos() {
@@ -385,7 +415,9 @@ export class ImageCarousel extends LitElement {
                     />`
                   : null}
                 <img
-                  src="${image.url}"
+                  src="${this._slowNetwork && image.preview_url
+                    ? image.preview_url
+                    : image.url}"
                   alt="${image.description || msg('Image')}"
                   @load="${this.handleImageLoad}"
                   class="${blurhashUrl ? '' : 'loaded'}"

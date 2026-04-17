@@ -10,7 +10,3 @@ export function isSafari(): boolean {
 export function isFirefox(): boolean {
   return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 }
-
-export function shouldDisableVirtualScroll(): boolean {
-  return isSafari() || isFirefox();
-}

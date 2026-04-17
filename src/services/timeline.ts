@@ -2,6 +2,7 @@ import { set } from 'idb-keyval';
 import { getUsersPosts } from './account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 import { Post } from '../interfaces/Post';
+import { getTimelineLimit } from '../utils/network-monitor';
 
 import {
   getPublicTimeline as mastodonGetPublicTimeline,
@@ -188,7 +189,7 @@ export const getPaginatedHomeTimeline = async (
   // Use provided maxId, fall back to lastPageID for this type, or fetch from beginning
   const effectiveMaxId = maxId || getLastPageID(type);
   const params: Record<string, string | number | boolean | undefined> = {
-    limit: 10,
+    limit: getTimelineLimit(),
   };
   if (effectiveMaxId && effectiveMaxId.length > 0) {
     params.max_id = effectiveMaxId;
@@ -219,7 +220,7 @@ export const prefetchNextPage = (maxId: string, type = 'home'): void => {
   }
 
   const url = buildMastodonUrl(`/api/v1/timelines/${type}`, {
-    limit: 10,
+    limit: getTimelineLimit(),
     max_id: maxId,
   });
 

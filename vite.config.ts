@@ -302,10 +302,6 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // Exclude lit-virtualizer from vendor-lit - let it bundle naturally with components
-            if (id.includes('/node_modules/@lit-labs/virtualizer')) {
-              return undefined;
-            }
             if (
               id.includes('/node_modules/lit') ||
               id.includes('/node_modules/@lit')

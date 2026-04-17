@@ -16,14 +16,10 @@ import {
   type ProfilePostsFilter,
 } from '../services/account';
 import { withOptimisticUpdate } from '../utils/optimistic-updates';
-import { shouldLoadMore } from '../utils/infinite-scroll';
-import { shouldDisableVirtualScroll } from '../utils/browser';
 import {
   createIntersectionObserver,
   disconnectIntersectionObserver,
 } from '../utils/intersection-observer';
-import '@lit-labs/virtualizer';
-import type { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 
 import '../components/timeline-item';
 import '../components/md/md-dialog';
@@ -644,14 +640,6 @@ export class AppProfile extends LitElement {
         opacity: 0.5;
       }
 
-      lit-virtualizer {
-        display: block;
-        contain: none;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-
       .scroller-fallback {
         display: block;
         contain: none;
@@ -934,9 +922,7 @@ export class AppProfile extends LitElement {
       }
     }
 
-    if (shouldDisableVirtualScroll()) {
-      this._setupInfiniteScroll();
-    }
+    this._setupInfiniteScroll();
   }
 
   setupMediaObserver() {
@@ -1128,27 +1114,8 @@ export class AppProfile extends LitElement {
     this.loadingPosts = false;
   }
 
-  private getVisiblePostsCount(): number {
-    if (this.activeSegment !== 'posts' || this.pinnedPosts.length === 0) {
-      return this.posts.length;
-    }
-
-    const pinnedIds = new Set(this.pinnedPosts.map((post) => post.id));
-    return this.posts.filter((post) => !pinnedIds.has(post.id)).length;
-  }
-
-  /** Handle visibility changes from lit-virtualizer to trigger load more */
-  private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
-    const visiblePostsCount = this.getVisiblePostsCount();
-    if (shouldLoadMore(e, visiblePostsCount, this.loadingMorePosts)) {
-      await this.loadMorePosts();
-    }
-  }
-
-  /** Load more posts for infinite scroll */
-  private async loadMorePosts() {
-    if (!this.user || this.loadingMorePosts || !this.hasMorePosts) return;
-
+  async loadMorePosts() {
+    if (this.loadingMorePosts || !this.user || !this.hasMorePosts) return;
     this.loadingMorePosts = true;
 
     try {
@@ -1206,11 +1173,12 @@ export class AppProfile extends LitElement {
   }
 
   private _setupInfiniteScroll() {
-    const trigger = this.shadowRoot?.querySelector(
-      '#posts-infinite-scroll-trigger'
-    );
+    const list = this.shadowRoot?.querySelector('.scroller-fallback');
+    if (!list) return;
 
-    if (!trigger) return;
+    const items = list.querySelectorAll('.post-item');
+    const lastItem = items[items.length - 1];
+    if (!lastItem) return;
 
     if (!this._listObserver) {
       this._listObserver = createIntersectionObserver(
@@ -1231,8 +1199,9 @@ export class AppProfile extends LitElement {
       );
     }
 
-    disconnectIntersectionObserver(this._listObserver);
-    this._listObserver.observe(trigger);
+    // Re-observe the current last item after each render
+    this._listObserver.disconnect();
+    this._listObserver.observe(lastItem);
   }
 
   private handlePinChange(
@@ -1897,61 +1866,15 @@ export class AppProfile extends LitElement {
             ? html`<md-skeleton-card count="5"></md-skeleton-card>`
             : this.activeSegment === 'media'
               ? this.renderMediaGrid()
-              : shouldDisableVirtualScroll()
-                ? html`
-                    <ul
-                      class="scroller-fallback ${this.loadingPosts
-                        ? 'posts-loading'
-                        : ''}"
-                    >
-                      ${visiblePosts.map(
-                        (post) => html`
-                          <li class="post-item">
-                            <timeline-item
-                              @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                                this.handleOpenPost(e.detail.tweet)}"
-                              @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                                this.editPost(e.detail.tweet)}"
-                              @reply-clicked="${(
-                                e: CustomEvent<{ tweet: Post }>
-                              ) => this._handleReplyClicked(e)}"
-                              @quote-clicked="${(
-                                e: CustomEvent<{ tweet: Post }>
-                              ) => this._handleQuoteClicked(e)}"
-                              @delete="${() => this.reloadPosts()}"
-                              @pin-change="${(e: CustomEvent) =>
-                                this.handlePinChange(e)}"
-                              .tweet=${post}
-                              ?guestMode="${this.isGuestMode}"
-                              ?allowPin="${this.isOwnProfile &&
-                              !this.isGuestMode}"
-                            ></timeline-item>
-                          </li>
-                        `
-                      )}
-                      <li
-                        id="posts-infinite-scroll-trigger"
-                        style="height: 1px; list-style: none;"
-                      ></li>
-                      ${this.loadingMorePosts
-                        ? html`<li
-                            class="load-more-indicator"
-                            style="list-style: none;"
-                          >
-                            <md-skeleton
-                              width="100%"
-                              height="120px"
-                            ></md-skeleton>
-                          </li>`
-                        : null}
-                    </ul>
-                  `
-                : html`
-                    <lit-virtualizer
-                      class="${this.loadingPosts ? 'posts-loading' : ''}"
-                      role="list"
-                      .items=${visiblePosts}
-                      .renderItem=${(post: Post) => html`
+              : html`
+                  <ul
+                    class="scroller-fallback ${this.loadingPosts
+                      ? 'posts-loading'
+                      : ''}"
+                    role="list"
+                  >
+                    ${visiblePosts.map(
+                      (post) => html`
                         <li class="post-item">
                           <timeline-item
                             @open="${(e: CustomEvent<{ tweet: Post }>) =>
@@ -1973,18 +1896,21 @@ export class AppProfile extends LitElement {
                             !this.isGuestMode}"
                           ></timeline-item>
                         </li>
-                      `}
-                      @visibilityChanged=${this._handleVisibilityChanged}
-                    ></lit-virtualizer>
+                      `
+                    )}
                     ${this.loadingMorePosts
-                      ? html`<div class="load-more-indicator">
+                      ? html`<li
+                          class="load-more-indicator"
+                          style="list-style: none;"
+                        >
                           <md-skeleton
                             width="100%"
                             height="120px"
                           ></md-skeleton>
-                        </div>`
+                        </li>`
                       : null}
-                  `}
+                  </ul>
+                `}
         </div>
 
         <report-dialog

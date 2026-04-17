@@ -165,8 +165,8 @@ describe('timeline pull-to-refresh', () => {
     });
   });
 
-  describe('lit-virtualizer integration', () => {
-    it('should render lit-virtualizer when data is provided', async () => {
+  describe('list rendering', () => {
+    it('should render list when data is provided', async () => {
       const el = await fixture<Timeline>(
         html`<app-timeline
           .data=${testPosts}
@@ -177,11 +177,12 @@ describe('timeline pull-to-refresh', () => {
       await elementUpdated(el);
       await waitForFrames(3);
 
-      const virtualizer = el.shadowRoot?.querySelector('lit-virtualizer');
-      expect(virtualizer).toBeDefined();
+      const list = el.shadowRoot?.querySelector('#mainList');
+      expect(list).toBeDefined();
+      expect(list?.tagName.toLowerCase()).toBe('ul');
     });
 
-    it('should use lit-virtualizer as scroll container', async () => {
+    it('should use list as scroll container', async () => {
       const el = await fixture<Timeline>(
         html`<app-timeline
           .data=${testPosts}
@@ -192,10 +193,10 @@ describe('timeline pull-to-refresh', () => {
       await elementUpdated(el);
       await waitForFrames(3);
 
-      const virtualizer = el.shadowRoot?.querySelector('lit-virtualizer');
+      const list = el.shadowRoot?.querySelector('#mainList');
       const scrollContainer = (el as any)._scrollContainer;
 
-      expect(scrollContainer).toBe(virtualizer);
+      expect(scrollContainer).toBe(list);
     });
   });
 });

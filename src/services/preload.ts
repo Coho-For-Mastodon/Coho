@@ -14,6 +14,7 @@
 import type { Post } from '../interfaces/Post';
 import type { Notification as MastodonNotification } from '../interfaces/Notification';
 import { getAccountScopedSessionStorageKey } from '../utils/account-scoped-storage';
+import { isSlowConnection } from '../utils/network-monitor';
 
 // Cache keys for preloaded data
 const getPreloadNotificationsKey = () =>
@@ -29,14 +30,6 @@ const PRELOAD_TTL = 5 * 60 * 1000;
 interface PreloadCache<T> {
   data: T;
   timestamp: number;
-}
-
-// Network Information API types
-interface NetworkInformation {
-  effectiveType?: 'slow-2g' | '2g' | '3g' | '4g';
-  saveData?: boolean;
-  downlink?: number;
-  rtt?: number;
 }
 
 /**
@@ -57,19 +50,8 @@ export async function canPreload(): Promise<boolean> {
   }
 
   // Check network conditions
-  if ('connection' in navigator) {
-    const conn = (navigator as Navigator & { connection?: NetworkInformation })
-      .connection;
-
-    // Skip on slow connections or if browser's save-data is enabled
-    if (
-      conn?.saveData ||
-      conn?.effectiveType === 'slow-2g' ||
-      conn?.effectiveType === '2g' ||
-      conn?.effectiveType === '3g'
-    ) {
-      return false;
-    }
+  if (isSlowConnection()) {
+    return false;
   }
 
   return true;

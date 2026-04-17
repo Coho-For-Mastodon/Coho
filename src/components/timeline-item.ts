@@ -89,6 +89,7 @@ export class TimelineItem extends LitElement {
 
       md-card {
         content-visibility: auto;
+        contain-intrinsic-size: auto 400px;
 
         animation-name: slideUp;
         animation-duration: 0.3s;

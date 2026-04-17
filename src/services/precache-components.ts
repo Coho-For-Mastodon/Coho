@@ -11,11 +11,7 @@
  * it's cached permanently (hashed filenames = immutable assets).
  */
 
-// Network Information API type (Chromium-only)
-interface NetworkInformation {
-  effectiveType?: 'slow-2g' | '2g' | '3g' | '4g';
-  saveData?: boolean;
-}
+import { getNetworkQuality } from '../utils/network-monitor';
 
 type PrecacheTask = () => Promise<unknown>;
 
@@ -35,20 +31,19 @@ async function getPrecacheTier(): Promise<'none' | 'critical' | 'extended'> {
     return 'none';
   }
 
-  const conn = (navigator as Navigator & { connection?: NetworkInformation })
-    .connection;
+  const quality = getNetworkQuality();
 
   // If the browser exposes saveData and it's on, skip entirely
-  if (conn?.saveData) {
+  if (quality === 'slow') {
     return 'none';
   }
 
   // Fast connection: 4g
-  if (conn?.effectiveType === '4g') {
+  if (quality === 'fast') {
     return 'extended';
   }
 
-  // Slow, moderate, or unknown (Safari/Firefox) — be conservative
+  // Moderate or unknown (Safari/Firefox) — be conservative
   return 'critical';
 }
 
