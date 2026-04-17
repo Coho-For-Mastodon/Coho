@@ -21,6 +21,7 @@ import './handwriting-dialog.js';
 import './quoted-post.js';
 
 import type { MdTextArea } from './md/md-text-area.js';
+import type { MdDropdown } from './md/md-dropdown.js';
 
 import {
   publishPost,
@@ -248,6 +249,7 @@ export class PostComposer extends LitElement {
   @query('media-edit-dialog')
   private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
   @query('#emoji-trigger') private _emojiButton!: HTMLElement;
+  @query('#more-options-dropdown') private _moreOptionsDropdown?: MdDropdown;
 
   static styles = [
     spinAnimation,
@@ -650,14 +652,12 @@ export class PostComposer extends LitElement {
 
       /* Proofread styles */
       .proofread-result-container {
-        position: relative;
+        width: 100%;
       }
 
       .proofread-dropdown {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        width: 320px;
+        width: 100%;
+        box-sizing: border-box;
         margin-top: 4px;
         padding: 8px 0;
         background-color: var(--md-sys-color-surface-container, #2b2930);
@@ -1983,6 +1983,11 @@ export class PostComposer extends LitElement {
     this.proofreading = true;
     this.proofreadResult = null;
 
+    // Keep the dropdown open so the "Checking..." loading state is visible
+    if (this._moreOptionsDropdown) {
+      this._moreOptionsDropdown.keepOpen = true;
+    }
+
     try {
       const result = await proofread(text);
       this.proofreadResult = result;
@@ -1990,6 +1995,11 @@ export class PostComposer extends LitElement {
       console.error('Proofreading failed:', error);
     } finally {
       this.proofreading = false;
+      // Re-enable auto-close and hide the dropdown now that result is ready
+      if (this._moreOptionsDropdown) {
+        this._moreOptionsDropdown.keepOpen = false;
+        this._moreOptionsDropdown.hide();
+      }
     }
   }
 
@@ -2880,7 +2890,7 @@ export class PostComposer extends LitElement {
         ></md-icon-button>
 
         <!-- Overflow menu -->
-        <md-dropdown placement="bottom-end">
+        <md-dropdown id="more-options-dropdown" placement="bottom-end">
           <md-icon-button
             slot="trigger"
             name="ellipsis-vertical"
@@ -2957,10 +2967,9 @@ export class PostComposer extends LitElement {
               : nothing}
           </md-menu>
         </md-dropdown>
-
-        <!-- Proofread result (outside overflow menu) -->
-        ${this.proofreaderAvailable ? this._renderProofreadResult() : nothing}
       </div>
+      <!-- Proofread result (below actions row, full-width) -->
+      ${this.proofreaderAvailable ? this._renderProofreadResult() : nothing}
     `;
   }
 
