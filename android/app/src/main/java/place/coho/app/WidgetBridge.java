@@ -1,5 +1,7 @@
 package place.coho.app;
 
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -27,6 +29,9 @@ public class WidgetBridge extends Plugin {
                 .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(PREF_SERVER, server).apply();
 
+        if (hasActiveWidgets()) {
+            CohoWidgetReceiver.scheduleWidgetUpdates(getContext());
+        }
         WidgetRefreshHelper.INSTANCE.refreshWidgets(getContext());
         call.resolve();
     }
@@ -42,6 +47,10 @@ public class WidgetBridge extends Plugin {
                 .putString(PREF_ACCESS_TOKEN, accessToken)
                 .apply();
 
+        // Ensure the periodic WorkManager job is scheduled when widget is active (handles reinstalls)
+        if (hasActiveWidgets()) {
+            CohoWidgetReceiver.scheduleWidgetUpdates(getContext());
+        }
         WidgetRefreshHelper.INSTANCE.refreshWidgets(getContext());
         call.resolve();
     }
@@ -50,5 +59,11 @@ public class WidgetBridge extends Plugin {
     public void refresh(PluginCall call) {
         WidgetRefreshHelper.INSTANCE.refreshWidgets(getContext());
         call.resolve();
+    }
+
+    private boolean hasActiveWidgets() {
+        AppWidgetManager mgr = AppWidgetManager.getInstance(getContext());
+        ComponentName cn = new ComponentName(getContext(), CohoWidgetReceiver.class);
+        return mgr.getAppWidgetIds(cn).length > 0;
     }
 }
