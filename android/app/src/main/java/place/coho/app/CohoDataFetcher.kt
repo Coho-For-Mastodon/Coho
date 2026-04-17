@@ -89,17 +89,20 @@ object CohoDataFetcher {
      * Caches decoded bitmaps to disk for 24 hours to avoid re-downloading on every widget refresh.
      * Returns null on any error.
      */
-    suspend fun downloadAvatar(context: Context, urlString: String, sizePx: Int): Bitmap? =
+    suspend fun downloadBitmap(context: Context, urlString: String, sizePx: Int): Bitmap? =
         withContext(Dispatchers.IO) {
             if (urlString.isBlank()) return@withContext null
 
-            val cacheDir = File(context.cacheDir, "widget_avatars").also { it.mkdirs() }
+            val cacheDir = File(context.cacheDir, "widget_images").also { it.mkdirs() }
             val cacheFile = File(cacheDir, "${md5Hex(urlString)}_$sizePx.png")
 
             // Serve from disk cache if < 24 hours old
             if (cacheFile.exists() && System.currentTimeMillis() - cacheFile.lastModified() < 86_400_000L) {
                 BitmapFactory.decodeFile(cacheFile.absolutePath)?.let { return@withContext it }
             }
+
+            // Expired cache file — delete before downloading a fresh copy
+            if (cacheFile.exists()) cacheFile.delete()
 
             // Download fresh copy
             var conn: HttpURLConnection? = null
@@ -110,7 +113,7 @@ object CohoDataFetcher {
                 conn.readTimeout = 5_000
                 conn.instanceFollowRedirects = true
                 if (conn.responseCode != 200) return@withContext null
-                val raw = BitmapFactory.decodeStream(conn.inputStream)
+                val raw = conn.inputStream.use { input -> BitmapFactory.decodeStream(input) }
                     ?: return@withContext null
                 val scaled = Bitmap.createScaledBitmap(raw, sizePx, sizePx, true)
                 if (scaled != raw) raw.recycle()
@@ -198,7 +201,7 @@ object CohoDataFetcher {
         else -> type
     }
 
-    /** Stable, collision-resistant filename key for a URL. */
+    /** Stable filename key for a URL (not cryptographically collision-resistant; used for cache file naming only). */
     private fun md5Hex(input: String): String {
         val digest = MessageDigest.getInstance("MD5").digest(input.toByteArray(Charsets.UTF_8))
         return digest.joinToString("") { "%02x".format(it) }
@@ -216,6 +219,7 @@ object CohoDataFetcher {
             }
             val date = sdf.parse(isoString.take(19)) ?: return ""
             val diff = System.currentTimeMillis() - date.time
+            if (diff <= 0L) return "now"
             when {
                 diff < 60_000L -> "now"
                 diff < 3_600_000L -> "${diff / 60_000}m"

@@ -38,6 +38,8 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 
 class CohoWidget : GlanceAppWidget() {
 
@@ -57,7 +59,7 @@ class CohoWidget : GlanceAppWidget() {
         val allUrls = timelinePosts.map { it.avatarUrl } + notifications.map { it.avatarUrl }
         for (url in allUrls.distinct()) {
             if (url.isNotBlank()) {
-                CohoDataFetcher.downloadAvatar(context, url, avatarSize)?.let { avatarCache[url] = it }
+                CohoDataFetcher.downloadBitmap(context, url, avatarSize)?.let { avatarCache[url] = it }
             }
         }
 
@@ -67,7 +69,7 @@ class CohoWidget : GlanceAppWidget() {
         for (post in timelinePosts) {
             val url = post.mediaPreviewUrl
             if (!url.isNullOrBlank()) {
-                CohoDataFetcher.downloadAvatar(context, url, thumbSize)?.let { mediaCache[url] = it }
+                CohoDataFetcher.downloadBitmap(context, url, thumbSize)?.let { mediaCache[url] = it }
             }
         }
 
@@ -121,6 +123,7 @@ class CohoWidget : GlanceAppWidget() {
                         .size(32.dp)
                         .background(GlanceTheme.colors.primary)
                         .cornerRadius(16.dp)
+                        .semantics { contentDescription = "New post" }
                         .clickable(actionRunCallback<DeepLinkAction>(
                             actionParametersOf(DeepLinkUrlKey to "https://localhost/home?newPost=1")
                         )),
