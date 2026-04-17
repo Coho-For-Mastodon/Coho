@@ -234,6 +234,11 @@ export class MdMenuItem extends LitElement {
       }
 
       /* On-device indicator - shown as badge on right side */
+      /* Reserve space so label text doesn't overlap the badge */
+      :host([title]) .menu-item {
+        padding-right: 90px;
+      }
+
       :host([title])::after {
         content: attr(title);
         position: absolute;

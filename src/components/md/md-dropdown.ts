@@ -8,6 +8,8 @@ import { customElement, property, query } from 'lit/decorators.js';
 @customElement('md-dropdown')
 export class MdDropdown extends LitElement {
   @property({ type: Boolean, reflect: true }) open = false;
+  /** When true, clicking a menu item will NOT auto-close the dropdown. */
+  @property({ type: Boolean }) keepOpen = false;
   @property({ type: String }) placement:
     | 'bottom-start'
     | 'bottom-end'
@@ -87,6 +89,7 @@ export class MdDropdown extends LitElement {
 
   private _handlePopupClick = (e: Event) => {
     // Close dropdown when a menu item is clicked
+    if (this.keepOpen) return;
     const target = e.target as HTMLElement;
     if (target.tagName === 'MD-MENU-ITEM' || target.closest('md-menu-item')) {
       // Small delay to allow the click handler to fire first
