@@ -37,6 +37,23 @@ export async function safeCachePut(
 }
 
 /**
+ * Enforce a max entry count for a cache by evicting oldest entries first.
+ * Cache Storage preserves insertion order in `cache.keys()`.
+ */
+export async function pruneCacheToMaxEntries(
+  cache: Cache,
+  maxEntries: number
+): Promise<void> {
+  if (maxEntries <= 0) return;
+
+  const keys = await cache.keys();
+  const overflow = keys.length - maxEntries;
+  if (overflow <= 0) return;
+
+  await Promise.all(keys.slice(0, overflow).map((key) => cache.delete(key)));
+}
+
+/**
  * Log a warning when a cache write is skipped for a critical asset type.
  * Only warns for scripts and styles to reduce noise.
  */
@@ -105,6 +122,31 @@ export async function cacheFirst(
   const cacheDecision = evaluateCacheResponse(request, response);
   if (cacheDecision.shouldCache) {
     await safeCachePut(cache, request, response.clone());
+  } else if (cacheDecision.reason) {
+    warnCacheSkip(request, cacheDecision.reason);
+  }
+  return response;
+}
+
+/**
+ * Cache-first with bounded cache growth.
+ */
+export async function cacheFirstWithLimit(
+  request: Request,
+  cacheName: string,
+  maxEntries: number
+): Promise<Response> {
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  const response = await fetch(request);
+  const cacheDecision = evaluateCacheResponse(request, response);
+  if (cacheDecision.shouldCache) {
+    await safeCachePut(cache, request, response.clone());
+    await pruneCacheToMaxEntries(cache, maxEntries);
   } else if (cacheDecision.reason) {
     warnCacheSkip(request, cacheDecision.reason);
   }

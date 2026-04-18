@@ -5,14 +5,20 @@
  * based on request type, destination, and URL pattern.
  */
 
-import { CACHE_NAMES } from './constants';
-import { networkFirst, cacheFirst, navigationHandler } from './strategies';
+import { CACHE_NAMES, IMAGE_CACHE_MAX_ENTRIES } from './constants';
+import {
+  networkFirst,
+  cacheFirst,
+  cacheFirstWithLimit,
+  navigationHandler,
+} from './strategies';
 import {
   networkWithBackgroundSync,
   type BackgroundSyncConfig,
 } from './background-sync';
 import { isSyncableRequest } from './syncable-patterns';
 import { shareTargetHandler } from './share-target';
+import { warmMediaCache } from './media-prefetch';
 
 /**
  * Main fetch event handler. Routes requests to strategies:
@@ -61,13 +67,32 @@ export function handleFetch(
 
   // Images
   if (request.destination === 'image') {
-    event.respondWith(cacheFirst(request, CACHE_NAMES.images));
+    event.respondWith(
+      cacheFirstWithLimit(request, CACHE_NAMES.images, IMAGE_CACHE_MAX_ENTRIES)
+    );
     return;
   }
 
   // Mastodon API mutations with background sync support
   if (isSyncableRequest(url, request.method)) {
     event.respondWith(networkWithBackgroundSync(syncConfig, request));
+    return;
+  }
+
+  // Timeline API GETs: network-first + best-effort media warming
+  if (
+    request.method === 'GET' &&
+    url.pathname.startsWith('/api/v1/timelines/')
+  ) {
+    event.respondWith(
+      (async () => {
+        const response = await networkFirst(request, CACHE_NAMES.pages);
+        if (response.ok) {
+          event.waitUntil(warmMediaCache(response.clone(), CACHE_NAMES.images));
+        }
+        return response;
+      })()
+    );
     return;
   }
 

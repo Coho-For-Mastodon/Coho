@@ -15,7 +15,11 @@ import {
   prefetchNextPage,
   resetLastPageID,
 } from '../services/timeline';
-import { isSlowConnection } from '../utils/network-monitor';
+import {
+  isSlowConnection,
+  getNetworkQuality,
+  onNetworkQualityChange,
+} from '../utils/network-monitor';
 import { Post } from '../interfaces/Post';
 
 import { filterTimelinePosts } from '../services/filters';
@@ -154,6 +158,8 @@ export class Timeline extends LitElement {
   private _refreshIcon: HTMLElement | null = null;
   private _scrollContainer: HTMLElement | null = null;
   private _observer: IntersectionObserver | null = null;
+  private _observerRootMargin = '';
+  private _unsubscribeNetworkQuality: (() => void) | null = null;
   private _rafId: number | null = null;
   private _pullToRefreshSetup: boolean = false;
 
@@ -551,6 +557,8 @@ export class Timeline extends LitElement {
 
   async disconnectedCallback() {
     super.disconnectedCallback();
+    this._unsubscribeNetworkQuality?.();
+    this._unsubscribeNetworkQuality = null;
     this._observer?.disconnect();
     this._cleanupKeyboardNavigation();
 
@@ -698,6 +706,14 @@ export class Timeline extends LitElement {
 
   private _hasMorePosts = true;
 
+  private _getInfiniteScrollRootMargin(): string {
+    const quality = getNetworkQuality();
+
+    if (quality === 'slow') return '900px';
+    if (quality === 'medium') return '700px';
+    return '400px';
+  }
+
   private _setupInfiniteScroll() {
     if (!this.autoLoad) return;
     const root = this.shadowRoot?.querySelector('#mainList');
@@ -707,7 +723,10 @@ export class Timeline extends LitElement {
     const lastItem = items[items.length - 1];
     if (!lastItem) return;
 
-    if (!this._observer) {
+    const nextRootMargin = this._getInfiniteScrollRootMargin();
+
+    if (!this._observer || this._observerRootMargin !== nextRootMargin) {
+      this._observer?.disconnect();
       this._observer = createIntersectionObserver(
         (entries) => {
           if (
@@ -743,10 +762,11 @@ export class Timeline extends LitElement {
         },
         {
           root: root,
-          rootMargin: '500px',
+          rootMargin: nextRootMargin,
           threshold: 0,
         }
       );
+      this._observerRootMargin = nextRootMargin;
     }
 
     // Re-observe the current last item after each render
@@ -1005,6 +1025,10 @@ export class Timeline extends LitElement {
     if (!this.autoLoad) {
       return;
     }
+
+    this._unsubscribeNetworkQuality = onNetworkQualityChange(() => {
+      this._setupInfiniteScroll();
+    });
 
     // In guest mode, don't override the timeline type set by the parent component
     // (the parent forces 'federated' which is the only valid type for unauthenticated users)

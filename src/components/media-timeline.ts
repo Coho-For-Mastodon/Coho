@@ -2,6 +2,10 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { getPaginatedHomeTimeline } from '../services/timeline';
 import {
+  getNetworkQuality,
+  onNetworkQualityChange,
+} from '../utils/network-monitor';
+import {
   createIntersectionObserver,
   disconnectIntersectionObserver,
 } from '../utils/intersection-observer';
@@ -18,6 +22,8 @@ export class MediaTimeline extends LitElement {
   @state() timeline: Post[] = [];
   @state() loadingData: boolean = false;
   private _observer: IntersectionObserver | null = null;
+  private _observerRootMargin = '';
+  private _unsubscribeNetworkQuality: (() => void) | null = null;
 
   @property({ type: String }) timelineType:
     | 'Home'
@@ -101,6 +107,10 @@ export class MediaTimeline extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
 
+    this._unsubscribeNetworkQuality = onNetworkQualityChange(() => {
+      this._setupInfiniteScroll();
+    });
+
     this.loadingData = true;
     // await this.refreshTimeline();
     this.loadingData = false;
@@ -108,6 +118,8 @@ export class MediaTimeline extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this._unsubscribeNetworkQuality?.();
+    this._unsubscribeNetworkQuality = null;
     disconnectIntersectionObserver(this._observer);
     this._observer = null;
   }
@@ -118,6 +130,13 @@ export class MediaTimeline extends LitElement {
 
   private _hasMore = true;
 
+  private _getInfiniteScrollRootMargin(): string {
+    const quality = getNetworkQuality();
+    if (quality === 'slow') return '900px';
+    if (quality === 'medium') return '700px';
+    return '400px';
+  }
+
   private _setupInfiniteScroll() {
     const root = this.shadowRoot?.querySelector('.scroller-fallback');
     if (!root) return;
@@ -126,7 +145,10 @@ export class MediaTimeline extends LitElement {
     const lastItem = items[items.length - 1];
     if (!lastItem) return;
 
-    if (!this._observer) {
+    const nextRootMargin = this._getInfiniteScrollRootMargin();
+
+    if (!this._observer || this._observerRootMargin !== nextRootMargin) {
+      disconnectIntersectionObserver(this._observer);
       this._observer = createIntersectionObserver(
         (entries) => {
           if (
@@ -156,10 +178,11 @@ export class MediaTimeline extends LitElement {
         },
         {
           root: root,
-          rootMargin: '500px',
+          rootMargin: nextRootMargin,
           threshold: 0,
         }
       );
+      this._observerRootMargin = nextRootMargin;
     }
 
     this._observer.disconnect();

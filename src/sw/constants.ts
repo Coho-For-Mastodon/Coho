@@ -20,6 +20,9 @@ export const CACHE_NAMES = {
   share: 'shareTarget',
 } as const;
 
+/** Max number of image responses retained in the versioned images cache */
+export const IMAGE_CACHE_MAX_ENTRIES = 300;
+
 /** Background Sync queue name */
 export const SYNC_TAG = 'mastodon-api-sync';
 

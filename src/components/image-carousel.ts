@@ -282,6 +282,10 @@ export class ImageCarousel extends LitElement {
     }
   }
 
+  private getVideoPreloadMode(): 'metadata' | 'none' {
+    return this._slowNetwork ? 'none' : 'metadata';
+  }
+
   private generateBlurhashes() {
     if (!this.images || this.images.length === 0) return;
 
@@ -475,7 +479,7 @@ export class ImageCarousel extends LitElement {
                   : null}
                 <video
                   controls
-                  preload="metadata"
+                  preload="${this.getVideoPreloadMode()}"
                   poster="${image.preview_url}"
                   src="${image.url}"
                   width="${ifDefined(
@@ -505,11 +509,12 @@ export class ImageCarousel extends LitElement {
                     />`
                   : null}
                 <video
-                  autoplay
-                  loop
+                  ?autoplay="${!this._slowNetwork}"
+                  ?loop="${!this._slowNetwork}"
+                  ?controls="${this._slowNetwork}"
                   muted
                   playsinline
-                  preload="metadata"
+                  preload="${this.getVideoPreloadMode()}"
                   poster="${image.preview_url}"
                   src="${image.url}"
                   width="${ifDefined(
