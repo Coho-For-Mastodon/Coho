@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { localized, msg } from '@lit/localize';
 import { getBlurhashWorker } from '../services/blurhash-worker';
 import type { MediaAttachment } from '../mastodon/types/media';
@@ -314,11 +315,35 @@ export class ImageCarousel extends LitElement {
   }
 
   private getImageStyle(image: MediaAttachment): string {
-    const meta = image.meta?.small || image.meta?.original;
-    if (meta?.aspect) {
-      return `aspect-ratio: ${meta.aspect}`;
+    const small = image.meta?.small;
+    const original = image.meta?.original;
+    const aspect = small?.aspect ?? original?.aspect;
+    if (aspect) {
+      return `aspect-ratio: ${aspect}`;
     }
-    return 'height: 300px';
+
+    const width = small?.width ?? original?.width;
+    const height = small?.height ?? original?.height;
+    if (typeof width === 'number' && typeof height === 'number' && height > 0) {
+      return `aspect-ratio: ${width} / ${height}`;
+    }
+
+    return 'aspect-ratio: 16 / 9; min-height: 220px';
+  }
+
+  private getMediaDimensions(
+    image: MediaAttachment
+  ): { width: number; height: number } | undefined {
+    const small = image.meta?.small;
+    const original = image.meta?.original;
+    const width = small?.width ?? original?.width;
+    const height = small?.height ?? original?.height;
+
+    if (typeof width === 'number' && typeof height === 'number') {
+      return { width, height };
+    }
+
+    return undefined;
   }
 
   private handleImageLoad(e: Event) {
@@ -402,6 +427,7 @@ export class ImageCarousel extends LitElement {
       </span>
       <div id="list">
         ${this.images.map((image) => {
+          const dimensions = this.getMediaDimensions(image);
           if (image.type === 'image') {
             const style = this.getImageStyle(image);
             const blurhashUrl = this.blurhashUrls.get(image.id);
@@ -425,6 +451,13 @@ export class ImageCarousel extends LitElement {
                   alt="${image.description || msg('Image')}"
                   @load="${this.handleImageLoad}"
                   class="${blurhashUrl ? '' : 'loaded'}"
+                  width="${ifDefined(
+                    dimensions ? String(dimensions.width) : undefined
+                  )}"
+                  height="${ifDefined(
+                    dimensions ? String(dimensions.height) : undefined
+                  )}"
+                  decoding="async"
                 />
               </div>
             `;
@@ -445,6 +478,12 @@ export class ImageCarousel extends LitElement {
                   preload="metadata"
                   poster="${image.preview_url}"
                   src="${image.url}"
+                  width="${ifDefined(
+                    dimensions ? String(dimensions.width) : undefined
+                  )}"
+                  height="${ifDefined(
+                    dimensions ? String(dimensions.height) : undefined
+                  )}"
                   @loadeddata="${this._handleVideoLoaded}"
                   @play="${(e: Event) => this._handleVideoPlay(e, image)}"
                   @pause="${this._handleVideoPauseOrEnded}"
@@ -473,6 +512,12 @@ export class ImageCarousel extends LitElement {
                   preload="metadata"
                   poster="${image.preview_url}"
                   src="${image.url}"
+                  width="${ifDefined(
+                    dimensions ? String(dimensions.width) : undefined
+                  )}"
+                  height="${ifDefined(
+                    dimensions ? String(dimensions.height) : undefined
+                  )}"
                   @loadeddata="${this._handleVideoLoaded}"
                 ></video>
               </div>

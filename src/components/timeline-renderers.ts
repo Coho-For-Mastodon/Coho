@@ -75,6 +75,11 @@ export function renderLinkCard(
 
   const provider = getProviderDomain(card.url, card.provider_name);
   const hasImage = !!card.image;
+  const cardWidth =
+    typeof card.width === 'number' && card.width > 0 ? card.width : 16;
+  const cardHeight =
+    typeof card.height === 'number' && card.height > 0 ? card.height : 9;
+  const heroAspectRatio = `${cardWidth} / ${cardHeight}`;
 
   if (hasImage) {
     // Vertical "large" card layout: image on top, content below
@@ -95,6 +100,10 @@ export function renderLinkCard(
           src="${card.image}"
           alt="${card.title}"
           loading="lazy"
+          decoding="async"
+          width="${cardWidth}"
+          height="${cardHeight}"
+          style="aspect-ratio: ${heroAspectRatio};"
         />
         <div class="link-card-content">
           <h4>${card.title}</h4>
