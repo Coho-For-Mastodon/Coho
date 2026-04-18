@@ -38,9 +38,13 @@ async function getPrecacheTier(): Promise<'none' | 'critical' | 'extended'> {
     return 'none';
   }
 
-  // Fast connection: 4g
+  // Fast connection: 4g (only when the API is actually present and confirmed)
   if (quality === 'fast') {
-    return 'extended';
+    if (typeof navigator !== 'undefined' && navigator.connection) {
+      return 'extended';
+    }
+    // API unavailable (Safari/Firefox) — treat as unknown, be conservative
+    return 'critical';
   }
 
   // Moderate or unknown (Safari/Firefox) — be conservative

@@ -682,7 +682,9 @@ export class Timeline extends LitElement {
   updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
 
-    this._setupInfiniteScroll();
+    if (changedProperties.has('timeline')) {
+      this._setupInfiniteScroll();
+    }
 
     // Setup pull-to-refresh when list becomes available
     if (
@@ -697,6 +699,7 @@ export class Timeline extends LitElement {
   private _hasMorePosts = true;
 
   private _setupInfiniteScroll() {
+    if (!this.autoLoad) return;
     const root = this.shadowRoot?.querySelector('#mainList');
     if (!root) return;
 
@@ -724,12 +727,18 @@ export class Timeline extends LitElement {
 
             const prevCount = this.timeline.length;
             this.loadingData = true;
-            this.loadMore().finally(() => {
-              this.loadingData = false;
-              if (this.timeline.length === prevCount) {
-                this._hasMorePosts = false;
-              }
-            });
+            this.loadMore()
+              .then(() => {
+                if (this.timeline.length === prevCount) {
+                  this._hasMorePosts = false;
+                }
+              })
+              .catch((error) => {
+                console.error('Failed to load more timeline posts', error);
+              })
+              .finally(() => {
+                this.loadingData = false;
+              });
           }
         },
         {

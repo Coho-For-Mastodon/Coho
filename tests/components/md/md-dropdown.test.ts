@@ -207,28 +207,32 @@ describe('md-dropdown', () => {
       expect(el.open).toBe(false);
     });
 
-    // Skipped: popover show/hide event timing is flaky in test environment
-    it.skip('emits show and hide events from the popover lifecycle', async () => {
+    it('emits show and hide events from the popover lifecycle', async () => {
       const el = await fixture<MdDropdown>(html`
         <md-dropdown>
           <button slot="trigger">Open</button>
           <div>Content</div>
         </md-dropdown>
       `);
-      const popup = el.shadowRoot!.querySelector('.popup') as HTMLDivElement;
       const showHandler = vi.fn();
       const hideHandler = vi.fn();
 
       el.addEventListener('md-dropdown-show', showHandler);
       el.addEventListener('md-dropdown-hide', hideHandler);
 
+      const showPromise = new Promise<void>((resolve) =>
+        el.addEventListener('md-dropdown-show', () => resolve(), { once: true })
+      );
       el.show();
+      await showPromise;
       await elementUpdated(el);
-      await waitForPopover();
 
-      popup.hidePopover();
+      const hidePromise = new Promise<void>((resolve) =>
+        el.addEventListener('md-dropdown-hide', () => resolve(), { once: true })
+      );
+      el.hide();
+      await hidePromise;
       await elementUpdated(el);
-      await waitForPopover();
 
       expect(showHandler).toHaveBeenCalledTimes(1);
       expect(hideHandler).toHaveBeenCalledTimes(1);

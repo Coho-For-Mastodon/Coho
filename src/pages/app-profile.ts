@@ -1114,7 +1114,7 @@ export class AppProfile extends LitElement {
     this.loadingPosts = false;
   }
 
-  async loadMorePosts() {
+  private async loadMorePosts() {
     if (this.loadingMorePosts || !this.user || !this.hasMorePosts) return;
     this.loadingMorePosts = true;
 

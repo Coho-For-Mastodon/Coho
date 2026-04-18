@@ -184,7 +184,7 @@ export class ImageCarousel extends LitElement {
   }
 
   updated(changedProperties: Map<string, unknown>) {
-    if (changedProperties.has('images') && this.images.length > 0) {
+    if (changedProperties.has('images')) {
       // Revoke URLs for images that are no longer in the current set
       const currentIds = new Set(this.images.map((img) => img.id));
       const newMap = new Map(this.blurhashUrls);
@@ -200,8 +200,10 @@ export class ImageCarousel extends LitElement {
         this.blurhashUrls = newMap;
       }
 
-      this.generateBlurhashes();
-      this.updateComplete.then(() => this._observeVideos());
+      if (this.images.length > 0) {
+        this.generateBlurhashes();
+        this.updateComplete.then(() => this._observeVideos());
+      }
     }
   }
 
@@ -220,9 +222,11 @@ export class ImageCarousel extends LitElement {
     }
     this._pendingBlurhashIds.clear();
 
-    // Intentionally do NOT revoke blurhash URLs here. The virtualizer may
-    // reconnect this element for the same post, and revoking forces the worker
-    // to regenerate them on every scroll. URLs are revoked when `images` changes.
+    // Revoke all blurhash object URLs on disconnect to prevent memory leaks.
+    for (const url of this.blurhashUrls.values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.blurhashUrls = new Map();
   }
 
   private _observeVideos() {

@@ -178,8 +178,8 @@ describe('timeline pull-to-refresh', () => {
       await waitForFrames(3);
 
       const list = el.shadowRoot?.querySelector('#mainList');
-      expect(list).toBeDefined();
-      expect(list?.tagName.toLowerCase()).toBe('ul');
+      expect(list).not.toBeNull();
+      expect(list!.tagName.toLowerCase()).toBe('ul');
     });
 
     it('should use list as scroll container', async () => {
@@ -196,6 +196,7 @@ describe('timeline pull-to-refresh', () => {
       const list = el.shadowRoot?.querySelector('#mainList');
       const scrollContainer = (el as any)._scrollContainer;
 
+      expect(list).not.toBeNull();
       expect(scrollContainer).toBe(list);
     });
   });

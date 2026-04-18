@@ -137,12 +137,21 @@ export class MediaTimeline extends LitElement {
           ) {
             const prevCount = this.timeline.length;
             this.loadingData = true;
-            this.loadMore().finally(() => {
-              this.loadingData = false;
-              if (this.timeline.length === prevCount) {
-                this._hasMore = false;
-              }
-            });
+            this.loadMore()
+              .then(() => {
+                if (this.timeline.length === prevCount) {
+                  this._hasMore = false;
+                }
+              })
+              .catch((error) => {
+                console.error(
+                  'Failed to load more media timeline posts',
+                  error
+                );
+              })
+              .finally(() => {
+                this.loadingData = false;
+              });
           }
         },
         {
@@ -165,6 +174,7 @@ export class MediaTimeline extends LitElement {
       (tweet: Post) => tweet.media_attachments.length > 0
     );
 
+    this._hasMore = true;
     this.timeline = updatedTimeline;
   }
 
