@@ -2,15 +2,12 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Post } from '../interfaces/Post';
 import { getPreviewTimeline } from '../services/timeline';
-import { shouldDisableVirtualScroll } from '../utils/browser';
 import {
   createIntersectionObserver,
   disconnectIntersectionObserver,
 } from '../utils/intersection-observer';
 
 import '../components/timeline-item';
-import '@lit-labs/virtualizer';
-import { VisibilityChangedEvent } from '@lit-labs/virtualizer';
 
 @customElement('preview-timeline')
 export class PreviewTimeline extends LitElement {
@@ -22,17 +19,6 @@ export class PreviewTimeline extends LitElement {
     css`
       :host {
         display: block;
-      }
-
-      lit-virtualizer {
-        display: block;
-        border-radius: var(--md-sys-shape-corner-small);
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 90vh;
-        overflow-y: auto;
-        overflow-x: hidden;
       }
 
       .scroller-fallback {
@@ -64,16 +50,18 @@ export class PreviewTimeline extends LitElement {
   }
 
   updated() {
-    if (shouldDisableVirtualScroll()) {
-      this._setupInfiniteScroll();
-    }
+    this._setupInfiniteScroll();
   }
 
-  private _setupInfiniteScroll() {
-    const trigger = this.shadowRoot?.querySelector('#infinite-scroll-trigger');
-    const root = this.shadowRoot?.querySelector('.scroller-fallback');
+  private _hasMore = true;
 
-    if (!trigger || !root) return;
+  private _setupInfiniteScroll() {
+    const root = this.shadowRoot?.querySelector('.scroller-fallback');
+    if (!root) return;
+
+    const items = root.querySelectorAll('.timeline-item');
+    const lastItem = items[items.length - 1];
+    if (!lastItem) return;
 
     if (!this._observer) {
       this._observer = createIntersectionObserver(
@@ -81,36 +69,38 @@ export class PreviewTimeline extends LitElement {
           if (
             entries[0].isIntersecting &&
             !this.loadingData &&
+            this._hasMore &&
             this.timeline.length > 0
           ) {
-            this.loadMore();
+            const prevCount = this.timeline.length;
+            this.loadingData = true;
+            this.loadMore()
+              .then(() => {
+                if (this.timeline.length === prevCount) {
+                  this._hasMore = false;
+                }
+              })
+              .catch((error) => {
+                console.error(
+                  'Failed to load more preview timeline posts',
+                  error
+                );
+              })
+              .finally(() => {
+                this.loadingData = false;
+              });
           }
         },
         {
-          root,
+          root: root,
           rootMargin: '500px',
           threshold: 0,
         }
       );
     }
 
-    disconnectIntersectionObserver(this._observer);
-    this._observer.observe(trigger);
-  }
-
-  /** Handle visibility changes from lit-virtualizer to trigger load more */
-  private async _handleVisibilityChanged(e: VisibilityChangedEvent) {
-    const { last } = e;
-    // Load more when we're close to the end
-    if (
-      last >= this.timeline.length - 5 &&
-      !this.loadingData &&
-      this.timeline.length > 0
-    ) {
-      this.loadingData = true;
-      await this.loadMore();
-      this.loadingData = false;
-    }
+    this._observer.disconnect();
+    this._observer.observe(lastItem);
   }
 
   async loadMore() {
@@ -119,38 +109,16 @@ export class PreviewTimeline extends LitElement {
   }
 
   render() {
-    return shouldDisableVirtualScroll()
-      ? html`
-          <div class="scroller-fallback" part="list">
-            ${this.timeline.map(
-              (tweet) => html`
-                <div class="timeline-item">
-                  <timeline-item
-                    ?show="${false}"
-                    .tweet="${tweet}"
-                  ></timeline-item>
-                </div>
-              `
-            )}
-            <div id="infinite-scroll-trigger" style="height: 1px;"></div>
-          </div>
-        `
-      : html`
-          <lit-virtualizer
-            part="list"
-            scroller
-            .items="${this.timeline as Post[]}"
-            .renderItem="${(tweet: Post) => html`
-              <div class="timeline-item">
-                <timeline-item
-                  ?show="${false}"
-                  .tweet="${tweet}"
-                ></timeline-item>
-              </div>
-            `}"
-            @visibilityChanged="${this._handleVisibilityChanged}"
-          >
-          </lit-virtualizer>
-        `;
+    return html`
+      <div class="scroller-fallback" part="list">
+        ${this.timeline.map(
+          (tweet) => html`
+            <div class="timeline-item">
+              <timeline-item ?show="${false}" .tweet="${tweet}"></timeline-item>
+            </div>
+          `
+        )}
+      </div>
+    `;
   }
 }

@@ -214,20 +214,25 @@ describe('md-dropdown', () => {
           <div>Content</div>
         </md-dropdown>
       `);
-      const popup = el.shadowRoot!.querySelector('.popup') as HTMLDivElement;
       const showHandler = vi.fn();
       const hideHandler = vi.fn();
 
       el.addEventListener('md-dropdown-show', showHandler);
       el.addEventListener('md-dropdown-hide', hideHandler);
 
+      const showPromise = new Promise<void>((resolve) =>
+        el.addEventListener('md-dropdown-show', () => resolve(), { once: true })
+      );
       el.show();
+      await showPromise;
       await elementUpdated(el);
-      await waitForPopover();
 
-      popup.hidePopover();
+      const hidePromise = new Promise<void>((resolve) =>
+        el.addEventListener('md-dropdown-hide', () => resolve(), { once: true })
+      );
+      el.hide();
+      await hidePromise;
       await elementUpdated(el);
-      await waitForPopover();
 
       expect(showHandler).toHaveBeenCalledTimes(1);
       expect(hideHandler).toHaveBeenCalledTimes(1);

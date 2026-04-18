@@ -63,7 +63,7 @@ declare global {
   const scheduler: Scheduler;
 
   // Network Information API
-  interface NetworkInformation {
+  interface NetworkInformation extends EventTarget {
     saveData: boolean;
     effectiveType: 'slow-2g' | '2g' | '3g' | '4g';
     downlink: number;
