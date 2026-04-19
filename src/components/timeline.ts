@@ -717,11 +717,22 @@ export class Timeline extends LitElement {
   private _setupInfiniteScroll() {
     if (!this.autoLoad) return;
     const root = this.shadowRoot?.querySelector('#mainList');
-    if (!root) return;
+    if (!root) {
+      // Disconnect observer when scroll container is gone (e.g. skeleton shown during refresh).
+      // The <ul> may be recreated as a new DOM element, so the observer's root would be stale.
+      this._observer?.disconnect();
+      this._observer = null;
+      return;
+    }
 
     const items = root.querySelectorAll('.timeline-list-item');
     const lastItem = items[items.length - 1];
-    if (!lastItem) return;
+    if (!lastItem) {
+      // Disconnect observer when timeline is empty to prevent stale state
+      this._observer?.disconnect();
+      this._observer = null;
+      return;
+    }
 
     const nextRootMargin = this._getInfiniteScrollRootMargin();
 
@@ -1119,6 +1130,12 @@ export class Timeline extends LitElement {
     } finally {
       this.isRefreshing = false;
       this.loadingData = false;
+      // Re-observe after loadingData clears so the observer fires correctly.
+      // The observer may have fired during the refresh (while loadingData=true)
+      // and skipped loadMore. Re-calling here re-triggers it if the last item
+      // is still within the rootMargin.
+      await this.updateComplete;
+      this._setupInfiniteScroll();
     }
   }
 

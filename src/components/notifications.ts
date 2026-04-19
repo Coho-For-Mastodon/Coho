@@ -734,11 +734,22 @@ export class Notifications extends LitElement {
     const root = this.shadowRoot?.querySelector(
       '.panel.active .scroller-fallback'
     );
-    if (!root) return;
+    if (!root) {
+      disconnectIntersectionObserver(this._observer);
+      this._observer = null;
+      this._activeRoot = null;
+      return;
+    }
 
     const items = root.querySelectorAll('.notification-wrapper');
     const lastItem = items[items.length - 1];
-    if (!lastItem) return;
+    if (!lastItem) {
+      // Disconnect observer when no items to prevent stale state
+      disconnectIntersectionObserver(this._observer);
+      this._observer = null;
+      this._activeRoot = null;
+      return;
+    }
 
     // Rebuild the observer when the active panel changes
     if (this._activeRoot !== root) {
