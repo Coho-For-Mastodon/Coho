@@ -20,12 +20,9 @@ import {
 import './md/md-audio-player';
 
 @localized()
-@customElement('image-carousel')
-export class ImageCarousel extends LitElement {
+@customElement('image-grid')
+export class ImageGrid extends LitElement {
   @property({ type: Array }) images: MediaAttachment[] = [];
-
-  /** Title shown in OS media controls when playing video/audio */
-  @property({ type: String }) mediaTitle = '';
 
   /** Artist shown in OS media controls */
   @property({ type: String }) mediaArtist = '';
@@ -34,11 +31,9 @@ export class ImageCarousel extends LitElement {
   @property({ type: String }) mediaArtwork = '';
 
   @state() blurhashUrls: Map<string, string> = new Map();
-  @state() currentIndex: number = 0;
   @state() private _slowNetwork = false;
 
   private _videoObserver: IntersectionObserver | null = null;
-  /** Track IDs sent to the worker so we can cancel on disconnect. */
   private _pendingBlurhashIds: Set<string> = new Set();
   private _unsubscribeNetwork: (() => void) | null = null;
 
@@ -49,25 +44,65 @@ export class ImageCarousel extends LitElement {
         width: 100%;
       }
 
-      img {
+      .media-grid {
+        display: grid;
+        gap: 3px;
         border-radius: var(--md-sys-shape-corner-medium);
+        overflow: hidden;
+        width: 100%;
       }
 
-      .image-container {
+      /* Multi-image layouts: 2 columns */
+      .media-grid:not(.count-1) {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .media-grid:not(.count-1) .media-cell {
+        aspect-ratio: unset !important;
+      }
+
+      .media-grid.count-2 {
+        grid-template-rows: 240px;
+      }
+
+      .media-grid.count-3 {
+        grid-template-rows: 1fr 1fr;
+        height: 280px;
+      }
+
+      .media-grid.count-3 .media-cell:first-child {
+        grid-row: span 2;
+      }
+
+      .media-grid.count-4 {
+        grid-template-rows: 1fr 1fr;
+        height: 360px;
+      }
+
+      .media-grid.count-many {
+        grid-auto-rows: 170px;
+      }
+
+      .media-cell {
         position: relative;
         overflow: hidden;
         background: var(--sl-color-neutral-100);
-        cursor: pointer;
         display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--md-sys-shape-corner-medium);
+        align-items: stretch;
       }
 
       @media (prefers-color-scheme: dark) {
-        .image-container {
+        .media-cell {
           background: rgb(24 25 31);
         }
+      }
+
+      .count-1 .media-cell {
+        max-height: 480px;
+      }
+
+      .media-cell.clickable {
+        cursor: pointer;
       }
 
       .blurhash-canvas {
@@ -82,7 +117,7 @@ export class ImageCarousel extends LitElement {
         z-index: 0;
       }
 
-      .image-container img:not(.blurhash-canvas) {
+      .media-cell img:not(.blurhash-canvas) {
         position: relative;
         display: block;
         width: 100%;
@@ -93,67 +128,39 @@ export class ImageCarousel extends LitElement {
         transition: opacity 0.3s ease-in-out;
       }
 
-      .image-container img.loaded {
+      .media-cell img.loaded {
         opacity: 1;
       }
 
-      .video-container video {
+      .media-cell video {
         position: relative;
         width: 100%;
-        border-radius: var(--md-sys-shape-corner-medium);
+        height: 100%;
+        object-fit: cover;
         z-index: 1;
         opacity: 0;
         transition: opacity 0.3s ease-in-out;
       }
 
-      .video-container video.loaded {
+      .media-cell video.loaded {
         opacity: 1;
       }
 
-      audio {
-        width: 100%;
-        border-radius: var(--md-sys-shape-corner-medium);
+      /* Single video: natural sizing, no crop */
+      .count-1 .media-cell video {
+        height: auto;
+        object-fit: contain;
       }
 
-      #list {
-        display: flex;
-        scroll-snap-type: x mandatory;
-        overflow-x: scroll;
-        scroll-behavior: smooth;
-
-        align-items: center;
-      }
-
-      #list div {
-        width: 100%;
-        flex-shrink: 0;
-        scroll-snap-align: start;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      #list::-webkit-scrollbar {
-        display: none;
-      }
-
-      .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
+      .audio-cell {
+        grid-column: 1 / -1;
+        padding: 4px 0;
       }
     `,
   ];
 
   connectedCallback() {
     super.connectedCallback();
-    // Initialise with the current quality and subscribe to future changes
     this._slowNetwork = shouldUseReducedImageQuality();
     this._unsubscribeNetwork = onNetworkQualityChange(() => {
       this._slowNetwork = shouldUseReducedImageQuality();
@@ -161,12 +168,6 @@ export class ImageCarousel extends LitElement {
   }
 
   firstUpdated() {
-    this.addEventListener('keydown', this._handleKeydown);
-    this.setAttribute('tabindex', '0');
-    this.setAttribute('role', 'region');
-    this.setAttribute('aria-roledescription', 'carousel');
-    this.setAttribute('aria-label', 'Media');
-
     this._videoObserver = createIntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -186,7 +187,6 @@ export class ImageCarousel extends LitElement {
 
   updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('images')) {
-      // Revoke URLs for images that are no longer in the current set
       const currentIds = new Set(this.images.map((img) => img.id));
       const newMap = new Map(this.blurhashUrls);
       let changed = false;
@@ -212,18 +212,15 @@ export class ImageCarousel extends LitElement {
     super.disconnectedCallback();
     this._unsubscribeNetwork?.();
     this._unsubscribeNetwork = null;
-    this.removeEventListener('keydown', this._handleKeydown);
     disconnectIntersectionObserver(this._videoObserver);
     this._videoObserver = null;
 
-    // Cancel any in-flight worker requests
     const worker = getBlurhashWorker();
     for (const id of this._pendingBlurhashIds) {
       worker.cancel(id);
     }
     this._pendingBlurhashIds.clear();
 
-    // Revoke all blurhash object URLs on disconnect to prevent memory leaks.
     for (const url of this.blurhashUrls.values()) {
       URL.revokeObjectURL(url);
     }
@@ -237,48 +234,6 @@ export class ImageCarousel extends LitElement {
     if (!videos) return;
     for (const video of videos) {
       this._videoObserver.observe(video);
-    }
-  }
-
-  private _handleKeydown = (event: KeyboardEvent) => {
-    if (this.images.length <= 1) return;
-
-    switch (event.key) {
-      case 'ArrowLeft':
-        event.preventDefault();
-        this._navigatePrevious();
-        break;
-      case 'ArrowRight':
-        event.preventDefault();
-        this._navigateNext();
-        break;
-      default:
-        break;
-    }
-  };
-
-  private _navigatePrevious() {
-    if (this.currentIndex > 0) {
-      this.currentIndex--;
-      this._scrollToCurrentImage();
-    }
-  }
-
-  private _navigateNext() {
-    if (this.currentIndex < this.images.length - 1) {
-      this.currentIndex++;
-      this._scrollToCurrentImage();
-    }
-  }
-
-  private _scrollToCurrentImage() {
-    const list = this.shadowRoot?.querySelector('#list') as HTMLElement;
-    if (list) {
-      const imageWidth = list.offsetWidth;
-      list.scrollTo({
-        left: this.currentIndex * imageWidth,
-        behavior: 'smooth',
-      });
     }
   }
 
@@ -318,7 +273,7 @@ export class ImageCarousel extends LitElement {
     }
   }
 
-  private getImageStyle(image: MediaAttachment): string {
+  private getCellStyle(image: MediaAttachment): string {
     const small = image.meta?.small;
     const original = image.meta?.original;
     const aspect = small?.aspect ?? original?.aspect;
@@ -332,7 +287,7 @@ export class ImageCarousel extends LitElement {
       return `aspect-ratio: ${width} / ${height}`;
     }
 
-    return 'aspect-ratio: 16 / 9; min-height: 220px';
+    return 'aspect-ratio: 16 / 9';
   }
 
   private getMediaDimensions(
@@ -367,7 +322,7 @@ export class ImageCarousel extends LitElement {
   private _handleVideoPlay = (e: Event, attachment: MediaAttachment) => {
     const video = e.target as HTMLVideoElement;
     updateMediaSession({
-      title: this.mediaTitle || attachment.description || 'Video',
+      title: attachment.description || 'Video',
       artist: this.mediaArtist,
       artwork: this.mediaArtwork || attachment.preview_url || undefined,
       onPlay: () => {
@@ -422,127 +377,138 @@ export class ImageCarousel extends LitElement {
     );
   }
 
+  private get gridClass(): string {
+    const n = this.images.length;
+    if (n === 1) return 'count-1';
+    if (n === 2) return 'count-2';
+    if (n === 3) return 'count-3';
+    if (n === 4) return 'count-4';
+    return 'count-many';
+  }
+
+  private renderCell(image: MediaAttachment) {
+    const dimensions = this.getMediaDimensions(image);
+    const cellStyle = this.getCellStyle(image);
+    const blurhashUrl = this.blurhashUrls.get(image.id);
+    const isSingle = this.images.length === 1;
+
+    if (image.type === 'image') {
+      return html`
+        <div
+          class="media-cell clickable"
+          style="${cellStyle}"
+          @click="${(event: MouseEvent) => this.openInBox(image, event)}"
+        >
+          ${blurhashUrl
+            ? html`<img
+                class="blurhash-canvas"
+                src="${blurhashUrl}"
+                aria-hidden="true"
+              />`
+            : null}
+          <img
+            src="${this._slowNetwork && image.preview_url
+              ? image.preview_url
+              : image.url}"
+            alt="${image.description || msg('Image')}"
+            @load="${this.handleImageLoad}"
+            class="${blurhashUrl ? '' : 'loaded'}"
+            width="${ifDefined(
+              dimensions ? String(dimensions.width) : undefined
+            )}"
+            height="${ifDefined(
+              dimensions ? String(dimensions.height) : undefined
+            )}"
+            decoding="async"
+          />
+        </div>
+      `;
+    }
+
+    if (image.type === 'video') {
+      return html`
+        <div class="media-cell" style="${isSingle ? '' : cellStyle}">
+          ${blurhashUrl
+            ? html`<img
+                class="blurhash-canvas"
+                src="${blurhashUrl}"
+                aria-hidden="true"
+              />`
+            : null}
+          <video
+            controls
+            preload="${this.getVideoPreloadMode()}"
+            poster="${image.preview_url}"
+            src="${image.url}"
+            width="${ifDefined(
+              !isSingle && dimensions ? String(dimensions.width) : undefined
+            )}"
+            height="${ifDefined(
+              !isSingle && dimensions ? String(dimensions.height) : undefined
+            )}"
+            @loadeddata="${this._handleVideoLoaded}"
+            @play="${(e: Event) => this._handleVideoPlay(e, image)}"
+            @pause="${this._handleVideoPauseOrEnded}"
+            @ended="${this._handleVideoPauseOrEnded}"
+            @timeupdate="${this._handleVideoTimeUpdate}"
+          ></video>
+        </div>
+      `;
+    }
+
+    if (image.type === 'gifv') {
+      return html`
+        <div class="media-cell" style="${isSingle ? '' : cellStyle}">
+          ${blurhashUrl
+            ? html`<img
+                class="blurhash-canvas"
+                src="${blurhashUrl}"
+                aria-hidden="true"
+              />`
+            : null}
+          <video
+            ?autoplay="${!this._slowNetwork}"
+            ?loop="${!this._slowNetwork}"
+            ?controls="${this._slowNetwork}"
+            muted
+            playsinline
+            preload="${this.getVideoPreloadMode()}"
+            poster="${image.preview_url}"
+            src="${image.url}"
+            width="${ifDefined(
+              !isSingle && dimensions ? String(dimensions.width) : undefined
+            )}"
+            height="${ifDefined(
+              !isSingle && dimensions ? String(dimensions.height) : undefined
+            )}"
+            @loadeddata="${this._handleVideoLoaded}"
+          ></video>
+        </div>
+      `;
+    }
+
+    if (image.type === 'audio') {
+      return html`
+        <div class="audio-cell">
+          <md-audio-player
+            src="${image.url}"
+            label="${image.description || msg('Audio')}"
+            preload="metadata"
+            mediaTitle="${image.description || ''}"
+            mediaArtist="${this.mediaArtist}"
+            mediaArtwork="${this.mediaArtwork}"
+          ></md-audio-player>
+        </div>
+      `;
+    }
+
+    return null;
+  }
+
   render() {
     return html`
-      <span class="sr-only" role="status" aria-live="polite">
-        ${this.images.length > 1
-          ? `Item ${this.currentIndex + 1} of ${this.images.length}`
-          : ''}
-      </span>
-      <div id="list">
-        ${this.images.map((image) => {
-          const dimensions = this.getMediaDimensions(image);
-          if (image.type === 'image') {
-            const style = this.getImageStyle(image);
-            const blurhashUrl = this.blurhashUrls.get(image.id);
-            return html`
-              <div
-                class="image-container"
-                style="${style}"
-                @click="${(event: MouseEvent) => this.openInBox(image, event)}"
-              >
-                ${blurhashUrl
-                  ? html`<img
-                      class="blurhash-canvas"
-                      src="${blurhashUrl}"
-                      aria-hidden="true"
-                    />`
-                  : null}
-                <img
-                  src="${this._slowNetwork && image.preview_url
-                    ? image.preview_url
-                    : image.url}"
-                  alt="${image.description || msg('Image')}"
-                  @load="${this.handleImageLoad}"
-                  class="${blurhashUrl ? '' : 'loaded'}"
-                  width="${ifDefined(
-                    dimensions ? String(dimensions.width) : undefined
-                  )}"
-                  height="${ifDefined(
-                    dimensions ? String(dimensions.height) : undefined
-                  )}"
-                  decoding="async"
-                />
-              </div>
-            `;
-          } else if (image.type === 'video') {
-            const style = this.getImageStyle(image);
-            const blurhashUrl = this.blurhashUrls.get(image.id);
-            return html`
-              <div class="image-container video-container" style="${style}">
-                ${blurhashUrl
-                  ? html`<img
-                      class="blurhash-canvas"
-                      src="${blurhashUrl}"
-                      aria-hidden="true"
-                    />`
-                  : null}
-                <video
-                  controls
-                  preload="${this.getVideoPreloadMode()}"
-                  poster="${image.preview_url}"
-                  src="${image.url}"
-                  width="${ifDefined(
-                    dimensions ? String(dimensions.width) : undefined
-                  )}"
-                  height="${ifDefined(
-                    dimensions ? String(dimensions.height) : undefined
-                  )}"
-                  @loadeddata="${this._handleVideoLoaded}"
-                  @play="${(e: Event) => this._handleVideoPlay(e, image)}"
-                  @pause="${this._handleVideoPauseOrEnded}"
-                  @ended="${this._handleVideoPauseOrEnded}"
-                  @timeupdate="${this._handleVideoTimeUpdate}"
-                ></video>
-              </div>
-            `;
-          } else if (image.type === 'gifv') {
-            const style = this.getImageStyle(image);
-            const blurhashUrl = this.blurhashUrls.get(image.id);
-            return html`
-              <div class="image-container video-container" style="${style}">
-                ${blurhashUrl
-                  ? html`<img
-                      class="blurhash-canvas"
-                      src="${blurhashUrl}"
-                      aria-hidden="true"
-                    />`
-                  : null}
-                <video
-                  ?autoplay="${!this._slowNetwork}"
-                  ?loop="${!this._slowNetwork}"
-                  ?controls="${this._slowNetwork}"
-                  muted
-                  playsinline
-                  preload="${this.getVideoPreloadMode()}"
-                  poster="${image.preview_url}"
-                  src="${image.url}"
-                  width="${ifDefined(
-                    dimensions ? String(dimensions.width) : undefined
-                  )}"
-                  height="${ifDefined(
-                    dimensions ? String(dimensions.height) : undefined
-                  )}"
-                  @loadeddata="${this._handleVideoLoaded}"
-                ></video>
-              </div>
-            `;
-          } else if (image.type === 'audio') {
-            return html`
-              <div>
-                <md-audio-player
-                  src="${image.url}"
-                  label="${image.description || msg('Audio')}"
-                  preload="metadata"
-                  mediaTitle="${this.mediaTitle || image.description || ''}"
-                  mediaArtist="${this.mediaArtist}"
-                  mediaArtwork="${this.mediaArtwork}"
-                ></md-audio-player>
-              </div>
-            `;
-          }
-          return null;
-        })}
+      <div class="media-grid ${this.gridClass}">
+        ${this.images.map((image) => this.renderCell(image))}
       </div>
     `;
   }

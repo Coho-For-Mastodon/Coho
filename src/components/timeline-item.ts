@@ -126,7 +126,7 @@ export class TimelineItem extends LitElement {
         border-color: var(--md-sys-color-outline-variant, #2b2930);
       }
 
-      image-carousel {
+      image-grid {
         margin-left: -12px;
         margin-right: -12px;
         width: calc(100% + 24px);

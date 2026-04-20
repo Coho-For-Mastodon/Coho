@@ -72,6 +72,7 @@ export class SettingsDrawerContent extends LitElement {
 
     .profile-inner img {
       width: 4em;
+      min-height: 4em;
       border-radius: var(--md-sys-shape-corner-circle);
     }
 
@@ -408,6 +409,7 @@ export class SettingsDrawerContent extends LitElement {
           <div class="profile-inner">
             ${this.user && this.user.avatar
               ? html`<img
+                  @click="${() => this.viewMyProfile()}"
                   src="${this.user.avatar}"
                   alt="${this.user.display_name}"
                 />`
@@ -442,6 +444,10 @@ export class SettingsDrawerContent extends LitElement {
                       ${msg('Share My Profile')}
                     </md-menu-item>
                     <md-menu-item @click="${() => this.editMyProfile()}">
+                      <md-icon
+                        slot="prefix"
+                        src="/assets/brush-outline.svg"
+                      ></md-icon>
                       ${msg('Edit My Profile')}
                     </md-menu-item>
                   </md-menu>

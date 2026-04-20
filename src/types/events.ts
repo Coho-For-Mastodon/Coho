@@ -155,7 +155,7 @@ export type SelectChangeEvent = CustomEvent<SelectChangeDetail>;
 // Media Events
 // ============================================================================
 
-/** Detail for preview-image events from image-carousel */
+/** Detail for preview-image events from image-grid */
 export interface PreviewImageDetail {
   src: string;
   alt?: string;

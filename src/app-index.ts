@@ -103,14 +103,10 @@ export class AppIndex extends LitElement {
     // Ensure the initial route renders after init completes
     this.requestUpdate();
 
-    // Defer PWA update / native push setup.
+    // Defer native push setup.
     // Use a lightweight native-platform check that avoids importing
     // @capacitor/core (saving ~4 KB compressed on web).
-    if (!isCapacitorNative()) {
-      requestIdleCallback(() => import('./components/pwa-update'), {
-        timeout: 5000,
-      });
-    } else {
+    if (isCapacitorNative()) {
       requestIdleCallback(
         async () => {
           const { setupNativePushListeners } =
@@ -441,7 +437,6 @@ export class AppIndex extends LitElement {
         >${'Skip to main content'}</a
       >
       ${router.render()}
-      <pwa-update></pwa-update>
     `;
   }
 

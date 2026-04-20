@@ -10,7 +10,7 @@ import './user-profile';
 import './md/md-card';
 import './md/md-icon';
 import './md/md-button';
-import './image-carousel';
+import './image-grid';
 import './timeline-poll';
 
 /**
@@ -252,11 +252,11 @@ export class ThreadBranch extends LitElement {
             ${!post.sensitive &&
             post.media_attachments &&
             post.media_attachments.length > 0
-              ? html`<image-carousel
+              ? html`<image-grid
                   .images=${post.media_attachments}
                   .mediaArtist="${post.account.display_name}"
                   .mediaArtwork="${post.account.avatar}"
-                ></image-carousel>`
+                ></image-grid>`
               : nothing}
 
             <div class="actions" slot="footer">
@@ -321,11 +321,11 @@ export class ThreadBranch extends LitElement {
           ${!post.sensitive &&
           post.media_attachments &&
           post.media_attachments.length > 0
-            ? html`<image-carousel
+            ? html`<image-grid
                 .images=${post.media_attachments}
                 mediaArtist="${post.account.display_name}"
                 mediaArtwork="${post.account.avatar}"
-              ></image-carousel>`
+              ></image-grid>`
             : nothing}
 
           <div class="actions" slot="footer">

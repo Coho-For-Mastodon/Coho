@@ -18,14 +18,14 @@ import '../components/md/md-menu';
 import '../components/md/md-menu-item';
 
 // Lazy-loaded: only needed when posts have media or polls
-let _carouselLoaded = false;
+let _imageGridLoaded = false;
 let _pollLoaded = false;
 let _quotedPostLoaded = false;
 
-function ensureCarousel(): void {
-  if (!_carouselLoaded) {
-    _carouselLoaded = true;
-    import('../components/image-carousel');
+function ensureImageGrid(): void {
+  if (!_imageGridLoaded) {
+    _imageGridLoaded = true;
+    import('../components/image-grid');
   }
 }
 
@@ -320,14 +320,14 @@ export function renderReplyContext(
       ${!state.tweet?.reply_to?.sensitive &&
       state.tweet?.reply_to?.media_attachments &&
       state.tweet.reply_to.media_attachments.length > 0
-        ? (ensureCarousel(),
+        ? (ensureImageGrid(),
           html`
-            <image-carousel
+            <image-grid
               .images="${state.tweet.reply_to.media_attachments}"
               .mediaArtist="${state.tweet.reply_to.account.display_name}"
               .mediaArtwork="${state.tweet.reply_to.account.avatar}"
             >
-            </image-carousel>
+            </image-grid>
           `)
         : html``}
 
@@ -592,14 +592,14 @@ export function renderRegularTweet(
         state.tweet &&
         state.tweet.media_attachments &&
         state.tweet.media_attachments.length > 0
-          ? (ensureCarousel(),
+          ? (ensureImageGrid(),
             html`
-              <image-carousel
+              <image-grid
                 .images="${state.tweet.media_attachments}"
                 mediaArtist="${state.tweet.account.display_name}"
                 mediaArtwork="${state.tweet.account.avatar}"
               >
-              </image-carousel>
+              </image-grid>
             `)
           : html``
       }
@@ -789,14 +789,14 @@ export function renderThreadContinuation(
           ${!threadPost.sensitive &&
           threadPost.media_attachments &&
           threadPost.media_attachments.length > 0
-            ? (ensureCarousel(),
+            ? (ensureImageGrid(),
               html`
-                <image-carousel
+                <image-grid
                   .images="${threadPost.media_attachments}"
                   mediaArtist="${threadPost.account.display_name}"
                   mediaArtwork="${threadPost.account.avatar}"
                 >
-                </image-carousel>
+                </image-grid>
               `)
             : html``}
           ${!threadPost.sensitive
@@ -1090,14 +1090,14 @@ export function renderReblog(
       ${!state.tweet.reblog.sensitive &&
       state.tweet.reblog.media_attachments &&
       state.tweet.reblog.media_attachments.length > 0
-        ? (ensureCarousel(),
+        ? (ensureImageGrid(),
           html`
-            <image-carousel
+            <image-grid
               .images="${state.tweet.reblog.media_attachments}"
               mediaArtist="${state.tweet.reblog.account.display_name}"
               mediaArtwork="${state.tweet.reblog.account.avatar}"
             >
-            </image-carousel>
+            </image-grid>
           `)
         : html``}
       ${!state.tweet.reblog.sensitive
@@ -1238,14 +1238,14 @@ export function renderThreadAncestors(
             ${!threadPost.sensitive &&
             threadPost.media_attachments &&
             threadPost.media_attachments.length > 0
-              ? (ensureCarousel(),
+              ? (ensureImageGrid(),
                 html`
-                  <image-carousel
+                  <image-grid
                     .images="${threadPost.media_attachments}"
                     mediaArtist="${threadPost.account.display_name}"
                     mediaArtwork="${threadPost.account.avatar}"
                   >
-                  </image-carousel>
+                  </image-grid>
                 `)
               : html``}
             ${!threadPost.sensitive
@@ -1317,14 +1317,15 @@ export function renderThread(
             ${!threadPost.sensitive &&
             threadPost.media_attachments &&
             threadPost.media_attachments.length > 0
-              ? html`
-                  <image-carousel
+              ? (ensureImageGrid(),
+                html`
+                  <image-grid
                     .images="${threadPost.media_attachments}"
                     mediaArtist="${threadPost.account.display_name}"
                     mediaArtwork="${threadPost.account.avatar}"
                   >
-                  </image-carousel>
-                `
+                  </image-grid>
+                `)
               : html``}
             ${!threadPost.sensitive
               ? renderLinkCard(

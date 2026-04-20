@@ -25,10 +25,10 @@ vi.mock('../../src/services/blurhash-worker', () => ({
   }),
 }));
 
-import '../../src/components/image-carousel';
-import type { ImageCarousel } from '../../src/components/image-carousel';
+import '../../src/components/image-grid';
+import type { ImageGrid } from '../../src/components/image-grid';
 
-describe('image-carousel', () => {
+describe('image-grid', () => {
   beforeEach(() => {
     cleanupFixtures();
     vi.clearAllMocks();
@@ -51,9 +51,7 @@ describe('image-carousel', () => {
   ];
 
   it('requests blurhash generation when images change', async () => {
-    const el = await fixture<ImageCarousel>(
-      html`<image-carousel></image-carousel>`
-    );
+    const el = await fixture<ImageGrid>(html`<image-grid></image-grid>`);
 
     el.images = images;
     await elementUpdated(el);
@@ -69,9 +67,7 @@ describe('image-carousel', () => {
   });
 
   it('renders blurhash image when available', async () => {
-    const el = await fixture<ImageCarousel>(
-      html`<image-carousel></image-carousel>`
-    );
+    const el = await fixture<ImageGrid>(html`<image-grid></image-grid>`);
 
     el.images = images;
     await elementUpdated(el);
@@ -82,9 +78,7 @@ describe('image-carousel', () => {
   });
 
   it('dispatches preview-image event on click', async () => {
-    const el = await fixture<ImageCarousel>(
-      html`<image-carousel></image-carousel>`
-    );
+    const el = await fixture<ImageGrid>(html`<image-grid></image-grid>`);
 
     el.images = images;
     await elementUpdated(el);
@@ -92,7 +86,7 @@ describe('image-carousel', () => {
     const handler = vi.fn();
     window.addEventListener('preview-image', handler);
 
-    const container = el.shadowRoot?.querySelector('.image-container');
+    const container = el.shadowRoot?.querySelector('.media-cell.clickable');
     container?.dispatchEvent(
       new MouseEvent('click', { bubbles: true, composed: true })
     );
