@@ -16,6 +16,8 @@ class CohoWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
         scheduleWidgetUpdates(context)
+        // Fetch data immediately so the widget isn't blank while waiting for the first periodic run.
+        WidgetUpdateWorker.enqueueOneTimeRefresh(context)
     }
 
     override fun onDisabled(context: Context) {

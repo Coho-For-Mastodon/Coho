@@ -45,31 +45,31 @@ class CohoWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = context.getSharedPreferences(WidgetBridge.PREFS_NAME, Context.MODE_PRIVATE)
-        val server = prefs.getString(WidgetBridge.PREF_SERVER, WidgetBridge.DEFAULT_SERVER) ?: WidgetBridge.DEFAULT_SERVER
         val token = prefs.getString(WidgetBridge.PREF_ACCESS_TOKEN, "") ?: ""
-
-        // Fetch all data upfront
-        val timelinePosts = CohoDataFetcher.fetchHomeTimeline(server, token)
-        val notifications = CohoDataFetcher.fetchNotifications(server, token)
         val isAuthenticated = token.isNotBlank()
 
-        // Download avatars (32dp ≈ 64px at 2x density)
-        val avatarSize = (32 * context.resources.displayMetrics.density).toInt()
+        // Load data from disk cache only — no network calls here.
+        val timelinePosts = CohoDataFetcher.loadTimelineCache(context)
+        val notifications = CohoDataFetcher.loadNotificationsCache(context)
+
+        // Load images from disk image cache only — no network calls.
+        val density = context.resources.displayMetrics.density
+        val avatarSize = (32 * density).toInt()
+        val thumbSize = (80 * density).toInt()
+
         val avatarCache = mutableMapOf<String, Bitmap>()
-        val allUrls = timelinePosts.map { it.avatarUrl } + notifications.map { it.avatarUrl }
-        for (url in allUrls.distinct()) {
+        val allUrls = (timelinePosts.map { it.avatarUrl } + notifications.map { it.avatarUrl }).distinct()
+        for (url in allUrls) {
             if (url.isNotBlank()) {
-                CohoDataFetcher.downloadBitmap(context, url, avatarSize)?.let { avatarCache[url] = it }
+                CohoDataFetcher.loadBitmapFromDiskCache(context, url, avatarSize)?.let { avatarCache[url] = it }
             }
         }
 
-        // Download media thumbnails for timeline posts with image attachments
-        val thumbSize = (80 * context.resources.displayMetrics.density).toInt()
         val mediaCache = mutableMapOf<String, Bitmap>()
         for (post in timelinePosts) {
             val url = post.mediaPreviewUrl
             if (!url.isNullOrBlank()) {
-                CohoDataFetcher.downloadBitmap(context, url, thumbSize)?.let { mediaCache[url] = it }
+                CohoDataFetcher.loadBitmapFromDiskCache(context, url, thumbSize)?.let { mediaCache[url] = it }
             }
         }
 

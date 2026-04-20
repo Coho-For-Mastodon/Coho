@@ -38,7 +38,9 @@ class RefreshAction : ActionCallback {
         glanceId: GlanceId,
         parameters: ActionParameters
     ) {
-        CohoWidget().update(context, glanceId)
+        // Enqueue a background worker to fetch fresh data and update the widget.
+        // This ensures the network work happens off the render path.
+        WidgetUpdateWorker.enqueueOneTimeRefresh(context)
     }
 }
 

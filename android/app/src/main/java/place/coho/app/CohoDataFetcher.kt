@@ -17,6 +17,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+class UnauthorizedException : Exception()
+
 data class TimelinePost(
     val id: String,
     val authorName: String,
@@ -41,47 +43,61 @@ data class WidgetNotification(
 object CohoDataFetcher {
 
     private const val TIMEOUT = 10_000
+    private const val TIMELINE_CACHE_FILE = "widget_timeline_cache.json"
+    private const val NOTIFICATIONS_CACHE_FILE = "widget_notifications_cache.json"
 
     /**
      * Fetch home timeline posts. Requires authentication.
+     * Throws [UnauthorizedException] if the server returns HTTP 401.
      */
-    suspend fun fetchHomeTimeline(server: String, token: String, limit: Int = 15): List<TimelinePost> =
+    suspend fun fetchHomeTimeline(server: String, token: String, limit: Int = 20): List<TimelinePost> =
         withContext(Dispatchers.IO) {
             if (token.isBlank()) return@withContext emptyList()
-            val json = httpGet(
+            val (code, json) = httpGet(
                 "https://$server/api/v1/timelines/home?limit=$limit",
                 token
-            ) ?: return@withContext emptyList()
-
-            val array = JSONArray(json)
-            val posts = mutableListOf<TimelinePost>()
-            for (i in 0 until minOf(array.length(), limit)) {
-                val obj = array.getJSONObject(i)
-                val post = parsePost(obj)
-                if (post != null) posts.add(post)
+            )
+            if (code == 401) throw UnauthorizedException()
+            val body = json ?: return@withContext emptyList()
+            try {
+                val array = JSONArray(body)
+                val posts = mutableListOf<TimelinePost>()
+                for (i in 0 until minOf(array.length(), limit)) {
+                    val obj = array.getJSONObject(i)
+                    val post = parsePost(obj)
+                    if (post != null) posts.add(post)
+                }
+                posts
+            } catch (_: Exception) {
+                emptyList()
             }
-            posts
         }
 
     /**
      * Fetch recent notifications. Requires authentication.
+     * Throws [UnauthorizedException] if the server returns HTTP 401.
      */
     suspend fun fetchNotifications(server: String, token: String, limit: Int = 15): List<WidgetNotification> =
         withContext(Dispatchers.IO) {
             if (token.isBlank()) return@withContext emptyList()
-            val json = httpGet(
+            val (code, json) = httpGet(
                 "https://$server/api/v1/notifications?limit=$limit",
                 token
-            ) ?: return@withContext emptyList()
-
-            val array = JSONArray(json)
-            val notifications = mutableListOf<WidgetNotification>()
-            for (i in 0 until minOf(array.length(), limit)) {
-                val obj = array.getJSONObject(i)
-                val notif = parseNotification(obj)
-                if (notif != null) notifications.add(notif)
+            )
+            if (code == 401) throw UnauthorizedException()
+            val body = json ?: return@withContext emptyList()
+            try {
+                val array = JSONArray(body)
+                val notifications = mutableListOf<WidgetNotification>()
+                for (i in 0 until minOf(array.length(), limit)) {
+                    val obj = array.getJSONObject(i)
+                    val notif = parseNotification(obj)
+                    if (notif != null) notifications.add(notif)
+                }
+                notifications
+            } catch (_: Exception) {
+                emptyList()
             }
-            notifications
         }
 
     /**
@@ -133,10 +149,107 @@ object CohoDataFetcher {
             }
         }
 
+    /**
+     * Load a bitmap from the disk image cache only — no network call.
+     * Returns null if the image has not been cached yet.
+     */
+    fun loadBitmapFromDiskCache(context: Context, urlString: String, sizePx: Int): Bitmap? {
+        if (urlString.isBlank()) return null
+        val cacheFile = File(File(context.cacheDir, "widget_images"), "${md5Hex(urlString)}_$sizePx.png")
+        if (!cacheFile.exists()) return null
+        return try {
+            BitmapFactory.decodeFile(cacheFile.absolutePath)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** Serialize and write the timeline post list to disk cache. */
+    fun saveTimelineCache(context: Context, posts: List<TimelinePost>) {
+        val array = JSONArray()
+        posts.forEach { array.put(serializePost(it)) }
+        try { File(context.cacheDir, TIMELINE_CACHE_FILE).writeText(array.toString()) } catch (_: Exception) { }
+    }
+
+    /** Load timeline posts from disk cache. Returns empty list if absent or unreadable. */
+    fun loadTimelineCache(context: Context): List<TimelinePost> = try {
+        val array = JSONArray(File(context.cacheDir, TIMELINE_CACHE_FILE).readText())
+        (0 until array.length()).mapNotNull { deserializePost(array.getJSONObject(it)) }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /** Serialize and write the notifications list to disk cache. */
+    fun saveNotificationsCache(context: Context, notifications: List<WidgetNotification>) {
+        val array = JSONArray()
+        notifications.forEach { array.put(serializeNotification(it)) }
+        try { File(context.cacheDir, NOTIFICATIONS_CACHE_FILE).writeText(array.toString()) } catch (_: Exception) { }
+    }
+
+    /** Load notifications from disk cache. Returns empty list if absent or unreadable. */
+    fun loadNotificationsCache(context: Context): List<WidgetNotification> = try {
+        val array = JSONArray(File(context.cacheDir, NOTIFICATIONS_CACHE_FILE).readText())
+        (0 until array.length()).mapNotNull { deserializeNotification(array.getJSONObject(it)) }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    private fun serializePost(post: TimelinePost): JSONObject = JSONObject().apply {
+        put("id", post.id)
+        put("authorName", post.authorName)
+        put("authorInitial", post.authorInitial)
+        put("avatarUrl", post.avatarUrl)
+        put("content", post.content)
+        put("createdAt", post.createdAt)
+        if (post.mediaPreviewUrl != null) put("mediaPreviewUrl", post.mediaPreviewUrl)
+    }
+
+    private fun deserializePost(obj: JSONObject): TimelinePost? = try {
+        TimelinePost(
+            id = obj.optString("id", ""),
+            authorName = obj.optString("authorName", ""),
+            authorInitial = obj.optString("authorInitial", "?"),
+            avatarUrl = obj.optString("avatarUrl", ""),
+            content = obj.optString("content", ""),
+            createdAt = obj.optString("createdAt", ""),
+            mediaPreviewUrl = obj.optString("mediaPreviewUrl", "").ifBlank { null }
+        )
+    } catch (_: Exception) { null }
+
+    private fun serializeNotification(notif: WidgetNotification): JSONObject = JSONObject().apply {
+        put("id", notif.id)
+        put("type", notif.type)
+        put("typeLabel", notif.typeLabel)
+        put("accountName", notif.accountName)
+        put("accountInitial", notif.accountInitial)
+        put("avatarUrl", notif.avatarUrl)
+        if (notif.statusContent != null) put("statusContent", notif.statusContent)
+        put("createdAt", notif.createdAt)
+    }
+
+    private fun deserializeNotification(obj: JSONObject): WidgetNotification? = try {
+        WidgetNotification(
+            id = obj.optString("id", ""),
+            type = obj.optString("type", ""),
+            typeLabel = obj.optString("typeLabel", ""),
+            accountName = obj.optString("accountName", ""),
+            accountInitial = obj.optString("accountInitial", "?"),
+            avatarUrl = obj.optString("avatarUrl", ""),
+            statusContent = obj.optString("statusContent", "").ifBlank { null },
+            createdAt = obj.optString("createdAt", "")
+        )
+    } catch (_: Exception) { null }
+
     private fun parsePost(obj: JSONObject): TimelinePost? {
         // If it's a reblog, use the inner status for content but attribute the boost
         val reblog = obj.optJSONObject("reblog")
         val contentSource = reblog ?: obj
+
+        // Skip posts with content warnings — not appropriate for widget surface
+        val spoilerText = contentSource.optString("spoiler_text", "")
+        val sensitive = contentSource.optBoolean("sensitive", false)
+        if (spoilerText.isNotBlank() || sensitive) return null
+
         val account = contentSource.optJSONObject("account") ?: return null
 
         val displayName = account.optString("display_name", "").ifBlank {
@@ -253,7 +366,8 @@ object CohoDataFetcher {
             .trim()
     }
 
-    private fun httpGet(urlString: String, bearerToken: String?): String? {
+    // Returns (httpStatusCode, responseBody). statusCode is -1 on connection failure.
+    private fun httpGet(urlString: String, bearerToken: String?): Pair<Int, String?> {
         var conn: HttpURLConnection? = null
         return try {
             val url = URL(urlString)
@@ -265,8 +379,8 @@ object CohoDataFetcher {
             if (bearerToken != null) {
                 conn.setRequestProperty("Authorization", "Bearer $bearerToken")
             }
-
-            if (conn.responseCode == 200) {
+            val code = conn.responseCode
+            if (code == 200) {
                 val reader = BufferedReader(InputStreamReader(conn.inputStream, "UTF-8"))
                 val sb = StringBuilder()
                 var line: String?
@@ -274,10 +388,12 @@ object CohoDataFetcher {
                     sb.append(line)
                 }
                 reader.close()
-                sb.toString()
-            } else null
+                Pair(code, sb.toString())
+            } else {
+                Pair(code, null)
+            }
         } catch (_: Exception) {
-            null
+            Pair(-1, null)
         } finally {
             conn?.disconnect()
         }

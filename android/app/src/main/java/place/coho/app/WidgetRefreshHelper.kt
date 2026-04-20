@@ -14,12 +14,15 @@ object WidgetRefreshHelper {
     private val scope = CoroutineScope(Dispatchers.IO)
 
     fun refreshWidgets(context: Context) {
+        // Re-render immediately from disk cache (fast, no network).
         scope.launch {
             try {
                 CohoWidget().updateAll(context)
             } catch (_: Exception) {
-                // Widget refresh failed — ignore
+                // Widget render failed — ignore
             }
         }
+        // Also kick off a background fetch so the widget gets fresh data shortly after.
+        WidgetUpdateWorker.enqueueOneTimeRefresh(context)
     }
 }
