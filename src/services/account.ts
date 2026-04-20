@@ -448,10 +448,14 @@ export const getInstanceInfo = async (): Promise<Instance> => {
 export const initAuth = async (serverURL: string) => {
   const normalizedServer = normalizeServer(serverURL);
 
-  const { isNativePlatform } = await import('../utils/platform.js');
-  const redirect_uri = isNativePlatform()
-    ? 'coho://auth/callback'
-    : `${location.origin}/auth/callback`;
+  const { getPlatform } = await import('../utils/platform.js');
+  const platform = getPlatform();
+  const redirect_uri =
+    platform === 'android'
+      ? 'https://coho.place/auth/callback/native'
+      : platform === 'ios'
+        ? 'coho://auth/callback'
+        : `${location.origin}/auth/callback`;
 
   const response = await apiFetch(
     `${FIREBASE_FUNCTIONS_BASE_URL}/authenticate`,

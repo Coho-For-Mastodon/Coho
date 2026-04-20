@@ -213,26 +213,21 @@
 
   <body>
     <!--
-      Android intent:// fallback for OAuth callback.
-      When App Link verification fails, the Chrome Custom Tab loads this page
-      instead of handing the URL back to the app. This script detects that
-      scenario and uses an intent:// URI with an explicit package to deliver
-      the callback directly to the app, bypassing App Link verification.
+      Android intent:// bridge for native OAuth callback.
+      The Capacitor Android app opens a Chrome Custom Tab with the Mastodon
+      OAuth UI and registers https://coho.place/auth/callback/native as the
+      redirect URI. After the user authenticates, the server redirects to that
+      HTTPS URL, which Chrome Custom Tab loads normally. This script then
+      converts the URL into an intent:// URI targeting the coho:// scheme so
+      Android hands the callback (code + state) directly to the Coho app,
+      bypassing any App Link / assetlinks.json requirement.
     -->
     <script>
       (function () {
-        if (
-          window.location.pathname.startsWith('/auth/callback') &&
-          !window.Capacitor &&
-          /Android/i.test(navigator.userAgent)
-        ) {
+        if (window.location.pathname === '/auth/callback/native' && !window.Capacitor) {
           var params = new URLSearchParams(window.location.search);
           if (params.get('code') && params.get('state')) {
-            var target =
-              'intent://coho.place' +
-              window.location.pathname +
-              window.location.search +
-              '#Intent;scheme=https;package=place.coho.app;end';
+            var target = 'coho://auth/callback' + window.location.search;
             window.location.replace(target);
           }
         }

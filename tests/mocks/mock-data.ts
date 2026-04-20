@@ -406,3 +406,39 @@ export const mockOAuthToken = {
   scope: 'read write follow push',
   created_at: 1672531200,
 };
+
+// ── Lists ─────────────────────────────────────────────────────────────────────
+
+export const mockLists = [
+  { id: 'list_mock_1', title: 'Mastodon', replies_policy: 'list' as const },
+  { id: 'list_mock_2', title: 'Web', replies_policy: 'followed' as const },
+];
+
+export const mockListAccounts = [
+  {
+    ...mockAccount,
+    id: 'acct_mock_1',
+    username: 'coho',
+    acct: 'coho@mock.social',
+    display_name: 'Coho Bot',
+  },
+];
+
+export const mockAccountSearchResults = [
+  {
+    ...mockAccount,
+    id: 'acct_search_1',
+    username: 'searchbot',
+    acct: 'searchbot@mock.social',
+    display_name: 'Search Bot',
+    avatar_static: '/assets/icons/icon-128.png',
+  },
+  {
+    ...mockAccount,
+    id: 'acct_search_2',
+    username: 'otheruser',
+    acct: 'otheruser@mock.social',
+    display_name: 'Other User',
+    avatar_static: '/assets/icons/icon-128.png',
+  },
+];

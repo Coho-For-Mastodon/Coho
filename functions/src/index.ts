@@ -1362,7 +1362,7 @@ export const authenticate = onRequest(
           client_name: 'Coho',
           redirect_uris: redirectUri,
           scopes: 'read write follow push',
-          website: redirectUri,
+          website: 'https://coho.place',
         }),
       });
 

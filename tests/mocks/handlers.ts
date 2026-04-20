@@ -15,6 +15,9 @@ import {
   mockInstanceInfo,
   mockTrendingTags,
   mockMediaAttachment,
+  mockLists,
+  mockListAccounts,
+  mockAccountSearchResults,
 } from './mock-data';
 
 // Helper to find a notification by ID
@@ -341,6 +344,53 @@ export const mastodonHandlers = [
 
   http.post('https://*/api/v1/accounts/:id/mute', () => {
     return HttpResponse.json(mockMutedAccounts[0]);
+  }),
+
+  // Lists endpoints
+  http.get('https://*/api/v1/lists', () => {
+    return HttpResponse.json(mockLists);
+  }),
+
+  http.post('https://*/api/v1/lists', async ({ request }) => {
+    const body = await request.formData();
+    const title = body.get('title') as string;
+    const replies_policy = (body.get('replies_policy') as string) || 'list';
+    return HttpResponse.json({
+      id: 'list_mock_new',
+      title,
+      replies_policy,
+    });
+  }),
+
+  http.put('https://*/api/v1/lists/:id', async ({ params, request }) => {
+    const body = await request.formData();
+    const title = body.get('title') as string;
+    const replies_policy = (body.get('replies_policy') as string) || 'list';
+    const existing = mockLists.find((l) => l.id === params.id);
+    if (!existing)
+      return HttpResponse.json({ error: 'Not found' }, { status: 404 });
+    return HttpResponse.json({ ...existing, title, replies_policy });
+  }),
+
+  http.delete('https://*/api/v1/lists/:id', () => {
+    return new HttpResponse(null, { status: 200 });
+  }),
+
+  http.get('https://*/api/v1/lists/:id/accounts', () => {
+    return HttpResponse.json(mockListAccounts);
+  }),
+
+  http.post('https://*/api/v1/lists/:id/accounts', () => {
+    return new HttpResponse(null, { status: 200 });
+  }),
+
+  http.delete('https://*/api/v1/lists/:id/accounts', () => {
+    return new HttpResponse(null, { status: 200 });
+  }),
+
+  // Account search
+  http.get('https://*/api/v1/accounts/search', () => {
+    return HttpResponse.json(mockAccountSearchResults);
   }),
 ];
 
