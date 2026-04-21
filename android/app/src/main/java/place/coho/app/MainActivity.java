@@ -21,6 +21,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(DynamicThemeBridge.class);
         registerPlugin(ShareTargetBridge.class);
         registerPlugin(AiBridge.class);
+        registerPlugin(SpeechBridge.class);
         registerPlugin(WearSyncBridge.class);
         super.onCreate(savedInstanceState);
 

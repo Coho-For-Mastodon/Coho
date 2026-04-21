@@ -464,11 +464,16 @@ export const isAudioTranscriptionAvailable = (): boolean => {
 
 /**
  * Get the audio transcription method available
- * Returns 'prompt-api' | 'transformers'
+ * Returns 'native-android' | 'prompt-api' | 'transformers'
  */
-export const getAudioTranscriptionMethod = ():
-  | 'prompt-api'
-  | 'transformers' => {
+export const getAudioTranscriptionMethod = async (): Promise<
+  'native-android' | 'prompt-api' | 'transformers'
+> => {
+  // Prefer native ML Kit speech recognition on Android
+  const { isNativeSpeechRecognitionAvailable } = await import('./native-ai.js');
+  if (await isNativeSpeechRecognitionAvailable()) {
+    return 'native-android';
+  }
   if ('LanguageModel' in window) {
     return 'prompt-api';
   }

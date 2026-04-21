@@ -98,4 +98,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Required for Android 13+ (API 33) to show push notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Required for on-device speech recognition (ML Kit) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 </manifest>

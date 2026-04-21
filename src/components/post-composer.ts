@@ -239,6 +239,11 @@ export class PostComposer extends LitElement {
   private audioChunks: Blob[] = [];
   private activeAttachmentBlobUrl: string | null = null;
 
+  // Native speech recognition (Android)
+  private useNativeSpeech: boolean = false;
+  private nativeSpeechPromise: Promise<string> | null = null;
+  private nativeSpeechPartialCleanup: (() => void) | null = null;
+
   private draftKey: string | null = null;
 
   private mentionQueryRange: { start: number; end: number } | null = null;
@@ -1007,6 +1012,18 @@ export class PostComposer extends LitElement {
     this.proofreaderAvailable = await isProofreaderAvailable();
     this.speechToTextAvailable = isAudioTranscriptionAvailable();
     this.handwritingAvailable = await isHandwritingRecognitionAvailable();
+
+    // Check for native Android speech recognition
+    try {
+      const { isNativeSpeechRecognitionAvailable } =
+        await import('../services/native-ai.js');
+      this.useNativeSpeech = await isNativeSpeechRecognitionAvailable();
+      if (this.useNativeSpeech) {
+        this.speechToTextAvailable = true;
+      }
+    } catch {
+      // Not on native Android, use web fallback
+    }
 
     // Add event listeners
     this.addEventListener('keydown', this._handleKeydown);
@@ -2030,6 +2047,64 @@ export class PostComposer extends LitElement {
 
   async startRecording() {
     try {
+      // Keep the dropdown open while recording is active
+      if (this._moreOptionsDropdown) {
+        this._moreOptionsDropdown.keepOpen = true;
+      }
+
+      // Use native ML Kit speech recognition on Android
+      if (this.useNativeSpeech) {
+        const { nativeStartSpeechRecognition, addNativeSpeechPartialListener } =
+          await import('../services/native-ai.js');
+        this.isRecording = true;
+
+        // Subscribe to live partial text so the user sees recognition in real-time
+        const baseText = this.textArea?.value ?? '';
+        addNativeSpeechPartialListener((partial) => {
+          if (this.textArea) {
+            const nextValue =
+              baseText.trim().length > 0 ? baseText + ' ' + partial : partial;
+            this.textArea.value = nextValue;
+            this._setStatusText(nextValue);
+          }
+        }).then((cleanup) => {
+          this.nativeSpeechPartialCleanup = cleanup;
+        });
+
+        this.nativeSpeechPromise = nativeStartSpeechRecognition();
+        // The promise resolves when stopSpeechRecognition is called
+        this.nativeSpeechPromise
+          .then((text) => {
+            this.nativeSpeechPartialCleanup?.();
+            this.nativeSpeechPartialCleanup = null;
+            this.isRecording = false;
+            this.nativeSpeechPromise = null;
+            if (this._moreOptionsDropdown) {
+              this._moreOptionsDropdown.keepOpen = false;
+              this._moreOptionsDropdown.hide();
+            }
+            if (text && this.textArea) {
+              const currentText = baseText;
+              const nextValue =
+                currentText.trim().length > 0 ? currentText + ' ' + text : text;
+              this.textArea.value = nextValue;
+              this._setStatusText(nextValue);
+            }
+          })
+          .catch((err) => {
+            console.error('Native speech recognition failed:', err);
+            this.nativeSpeechPartialCleanup?.();
+            this.nativeSpeechPartialCleanup = null;
+            this.isRecording = false;
+            this.nativeSpeechPromise = null;
+            if (this._moreOptionsDropdown) {
+              this._moreOptionsDropdown.keepOpen = false;
+              this._moreOptionsDropdown.hide();
+            }
+          });
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { channelCount: 1, sampleRate: 16000 },
       });
@@ -2074,11 +2149,35 @@ export class PostComposer extends LitElement {
       this.mediaRecorder.start(250);
       this.isRecording = true;
     } catch (error) {
+      // If recording failed to start, release keepOpen
+      if (this._moreOptionsDropdown) {
+        this._moreOptionsDropdown.keepOpen = false;
+      }
       console.error('Failed to start recording:', error);
     }
   }
 
   async stopRecording() {
+    // Native Android path
+    if (this.useNativeSpeech && this.nativeSpeechPromise) {
+      try {
+        const { nativeStopSpeechRecognition } =
+          await import('../services/native-ai.js');
+        await nativeStopSpeechRecognition();
+      } catch (err) {
+        console.error('Failed to stop native speech recognition:', err);
+        this.nativeSpeechPartialCleanup?.();
+        this.nativeSpeechPartialCleanup = null;
+        if (this._moreOptionsDropdown) {
+          this._moreOptionsDropdown.keepOpen = false;
+          this._moreOptionsDropdown.hide();
+        }
+      }
+      this.isRecording = false;
+      return;
+    }
+
+    // Web path
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       this.mediaRecorder.stop();
       this.isRecording = false;
@@ -2105,6 +2204,10 @@ export class PostComposer extends LitElement {
       console.error('Transcription failed:', error);
     } finally {
       this.isTranscribing = false;
+      if (this._moreOptionsDropdown) {
+        this._moreOptionsDropdown.keepOpen = false;
+        this._moreOptionsDropdown.hide();
+      }
     }
   }
 

@@ -36,6 +36,19 @@ interface AiBridgePlugin {
   detectLanguage(opts: { text: string }): Promise<{ language: string }>;
 }
 
+interface SpeechBridgePlugin {
+  checkSpeechStatus(): Promise<{
+    available: boolean;
+    mode: 'advanced' | 'basic' | 'unavailable';
+  }>;
+  startSpeechRecognition(opts: { locale: string }): Promise<{ text: string }>;
+  stopSpeechRecognition(): Promise<{ stopped: boolean }>;
+  addListener(
+    event: 'partialSpeech',
+    callback: (data: { text: string }) => void
+  ): Promise<{ remove: () => void }>;
+}
+
 // Cached capabilities – populated once per session
 let cachedCapabilities: {
   translation: boolean;
@@ -133,4 +146,75 @@ export async function nativeProofread(text: string): Promise<{
 export async function nativeDetectLanguage(text: string): Promise<string> {
   const result = await getBridge().detectLanguage({ text });
   return result.language;
+}
+
+// ── Speech Recognition (ML Kit GenAI) ───────────────────────────────────
+
+const speechBridge = registerPlugin<SpeechBridgePlugin>('SpeechBridge');
+
+let cachedSpeechStatus: {
+  available: boolean;
+  mode: 'advanced' | 'basic' | 'unavailable';
+} | null = null;
+
+/**
+ * Check if native on-device speech recognition is available.
+ * Result is cached for the session lifetime.
+ */
+export async function isNativeSpeechRecognitionAvailable(): Promise<boolean> {
+  if (!isNativeAndroid()) return false;
+
+  if (cachedSpeechStatus) return cachedSpeechStatus.available;
+
+  try {
+    cachedSpeechStatus = await speechBridge.checkSpeechStatus();
+  } catch {
+    cachedSpeechStatus = { available: false, mode: 'unavailable' };
+  }
+
+  return cachedSpeechStatus.available;
+}
+
+/**
+ * Get the speech recognition mode available on this device.
+ */
+export async function getNativeSpeechMode(): Promise<
+  'advanced' | 'basic' | 'unavailable'
+> {
+  await isNativeSpeechRecognitionAvailable();
+  return cachedSpeechStatus?.mode ?? 'unavailable';
+}
+
+/**
+ * Start native speech recognition from the microphone.
+ * Returns a promise that resolves with the final transcribed text
+ * when recognition ends (after calling nativeStopSpeechRecognition).
+ */
+export function nativeStartSpeechRecognition(
+  locale: string = 'en-US'
+): Promise<string> {
+  return speechBridge
+    .startSpeechRecognition({ locale })
+    .then((result) => result.text);
+}
+
+/**
+ * Stop an active native speech recognition session.
+ * The promise from nativeStartSpeechRecognition will resolve with the final text.
+ */
+export async function nativeStopSpeechRecognition(): Promise<void> {
+  await speechBridge.stopSpeechRecognition();
+}
+
+/**
+ * Subscribe to live partial text updates during native speech recognition.
+ * Returns a cleanup function to remove the listener.
+ */
+export async function addNativeSpeechPartialListener(
+  callback: (text: string) => void
+): Promise<() => void> {
+  const handle = await speechBridge.addListener('partialSpeech', ({ text }) =>
+    callback(text)
+  );
+  return () => handle.remove();
 }

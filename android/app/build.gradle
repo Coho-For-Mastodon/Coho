@@ -57,6 +57,9 @@ dependencies {
     implementation 'com.google.mlkit:genai-image-description:1.0.0-beta1'
     implementation 'com.google.mlkit:genai-proofreading:1.0.0-beta1'
 
+    // On-device AI: ML Kit GenAI Speech Recognition (Basic + Advanced/Gemini Nano)
+    implementation 'com.google.mlkit:genai-speech-recognition:1.0.0-alpha1'
+
     // Wearable Data Layer (phone → watch credential sync)
     implementation 'com.google.android.gms:play-services-wearable:19.0.0'
 
