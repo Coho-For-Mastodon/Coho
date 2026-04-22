@@ -650,10 +650,6 @@
   <source>Allow multiple choices</source>
   <target>Permitir múltiples opciones</target>
 </trans-unit>
-<trans-unit id="see38600121f45267">
-  <source>Enter a prompt to generate an image with AI!</source>
-  <target>¡Ingresa un prompt para generar una imagen con IA!</target>
-</trans-unit>
 <trans-unit id="sdd1ff479d04ac140">
   <source>Public</source>
   <target>Público</target>
@@ -902,21 +898,9 @@
   <source>Add Field</source>
   <target>Agregar Campo</target>
 </trans-unit>
-<trans-unit id="s4ba4473f3d4ec896">
-  <source>New version available</source>
-  <target>Nueva versión disponible</target>
-</trans-unit>
-<trans-unit id="sd5b6130b4937488c">
-  <source>Reload</source>
-  <target>Recargar</target>
-</trans-unit>
 <trans-unit id="s5eee3dd2675292f6">
   <source>Loading more...</source>
   <target>Cargando más...</target>
-</trans-unit>
-<trans-unit id="s8d10c896a6f5e373">
-  <source>AI generated image</source>
-  <target>Imagen generada por IA</target>
 </trans-unit>
 <trans-unit id="s216407f266691656">
   <source>Failed to load shared image. Please try sharing again.</source>
@@ -1104,15 +1088,6 @@
 </trans-unit>
 <trans-unit id="s6573065ac52955ac">
   <source>Your post will be published when you're back online</source>
-</trans-unit>
-<trans-unit id="s177e08713b52d021">
-  <source>Add to post</source>
-</trans-unit>
-<trans-unit id="sb25bd3e46439f38c">
-  <source>Describe the image...</source>
-</trans-unit>
-<trans-unit id="s45cb501abd43ba52">
-  <source>Generate</source>
 </trans-unit>
 <trans-unit id="sf46397f167ec5533">
   <source>Searching...</source>
@@ -2127,6 +2102,42 @@
 </trans-unit>
 <trans-unit id="sb04cf41e36c8572c">
   <source>Quotes</source>
+</trans-unit>
+<trans-unit id="sbbd21d737194cd91">
+  <source>Unable to load list members. Please try again.</source>
+</trans-unit>
+<trans-unit id="s237c0118f767a568">
+  <source>Unable to add account. Please try again.</source>
+</trans-unit>
+<trans-unit id="s8d4a38496e0d1503">
+  <source>Unable to remove account. Please try again.</source>
+</trans-unit>
+<trans-unit id="sf9aee319a006c9b4">
+  <source>Add</source>
+</trans-unit>
+<trans-unit id="s576d021bb8b900eb">
+  <source>Edit list</source>
+</trans-unit>
+<trans-unit id="s9f5a5f23312798f0">
+  <source>Members</source>
+</trans-unit>
+<trans-unit id="s9b3e08930a773da6">
+  <source>Loading members...</source>
+</trans-unit>
+<trans-unit id="s339cc6ad232433e3">
+  <source>No members yet.</source>
+</trans-unit>
+<trans-unit id="seac7c7f7c3fe00df">
+  <source>Add people</source>
+</trans-unit>
+<trans-unit id="s365a13837f1be602">
+  <source>Search for accounts</source>
+</trans-unit>
+<trans-unit id="sa81413e2e309b882">
+  <source>No results found.</source>
+</trans-unit>
+<trans-unit id="sa958d9ee50941ce7">
+  <source>Search to add people (optional)</source>
 </trans-unit>
 </body>
 </file>
