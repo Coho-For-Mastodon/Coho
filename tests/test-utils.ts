@@ -53,8 +53,12 @@ export async function fixture<T extends HTMLElement>(
 /**
  * Waits for a LitElement to complete its update cycle
  */
-export async function elementUpdated(element: LitElement): Promise<void> {
-  await element.updateComplete;
+export async function elementUpdated(
+  element: LitElement | Element
+): Promise<void> {
+  if ('updateComplete' in element) {
+    await (element as LitElement).updateComplete;
+  }
 }
 
 /**

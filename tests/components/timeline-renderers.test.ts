@@ -32,6 +32,7 @@ function createHandlers(): TimelineItemHandlers {
     bookmark: vi.fn(),
     favorite: vi.fn(),
     reblog: vi.fn(),
+    quotePost: vi.fn(),
     togglePin: vi.fn(),
     muteConversation: vi.fn(),
     addToList: vi.fn(),
@@ -39,6 +40,7 @@ function createHandlers(): TimelineItemHandlers {
     shareStatus: vi.fn(),
     deleteStatus: vi.fn(),
     initEditStatus: vi.fn(),
+    viewEditHistory: vi.fn(),
     openPost: vi.fn(),
     openParentPost: vi.fn(),
     openLinkCard: vi.fn(),
@@ -46,6 +48,7 @@ function createHandlers(): TimelineItemHandlers {
     showThread: vi.fn(),
     muteUser: vi.fn(),
     blockUser: vi.fn(),
+    blockDomain: vi.fn(),
     reportUser: vi.fn(),
   };
 }
@@ -54,20 +57,20 @@ function createState(
   overrides: Partial<TimelineItemState> = {}
 ): TimelineItemState {
   const baseTweet = {
-    ...(mockTimelinePosts[0] as Post),
+    ...(mockTimelinePosts[0] as unknown as Post),
     account: {
-      ...(mockTimelinePosts[0].account as Account),
+      ...(mockTimelinePosts[0].account as unknown as Account),
       id: 'acct-1',
       acct: 'acct-1',
       display_name: 'User One',
       emojis: [],
     },
-  } as Post;
+  } as unknown as Post;
 
   return {
     tweet: baseTweet,
     show: true,
-    currentUser: { id: 'current-user', acct: 'me' } as Account,
+    currentUser: { id: 'current-user', acct: 'me' } as unknown as Account,
     settings: { wellness: false },
     isBookmarked: false,
     isBoosted: false,
@@ -95,7 +98,7 @@ describe('timeline-renderers', () => {
   it('renders sensitive content view and wires view button', async () => {
     const handlers = createHandlers();
     const state = createState({
-      tweet: { ...(mockTimelinePosts[0] as Post), sensitive: true },
+      tweet: { ...(mockTimelinePosts[0] as unknown as Post), sensitive: true },
     });
 
     const root = await fixture<HTMLDivElement>(
@@ -112,9 +115,9 @@ describe('timeline-renderers', () => {
   it('handles link card click and menu actions in regular tweets', async () => {
     const handlers = createHandlers();
     const tweet = {
-      ...(mockTimelinePosts[0] as Post),
+      ...(mockTimelinePosts[0] as unknown as Post),
       account: {
-        ...(mockTimelinePosts[0].account as Account),
+        ...(mockTimelinePosts[0].account as unknown as Account),
         id: 'acct-2',
         acct: 'acct-2',
         emojis: [],
@@ -157,22 +160,22 @@ describe('timeline-renderers', () => {
   it('navigates to booster profile when clicking reblog header', async () => {
     const handlers = createHandlers();
     const booster = {
-      ...(mockTimelinePosts[0].account as Account),
+      ...(mockTimelinePosts[0].account as unknown as Account),
       id: 'booster',
       acct: 'booster',
       display_name: 'Booster',
       emojis: [],
-    } as Account;
+    } as unknown as Account;
     const reblog = {
-      ...(mockTimelinePosts[0] as Post),
+      ...(mockTimelinePosts[0] as unknown as Post),
       id: 'reblog',
       account: booster,
-    } as Post;
+    } as unknown as Post;
     const tweet = {
-      ...(mockTimelinePosts[0] as Post),
+      ...(mockTimelinePosts[0] as unknown as Post),
       account: booster,
       reblog,
-    } as Post;
+    } as unknown as Post;
 
     const state = createState({ tweet });
 
@@ -192,11 +195,11 @@ describe('timeline-renderers', () => {
   it('shows thread continuation and handles view sensitive', async () => {
     const handlers = createHandlers();
     const threadPost = {
-      ...(mockTimelinePosts[0] as Post),
+      ...(mockTimelinePosts[0] as unknown as Post),
       id: 'thread-1',
       sensitive: true,
       spoiler_text: 'Sensitive',
-    } as Post;
+    } as unknown as Post;
 
     const state = createState({
       threadExpanded: true,
