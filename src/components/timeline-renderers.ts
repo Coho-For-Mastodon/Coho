@@ -1,5 +1,4 @@
 import { html, nothing, type TemplateResult } from 'lit';
-import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { msg, str } from '@lit/localize';
 import { Post } from '../interfaces/Post';
@@ -278,7 +277,7 @@ export function renderReplyContext(
   return html`
     <md-card
       part="card"
-      class="connected-bottom"
+      connected-bottom
       @click="${() => handlers.openParentPost()}"
       style="cursor: pointer;"
     >
@@ -416,10 +415,8 @@ export function renderRegularTweet(
 
     <md-card
       part="card"
-      class="${classMap({
-        'connected-top': hasReplyTo,
-        'connected-bottom': hasContinuation,
-      })}"
+      ?connected-top="${hasReplyTo}"
+      ?connected-bottom="${hasContinuation}"
     >
       <div class="header-actions-block" slot="header">
         <user-profile .account="${state.tweet?.account}"></user-profile>
@@ -744,11 +741,9 @@ export function renderThreadContinuation(
       return html`
         <md-card
           part="card"
-          class="${classMap({
-            'thread-continuation-card': true,
-            'connected-top': true,
-            'connected-bottom': hasMore,
-          })}"
+          class="thread-continuation-card"
+          connected-top
+          ?connected-bottom="${hasMore}"
           @click="${(e: Event) =>
             handlers.handleContentClick(e, threadPost, true)}"
         >

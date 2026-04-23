@@ -140,7 +140,9 @@ export class ImagePreviewDialog extends LitElement {
 
     .close-button {
       position: absolute;
-      top: 16px;
+      top: calc(
+        env(titlebar-area-height, env(safe-area-inset-top, 0px)) + 16px
+      );
       right: 16px;
       z-index: 10;
       color: white;

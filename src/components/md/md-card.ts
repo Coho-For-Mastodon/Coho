@@ -31,6 +31,13 @@ export class MdCard extends LitElement {
   /** Whether the card is disabled */
   @property({ type: Boolean }) disabled = false;
 
+  /** Flatten bottom corners — used when another card follows (thread grouping) */
+  @property({ type: Boolean, attribute: 'connected-bottom' }) connectedBottom =
+    false;
+
+  /** Flatten top corners — used when another card precedes (thread grouping) */
+  @property({ type: Boolean, attribute: 'connected-top' }) connectedTop = false;
+
   static styles = css`
     :host {
       display: block;
@@ -52,6 +59,29 @@ export class MdCard extends LitElement {
       color: var(--md-sys-color-on-surface, white);
       min-width: 0;
       max-width: 100%;
+    }
+
+    /* Thread-connected card: flatten touching corners from inside the shadow DOM */
+    :host([connected-bottom]) {
+      /* border-bottom-left-radius: 0 !important; */
+      border-bottom-right-radius: 0 !important;
+    }
+
+    :host([connected-bottom]) .card {
+      /* border-bottom-left-radius: 0 !important; */
+      border-bottom-right-radius: 0 !important;
+    }
+
+    :host([connected-top]) {
+      border-top-left-radius: 0 !important;
+      border-top-right-radius: 0 !important;
+
+      margin-left: 20px;
+    }
+
+    :host([connected-top]) .card {
+      border-top-left-radius: 0 !important;
+      border-top-right-radius: 0 !important;
     }
 
     /* Respect reduced motion preference */

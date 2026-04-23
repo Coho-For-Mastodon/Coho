@@ -1,65 +1,5 @@
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 
-export const requestMammothBot = async (
-  prompt: string,
-  previousMessages: { role: string; content: string }[]
-) => {
-  // This uses Azure Functions - keep as is for now
-  const response = await fetch(`/api/mammothBot?prompt=${prompt}`, {
-    method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify({
-      previousMessages: previousMessages,
-    }),
-  });
-  const data = await response.json();
-
-  return data;
-};
-
-export const summarize = async (prompt: string) => {
-  // Use Chrome's built-in Summarizer API
-  try {
-    // Check if the API is available
-    if (!('summarizer' in window)) {
-      throw new Error('Summarizer API not available');
-    }
-
-    const canSummarize = await window.summarizer.capabilities();
-    if (canSummarize.available === 'no') {
-      throw new Error('Summarizer not available on this device');
-    }
-
-    // Create summarizer session
-    const summarizer = await window.summarizer.create({
-      type: 'tl;dr', // or 'key-points', 'teaser', 'headline'
-      format: 'plain-text', // or 'markdown'
-      length: 'short', // or 'medium', 'long'
-    });
-
-    // Summarize the text
-    const summary = await summarizer.summarize(prompt);
-
-    // Clean up
-    summarizer.destroy();
-
-    return { summary };
-  } catch (error) {
-    console.error('Summarizer API error:', error);
-    // Fallback to Azure Functions if built-in API fails
-    const response = await fetch(`/api/summarizeStatus?prompt=${prompt}`, {
-      method: 'GET',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-      }),
-    });
-    const data = await response.json();
-    return data;
-  }
-};
-
 export const translate = async (
   prompt: string,
   language: string = 'en-us',
@@ -96,24 +36,27 @@ export const translate = async (
     return prompt;
   }
 
-  // Try native Android ML Kit translation first
-  try {
-    const { getNativeAICapabilities, nativeTranslate } =
-      await import('./native-ai');
-    const caps = await getNativeAICapabilities();
-    if (caps.translation) {
-      const result = await nativeTranslate(
-        prompt,
-        sourceLanguage,
-        targetLanguage
+  const { getPlatform } = await import('../utils/platform');
+  if (getPlatform() === 'android') {
+    // Try native Android ML Kit translation first
+    try {
+      const { getNativeAICapabilities, nativeTranslate } =
+        await import('./native-ai');
+      const caps = await getNativeAICapabilities();
+      if (caps.translation) {
+        const result = await nativeTranslate(
+          prompt,
+          sourceLanguage,
+          targetLanguage
+        );
+        return result;
+      }
+    } catch (nativeErr) {
+      console.warn(
+        'Native translation unavailable, trying Chrome API:',
+        nativeErr
       );
-      return result;
     }
-  } catch (nativeErr) {
-    console.warn(
-      'Native translation unavailable, trying Chrome API:',
-      nativeErr
-    );
   }
 
   // Use Chrome's built-in Translator API
@@ -176,20 +119,6 @@ export const createAPost = async (prompt: string) => {
       body: JSON.stringify({ prompt }),
     }
   );
-  const data = await response.json();
-
-  return data;
-};
-
-export const createImage = async (prompt: string) => {
-  // Use Firebase Function
-  const response = await fetch(`${FIREBASE_FUNCTIONS_BASE_URL}/generateImage`, {
-    method: 'POST',
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify({ prompt }),
-  });
   const data = await response.json();
 
   return data;
@@ -405,12 +334,6 @@ export const generateAltText = async (
       } else if (typeof imageSource === 'string') {
         imageUrl = imageSource;
       } else {
-        // If it's a blob, we might need to upload it or convert to base64
-        // For simplicity in this context, let's assume valid URL or handle blob -> base64
-        // However, sending large base64 to a function might be heavy.
-
-        // Let's see how requestMammothBot or others work. They just send JSON.
-        // If imageSource is a Blob, we need to convert to base64 data URL.
         const reader = new FileReader();
         imageUrl = await new Promise<string>((resolve) => {
           reader.onloadend = () => resolve(reader.result as string);

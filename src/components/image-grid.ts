@@ -103,6 +103,11 @@ export class ImageGrid extends LitElement {
 
       .media-cell.clickable {
         cursor: pointer;
+        border-radius: var(--md-sys-shape-corner-medium);
+      }
+
+      .media-cell.clickable img {
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       .blurhash-canvas {
