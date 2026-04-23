@@ -158,6 +158,8 @@ export class HomeSidebar extends LitElement {
         backdrop-filter: blur(48px);
         color: white;
         z-index: 99;
+
+        border-radius: var(--md-sys-shape-corner-large);
       }
 
       md-menu-item {
