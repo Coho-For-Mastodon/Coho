@@ -3,7 +3,7 @@
 
 # Coho
 
-A fast, offline-first Mastodon client.
+<p>Making Mastodon fast and simple!</p>
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
@@ -12,40 +12,16 @@ A fast, offline-first Mastodon client.
   <img src="/public/assets/screenshots/desktop-dark.png" alt="Coho For Mastodon" />
 </div>
 
-## Features
+<br />
+<br />
 
-### Offline First
+Coho's main focus is providing a fast, simple user experience that makes the most of your time on the Fediverse.
 
-Your timeline is cached locally so you can browse without connectivity. Likes, boosts, and new posts queue up and sync seamlessly when you reconnect. No other Mastodon client handles offline as well as Coho.
+- Coho is ALWAYS fast, on any device and even on slow network connections.
+- Coho is built with the latest Material Design guidelines in mind, giving you a simple, familiar experience.
+- Looking for a widget, what about a WearOS app? Coho has those too, making the most of what Android provides.
+- Stay in Coho when you tap `@mentions` or `#hashtags` — we route to the right profile or tag without bouncing you to a remote server.
 
-### On-Device AI
-
-Fast, private, and no server required — these features run entirely on your device:
-
-- **Instant translations** — Translate posts without server round-trips
-- **Auto-generated alt text** — Images missing alt text get descriptions automatically
-- **Alt text assistance** — Generate alt text for your images before posting
-- **Voice input** — Compose posts by speaking
-
-### Seamless Navigation
-
-Stay in Coho when you tap `@mentions` or `#hashtags` — we route to the right profile or tag without bouncing you to a remote server.
-
-### Cross Platform
-
-Install Coho on any device — iOS, Android, Windows, macOS, or Linux. It's a [Progressive Web App](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/What_is_a_progressive_web_app)
-
-### Theming
-
-Choose your accent color and switch between light and dark mode.
-
-### Wellness Mode
-
-Hide likes, boost counts, and other metrics for a calmer experience.
-
-## Getting Started
-
-See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for setup instructions.
 
 ## Contributing
 
