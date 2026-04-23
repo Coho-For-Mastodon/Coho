@@ -73,6 +73,14 @@ export class TimelineItem extends LitElement {
         outline: none;
       }
 
+      .thread-connector-bar {
+          width: 100%;
+    background: var(--md-sys-color-primary);
+    height: 8px;
+    border-radius: 8px;
+    margin-left: 20px;
+      }
+
       :host([focused]) md-card {
         outline: 2px solid var(--md-sys-color-primary, #6750a4);
         outline-offset: 2px;
@@ -552,58 +560,19 @@ export class TimelineItem extends LitElement {
       /* === Connected thread card styles === */
 
       /* Connector bar between connected cards — sits in normal flow */
-      .thread-connector-bar {
-        display: flex;
-        align-items: stretch;
-        padding: 0 11px;
-        background: var(--md-sys-color-surface-container, #1e1e24);
-        border-left: 1px solid
-          color-mix(
-            in srgb,
-            var(--md-sys-color-outline-variant, #2b2930) 60%,
-            transparent
-          );
-        border-right: 1px solid
-          color-mix(
-            in srgb,
-            var(--md-sys-color-outline-variant, #2b2930) 60%,
-            transparent
-          );
-      }
 
       .thread-connector-line {
         width: 2px;
         min-height: 24px;
-        margin-left: 19px;
+        /* 11px bar padding-left + 30px = 41px from card left edge,
+           matching avatar center (16px card padding + 25px = half of 50px avatar) */
+        margin-left: 30px;
         background: var(--md-sys-color-outline, #938f99);
         border-radius: 1px;
         flex-shrink: 0;
       }
 
-      /* Host-level radius + overflow removal for connected cards */
-      md-card.connected-bottom {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-      }
-
-      md-card.connected-top {
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
-      }
-
-      /* Shadow DOM part: flat bottom (more cards follow) */
-      md-card.connected-bottom::part(base) {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        border-bottom: none;
-      }
-
-      /* Shadow DOM part: flat top (preceded by another card) */
-      md-card.connected-top::part(base) {
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
-        border-top: none;
-      }
+      /* Connected thread cards: radius is handled inside md-card via :host([connected-top/bottom]) */
 
       .thread-continuation-card {
         cursor: pointer;
@@ -1377,27 +1346,6 @@ export class TimelineItem extends LitElement {
   openLinkCard(url: string) {
     if (url) {
       window.open(url, '_blank');
-    }
-  }
-
-  async summarizePost(postContent: string | null) {
-    if (!postContent) return;
-
-    // remove all html tags
-    const text = postContent.replace(/(<([^>]+)>)/gi, '');
-
-    const { summarize } = await import('../services/ai');
-    const summaryData = await summarize(text);
-
-    if (summaryData) {
-      this.dispatchEvent(
-        new CustomEvent('summarize', {
-          detail: {
-            data: summaryData.choices[0].message.content,
-            tweet: this.tweet,
-          },
-        })
-      );
     }
   }
 
