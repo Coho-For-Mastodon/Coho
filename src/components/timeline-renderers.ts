@@ -904,18 +904,6 @@ export function renderThreadContinuation(
           : null}
       `;
     })}
-    ${state.tweet?.thread_truncated && !state.threadExpanded
-      ? html`
-          <button
-            type="button"
-            class="thread-show-more button-reset"
-            @click="${() => handlers.openPost()}"
-          >
-            <md-icon name="chatbox"></md-icon>
-            ${msg('Show thread')}
-          </button>
-        `
-      : null}
   `;
 }
 
