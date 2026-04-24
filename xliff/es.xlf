@@ -1710,9 +1710,6 @@
 <trans-unit id="s060f62c250a1042e">
   <source>Waiting for media to finish uploading…</source>
 </trans-unit>
-<trans-unit id="sc6e15730cbfb902c">
-  <source>Show thread</source>
-</trans-unit>
 <trans-unit id="s7b160218e24ae4b8">
   <source>Locked Account</source>
 </trans-unit>
@@ -2138,6 +2135,9 @@
 </trans-unit>
 <trans-unit id="sa958d9ee50941ce7">
   <source>Search to add people (optional)</source>
+</trans-unit>
+<trans-unit id="s022e4d30701b206d">
+  <source>View profile</source>
 </trans-unit>
 </body>
 </file>
