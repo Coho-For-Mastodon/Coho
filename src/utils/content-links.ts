@@ -1,5 +1,7 @@
 import type { Post } from '../interfaces/Post';
 import { router } from '../router/routes';
+import { lookupAccountByAcct } from '../mastodon/api/accounts';
+import type { Account } from '../mastodon/types/account';
 
 type Mention = Post['mentions'][number];
 type Tag = Post['tags'][number];
@@ -144,4 +146,103 @@ export function handleStatusContentClick(
 
   // Let normal links behave as normal, but avoid bubbling to open-post handlers.
   event.stopPropagation();
+}
+
+// ---------------------------------------------------------------------------
+// Hover profile card utilities
+// ---------------------------------------------------------------------------
+
+const _accountCache = new Map<string, Account>();
+let _hoverTimer: ReturnType<typeof setTimeout> | undefined;
+let _leaveTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Call on mouseover of the post content area.
+ * If the mouse is over a known @mention link, shows the profile hover card
+ * after a short delay.
+ */
+export function handleMentionMouseOver(
+  event: Event,
+  post: Post | null | undefined
+) {
+  const anchor = getAnchorFromEvent(event);
+  if (!anchor) return;
+
+  const href = anchor.getAttribute('href') || '';
+  const mention = findMention(post, href, anchor.textContent);
+  if (!mention) return;
+
+  // Cancel any pending hide
+  if (_leaveTimer !== undefined) {
+    clearTimeout(_leaveTimer);
+    _leaveTimer = undefined;
+  }
+
+  // Reset pending show timer
+  if (_hoverTimer !== undefined) {
+    clearTimeout(_hoverTimer);
+  }
+
+  _hoverTimer = setTimeout(() => {
+    _hoverTimer = undefined;
+
+    import('../components/profile-hover-card').then(
+      ({ getProfileHoverCard }) => {
+        const card = getProfileHoverCard();
+
+        // Register cancel-hide callback so card mouse-enter cancels our leave timer
+        card.registerCancelHide(() => {
+          if (_leaveTimer !== undefined) {
+            clearTimeout(_leaveTimer);
+            _leaveTimer = undefined;
+          }
+        });
+
+        // Show loading skeleton immediately
+        card.account = null;
+        card.loading = true;
+        card.showAt(anchor);
+
+        // Serve from cache or fetch
+        const cached = _accountCache.get(mention.acct);
+        if (cached) {
+          card.account = cached;
+          card.loading = false;
+        } else {
+          lookupAccountByAcct(mention.acct)
+            .then((account) => {
+              if (account) {
+                _accountCache.set(mention.acct, account);
+                card.account = account;
+                card.loading = false;
+              } else {
+                card.hide();
+              }
+            })
+            .catch(() => {
+              card.hide();
+            });
+        }
+      }
+    );
+  }, 300);
+}
+
+/**
+ * Call on mouseleave of the post content area.
+ * Hides the profile hover card after a short delay (giving the user time
+ * to move the mouse into the card itself, which cancels the timer).
+ */
+export function handleMentionMouseLeave() {
+  if (_hoverTimer !== undefined) {
+    clearTimeout(_hoverTimer);
+    _hoverTimer = undefined;
+  }
+
+  _leaveTimer = setTimeout(() => {
+    _leaveTimer = undefined;
+    import('../components/profile-hover-card').then(({ getProfileHoverCard }) =>
+      getProfileHoverCard().hide()
+    );
+  }, 150);
 }

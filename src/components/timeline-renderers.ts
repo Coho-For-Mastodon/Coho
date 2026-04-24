@@ -6,6 +6,10 @@ import { parseEmojis } from '../utils/emoji-parser';
 import type { Settings } from '../services/settings';
 import type { Account } from '../mastodon/types';
 import { router } from '../router/routes';
+import {
+  handleMentionMouseOver,
+  handleMentionMouseLeave,
+} from '../utils/content-links';
 
 import '../components/user-profile';
 import '../components/md/md-card';
@@ -307,6 +311,9 @@ export function renderReplyContext(
         : html`<div
             @click="${(e: Event) =>
               handlers.handleContentClick(e, state.tweet?.reply_to)}"
+            @mouseover="${(e: Event) =>
+              handleMentionMouseOver(e, state.tweet?.reply_to)}"
+            @mouseleave="${() => handleMentionMouseLeave()}"
             .innerHTML="${parseEmojis(
               state.tweet?.reply_to?.content || '',
               state.tweet?.reply_to?.emojis || []
@@ -560,6 +567,8 @@ export function renderRegularTweet(
       <div
         @click="${(e: Event) =>
           handlers.handleContentClick(e, state.tweet, true)}"
+        @mouseover="${(e: Event) => handleMentionMouseOver(e, state.tweet)}"
+        @mouseleave="${() => handleMentionMouseLeave()}"
         .innerHTML="${parseEmojis(state.tweet?.content || '', state.tweet?.emojis || [])}"
       ></div>
 
