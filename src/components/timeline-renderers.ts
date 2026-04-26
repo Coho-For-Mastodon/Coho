@@ -1069,6 +1069,9 @@ export function renderReblog(
       <div
         @click="${(e: Event) =>
           handlers.handleContentClick(e, state.tweet?.reblog, true)}"
+        @mouseover="${(e: Event) =>
+          handleMentionMouseOver(e, state.tweet?.reblog)}"
+        @mouseleave="${() => handleMentionMouseLeave()}"
         .innerHTML="${parseEmojis(
           state.tweet.reblog.content || '',
           state.tweet.reblog.emojis || []
