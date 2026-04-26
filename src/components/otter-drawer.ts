@@ -1,6 +1,7 @@
 import { LitElement, css, html } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
+import './md/md-icon-button';
 
 /**
  * Custom drawer component to replace sl-drawer
@@ -188,26 +189,7 @@ export class OtterDrawer extends LitElement {
     }
 
     .close-button {
-      background: none;
-      border: none;
-      padding: 0.5rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--md-sys-shape-corner-extra-small);
-      color: var(--sl-color-neutral-600, #666);
-      transition: all 0.2s ease;
-    }
-
-    .close-button:hover {
-      background: var(--sl-color-neutral-100, #f5f5f5);
-      color: var(--sl-color-neutral-900, #000);
-    }
-
-    .close-button svg {
-      width: 24px;
-      height: 24px;
+      /* positioning handled by md-icon-button */
     }
 
     .body {
@@ -290,26 +272,13 @@ export class OtterDrawer extends LitElement {
           @pointerdown=${this.placement === 'bottom' ? this.onDragStart : null}
         >
           <h2>${this.label}</h2>
-          <button
+          <md-icon-button
             class="close-button"
-            @click="${this.hide}"
-            aria-label=${msg('Close drawer')}
+            name="close"
+            .label="${msg('Close drawer')}"
             part="close-button"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+            @click="${this.hide}"
+          ></md-icon-button>
         </div>
 
         <div class="body" part="body">

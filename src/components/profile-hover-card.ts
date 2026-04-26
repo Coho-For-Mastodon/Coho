@@ -4,6 +4,7 @@ import { msg } from '@lit/localize';
 import type { Account } from '../mastodon/types/account';
 import { parseEmojis } from '../utils/emoji-parser';
 import { router } from '../router/routes';
+import './md/md-button';
 
 /** Global singleton getter — lazily appends to document.body. */
 let _instance: ProfileHoverCard | null = null;
@@ -186,25 +187,7 @@ export class ProfileHoverCard extends LitElement {
     }
 
     .view-profile-btn {
-      background: none;
-      border: 1px solid
-        var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.2));
-      border-radius: var(--md-sys-shape-corner-full, 9999px);
-      padding: 6px 14px;
-      color: var(--md-sys-color-primary);
-      font-size: 0.85rem;
-      cursor: pointer;
       align-self: flex-start;
-      transition: background 0.15s;
-      font-family: inherit;
-    }
-
-    .view-profile-btn:hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-primary) 12%,
-        transparent
-      );
     }
 
     .skeleton-line {
@@ -386,9 +369,14 @@ export class ProfileHoverCard extends LitElement {
           </div>
         </div>
 
-        <button class="view-profile-btn" @click="${this._viewProfile}">
+        <md-button
+          class="view-profile-btn"
+          variant="outlined"
+          size="small"
+          @click="${this._viewProfile}"
+        >
           ${msg('View profile')}
-        </button>
+        </md-button>
       </div>
     `;
   }

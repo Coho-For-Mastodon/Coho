@@ -117,48 +117,11 @@ export class ThreadBranch extends LitElement {
     }
 
     .continue-thread {
-      background: var(--md-sys-color-surface-container, #1e1e24);
-      border: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      color: var(--md-sys-color-primary, #6750a4);
-      font-size: var(--md-sys-typescale-body-medium-font-size, 14px);
-      cursor: pointer;
-      border-radius: var(--md-sys-shape-corner-medium);
       margin-bottom: 8px;
     }
 
-    .continue-thread:hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-primary, #6750a4) 8%,
-        transparent
-      );
-    }
-
     .more-replies {
-      background: var(--md-sys-color-surface-container, #1e1e24);
-      border: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      color: var(--md-sys-color-on-surface-variant, #999);
-      font-size: var(--md-sys-typescale-body-small-font-size, 12px);
-      cursor: pointer;
-      border-radius: var(--md-sys-shape-corner-medium);
       margin-bottom: 4px;
-    }
-
-    .more-replies:hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-primary, #6750a4) 8%,
-        transparent
-      );
-      color: var(--md-sys-color-primary, #6750a4);
     }
 
     .children {
@@ -281,16 +244,17 @@ export class ThreadBranch extends LitElement {
                   ${this.renderChildren(children)}
                 </div>`
               : html`
-                  <button
+                  <md-button
                     class="continue-thread"
+                    variant="text"
                     @click=${(e: Event) => {
                       e.stopPropagation();
                       this._deepRepliesExpanded = true;
                     }}
                   >
-                    <md-icon name="arrow-forward"></md-icon>
+                    <md-icon slot="prefix" name="arrow-forward"></md-icon>
                     ${msg('Continue this thread')}
-                  </button>
+                  </md-button>
                 `
             : nothing}
         </div>
@@ -377,18 +341,20 @@ export class ThreadBranch extends LitElement {
               `
             )
           : html`
-              <button
+              <md-button
                 class="more-replies"
+                variant="text"
+                size="small"
                 @click=${(e: Event) => {
                   e.stopPropagation();
                   this._collapsedChildrenExpanded = true;
                 }}
               >
-                <md-icon name="chatbubbles"></md-icon>
+                <md-icon slot="prefix" name="chatbubbles"></md-icon>
                 ${remainingCount === 1
                   ? msg('1 more reply')
                   : msg(str`${remainingCount} more replies`)}
-              </button>
+              </md-button>
             `}
       `;
     }

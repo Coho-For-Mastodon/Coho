@@ -509,6 +509,25 @@ export const follow = onRequest(
       return;
     }
 
+    // Optional Mastodon follow params: notify (bell on posts), reblogs, languages.
+    const followBody: {
+      notify?: boolean;
+      reblogs?: boolean;
+      languages?: string[];
+    } = {};
+    if (typeof request.body?.notify === 'boolean') {
+      followBody.notify = request.body.notify;
+    }
+    if (typeof request.body?.reblogs === 'boolean') {
+      followBody.reblogs = request.body.reblogs;
+    }
+    if (Array.isArray(request.body?.languages)) {
+      followBody.languages = (request.body.languages as unknown[]).filter(
+        (l): l is string => typeof l === 'string'
+      );
+    }
+    const hasFollowBody = Object.keys(followBody).length > 0;
+
     try {
       const apiResponse = await fetch(
         `https://${server}/api/v1/accounts/${id}/follow`,
@@ -516,7 +535,9 @@ export const follow = onRequest(
           method: 'POST',
           headers: {
             Authorization: `Bearer ${accessToken}`,
+            ...(hasFollowBody ? { 'Content-Type': 'application/json' } : {}),
           },
+          ...(hasFollowBody ? { body: JSON.stringify(followBody) } : {}),
         }
       );
 
