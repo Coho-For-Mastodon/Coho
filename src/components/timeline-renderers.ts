@@ -439,7 +439,7 @@ export function renderRegularTweet(
         <user-profile .account="${state.tweet?.account}"></user-profile>
 
         <div class="actions-right">
-          <md-dropdown placement="bottom-end">
+          <md-dropdown placement="bottom-end" close-on-scroll>
             <md-icon-button slot="trigger" name="ellipsis-vertical" label="${msg('More options')}" size="small"></md-icon-button>
             <md-menu>
               <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null, state.tweet?.id)}" title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}>
@@ -943,7 +943,7 @@ export function renderReblog(
           ?small="${true}"
           .account="${state.tweet.reblog.account}"
         ></user-profile>
-        <md-dropdown placement="bottom-end">
+        <md-dropdown placement="bottom-end" close-on-scroll>
           <md-icon-button
             slot="trigger"
             name="ellipsis-vertical"

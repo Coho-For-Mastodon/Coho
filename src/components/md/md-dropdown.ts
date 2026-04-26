@@ -10,6 +10,9 @@ export class MdDropdown extends LitElement {
   @property({ type: Boolean, reflect: true }) open = false;
   /** When true, clicking a menu item will NOT auto-close the dropdown. */
   @property({ type: Boolean }) keepOpen = false;
+  /** When true, close the dropdown when any ancestor scroll container scrolls. */
+  @property({ type: Boolean, attribute: 'close-on-scroll' })
+  closeOnScroll = false;
   @property({ type: String }) placement:
     | 'bottom-start'
     | 'bottom-end'
@@ -19,6 +22,9 @@ export class MdDropdown extends LitElement {
 
   @query('slot[name="trigger"]') triggerSlot!: HTMLSlotElement;
   @query('.popup') popup!: HTMLDivElement;
+
+  private _positionRaf: number | null = null;
+  private _scrollTargets: EventTarget[] = [];
 
   static styles = css`
     :host {
@@ -208,7 +214,10 @@ export class MdDropdown extends LitElement {
     }
 
     if (isOpen) {
+      this._attachOpenListeners();
       requestAnimationFrame(() => this._positionPopup());
+    } else {
+      this._detachOpenListeners();
     }
 
     this.dispatchEvent(
@@ -218,6 +227,118 @@ export class MdDropdown extends LitElement {
       })
     );
   };
+
+  private _schedulePositionPopup() {
+    if (this._positionRaf !== null) return;
+    this._positionRaf = requestAnimationFrame(() => {
+      this._positionRaf = null;
+      if (this.open) {
+        this._positionPopup();
+      }
+    });
+  }
+
+  private _handleScrollOrResize = (e: Event) => {
+    if (!this.open) return;
+
+    const target = e.target;
+    const scrolledInsidePopup =
+      target instanceof Node && !!this.popup && this.popup.contains(target);
+    if (scrolledInsidePopup) {
+      return;
+    }
+
+    if (this.closeOnScroll && e.type === 'scroll') {
+      this.hide();
+      return;
+    }
+
+    this._schedulePositionPopup();
+  };
+
+  private _isScrollableElement(el: Element): boolean {
+    const style = getComputedStyle(el);
+    const overflowY = style.overflowY;
+    const overflowX = style.overflowX;
+    const canScrollY =
+      (overflowY === 'auto' ||
+        overflowY === 'scroll' ||
+        overflowY === 'overlay') &&
+      el.scrollHeight > el.clientHeight;
+    const canScrollX =
+      (overflowX === 'auto' ||
+        overflowX === 'scroll' ||
+        overflowX === 'overlay') &&
+      el.scrollWidth > el.clientWidth;
+    return canScrollY || canScrollX;
+  }
+
+  private _collectScrollTargets(start: HTMLElement): EventTarget[] {
+    const targets: EventTarget[] = [];
+    const seen = new Set<EventTarget>();
+
+    let current: Element | null = start;
+    while (current) {
+      if (this._isScrollableElement(current) && !seen.has(current)) {
+        seen.add(current);
+        targets.push(current);
+      }
+
+      if (current.parentElement) {
+        current = current.parentElement;
+        continue;
+      }
+
+      const root = current.getRootNode();
+      if (root instanceof ShadowRoot) {
+        current = root.host;
+      } else {
+        current = null;
+      }
+    }
+
+    if (!seen.has(window)) {
+      seen.add(window);
+      targets.push(window);
+    }
+
+    return targets;
+  }
+
+  private _attachOpenListeners() {
+    this._detachOpenListeners();
+
+    const triggerEl = this.triggerSlot?.assignedElements()[0] as
+      | HTMLElement
+      | undefined;
+    this._scrollTargets = triggerEl
+      ? this._collectScrollTargets(triggerEl)
+      : [window];
+
+    for (const target of this._scrollTargets) {
+      target.addEventListener('scroll', this._handleScrollOrResize, {
+        passive: true,
+      });
+    }
+
+    window.addEventListener('resize', this._handleScrollOrResize, {
+      passive: true,
+    });
+  }
+
+  private _detachOpenListeners() {
+    window.removeEventListener('resize', this._handleScrollOrResize);
+
+    for (const target of this._scrollTargets) {
+      target.removeEventListener('scroll', this._handleScrollOrResize);
+    }
+    this._scrollTargets = [];
+
+    if (this._positionRaf !== null) {
+      cancelAnimationFrame(this._positionRaf);
+      this._positionRaf = null;
+    }
+  }
 
   private _syncPopover() {
     if (!this.isConnected || !this.popup) return;
@@ -246,7 +367,16 @@ export class MdDropdown extends LitElement {
     if (changedProperties.has('open')) {
       this._syncPopover();
       this._updateTriggerAria();
+
+      if (!this.open) {
+        this._detachOpenListeners();
+      }
     }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._detachOpenListeners();
   }
 
   render() {
