@@ -129,21 +129,61 @@ export class ThreadBranch extends LitElement {
     }
 
     .sensitive {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      padding: 16px;
+      justify-content: center;
       text-align: center;
+      gap: 8px;
+      padding: 20px 16px;
+      border-radius: var(--md-sys-shape-corner-large, 16px);
+      background: var(--md-sys-color-surface-container-high, rgb(36 36 40));
+      border: 1px solid
+        color-mix(
+          in srgb,
+          var(--md-sys-color-outline-variant, #49454f) 45%,
+          transparent
+        );
     }
 
-    .sensitive span {
-      font-weight: 600;
+    .sensitive-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(
+        --md-sys-color-secondary-container,
+        rgba(255, 255, 255, 0.08)
+      );
+      color: var(--md-sys-color-on-secondary-container, #cac4d0);
     }
 
-    .sensitive p {
+    .sensitive-icon md-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .sensitive-title {
+      font-weight: 500;
+      font-size: var(--md-sys-typescale-title-small-font-size, 14px);
+      color: var(--md-sys-color-on-surface, #e6e1e5);
+    }
+
+    .sensitive-text {
       margin: 0;
+      max-width: 320px;
+      font-size: var(--md-sys-typescale-body-small-font-size, 12px);
+      line-height: 1.4;
       color: var(--md-sys-color-on-surface-variant, #999);
+    }
+
+    .sensitive-text--muted {
+      font-style: italic;
+      opacity: 0.75;
     }
   `;
 
@@ -196,9 +236,22 @@ export class ThreadBranch extends LitElement {
 
             ${post.sensitive
               ? html`
-                  <div class="sensitive">
-                    <span>${msg('Sensitive Content')}</span>
-                    <p>
+                  <div
+                    class="sensitive"
+                    role="group"
+                    aria-label="${msg('Sensitive Content')}"
+                  >
+                    <div class="sensitive-icon" aria-hidden="true">
+                      <md-icon name="eye-off"></md-icon>
+                    </div>
+                    <div class="sensitive-title">
+                      ${msg('Sensitive Content')}
+                    </div>
+                    <p
+                      class="sensitive-text ${post.spoiler_text
+                        ? ''
+                        : 'sensitive-text--muted'}"
+                    >
                       ${post.spoiler_text || msg('No spoiler text provided')}
                     </p>
                   </div>
@@ -271,9 +324,22 @@ export class ThreadBranch extends LitElement {
 
           ${post.sensitive
             ? html`
-                <div class="sensitive">
-                  <span>${msg('Sensitive Content')}</span>
-                  <p>${post.spoiler_text || msg('No spoiler text provided')}</p>
+                <div
+                  class="sensitive"
+                  role="group"
+                  aria-label="${msg('Sensitive Content')}"
+                >
+                  <div class="sensitive-icon" aria-hidden="true">
+                    <md-icon name="eye-off"></md-icon>
+                  </div>
+                  <div class="sensitive-title">${msg('Sensitive Content')}</div>
+                  <p
+                    class="sensitive-text ${post.spoiler_text
+                      ? ''
+                      : 'sensitive-text--muted'}"
+                  >
+                    ${post.spoiler_text || msg('No spoiler text provided')}
+                  </p>
                 </div>
               `
             : html`<div

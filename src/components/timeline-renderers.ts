@@ -47,6 +47,41 @@ function ensureQuotedPost(): void {
 }
 
 /**
+ * Renders the Material-styled "Sensitive Content" block with an icon,
+ * spoiler text, and a tonal "View" action.
+ */
+function renderSensitiveBlock(
+  spoilerText: string | undefined | null,
+  onView: (e: Event) => void
+) {
+  const hasSpoiler = !!spoilerText && spoilerText.trim().length > 0;
+  return html`
+    <div
+      class="sensitive"
+      role="group"
+      aria-label="${msg('Sensitive Content')}"
+    >
+      <div class="sensitive-icon" aria-hidden="true">
+        <md-icon name="eye-off"></md-icon>
+      </div>
+      <div class="sensitive-title">${msg('Sensitive Content')}</div>
+      <p class="sensitive-text ${hasSpoiler ? '' : 'sensitive-text--muted'}">
+        ${hasSpoiler ? spoilerText : msg('No spoiler text provided')}
+      </p>
+      <md-button
+        class="sensitive-action"
+        variant="tonal"
+        pill
+        @click="${onView}"
+      >
+        ${msg('View')}
+        <md-icon slot="suffix" name="eye"></md-icon>
+      </md-button>
+    </div>
+  `;
+}
+
+/**
  * Returns a provider label for display, preferring the explicit providerName
  * when available and otherwise deriving it from the URL hostname (without a
  * leading "www.").
@@ -255,21 +290,10 @@ export function renderSensitive(
   state: TimelineItemState,
   handlers: TimelineItemHandlers
 ) {
-  return html`
-    <div class="sensitive">
-      <span>${msg('Sensitive Content')}</span>
-      <p>
-        ${state.tweet?.reblog
-          ? state.tweet.reblog.spoiler_text
-          : state.tweet?.spoiler_text || msg('No spoiler text provided')}
-      </p>
-
-      <md-button variant="text" pill @click="${() => handlers.viewSensitive()}">
-        ${msg('View')}
-        <md-icon slot="suffix" name="eye"></md-icon>
-      </md-button>
-    </div>
-  `;
+  const spoiler = state.tweet?.reblog
+    ? state.tweet.reblog.spoiler_text
+    : state.tweet?.spoiler_text;
+  return renderSensitiveBlock(spoiler, () => handlers.viewSensitive());
 }
 
 export function renderReplyContext(
@@ -287,27 +311,13 @@ export function renderReplyContext(
     >
       <user-profile .account="${state.tweet?.reply_to?.account}"></user-profile>
       ${state.tweet?.reply_to?.sensitive
-        ? html`
-            <div class="sensitive">
-              <span>${msg('Sensitive Content')}</span>
-              <p>
-                ${state.tweet?.reply_to?.spoiler_text ||
-                msg('No spoiler text provided')}
-              </p>
-
-              <md-button
-                variant="text"
-                pill
-                @click="${(e: Event) => {
-                  e.stopPropagation();
-                  handlers.viewReplySensitive();
-                }}"
-              >
-                ${msg('View')}
-                <md-icon slot="suffix" name="eye"></md-icon>
-              </md-button>
-            </div>
-          `
+        ? renderSensitiveBlock(
+            state.tweet?.reply_to?.spoiler_text,
+            (e: Event) => {
+              e.stopPropagation();
+              handlers.viewReplySensitive();
+            }
+          )
         : html`<div
             @click="${(e: Event) =>
               handlers.handleContentClick(e, state.tweet?.reply_to)}"
@@ -758,26 +768,10 @@ export function renderThreadContinuation(
         >
           <user-profile .account="${threadPost.account}"></user-profile>
           ${threadPost.sensitive
-            ? html`
-                <div class="sensitive">
-                  <span>${msg('Sensitive Content')}</span>
-                  <p>
-                    ${threadPost.spoiler_text ||
-                    msg('No spoiler text provided')}
-                  </p>
-                  <md-button
-                    variant="text"
-                    pill
-                    @click="${(e: Event) => {
-                      e.stopPropagation();
-                      handlers.viewThreadSensitive(threadPost.id);
-                    }}"
-                  >
-                    ${msg('View')}
-                    <md-icon slot="suffix" name="eye"></md-icon>
-                  </md-button>
-                </div>
-              `
+            ? renderSensitiveBlock(threadPost.spoiler_text, (e: Event) => {
+                e.stopPropagation();
+                handlers.viewThreadSensitive(threadPost.id);
+              })
             : html`<div
                 @click="${(e: Event) =>
                   handlers.handleContentClick(e, threadPost)}"
@@ -1200,24 +1194,9 @@ export function renderThreadAncestors(
               ></user-profile>
             </div>
             ${threadPost.sensitive
-              ? html`
-                  <div class="sensitive">
-                    <span>${msg('Sensitive Content')}</span>
-                    <p>
-                      ${threadPost.spoiler_text ||
-                      msg('No spoiler text provided')}
-                    </p>
-                    <md-button
-                      variant="text"
-                      pill
-                      @click="${() =>
-                        handlers.viewThreadSensitive(threadPost.id)}"
-                    >
-                      ${msg('View')}
-                      <md-icon slot="suffix" name="eye"></md-icon>
-                    </md-button>
-                  </div>
-                `
+              ? renderSensitiveBlock(threadPost.spoiler_text, () =>
+                  handlers.viewThreadSensitive(threadPost.id)
+                )
               : html`<div
                   @click="${(e: Event) =>
                     handlers.handleContentClick(e, threadPost)}"
@@ -1279,25 +1258,9 @@ export function renderThread(
               ></user-profile>
             </div>
             ${threadPost.sensitive
-              ? html`
-                  <div class="sensitive">
-                    <span>${msg('Sensitive Content')}</span>
-                    <p>
-                      ${threadPost.spoiler_text ||
-                      msg('No spoiler text provided')}
-                    </p>
-
-                    <md-button
-                      variant="text"
-                      pill
-                      @click="${() =>
-                        handlers.viewThreadSensitive(threadPost.id)}"
-                    >
-                      ${msg('View')}
-                      <md-icon slot="suffix" name="eye"></md-icon>
-                    </md-button>
-                  </div>
-                `
+              ? renderSensitiveBlock(threadPost.spoiler_text, () =>
+                  handlers.viewThreadSensitive(threadPost.id)
+                )
               : html`<div
                   @click="${(e: Event) =>
                     handlers.handleContentClick(e, threadPost)}"
