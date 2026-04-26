@@ -2149,6 +2149,9 @@
 <trans-unit id="s9b6b1422027158eb">
   <source>Report</source>
 </trans-unit>
+<trans-unit id="s07ba1a869cb2387b">
+  <source>View my profile</source>
+</trans-unit>
 </body>
 </file>
 </xliff>
