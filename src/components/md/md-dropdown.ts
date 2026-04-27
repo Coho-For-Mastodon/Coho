@@ -368,7 +368,10 @@ export class MdDropdown extends LitElement {
       this._syncPopover();
       this._updateTriggerAria();
 
-      if (!this.open) {
+      if (this.open) {
+        this._attachOpenListeners();
+        this._schedulePositionPopup();
+      } else {
         this._detachOpenListeners();
       }
     }
