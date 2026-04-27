@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, type PropertyValues } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { getAllMedia } from '../services/media';
 
@@ -7,6 +7,8 @@ import '../components/header';
 @customElement('app-media')
 export class AppMedia extends LitElement {
   @state() media: File[] = [];
+
+  private _mediaObjectUrls = new Map<File, string>();
 
   static styles = [
     css`
@@ -60,6 +62,45 @@ export class AppMedia extends LitElement {
     this.media = files;
   }
 
+  protected updated(changedProperties: PropertyValues<this>) {
+    if (changedProperties.has('media')) {
+      this._syncObjectUrlsForCurrentMedia();
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._revokeAllObjectUrls();
+  }
+
+  private _getObjectUrl(file: File): string {
+    const existing = this._mediaObjectUrls.get(file);
+    if (existing) {
+      return existing;
+    }
+
+    const url = URL.createObjectURL(file);
+    this._mediaObjectUrls.set(file, url);
+    return url;
+  }
+
+  private _syncObjectUrlsForCurrentMedia() {
+    const activeFiles = new Set(this.media);
+    for (const [file, url] of this._mediaObjectUrls.entries()) {
+      if (!activeFiles.has(file)) {
+        URL.revokeObjectURL(url);
+        this._mediaObjectUrls.delete(file);
+      }
+    }
+  }
+
+  private _revokeAllObjectUrls() {
+    for (const url of this._mediaObjectUrls.values()) {
+      URL.revokeObjectURL(url);
+    }
+    this._mediaObjectUrls.clear();
+  }
+
   render() {
     return html`
       <app-header ?enableBack="${true}"></app-header>
@@ -68,7 +109,7 @@ export class AppMedia extends LitElement {
         <ul>
           ${this.media.map((file) => {
             return html`<li>
-              <img src="${URL.createObjectURL(file)}" alt="${file.name}" />
+              <img src="${this._getObjectUrl(file)}" alt="${file.name}" />
             </li>`;
           })}
         </ul>
