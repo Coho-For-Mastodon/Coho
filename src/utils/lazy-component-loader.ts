@@ -2,6 +2,7 @@
  * Utility for lazy loading Lit components with proper tracking.
  * Reduces boilerplate in page components that lazy-load many sub-components.
  */
+import { perfMark, perfMeasure } from './perf-observer';
 
 type ComponentLoader = () => Promise<unknown>;
 
@@ -35,7 +36,14 @@ export async function lazyLoad(
     return false;
   }
 
+  perfMark(`lazy-load-start:${key}`);
   await loader();
+  perfMark(`lazy-load-end:${key}`);
+  perfMeasure(
+    `Lazy load (${key})`,
+    `lazy-load-start:${key}`,
+    `lazy-load-end:${key}`
+  );
   loadedComponents.set(key, true);
   return true;
 }

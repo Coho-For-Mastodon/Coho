@@ -1,4 +1,5 @@
 import type { TemplateResult } from 'lit';
+import { perfMark, perfMeasure } from '../utils/perf-observer';
 
 /**
  * Base navigation state type - extend this for app-specific state.
@@ -206,6 +207,11 @@ export class Router extends EventTarget {
     route: Route,
     options?: { skipViewTransition?: boolean }
   ): Promise<void> {
+    const fromPath = this.currentRoute?.path ?? '(initial)';
+    const toPath = route.path;
+    const navKey = `${fromPath}→${toPath}`;
+    perfMark(`page-navigate-start:${navKey}`);
+
     // Run global beforeNavigation plugins first
     for (const plugin of this.globalPlugins) {
       if (plugin.beforeNavigation) {
@@ -252,6 +258,12 @@ export class Router extends EventTarget {
     if (options?.skipViewTransition) {
       updateDOM();
       moveFocusToMain();
+      perfMark(`page-navigate-end:${navKey}`);
+      perfMeasure(
+        `Page navigation (${navKey})`,
+        `page-navigate-start:${navKey}`,
+        `page-navigate-end:${navKey}`
+      );
       return;
     }
 
@@ -278,6 +290,13 @@ export class Router extends EventTarget {
       updateDOM();
       moveFocusToMain();
     }
+
+    perfMark(`page-navigate-end:${navKey}`);
+    perfMeasure(
+      `Page navigation (${navKey})`,
+      `page-navigate-start:${navKey}`,
+      `page-navigate-end:${navKey}`
+    );
   }
 
   /**

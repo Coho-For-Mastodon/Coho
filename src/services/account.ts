@@ -425,13 +425,19 @@ export const getFollowing = async (id: string) => {
   return response.json();
 };
 
-export const followUser = async (id: string) => {
+export interface FollowOptions {
+  notify?: boolean;
+  reblogs?: boolean;
+  languages?: string[];
+}
+
+export const followUser = async (id: string, options: FollowOptions = {}) => {
   const accessToken = getAccessToken();
   const server = getServer();
   const response = await apiFetch(`${FIREBASE_FUNCTIONS_BASE_URL}/follow`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ accessToken, server, id }),
+    body: JSON.stringify({ accessToken, server, id, ...options }),
     skipAuth: true,
   });
   return response.json();

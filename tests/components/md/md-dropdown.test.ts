@@ -121,6 +121,56 @@ describe('md-dropdown', () => {
     });
   });
 
+  describe('close-on-scroll', () => {
+    it('maps close-on-scroll attribute to closeOnScroll property', async () => {
+      const el = await fixture<MdDropdown>(
+        html`<md-dropdown close-on-scroll></md-dropdown>`
+      );
+
+      expect(el.closeOnScroll).toBe(true);
+    });
+
+    it('closes when a scroll event occurs and close-on-scroll is enabled', async () => {
+      const el = await fixture<MdDropdown>(html`
+        <md-dropdown close-on-scroll>
+          <button slot="trigger">Open</button>
+          <div>Content</div>
+        </md-dropdown>
+      `);
+
+      el.show();
+      await elementUpdated(el);
+      await waitForPopover();
+      expect(el.open).toBe(true);
+
+      window.dispatchEvent(new Event('scroll'));
+      await elementUpdated(el);
+      await waitForPopover();
+
+      expect(el.open).toBe(false);
+    });
+
+    it('does not close on scroll when close-on-scroll is disabled', async () => {
+      const el = await fixture<MdDropdown>(html`
+        <md-dropdown>
+          <button slot="trigger">Open</button>
+          <div>Content</div>
+        </md-dropdown>
+      `);
+
+      el.show();
+      await elementUpdated(el);
+      await waitForPopover();
+      expect(el.open).toBe(true);
+
+      window.dispatchEvent(new Event('scroll'));
+      await elementUpdated(el);
+      await waitForPopover();
+
+      expect(el.open).toBe(true);
+    });
+  });
+
   describe('trigger interaction', () => {
     it('opens on trigger click', async () => {
       const el = await fixture<MdDropdown>(html`

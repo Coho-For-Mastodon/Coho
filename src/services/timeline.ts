@@ -3,6 +3,7 @@ import { getUsersPosts } from './account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 import { Post } from '../interfaces/Post';
 import { getTimelineLimit } from '../utils/network-monitor';
+import { perfMark, perfMeasure } from '../utils/perf-observer';
 
 import {
   getPublicTimeline as mastodonGetPublicTimeline,
@@ -68,6 +69,7 @@ export const getHomeTimeline = async (): Promise<Post[]> => {
 };
 
 export const mixTimeline = async (type = 'home'): Promise<Post[]> => {
+  perfMark(`timeline-fetch-start:mixed`);
   // run getPaginatedHomeTimeline and getTrendingStatuses in parallel
   const [homeResult, trendingResult, searchedResult] = await Promise.allSettled(
     [
@@ -95,6 +97,13 @@ export const mixTimeline = async (type = 'home'): Promise<Post[]> => {
   const timeline2 = timeline.concat(searched);
 
   set('latest-mixed-timeline', timeline2);
+
+  perfMark('timeline-fetch-end:mixed');
+  perfMeasure(
+    'Timeline fetch (mixed)',
+    'timeline-fetch-start:mixed',
+    'timeline-fetch-end:mixed'
+  );
 
   return timeline2;
 };
@@ -196,6 +205,7 @@ export const getPaginatedHomeTimeline = async (
   }
 
   const url = buildMastodonUrl(`/api/v1/timelines/${type}`, params);
+  perfMark(`timeline-fetch-start:${type}`);
   const response = await apiFetch(url, {
     skipAuth: !accessToken,
   });
@@ -205,6 +215,13 @@ export const getPaginatedHomeTimeline = async (
   if (data.length > 0) {
     setLastPageID(type, data[data.length - 1].id);
   }
+
+  perfMark(`timeline-fetch-end:${type}`);
+  perfMeasure(
+    `Timeline fetch (${type})`,
+    `timeline-fetch-start:${type}`,
+    `timeline-fetch-end:${type}`
+  );
 
   return data;
 };

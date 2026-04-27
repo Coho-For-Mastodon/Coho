@@ -1,6 +1,41 @@
 import { test, expect, gotoWithAuth } from './fixtures';
 
 test.describe('Post Interactions', () => {
+  test('should close timeline item more-options menu when timeline scrolls', async ({
+    authedPage,
+  }) => {
+    await gotoWithAuth(authedPage, '/home');
+    await authedPage.waitForLoadState('networkidle');
+
+    const firstTimelineItem = authedPage.locator('timeline-item').first();
+    await expect(firstTimelineItem).toBeVisible({ timeout: 10000 });
+
+    const moreOptionsButton = firstTimelineItem
+      .locator('md-icon-button[name="ellipsis-vertical"]')
+      .first();
+    await expect(moreOptionsButton).toBeVisible({ timeout: 10000 });
+
+    await moreOptionsButton.click();
+
+    const visibleShareMenuItems = authedPage
+      .locator('md-menu-item:visible')
+      .filter({ hasText: 'Share' });
+    await expect(visibleShareMenuItems).toHaveCount(1);
+
+    await authedPage.evaluate(() => {
+      const timeline = document.querySelector('app-timeline');
+      const scroller = timeline?.shadowRoot?.querySelector(
+        '.scroller-fallback'
+      ) as HTMLElement | null;
+      if (!scroller) return;
+
+      scroller.scrollTop = scroller.scrollTop + 120;
+      scroller.dispatchEvent(new Event('scroll'));
+    });
+
+    await expect(visibleShareMenuItems).toHaveCount(0);
+  });
+
   test('should favourite a post', async ({ authedPage }) => {
     await gotoWithAuth(authedPage, '/home');
     await authedPage.waitForLoadState('networkidle');

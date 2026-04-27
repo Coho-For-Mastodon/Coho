@@ -8,6 +8,8 @@ export interface Settings {
   haptics?: boolean;
 }
 
+export const SETTINGS_CHANGED_EVENT = 'coho-settings-changed';
+
 const defaultSettings = {
   primary_color: '',
   font_size: '16px',
@@ -56,4 +58,12 @@ export async function setSettings(settings: Settings) {
   const { set } = await import('idb-keyval');
 
   await set('settings', savedSettings);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent<Settings>(SETTINGS_CHANGED_EVENT, {
+        detail: savedSettings,
+      })
+    );
+  }
 }

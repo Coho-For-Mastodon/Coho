@@ -722,14 +722,6 @@
   <source>More options</source>
   <target>Mehr Optionen</target>
 </trans-unit>
-<trans-unit id="s0f2c1f1aaf765577">
-  <source>Unmute @<x id="0" equiv-text="${this.user?.acct}"/></source>
-  <target>Stummschaltung aufheben @<x id="0" equiv-text="${this.user?.acct}"/></target>
-</trans-unit>
-<trans-unit id="sa23e9f89b092ea6b">
-  <source>Unblock @<x id="0" equiv-text="${this.user?.acct}"/></source>
-  <target>Entblocken @<x id="0" equiv-text="${this.user?.acct}"/></target>
-</trans-unit>
 <trans-unit id="s4ae28745a97a868e">
   <source>Mutuals</source>
   <target>Gegenseitig</target>
@@ -1208,9 +1200,6 @@
 </trans-unit>
 <trans-unit id="s5c1b3310ecdc878c">
   <source>Coho is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.</source>
-</trans-unit>
-<trans-unit id="s9ad3e85be89be269">
-  <source>Add @<x id="0" equiv-text="${this.user?.acct}"/> to list</source>
 </trans-unit>
 <trans-unit id="seed275e54b072145">
   <source>Home &amp; lists</source>
@@ -2138,6 +2127,30 @@
 </trans-unit>
 <trans-unit id="s022e4d30701b206d">
   <source>View profile</source>
+</trans-unit>
+<trans-unit id="se406d1a28a99f056">
+  <source>Turn off post notifications for @<x id="0" equiv-text="${this.user?.acct}"/></source>
+</trans-unit>
+<trans-unit id="s0a56f292264affab">
+  <source>Notify me when @<x id="0" equiv-text="${this.user?.acct}"/> posts</source>
+</trans-unit>
+<trans-unit id="s8ea9534aa46849f3">
+  <source>Turn off post notifications</source>
+</trans-unit>
+<trans-unit id="se7e9621444f114c2">
+  <source>Notify me when this user posts</source>
+</trans-unit>
+<trans-unit id="se0f67eae944f8f94">
+  <source>Mute</source>
+</trans-unit>
+<trans-unit id="s2b2ae20d26f78ac2">
+  <source>Block</source>
+</trans-unit>
+<trans-unit id="s9b6b1422027158eb">
+  <source>Report</source>
+</trans-unit>
+<trans-unit id="s07ba1a869cb2387b">
+  <source>View my profile</source>
 </trans-unit>
 </body>
 </file>

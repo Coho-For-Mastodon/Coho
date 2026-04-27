@@ -83,6 +83,22 @@ export class HomeSidebar extends LitElement {
         border: 2px solid var(--md-sys-color-primary);
       }
 
+      #profile-card-content img.profile-avatar {
+        cursor: pointer;
+        transition:
+          transform 0.15s ease-in-out,
+          box-shadow 0.15s ease-in-out;
+      }
+
+      #profile-card-content img.profile-avatar:hover {
+        transform: scale(1.04);
+      }
+
+      #profile-card-content img.profile-avatar:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px var(--md-sys-color-primary);
+      }
+
       #profile-card-content h3 {
         margin: 0;
         font-size: 1.1rem;
@@ -330,8 +346,20 @@ export class HomeSidebar extends LitElement {
 
           ${this.user && this.user.avatar
             ? html`<img
+                class="profile-avatar"
                 src="${this.user.avatar}"
                 alt="${this.user.display_name}"
+                role="button"
+                tabindex="0"
+                aria-label=${msg('View my profile')}
+                title=${msg('View my profile')}
+                @click="${() => this.viewMyProfile()}"
+                @keydown="${(event: KeyboardEvent) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    this.viewMyProfile();
+                  }
+                }}"
               />`
             : html`<md-skeleton
                 id="profile-avatar"

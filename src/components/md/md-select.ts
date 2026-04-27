@@ -324,10 +324,6 @@ export class MdSelect extends LitElement {
     document.removeEventListener('keydown', this._handleKeydown);
   }
 
-  firstUpdated() {
-    this._updateOptions();
-  }
-
   private _optionClickHandlers = new WeakMap<MdOption, () => void>();
 
   private _updateOptions() {
@@ -512,10 +508,17 @@ export class MdSelect extends LitElement {
   private _getDisplayLabel(): string {
     if (!this.value) return this.placeholder;
 
-    const selectedOption = this._options.find(
-      (opt) => opt.value === this.value
-    );
-    return selectedOption?.textContent?.trim() || this.value;
+    // Query light DOM directly so the label is correct even before
+    // _options is populated by the slotchange handler.
+    const fromDOM = (
+      this.querySelector(
+        `md-option[value="${CSS.escape(this.value)}"]`
+      ) as MdOption | null
+    )?.textContent?.trim();
+    if (fromDOM) return fromDOM;
+
+    const fromState = this._options.find((opt) => opt.value === this.value);
+    return fromState?.textContent?.trim() || this.value;
   }
 
   render() {

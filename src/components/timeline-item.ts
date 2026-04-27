@@ -2,7 +2,11 @@ import { LitElement, html, css, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { msg, str } from '@lit/localize';
 
-import { getSettings, Settings } from '../services/settings';
+import {
+  getSettings,
+  Settings,
+  SETTINGS_CHANGED_EVENT,
+} from '../services/settings';
 import { getCurrentUser } from '../services/account';
 import {
   toggleStatusAction,
@@ -55,6 +59,12 @@ export class TimelineItem extends LitElement {
   @state() reportAccountAcct: string = '';
   @state() reportStatusId: string | undefined;
   @state() isOnDeviceTranslateAvailable: boolean = false;
+
+  private _handleSettingsChanged = (event: Event) => {
+    const detail = (event as CustomEvent<Settings>).detail;
+    if (!detail) return;
+    this.settings = detail;
+  };
 
   device: 'mobile' | 'desktop' = 'mobile';
 
@@ -211,25 +221,85 @@ export class TimelineItem extends LitElement {
       }
 
       .sensitive {
-        background: rgb(32 32 35);
+        position: relative;
         z-index: 1;
         display: flex;
-        align-items: center;
-        text-align: center;
-        justify-content: center;
         flex-direction: column;
-        border-radius: var(--md-sys-shape-corner-small);
-        padding: 22px;
-      }
-
-      .sensitive span {
-        font-weight: bold;
-        display: block;
-        width: 142px;
-      }
-
-      .sensitive p {
+        align-items: center;
+        justify-content: center;
         text-align: center;
+        gap: 10px;
+        padding: 24px 20px 20px;
+        border-radius: var(--md-sys-shape-corner-large, 16px);
+        background: var(
+          --md-sys-color-surface-container-high,
+          rgb(36 36 40)
+        );
+        border: 1px solid
+          color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #49454f) 45%,
+            transparent
+          );
+      }
+
+      .sensitive-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(
+          --md-sys-color-secondary-container,
+          rgba(255, 255, 255, 0.08)
+        );
+        color: var(--md-sys-color-on-secondary-container, #cac4d0);
+        margin-bottom: 2px;
+      }
+
+      .sensitive-icon md-icon {
+        font-size: 22px;
+        width: 22px;
+        height: 22px;
+      }
+
+      .sensitive-title {
+        font-weight: 500;
+        font-size: var(--md-sys-typescale-title-medium-font-size, 16px);
+        line-height: 1.25;
+        color: var(--md-sys-color-on-surface, #e6e1e5);
+      }
+
+      .sensitive-text {
+        margin: 0;
+        max-width: 340px;
+        font-size: var(--md-sys-typescale-body-medium-font-size, 14px);
+        line-height: 1.4;
+        color: var(--md-sys-color-on-surface-variant, #cac4d0);
+      }
+
+      .sensitive-text--muted {
+        font-style: italic;
+        opacity: 0.75;
+      }
+
+      .sensitive-action {
+        margin-top: 6px;
+      }
+
+      /* Legacy fallbacks for any remaining markup */
+      .sensitive > span {
+        font-weight: 500;
+        font-size: var(--md-sys-typescale-title-medium-font-size, 16px);
+        color: var(--md-sys-color-on-surface, #e6e1e5);
+      }
+
+      .sensitive > p {
+        margin: 0;
+        max-width: 340px;
+        font-size: var(--md-sys-typescale-body-medium-font-size, 14px);
+        color: var(--md-sys-color-on-surface-variant, #cac4d0);
       }
 
       .filter-warning {
@@ -374,7 +444,23 @@ export class TimelineItem extends LitElement {
         }
 
         .sensitive {
-          background: white;
+          background: var(
+            --md-sys-color-surface-container-high,
+            rgb(243 243 247)
+          );
+          border-color: color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, #cac4d0) 60%,
+            transparent
+          );
+        }
+
+        .sensitive-icon {
+          background: var(
+            --md-sys-color-secondary-container,
+            rgba(0, 0, 0, 0.06)
+          );
+          color: var(--md-sys-color-on-secondary-container, #1d1b20);
         }
       }
 
@@ -761,11 +847,19 @@ export class TimelineItem extends LitElement {
 
     // Add keyboard event listener for when this item is focused
     this.addEventListener('keydown', this._handleKeydown);
+    window.addEventListener(
+      SETTINGS_CHANGED_EVENT,
+      this._handleSettingsChanged
+    );
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeydown);
+    window.removeEventListener(
+      SETTINGS_CHANGED_EVENT,
+      this._handleSettingsChanged
+    );
   }
 
   updated(changed: PropertyValues) {

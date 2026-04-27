@@ -59,6 +59,7 @@ export class AppProfile extends LitElement {
   @state() pinnedPosts: Post[] = [];
   @state() followed: boolean = false;
   @state() following: boolean = false;
+  @state() notifying: boolean = false;
   @state() muted: boolean = false;
   @state() blocked: boolean = false;
   @state() followStatusLoaded: boolean = false;
@@ -978,6 +979,7 @@ export class AppProfile extends LitElement {
     this.pinnedPosts = [];
     this.followed = false;
     this.following = false;
+    this.notifying = false;
     this.muted = false;
     this.blocked = false;
     this.followStatusLoaded = false;
@@ -1049,6 +1051,7 @@ export class AppProfile extends LitElement {
       if (Array.isArray(relationshipData) && relationshipData[0]) {
         this.followed = relationshipData[0].following;
         this.following = relationshipData[0].followed_by;
+        this.notifying = Boolean(relationshipData[0].notifying);
         this.muted = relationshipData[0].muting;
         this.blocked = relationshipData[0].blocking;
       }
@@ -1263,6 +1266,42 @@ export class AppProfile extends LitElement {
         this.requestUpdate();
       },
       { errorMessage: 'Failed to unfollow user.' }
+    );
+  }
+
+  async toggleNotify() {
+    if (!this.user || !this.followed) return;
+
+    if (this.isGuestMode) {
+      window.dispatchEvent(
+        new CustomEvent('app-toast', {
+          detail: {
+            message: 'Sign in to manage post notifications',
+            variant: 'info',
+          },
+        })
+      );
+      return;
+    }
+
+    const originalNotifying = this.notifying;
+    const nextNotifying = !originalNotifying;
+
+    import('../utils/haptics').then(({ hapticImpact }) =>
+      hapticImpact('light')
+    );
+
+    await withOptimisticUpdate(
+      () => {
+        this.notifying = nextNotifying;
+        this.requestUpdate();
+      },
+      () => followUser(this.user!.id, { notify: nextNotifying }),
+      () => {
+        this.notifying = originalNotifying;
+        this.requestUpdate();
+      },
+      { errorMessage: 'Failed to update post notifications.' }
     );
   }
 
@@ -1640,6 +1679,24 @@ export class AppProfile extends LitElement {
                               @click="${() => this.follow()}"
                               >${msg('Follow')}</md-button
                             >`}
+                        ${this.followed
+                          ? html`<md-icon-button
+                              name="${this.notifying
+                                ? 'notifications'
+                                : 'notifications-off'}"
+                              .label="${this.notifying
+                                ? msg(
+                                    str`Turn off post notifications for @${this.user?.acct}`
+                                  )
+                                : msg(
+                                    str`Notify me when @${this.user?.acct} posts`
+                                  )}"
+                              title="${this.notifying
+                                ? msg('Turn off post notifications')
+                                : msg('Notify me when this user posts')}"
+                              @click="${() => this.toggleNotify()}"
+                            ></md-icon-button>`
+                          : null}
                         <md-dropdown placement="bottom-end">
                           <md-icon-button
                             slot="trigger"
@@ -1655,7 +1712,7 @@ export class AppProfile extends LitElement {
                                     slot="prefix"
                                     name="volume-mute"
                                   ></md-icon>
-                                  ${msg(str`Unmute @${this.user?.acct}`)}
+                                  ${msg('Unmute')}
                                 </md-menu-item>`
                               : html`<md-menu-item
                                   @click="${() => this.mute()}"
@@ -1664,32 +1721,32 @@ export class AppProfile extends LitElement {
                                     slot="prefix"
                                     name="volume-mute"
                                   ></md-icon>
-                                  ${msg(str`Mute @${this.user?.acct}`)}
+                                  ${msg('Mute')}
                                 </md-menu-item>`}
                             ${this.blocked
                               ? html`<md-menu-item
                                   @click="${() => this.unblock()}"
                                 >
                                   <md-icon slot="prefix" name="ban"></md-icon>
-                                  ${msg(str`Unblock @${this.user?.acct}`)}
+                                  ${msg('Unblock')}
                                 </md-menu-item>`
                               : html`<md-menu-item
                                   @click="${() => this.block()}"
                                 >
                                   <md-icon slot="prefix" name="ban"></md-icon>
-                                  ${msg(str`Block @${this.user?.acct}`)}
+                                  ${msg('Block')}
                                 </md-menu-item>`}
                             <md-menu-item
                               @click="${() => this.openListMembershipDialog()}"
                             >
                               <md-icon slot="prefix" name="albums"></md-icon>
-                              ${msg(str`Add @${this.user?.acct} to list`)}
+                              ${msg('Add to list')}
                             </md-menu-item>
                             <md-menu-item
                               @click="${() => this.openReportDialog()}"
                             >
                               <md-icon slot="prefix" name="flag"></md-icon>
-                              ${msg(str`Report @${this.user?.acct}`)}
+                              ${msg('Report')}
                             </md-menu-item>
                           </md-menu>
                         </md-dropdown>

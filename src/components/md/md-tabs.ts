@@ -261,12 +261,15 @@ export class MdTabs extends LitElement {
     this._updatePanels();
   };
 
-  firstUpdated() {
-    // Set initial active tab
-    if (this.active) {
+  willUpdate(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('active') && this.active !== undefined) {
       this._activePanel = this.active;
-    } else {
-      // Auto-select first tab if no active specified
+    }
+  }
+
+  firstUpdated() {
+    // Auto-select first tab only if no active panel was specified
+    if (!this._activePanel) {
       const tabs = this._getTabs();
       if (tabs.length > 0) {
         this._activePanel = tabs[0].panel || '';
@@ -319,13 +322,9 @@ export class MdTabs extends LitElement {
   }
 
   updated(changedProperties: Map<string, unknown>) {
-    if (changedProperties.has('active') && this.active) {
-      this._activePanel = this.active;
-      this._updatePanels();
-    }
-
-    // Update tabs when orientation or placement changes (for Firefox)
+    // _activePanel is already updated in willUpdate; just sync the DOM.
     if (
+      changedProperties.has('_activePanel') ||
       changedProperties.has('orientation') ||
       changedProperties.has('placement')
     ) {
