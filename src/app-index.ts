@@ -2,6 +2,7 @@ import { LitElement, css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 
 import { router } from './router/routes';
+import { initPerfObserver, perfMark, perfMeasure } from './utils/perf-observer';
 
 // Initialize localization (must be imported early)
 import './config/localization.js';
@@ -64,6 +65,8 @@ export class AppIndex extends LitElement {
 
   async connectedCallback() {
     super.connectedCallback();
+    perfMark('app-bootstrap-start');
+    initPerfObserver();
 
     // Register route-changed listener synchronously — must be in place before
     // router.init() to avoid missing the initial event in browsers with native
@@ -235,6 +238,13 @@ export class AppIndex extends LitElement {
   }
 
   async firstUpdated() {
+    perfMark('app-bootstrap-end');
+    perfMeasure(
+      'App bootstrap (connectedCallback → firstUpdated)',
+      'app-bootstrap-start',
+      'app-bootstrap-end'
+    );
+
     // Check initial authentication state
     await this.checkAuthenticationState();
 

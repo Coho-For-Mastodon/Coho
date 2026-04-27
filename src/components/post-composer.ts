@@ -42,6 +42,7 @@ import {
   isHandwritingRecognitionAvailable,
 } from '../services/ai';
 import { showInfoToast, showErrorToast } from '../utils/optimistic-updates';
+import { perfMark, perfMeasure } from '../utils/perf-observer';
 import {
   estimateMentionDropdownHeight,
   findMentionMatch,
@@ -1592,8 +1593,15 @@ export class PostComposer extends LitElement {
   }
 
   private async _uploadFile(file: File, tempId: string) {
+    perfMark(`media-upload-start:${file.name}`);
     try {
       const result = await uploadMediaBlob(file);
+      perfMark(`media-upload-end:${file.name}`);
+      perfMeasure(
+        `Media upload (${file.name})`,
+        `media-upload-start:${file.name}`,
+        `media-upload-end:${file.name}`
+      );
 
       // Find and update the attachment
       const index = this.attachments.findIndex((a) => a.id === tempId);
@@ -2293,6 +2301,8 @@ export class PostComposer extends LitElement {
     const status = this.textArea?.value;
     if (!status || status.length === 0) return;
 
+    perfMark('post-submit-start');
+
     const scheduledAt =
       submitScheduledAt ??
       (!this.compact && this.scheduleEnabled
@@ -2418,6 +2428,13 @@ export class PostComposer extends LitElement {
           )
         );
       }
+
+      perfMark('post-submit-end');
+      perfMeasure(
+        'Post submit (total)',
+        'post-submit-start',
+        'post-submit-end'
+      );
 
       worker.terminate();
       this.isPublishing = false;
