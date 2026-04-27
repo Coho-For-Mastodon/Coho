@@ -14,6 +14,7 @@ test.describe('Stateful Flows', () => {
     const favButton = firstPost.locator('md-button[aria-label="Favourite"]');
     await expect(favButton).toBeVisible({ timeout: 10000 });
     await expect(favButton).toHaveAttribute('aria-pressed', 'false');
+    await expect(favButton).toContainText('5');
     await favButton.click();
 
     // Verify it toggled to favourited
@@ -23,6 +24,7 @@ test.describe('Stateful Flows', () => {
     await expect(unfavButton).toHaveAttribute('aria-pressed', 'true', {
       timeout: 10000,
     });
+    await expect(unfavButton).toContainText('6');
 
     // Now unfavourite
     await unfavButton.click();
@@ -32,6 +34,40 @@ test.describe('Stateful Flows', () => {
     await expect(revertedFav).toHaveAttribute('aria-pressed', 'false', {
       timeout: 10000,
     });
+    await expect(revertedFav).toContainText('5');
+  });
+
+  test('should boost and undo boost with count updates', async ({
+    statefulPage,
+  }) => {
+    await gotoWithAuth(statefulPage, '/home');
+    await statefulPage.waitForLoadState('networkidle');
+
+    const firstPost = statefulPage.locator('timeline-item').first();
+    await expect(firstPost).toBeVisible({ timeout: 10000 });
+
+    const boostButton = firstPost.locator('md-button[aria-label="Boost"]');
+    await expect(boostButton).toBeVisible({ timeout: 10000 });
+    await expect(boostButton).toHaveAttribute('aria-pressed', 'false');
+    await expect(boostButton).toContainText('2');
+
+    await boostButton.click();
+
+    const undoBoostButton = firstPost.locator(
+      'md-button[aria-label="Undo boost"]'
+    );
+    await expect(undoBoostButton).toHaveAttribute('aria-pressed', 'true', {
+      timeout: 10000,
+    });
+    await expect(undoBoostButton).toContainText('3');
+
+    await undoBoostButton.click();
+
+    const revertedBoost = firstPost.locator('md-button[aria-label="Boost"]');
+    await expect(revertedBoost).toHaveAttribute('aria-pressed', 'false', {
+      timeout: 10000,
+    });
+    await expect(revertedBoost).toContainText('2');
   });
 
   test('should bookmark and remove bookmark', async ({ statefulPage }) => {
