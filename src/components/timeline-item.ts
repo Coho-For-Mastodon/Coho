@@ -2,7 +2,11 @@ import { LitElement, html, css, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { msg, str } from '@lit/localize';
 
-import { getSettings, Settings } from '../services/settings';
+import {
+  getSettings,
+  Settings,
+  SETTINGS_CHANGED_EVENT,
+} from '../services/settings';
 import { getCurrentUser } from '../services/account';
 import {
   toggleStatusAction,
@@ -55,6 +59,12 @@ export class TimelineItem extends LitElement {
   @state() reportAccountAcct: string = '';
   @state() reportStatusId: string | undefined;
   @state() isOnDeviceTranslateAvailable: boolean = false;
+
+  private _handleSettingsChanged = (event: Event) => {
+    const detail = (event as CustomEvent<Settings>).detail;
+    if (!detail) return;
+    this.settings = detail;
+  };
 
   device: 'mobile' | 'desktop' = 'mobile';
 
@@ -837,11 +847,19 @@ export class TimelineItem extends LitElement {
 
     // Add keyboard event listener for when this item is focused
     this.addEventListener('keydown', this._handleKeydown);
+    window.addEventListener(
+      SETTINGS_CHANGED_EVENT,
+      this._handleSettingsChanged
+    );
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeydown);
+    window.removeEventListener(
+      SETTINGS_CHANGED_EVENT,
+      this._handleSettingsChanged
+    );
   }
 
   updated(changed: PropertyValues) {

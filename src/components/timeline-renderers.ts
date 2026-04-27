@@ -378,40 +378,40 @@ export function renderReplyContext(
           }}"
           ><md-icon slot="suffix" name="bookmark"></md-icon
         ></md-button>
-        ${state.settings && state.settings.wellness === false
-          ? html`<md-button
-              variant="text"
-              style="--md-sys-color-primary: ${state.isBoosted ||
-              state.tweet?.reply_to?.favourited
-                ? 'var(--sl-color-primary-600)'
-                : 'var(--md-sys-color-on-surface-variant)'}"
-              pill
-              size="small"
-              @click="${(e: Event) => {
-                e.stopPropagation();
-                handlers.favorite(state.tweet?.reply_to?.id || '');
-              }}"
-              >${state.tweet?.reply_to?.favourites_count}
-              <md-icon slot="suffix" name="heart"></md-icon
-            ></md-button>`
-          : null}
-        ${state.settings && state.settings.wellness === false
-          ? html`<md-button
-              variant="text"
-              style="--md-sys-color-primary: ${state.isReblogged ||
-              state.tweet?.reply_to?.reblogged
-                ? 'var(--sl-color-primary-600)'
-                : 'var(--md-sys-color-on-surface-variant)'}"
-              pill
-              size="small"
-              @click="${(e: Event) => {
-                e.stopPropagation();
-                handlers.reblog(state.tweet?.reply_to?.id || '');
-              }}"
-              >${state.tweet?.reply_to?.reblogs_count}
-              <md-icon slot="suffix" name="repeat"></md-icon
-            ></md-button>`
-          : null}
+        <md-button
+          variant="text"
+          style="--md-sys-color-primary: ${state.isBoosted ||
+          state.tweet?.reply_to?.favourited
+            ? 'var(--sl-color-primary-600)'
+            : 'var(--md-sys-color-on-surface-variant)'}"
+          pill
+          size="small"
+          @click="${(e: Event) => {
+            e.stopPropagation();
+            handlers.favorite(state.tweet?.reply_to?.id || '');
+          }}"
+          >${state.settings?.wellness
+            ? ''
+            : state.tweet?.reply_to?.favourites_count}
+          <md-icon slot="suffix" name="heart"></md-icon
+        ></md-button>
+        <md-button
+          variant="text"
+          style="--md-sys-color-primary: ${state.isReblogged ||
+          state.tweet?.reply_to?.reblogged
+            ? 'var(--sl-color-primary-600)'
+            : 'var(--md-sys-color-on-surface-variant)'}"
+          pill
+          size="small"
+          @click="${(e: Event) => {
+            e.stopPropagation();
+            handlers.reblog(state.tweet?.reply_to?.id || '');
+          }}"
+          >${state.settings?.wellness
+            ? ''
+            : state.tweet?.reply_to?.reblogs_count}
+          <md-icon slot="suffix" name="repeat"></md-icon
+        ></md-button>
       </div>
     </md-card>
     <div class="thread-connector-bar">
@@ -662,50 +662,46 @@ export function renderRegularTweet(
           @click="${() => handlers.bookmark(state.tweet?.id || '')}"
           ><md-icon slot="suffix" src="/assets/bookmark-outline.svg"></md-icon
         ></md-button>
-        ${
-          state.settings && state.settings.wellness === false
-            ? html`<md-button
-                variant="text"
-                style="--md-sys-color-primary: ${state.isBoosted ||
-                state.tweet?.favourited
-                  ? 'var(--sl-color-primary-600)'
-                  : 'var(--md-sys-color-on-surface-variant)'}"
-                pill
-                size="small"
-                aria-pressed="${state.isBoosted || state.tweet?.favourited
-                  ? 'true'
-                  : 'false'}"
-                aria-label="${state.isBoosted || state.tweet?.favourited
-                  ? 'Unfavourite'
-                  : 'Favourite'}"
-                @click="${() => handlers.favorite(state.tweet?.id || '')}"
-                >${state.tweet?.favourites_count}
-                <md-icon slot="suffix" name="heart"></md-icon
-              ></md-button>`
-            : null
-        }
-        ${
-          state.settings && state.settings.wellness === false
-            ? html`<md-button
-                variant="text"
-                style="--md-sys-color-primary: ${state.isReblogged ||
-                state.tweet?.reblogged
-                  ? 'var(--sl-color-primary-600)'
-                  : 'var(--md-sys-color-on-surface-variant)'}"
-                pill
-                size="small"
-                aria-pressed="${state.isReblogged || state.tweet?.reblogged
-                  ? 'true'
-                  : 'false'}"
-                aria-label="${state.isReblogged || state.tweet?.reblogged
-                  ? 'Undo boost'
-                  : 'Boost'}"
-                @click="${() => handlers.reblog(state.tweet?.id || '')}"
-                >${state.tweet?.reblogs_count}
-                <md-icon slot="suffix" name="repeat"></md-icon
-              ></md-button>`
-            : null
-        }
+        <md-button
+          variant="text"
+          style="--md-sys-color-primary: ${
+            state.isBoosted || state.tweet?.favourited
+              ? 'var(--sl-color-primary-600)'
+              : 'var(--md-sys-color-on-surface-variant)'
+          }"
+          pill
+          size="small"
+          aria-pressed="${
+            state.isBoosted || state.tweet?.favourited ? 'true' : 'false'
+          }"
+          aria-label="${
+            state.isBoosted || state.tweet?.favourited
+              ? 'Unfavourite'
+              : 'Favourite'
+          }"
+          @click="${() => handlers.favorite(state.tweet?.id || '')}"
+          >${state.settings?.wellness ? '' : state.tweet?.favourites_count}
+          <md-icon slot="suffix" name="heart"></md-icon
+        ></md-button>
+        <md-button
+          variant="text"
+          style="--md-sys-color-primary: ${
+            state.isReblogged || state.tweet?.reblogged
+              ? 'var(--sl-color-primary-600)'
+              : 'var(--md-sys-color-on-surface-variant)'
+          }"
+          pill
+          size="small"
+          aria-pressed="${
+            state.isReblogged || state.tweet?.reblogged ? 'true' : 'false'
+          }"
+          aria-label="${
+            state.isReblogged || state.tweet?.reblogged ? 'Undo boost' : 'Boost'
+          }"
+          @click="${() => handlers.reblog(state.tweet?.id || '')}"
+          >${state.settings?.wellness ? '' : state.tweet?.reblogs_count}
+          <md-icon slot="suffix" name="repeat"></md-icon
+        ></md-button>
         ${
           !state.guestMode &&
           state.tweet?.quote_approval?.current_user !== 'denied' &&
@@ -823,46 +819,42 @@ export function renderThreadContinuation(
               }}"
               ><md-icon slot="suffix" name="bookmark"></md-icon
             ></md-button>
-            ${state.settings && state.settings.wellness === false
-              ? html`<md-button
-                  variant="text"
-                  style="--md-sys-color-primary: ${threadPost.favourited
-                    ? 'var(--sl-color-primary-600)'
-                    : 'var(--md-sys-color-on-surface-variant)'}"
-                  pill
-                  size="small"
-                  aria-pressed="${threadPost.favourited ? 'true' : 'false'}"
-                  aria-label="${threadPost.favourited
-                    ? msg('Unfavourite')
-                    : msg('Favourite')}"
-                  @click="${(e: Event) => {
-                    e.stopPropagation();
-                    handlers.favorite(threadPost.id);
-                  }}"
-                  >${threadPost.favourites_count}
-                  <md-icon slot="suffix" name="heart"></md-icon
-                ></md-button>`
-              : null}
-            ${state.settings && state.settings.wellness === false
-              ? html`<md-button
-                  variant="text"
-                  style="--md-sys-color-primary: ${threadPost.reblogged
-                    ? 'var(--sl-color-primary-600)'
-                    : 'var(--md-sys-color-on-surface-variant)'}"
-                  pill
-                  size="small"
-                  aria-pressed="${threadPost.reblogged ? 'true' : 'false'}"
-                  aria-label="${threadPost.reblogged
-                    ? msg('Undo boost')
-                    : msg('Boost')}"
-                  @click="${(e: Event) => {
-                    e.stopPropagation();
-                    handlers.reblog(threadPost.id);
-                  }}"
-                  >${threadPost.reblogs_count}
-                  <md-icon slot="suffix" name="repeat"></md-icon
-                ></md-button>`
-              : null}
+            <md-button
+              variant="text"
+              style="--md-sys-color-primary: ${threadPost.favourited
+                ? 'var(--sl-color-primary-600)'
+                : 'var(--md-sys-color-on-surface-variant)'}"
+              pill
+              size="small"
+              aria-pressed="${threadPost.favourited ? 'true' : 'false'}"
+              aria-label="${threadPost.favourited
+                ? msg('Unfavourite')
+                : msg('Favourite')}"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                handlers.favorite(threadPost.id);
+              }}"
+              >${state.settings?.wellness ? '' : threadPost.favourites_count}
+              <md-icon slot="suffix" name="heart"></md-icon
+            ></md-button>
+            <md-button
+              variant="text"
+              style="--md-sys-color-primary: ${threadPost.reblogged
+                ? 'var(--sl-color-primary-600)'
+                : 'var(--md-sys-color-on-surface-variant)'}"
+              pill
+              size="small"
+              aria-pressed="${threadPost.reblogged ? 'true' : 'false'}"
+              aria-label="${threadPost.reblogged
+                ? msg('Undo boost')
+                : msg('Boost')}"
+              @click="${(e: Event) => {
+                e.stopPropagation();
+                handlers.reblog(threadPost.id);
+              }}"
+              >${state.settings?.wellness ? '' : threadPost.reblogs_count}
+              <md-icon slot="suffix" name="repeat"></md-icon
+            ></md-button>
             ${!state.guestMode &&
             threadPost.quote_approval?.current_user !== 'denied' &&
             threadPost.quote_approval?.current_user !== 'unknown'
@@ -1120,34 +1112,32 @@ export function renderReblog(
           @click="${() => handlers.bookmark(state.tweet?.id || '')}"
           ><md-icon slot="suffix" name="bookmark"></md-icon
         ></md-button>
-        ${state.settings && state.settings.wellness === false
-          ? html`<md-button
-              variant="text"
-              style="--md-sys-color-primary: ${state.isBoosted ||
-              state.tweet?.favourited
-                ? 'var(--sl-color-primary-600)'
-                : 'var(--md-sys-color-on-surface-variant)'}"
-              pill
-              size="small"
-              @click="${() => handlers.favorite(state.tweet?.id || '')}"
-              >${state.tweet.reblog.favourites_count}
-              <md-icon slot="suffix" name="heart"></md-icon
-            ></md-button>`
-          : null}
-        ${state.settings && state.settings.wellness === false
-          ? html`<md-button
-              variant="text"
-              style="--md-sys-color-primary: ${state.isReblogged ||
-              state.tweet?.reblogged
-                ? 'var(--sl-color-primary-600)'
-                : 'var(--md-sys-color-on-surface-variant)'}"
-              pill
-              size="small"
-              @click="${() => handlers.reblog(state.tweet?.id || '')}"
-              >${state.tweet.reblog.reblogs_count}
-              <md-icon slot="suffix" name="repeat"></md-icon
-            ></md-button>`
-          : null}
+        <md-button
+          variant="text"
+          style="--md-sys-color-primary: ${state.isBoosted ||
+          state.tweet?.favourited
+            ? 'var(--sl-color-primary-600)'
+            : 'var(--md-sys-color-on-surface-variant)'}"
+          pill
+          size="small"
+          @click="${() => handlers.favorite(state.tweet?.id || '')}"
+          >${state.settings?.wellness
+            ? ''
+            : state.tweet.reblog.favourites_count}
+          <md-icon slot="suffix" name="heart"></md-icon
+        ></md-button>
+        <md-button
+          variant="text"
+          style="--md-sys-color-primary: ${state.isReblogged ||
+          state.tweet?.reblogged
+            ? 'var(--sl-color-primary-600)'
+            : 'var(--md-sys-color-on-surface-variant)'}"
+          pill
+          size="small"
+          @click="${() => handlers.reblog(state.tweet?.id || '')}"
+          >${state.settings?.wellness ? '' : state.tweet.reblog.reblogs_count}
+          <md-icon slot="suffix" name="repeat"></md-icon
+        ></md-button>
         ${!state.guestMode &&
         state.tweet?.reblog?.quote_approval?.current_user !== 'denied' &&
         state.tweet?.reblog?.quote_approval?.current_user !== 'unknown'
@@ -1321,32 +1311,28 @@ export function renderThread(
                 @click="${() => handlers.bookmark(threadPost.id)}"
                 ><md-icon slot="suffix" name="bookmark"></md-icon
               ></md-button>
-              ${state.settings && state.settings.wellness === false
-                ? html`<md-button
-                    variant="text"
-                    style="--md-sys-color-primary: ${threadPost.favourited
-                      ? 'var(--sl-color-primary-600)'
-                      : 'var(--md-sys-color-on-surface-variant)'}"
-                    pill
-                    size="small"
-                    @click="${() => handlers.favorite(threadPost.id)}"
-                    >${threadPost.favourites_count}
-                    <md-icon slot="suffix" name="heart"></md-icon
-                  ></md-button>`
-                : null}
-              ${state.settings && state.settings.wellness === false
-                ? html`<md-button
-                    variant="text"
-                    style="--md-sys-color-primary: ${threadPost.reblogged
-                      ? 'var(--sl-color-primary-600)'
-                      : 'var(--md-sys-color-on-surface-variant)'}"
-                    pill
-                    size="small"
-                    @click="${() => handlers.reblog(threadPost.id)}"
-                    >${threadPost.reblogs_count}
-                    <md-icon slot="suffix" name="repeat"></md-icon
-                  ></md-button>`
-                : null}
+              <md-button
+                variant="text"
+                style="--md-sys-color-primary: ${threadPost.favourited
+                  ? 'var(--sl-color-primary-600)'
+                  : 'var(--md-sys-color-on-surface-variant)'}"
+                pill
+                size="small"
+                @click="${() => handlers.favorite(threadPost.id)}"
+                >${state.settings?.wellness ? '' : threadPost.favourites_count}
+                <md-icon slot="suffix" name="heart"></md-icon
+              ></md-button>
+              <md-button
+                variant="text"
+                style="--md-sys-color-primary: ${threadPost.reblogged
+                  ? 'var(--sl-color-primary-600)'
+                  : 'var(--md-sys-color-on-surface-variant)'}"
+                pill
+                size="small"
+                @click="${() => handlers.reblog(threadPost.id)}"
+                >${state.settings?.wellness ? '' : threadPost.reblogs_count}
+                <md-icon slot="suffix" name="repeat"></md-icon
+              ></md-button>
             </div>
           </md-card>
         `
