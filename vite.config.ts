@@ -179,7 +179,11 @@ customPlugins.push({
     handler(html: string, { bundle }: { bundle?: Record<string, unknown> }) {
       if (!bundle) return html;
 
-      const chunksToPreload = ['vendor-idb-keyval'];
+      const chunksToPreload = [
+        'auth-session',
+        'vendor-idb-keyval',
+        'firebase-',
+      ];
       const preloadLinks: string[] = [];
 
       for (const chunkPattern of chunksToPreload) {
@@ -301,6 +305,14 @@ export default defineConfig({
       ],
       output: {
         manualChunks(id) {
+          if (id.includes('src/utils/perf-observer')) {
+            return 'perf-observer';
+          }
+
+          if (id.includes('pages/app-login')) {
+            return 'app-login';
+          }
+
           if (id.includes('node_modules')) {
             if (
               id.includes('/node_modules/lit') ||
@@ -311,6 +323,10 @@ export default defineConfig({
 
             if (id.includes('/node_modules/idb-keyval')) {
               return 'vendor-idb-keyval';
+            }
+
+            if (id.includes('/web-router')) {
+              return 'vendor-web-router';
             }
 
             // Keep tslib in a dedicated chunk so shared TypeScript helper code can
