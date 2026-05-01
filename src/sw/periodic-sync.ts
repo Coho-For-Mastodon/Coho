@@ -8,7 +8,6 @@
 import { set } from 'idb-keyval';
 import type { PeriodicSyncEvent } from './types';
 import { getAuthHeaders } from './helpers';
-import { getNotifications } from './notifications';
 import { getPeriodicTimelineCacheKey } from '../utils/account-scoped-storage';
 
 /**
@@ -47,9 +46,6 @@ export function handlePeriodicSync(event: Event): void {
   const periodicSyncEvent = event as PeriodicSyncEvent;
 
   switch (periodicSyncEvent.tag) {
-    case 'get-notifications':
-      periodicSyncEvent.waitUntil(getNotifications());
-      break;
     case 'timeline-sync':
       periodicSyncEvent.waitUntil(timelineSync());
       break;

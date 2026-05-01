@@ -1,18 +1,4 @@
 /// <reference lib="webworker" />
-/**
- * Service Worker - Orchestrator
- *
- * This is the entry point for Coho's service worker. It imports all
- * functionality from focused modules under `src/sw/` and wires them
- * to the appropriate event listeners.
- *
- * Built by custom Vite plugins (see vite.config.ts):
- * - Dev: outputs to public/sw.js (unminified)
- * - Prod: outputs to dist/sw.js (minified with inlined imports)
- *
- * All imports are statically resolved and bundled into a single file
- * by Rollup's `inlineDynamicImports: true` setting.
- */
 
 import { get, set } from 'idb-keyval';
 import type { CohoServiceWorkerGlobalScope } from './sw/types';

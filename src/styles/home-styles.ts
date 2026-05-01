@@ -149,6 +149,8 @@ export const homeStyles = css`
     bottom: 90px;
     right: 16px;
     display: none;
+
+    z-index: 100;
   }
 
   @media (min-width: 821px) and (max-width: 1030px) {
@@ -192,6 +194,7 @@ export const homeStyles = css`
     #mobile-actions {
       display: flex;
       bottom: calc(env(safe-area-inset-bottom, 0px) + 86px);
+      z-index: 100;
     }
 
     #mobile-actions md-button md-icon {

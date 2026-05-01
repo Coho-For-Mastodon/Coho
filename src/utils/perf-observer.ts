@@ -97,8 +97,6 @@ export function initPerfObserver(): void {
   _observeLongTasks();
   _observeCLS();
   _observeInteractions();
-  _observeSlowResources();
-  _observeSoftNavigation();
 }
 
 // ── LCP ─────────────────────────────────────────────────────────────────────
@@ -300,55 +298,5 @@ function _observeInteractions() {
     } as PerformanceObserverInit);
   } catch {
     /* unsupported */
-  }
-}
-
-// ── Slow resources ────────────────────────────────────────────────────────────
-function _observeSlowResources() {
-  try {
-    const SLOW_THRESHOLD_MS = 500;
-
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        if (entry.duration >= SLOW_THRESHOLD_MS) {
-          const resEntry = entry as PerformanceResourceTiming;
-          const ms = entry.duration.toFixed(1);
-          const transferKb = resEntry.transferSize
-            ? ` ${(resEntry.transferSize / 1024).toFixed(1)} KB`
-            : '';
-          const cached = resEntry.transferSize === 0 ? ' (cached)' : '';
-          // Truncate long URLs to keep the log readable
-          const url =
-            entry.name.length > 80 ? entry.name.slice(0, 80) + '…' : entry.name;
-          warn(
-            `Slow resource (${resEntry.initiatorType}): ${ms} ms${transferKb}${cached}  ${url}`
-          );
-        }
-      }
-    });
-    observer.observe({ type: 'resource', buffered: false });
-  } catch {
-    /* unsupported */
-  }
-}
-
-// ── Soft navigation (Chrome 117+ flag / experimental) ────────────────────────
-function _observeSoftNavigation() {
-  try {
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        const softEntry = entry as PerformanceEntry & {
-          startTime: number;
-          duration: number;
-        };
-        log(
-          `Soft navigation: ${entry.name}  duration:${softEntry.duration.toFixed(1)} ms`
-        );
-      }
-    });
-    // 'soft-navigation' is experimental — will throw if not supported
-    observer.observe({ type: 'soft-navigation' as string, buffered: true });
-  } catch {
-    /* not supported or not enabled via flag — silently skip */
   }
 }
