@@ -18,7 +18,7 @@ export function handleInstall(event: ExtendableEvent): void {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAMES.pages);
-      await cache.addAll(['/', '/index.html', '/manifest.json']);
+      await cache.addAll(['/index.html', '/manifest.json']);
     })()
   );
 }
@@ -35,8 +35,7 @@ export function handleActivate(event: ExtendableEvent): void {
       await Promise.all(
         cacheNames.map((cacheName) => {
           // Delete old caches that don't match current version
-          // But keep shareTarget (not versioned)
-          if (!validCaches.includes(cacheName) && cacheName !== 'shareTarget') {
+          if (!validCaches.includes(cacheName)) {
             return caches.delete(cacheName);
           }
           return Promise.resolve();

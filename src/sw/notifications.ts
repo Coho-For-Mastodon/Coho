@@ -109,7 +109,6 @@ export async function getNotifications(): Promise<void> {
     renotify: false,
     actions: actions,
     data: {
-      url: data[0].account.url,
       accountId: data[0].account.id,
     },
   });
@@ -310,6 +309,29 @@ export function handleNotificationClick(event: NotificationEvent): void {
   const targetUrl = getTargetUrl(notificationData);
 
   // Handle "Follow back" action
+  // Periodic-sync notifications store accountId directly (no access_token).
+  if (
+    event.action === 'follow' &&
+    notificationData?.accountId &&
+    !notificationData?.access_token
+  ) {
+    event.waitUntil(
+      (async () => {
+        try {
+          await followAUser(notificationData.accountId);
+        } catch (error) {
+          console.error(
+            '[SW] Failed to follow user from periodic-sync notification:',
+            error
+          );
+        }
+        await focusOrOpenWindow(targetUrl);
+      })()
+    );
+    return;
+  }
+
+  // Push notifications carry their own access_token in the payload.
   if (
     event.action === 'follow' &&
     notificationData?.notification_id &&

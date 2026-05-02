@@ -37,9 +37,6 @@ import { handleWidgetInstall } from './sw/widgets';
 
 declare const self: CohoServiceWorkerGlobalScope;
 
-// Expose idb-keyval on self for external access (e.g., from devtools)
-self.idbKeyval = { get, set };
-
 // Log build version for debugging (kept for SW diagnostics)
 console.log('[SW] Build version:', VERSION);
 
