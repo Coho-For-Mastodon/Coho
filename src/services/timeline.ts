@@ -1,5 +1,3 @@
-import { set } from 'idb-keyval';
-import { getUsersPosts } from './account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 import { Post } from '../interfaces/Post';
 import { getTimelineLimit } from '../utils/network-monitor';
@@ -51,83 +49,6 @@ const setLastPageID = (type: string, id: string): void => {
   lastPageIDs.set(type, id);
 };
 
-export const mixTimeline = async (type = 'home'): Promise<Post[]> => {
-  perfMark(`timeline-fetch-start:mixed`);
-  // run getPaginatedHomeTimeline and getTrendingStatuses in parallel
-  const [homeResult, trendingResult, searchedResult] = await Promise.allSettled(
-    [
-      getPaginatedHomeTimeline(type),
-      getTrendingStatuses(),
-      addSomeInterestFinds(),
-    ]
-  );
-
-  // Extract successful results as arrays, fallback to empty array on failure
-  const home =
-    homeResult.status === 'fulfilled' && Array.isArray(homeResult.value)
-      ? homeResult.value
-      : [];
-  const trending =
-    trendingResult.status === 'fulfilled' && Array.isArray(trendingResult.value)
-      ? trendingResult.value
-      : [];
-  const searched =
-    searchedResult.status === 'fulfilled' && Array.isArray(searchedResult.value)
-      ? searchedResult.value
-      : [];
-
-  const timeline = home.concat(trending);
-  const timeline2 = timeline.concat(searched);
-
-  set('latest-mixed-timeline', timeline2);
-
-  perfMark('timeline-fetch-end:mixed');
-  perfMeasure(
-    'Timeline fetch (mixed)',
-    'timeline-fetch-start:mixed',
-    'timeline-fetch-end:mixed'
-  );
-
-  return timeline2;
-};
-
-export const addSomeInterestFinds = async (): Promise<Post[]> => {
-  const { get } = await import('idb-keyval');
-  const interests = await get('interests');
-
-  if (interests && interests.length > 0) {
-    const interest = interests[Math.floor(Math.random() * interests.length)];
-
-    const accessToken = getAccessToken();
-    const url = buildMastodonUrl('/api/v2/search', {
-      q: interest,
-      resolve: true,
-      limit: 5,
-      type: 'accounts',
-    });
-
-    const response = await apiFetch(url, {
-      skipAuth: !accessToken,
-    });
-    const data = await response.json();
-
-    if (data.accounts && data.accounts.length > 0) {
-      // get statuses from account
-      const account =
-        data.accounts[Math.floor(Math.random() * data.accounts.length)];
-
-      // get posts from account
-      const posts = await getUsersPosts(account.id);
-
-      return posts.slice(0, 5);
-    } else {
-      return [];
-    }
-  } else {
-    return [];
-  }
-};
-
 // Wrapper for preview timeline with pagination state
 export const getPreviewTimeline = async (): Promise<Post[]> => {
   const data = await mastodonGetPreviewTimeline(lastPreviewPageID || undefined);
@@ -172,11 +93,6 @@ export const getPaginatedHomeTimeline = async (
   }
 
   const accessToken = getAccessToken();
-
-  // Normalize type
-  if (type === 'for you') {
-    type = 'home';
-  }
 
   // Use provided maxId, fall back to lastPageID for this type, or fetch from beginning
   const effectiveMaxId = maxId || getLastPageID(type);
