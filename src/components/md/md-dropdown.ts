@@ -25,6 +25,8 @@ export class MdDropdown extends LitElement {
 
   private _positionRaf: number | null = null;
   private _scrollTargets: EventTarget[] = [];
+  private _popupId = `md-dropdown-popup-${Math.random().toString(36).slice(2, 9)}`;
+  private _focusRestoreTarget: HTMLElement | null = null;
 
   static styles = css`
     :host {
@@ -105,6 +107,7 @@ export class MdDropdown extends LitElement {
 
   show() {
     if (!this.open) {
+      this._focusRestoreTarget = document.activeElement as HTMLElement;
       this.open = true;
     }
   }
@@ -215,9 +218,17 @@ export class MdDropdown extends LitElement {
 
     if (isOpen) {
       this._attachOpenListeners();
-      requestAnimationFrame(() => this._positionPopup());
+      requestAnimationFrame(() => {
+        this._positionPopup();
+        this._focusMenuContent();
+      });
     } else {
       this._detachOpenListeners();
+      // Restore focus to the element that was focused before the dropdown opened
+      requestAnimationFrame(() => {
+        this._focusRestoreTarget?.focus();
+        this._focusRestoreTarget = null;
+      });
     }
 
     this.dispatchEvent(
@@ -360,7 +371,22 @@ export class MdDropdown extends LitElement {
 
     triggerEl.setAttribute('aria-expanded', String(this.open));
     triggerEl.setAttribute('aria-haspopup', 'menu');
-    triggerEl.setAttribute('aria-controls', 'dropdown-popup');
+    triggerEl.setAttribute('aria-controls', this._popupId);
+  }
+
+  private _focusMenuContent() {
+    const defaultSlot =
+      this.shadowRoot?.querySelector<HTMLSlotElement>('slot:not([name])');
+    const elements = (defaultSlot?.assignedElements() ?? []) as HTMLElement[];
+    for (const el of elements) {
+      if (el.tagName === 'MD-MENU') {
+        const menu = el as HTMLElement & { focusFirst?: () => void };
+        if (typeof menu.focusFirst === 'function') {
+          menu.focusFirst();
+        }
+        return;
+      }
+    }
   }
 
   updated(changedProperties: Map<PropertyKey, unknown>) {
@@ -388,7 +414,7 @@ export class MdDropdown extends LitElement {
         <slot name="trigger"></slot>
       </div>
       <div
-        id="dropdown-popup"
+        id="${this._popupId}"
         class="popup"
         popover="auto"
         @toggle=${this._handleToggle}

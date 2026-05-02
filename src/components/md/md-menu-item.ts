@@ -47,7 +47,8 @@ export class MdMenuItem extends LitElement {
         color: var(--md-sys-color-on-secondary-container, #31111d);
       }
 
-      .menu-item:focus-visible {
+      .menu-item:focus-visible,
+      :host(:focus-visible) .menu-item {
         outline: 2px solid var(--md-sys-color-primary, #6750a4);
         outline-offset: -2px;
       }
@@ -272,13 +273,33 @@ export class MdMenuItem extends LitElement {
     `,
   ];
 
+  protected override createRenderRoot(): ShadowRoot {
+    return this.attachShadow({ mode: 'open', delegatesFocus: true });
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.setAttribute('role', 'menuitem');
+    if (!this.hasAttribute('tabindex')) {
+      this.setAttribute('tabindex', '-1');
+    }
+    this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('disabled')) {
+      this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
+      if (this.disabled) {
+        this.setAttribute('tabindex', '-1');
+      }
+    }
+  }
+
   render() {
     return html`
       <div
         class="menu-item ${this.disabled ? 'disabled' : ''}"
-        role="menuitem"
-        aria-selected="${this.selected ? 'true' : 'false'}"
-        tabindex="${this.disabled ? '-1' : '0'}"
+        tabindex="-1"
         title=${ifDefined(this.title || undefined)}
         @click="${this._handleClick}"
         @keydown="${this._handleKeydown}"

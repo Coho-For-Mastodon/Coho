@@ -12,6 +12,7 @@ export class MdOption extends LitElement {
   @property({ type: String }) value = '';
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) selected = false;
+  @property({ type: Boolean, reflect: true }) highlighted = false;
 
   static styles = [
     mdSharedStyles,
@@ -62,6 +63,14 @@ export class MdOption extends LitElement {
           transparent
         );
         font-weight: 500;
+      }
+
+      .option.highlighted {
+        background-color: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, #1d1b20) 8%,
+          transparent
+        );
       }
 
       .option.disabled {
@@ -172,15 +181,28 @@ export class MdOption extends LitElement {
     `,
   ];
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.setAttribute('role', 'option');
+    this.setAttribute('aria-selected', this.selected ? 'true' : 'false');
+    this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
+  }
+
+  updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has('selected')) {
+      this.setAttribute('aria-selected', this.selected ? 'true' : 'false');
+    }
+    if (changedProperties.has('disabled')) {
+      this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
+    }
+  }
+
   render() {
     return html`
       <div
-        class="option ${this.selected ? 'selected' : ''} ${this.disabled
-          ? 'disabled'
-          : ''}"
-        role="option"
-        aria-selected="${this.selected ? 'true' : 'false'}"
-        aria-disabled="${this.disabled ? 'true' : 'false'}"
+        class="option ${this.selected ? 'selected' : ''} ${this.highlighted
+          ? 'highlighted'
+          : ''} ${this.disabled ? 'disabled' : ''}"
       >
         <div class="content">
           <slot></slot>

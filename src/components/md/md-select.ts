@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { mdSharedStyles } from './md-shared-styles.js';
 import './md-icon.js';
@@ -20,6 +20,13 @@ export class MdSelect extends LitElement {
   @property({ type: String, attribute: 'icon-src' }) iconSrc = '';
   @property({ type: String, attribute: 'icon-label' }) iconLabel = '';
 
+  /** Visible label rendered above the select trigger */
+  @property({ type: String }) label = '';
+  /** aria-label override for the combobox trigger */
+  @property({ type: String, attribute: 'aria-label' }) ariaLabel = '';
+  /** ID(s) of external elements that label this select */
+  @property({ type: String, attribute: 'aria-labelledby' }) ariaLabelledBy = '';
+
   @state() private _open = false;
   @state() private _options: MdOption[] = [];
   @state() private _highlightedIndex = -1;
@@ -27,6 +34,7 @@ export class MdSelect extends LitElement {
   @query('.dropdown') private _dropdown!: HTMLDivElement;
 
   private _listboxId = `md-select-listbox-${Math.random().toString(36).slice(2, 9)}`;
+  private _labelId = `md-select-label-${Math.random().toString(36).slice(2, 9)}`;
 
   static styles = [
     mdSharedStyles,
@@ -237,6 +245,22 @@ export class MdSelect extends LitElement {
         cursor: pointer;
       }
 
+      .select-field-label {
+        display: block;
+        font-size: var(--md-sys-typescale-body-small-font-size, 12px);
+        font-weight: 500;
+        line-height: 16px;
+        letter-spacing: 0.4px;
+        color: var(--md-sys-color-on-surface-variant, #49454f);
+        margin-bottom: 4px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .select-field-label {
+          color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        }
+      }
+
       /* Focus visible styles */
       .select-input:focus-visible {
         outline: 2px solid var(--md-sys-color-primary, #6750a4);
@@ -350,6 +374,8 @@ export class MdSelect extends LitElement {
         }
         option.id = `${this._listboxId}-opt-${index}`;
       });
+
+      this._syncOptionsSelected();
     }
   }
 
@@ -456,6 +482,7 @@ export class MdSelect extends LitElement {
 
     const oldValue = this.value;
     this.value = option.value;
+    this._syncOptionsSelected();
 
     // Dispatch change event
     this.dispatchEvent(
@@ -467,6 +494,24 @@ export class MdSelect extends LitElement {
     );
 
     this._close();
+  }
+
+  private _syncOptionsSelected() {
+    this._options.forEach((opt) => {
+      const isSelected = opt.value === this.value;
+      if (opt.selected !== isSelected) {
+        opt.selected = isSelected;
+      }
+    });
+  }
+
+  private _syncOptionsHighlighted() {
+    this._options.forEach((opt, i) => {
+      const isHighlighted = i === this._highlightedIndex;
+      if (opt.highlighted !== isHighlighted) {
+        opt.highlighted = isHighlighted;
+      }
+    });
   }
 
   private _close() {
@@ -524,10 +569,25 @@ export class MdSelect extends LitElement {
   render() {
     const displayLabel = this._getDisplayLabel();
     const isPlaceholder = !this.value;
-    const ariaLabel = this.iconLabel || this.placeholder || displayLabel;
+    // Build accessible name: explicit ariaLabel > labeled via prop > icon fallback > existing fallback
+    const computedAriaLabel =
+      this.ariaLabel ||
+      (this.label
+        ? nothing
+        : this.iconOnly
+          ? this.iconLabel || this.placeholder
+          : this.placeholder || displayLabel);
+    const computedLabelledBy = this.ariaLabel
+      ? nothing
+      : this.ariaLabelledBy || (this.label ? this._labelId : nothing);
 
     return html`
       <div class="select-container">
+        ${this.label
+          ? html`<span id="${this._labelId}" class="select-field-label"
+              >${this.label}</span
+            >`
+          : ''}
         <div
           class="select-input ${this.variant} ${this._open ? 'open' : ''} ${this
             .disabled
@@ -543,14 +603,15 @@ export class MdSelect extends LitElement {
           aria-controls="${this._listboxId}"
           aria-activedescendant="${this._open && this._highlightedIndex >= 0
             ? `${this._listboxId}-opt-${this._highlightedIndex}`
-            : ''}"
-          aria-label="${ariaLabel}"
+            : nothing}"
+          aria-label="${computedAriaLabel}"
+          aria-labelledby="${computedLabelledBy}"
         >
           ${this.iconOnly && this.iconSrc
             ? html`<md-icon
                 class="icon-only-image"
                 src="${this.iconSrc}"
-                label="${ariaLabel}"
+                label="${computedAriaLabel}"
               ></md-icon>`
             : html`
                 <span
@@ -587,6 +648,12 @@ export class MdSelect extends LitElement {
     if (changedProperties.has('_open')) {
       this._syncPopover();
     }
+    if (changedProperties.has('value')) {
+      this._syncOptionsSelected();
+    }
+    if (changedProperties.has('_highlightedIndex')) {
+      this._syncOptionsHighlighted();
+    }
   }
 }
 
@@ -594,6 +661,8 @@ export class MdSelect extends LitElement {
 interface MdOption extends HTMLElement {
   value: string;
   disabled: boolean;
+  selected: boolean;
+  highlighted: boolean;
 }
 
 declare global {

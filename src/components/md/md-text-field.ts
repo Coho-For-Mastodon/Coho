@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { mdSharedStyles } from './md-shared-styles.js';
 
@@ -28,6 +28,24 @@ export class MdTextField extends LitElement {
   @property({ type: String }) min = '';
   @property({ type: String }) max = '';
   @property({ type: String }) step = '';
+
+  /** Visible label text rendered above the input */
+  @property({ type: String }) label = '';
+  /** aria-label on the native input; use when no visible label is needed */
+  @property({ type: String, attribute: 'aria-label' }) ariaLabel = '';
+  /** ID(s) of external elements that label this field */
+  @property({ type: String, attribute: 'aria-labelledby' }) ariaLabelledBy = '';
+  /** ID(s) of elements that describe this field */
+  @property({ type: String, attribute: 'aria-describedby' }) ariaDescribedBy =
+    '';
+  /** name attribute forwarded to the native input */
+  @property({ type: String }) name = '';
+  /** Marks the field as required */
+  @property({ type: Boolean }) required = false;
+  /** Marks the field as invalid */
+  @property({ type: Boolean }) invalid = false;
+
+  private _inputId = `md-text-field-${Math.random().toString(36).slice(2, 9)}`;
 
   @query('input') private _input!: HTMLInputElement;
 
@@ -191,6 +209,22 @@ export class MdTextField extends LitElement {
           border-color: var(--md-sys-color-primary, #d0bcff);
         }
       }
+
+      .field-label {
+        display: block;
+        font-size: var(--md-sys-typescale-body-small-font-size, 12px);
+        font-weight: 500;
+        line-height: 16px;
+        letter-spacing: 0.4px;
+        color: var(--md-sys-color-on-surface-variant, #49454f);
+        margin-bottom: 4px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .field-label {
+          color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        }
+      }
     `,
   ];
 
@@ -229,9 +263,23 @@ export class MdTextField extends LitElement {
   }
 
   render() {
+    const labelId = `${this._inputId}-label`;
+    const computedLabelledBy = this.ariaLabel
+      ? nothing
+      : this.ariaLabelledBy || (this.label ? labelId : nothing);
+
     return html`
       <div class="text-field-container">
+        ${this.label
+          ? html`<label
+              id="${labelId}"
+              for="${this._inputId}"
+              class="field-label"
+              >${this.label}</label
+            >`
+          : ''}
         <input
+          id="${this._inputId}"
           type="${this.type}"
           .value="${this.value}"
           placeholder="${this.placeholder}"
@@ -240,6 +288,12 @@ export class MdTextField extends LitElement {
           step="${this.step}"
           ?disabled="${this.disabled}"
           class="${this.variant} ${this.pill ? 'pill' : ''}"
+          aria-label="${this.ariaLabel || nothing}"
+          aria-labelledby="${computedLabelledBy}"
+          aria-describedby="${this.ariaDescribedBy || nothing}"
+          aria-required="${this.required ? 'true' : nothing}"
+          aria-invalid="${this.invalid ? 'true' : nothing}"
+          name="${this.name || nothing}"
           @input="${this._handleInput}"
           @change="${this._handleChange}"
         />

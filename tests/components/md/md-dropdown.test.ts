@@ -231,7 +231,9 @@ describe('md-dropdown', () => {
 
       expect(trigger.getAttribute('aria-expanded')).toBe('true');
       expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
-      expect(trigger.getAttribute('aria-controls')).toBe('dropdown-popup');
+      expect(trigger.getAttribute('aria-controls')).toMatch(
+        /^md-dropdown-popup-/
+      );
     });
   });
 

@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit';
+import type { MdMenuItem } from './md-menu-item.js';
 import { customElement } from 'lit/decorators.js';
 import { mdSharedStyles } from './md-shared-styles.js';
 
@@ -58,10 +59,82 @@ export class MdMenu extends LitElement {
     `,
   ];
 
+  connectedCallback() {
+    super.connectedCallback();
+    this._initRovingTabindex();
+  }
+
+  private _getItems(): MdMenuItem[] {
+    return Array.from(this.querySelectorAll<MdMenuItem>('md-menu-item'));
+  }
+
+  private _getEnabledItems(): MdMenuItem[] {
+    return this._getItems().filter((item) => !item.disabled);
+  }
+
+  private _getFocusedItem(): MdMenuItem | undefined {
+    return this._getItems().find(
+      (item) => item.matches(':focus') || item.matches(':focus-within')
+    );
+  }
+
+  private _focusItem(item: MdMenuItem) {
+    this._getItems().forEach((i) => i.setAttribute('tabindex', '-1'));
+    item.setAttribute('tabindex', '0');
+    item.focus();
+  }
+
+  /** Focus the first enabled menu item. Called by md-dropdown on open. */
+  focusFirst() {
+    const first = this._getEnabledItems()[0];
+    if (first) this._focusItem(first);
+  }
+
+  private _initRovingTabindex() {
+    requestAnimationFrame(() => {
+      this._getItems().forEach((item) => item.setAttribute('tabindex', '-1'));
+    });
+  }
+
+  private _handleSlotChange() {
+    this._getItems().forEach((item) => {
+      if (!item.hasAttribute('tabindex')) {
+        item.setAttribute('tabindex', '-1');
+      }
+    });
+  }
+
+  private _handleMenuKeydown(e: KeyboardEvent) {
+    const items = this._getEnabledItems();
+    if (items.length === 0) return;
+
+    const focused = this._getFocusedItem();
+    const idx = focused ? items.indexOf(focused) : -1;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        this._focusItem(items[(idx + 1) % items.length]);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        this._focusItem(items[(idx - 1 + items.length) % items.length]);
+        break;
+      case 'Home':
+        e.preventDefault();
+        this._focusItem(items[0]);
+        break;
+      case 'End':
+        e.preventDefault();
+        this._focusItem(items[items.length - 1]);
+        break;
+    }
+  }
+
   render() {
     return html`
-      <div class="menu" role="menu">
-        <slot></slot>
+      <div class="menu" role="menu" @keydown="${this._handleMenuKeydown}">
+        <slot @slotchange="${this._handleSlotChange}"></slot>
       </div>
     `;
   }

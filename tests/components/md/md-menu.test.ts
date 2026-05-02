@@ -62,16 +62,17 @@ describe('md-menu-item', () => {
   describe('accessibility', () => {
     it('has role="menuitem"', async () => {
       const el = await fixture(html`<md-menu-item>Item</md-menu-item>`);
-      const item = el.shadowRoot!.querySelector('.menu-item');
 
-      expect(item?.getAttribute('role')).toBe('menuitem');
+      // role is set on the host element (not the inner shadow div)
+      expect(el.getAttribute('role')).toBe('menuitem');
     });
 
-    it('is focusable', async () => {
+    it('is programmatically focusable', async () => {
       const el = await fixture(html`<md-menu-item>Item</md-menu-item>`);
       const item = el.shadowRoot!.querySelector('.menu-item');
 
-      expect(item?.getAttribute('tabindex')).toBe('0');
+      // Inner div is focusable with tabindex=-1 (roving tabindex managed by md-menu)
+      expect(item?.getAttribute('tabindex')).toBe('-1');
     });
   });
 });

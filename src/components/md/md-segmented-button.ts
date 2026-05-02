@@ -71,6 +71,7 @@ export class MdSegmentedButton extends LitElement {
       'segment-selected',
       this._handleSegmentSelected as EventListener
     );
+    this.addEventListener('keydown', this._handleKeydown);
   }
 
   disconnectedCallback() {
@@ -79,6 +80,7 @@ export class MdSegmentedButton extends LitElement {
       'segment-selected',
       this._handleSegmentSelected as EventListener
     );
+    this.removeEventListener('keydown', this._handleKeydown);
   }
 
   firstUpdated() {
@@ -132,6 +134,60 @@ export class MdSegmentedButton extends LitElement {
       }
     });
   }
+
+  private _getEnabledSegments(): MdSegment[] {
+    const slot = this.shadowRoot?.querySelector('slot');
+    if (!slot) return [];
+    return slot
+      .assignedElements()
+      .filter(
+        (el) =>
+          el.tagName.toLowerCase() === 'md-segment' &&
+          !(el as MdSegment).disabled
+      ) as MdSegment[];
+  }
+
+  private _handleKeydown = (e: KeyboardEvent) => {
+    const segments = this._getEnabledSegments();
+    if (segments.length === 0) return;
+
+    const focusedIdx = segments.findIndex(
+      (s) => s.matches(':focus') || s.matches(':focus-within')
+    );
+    if (focusedIdx === -1) return;
+
+    let targetIdx: number;
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        targetIdx = (focusedIdx + 1) % segments.length;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        targetIdx = (focusedIdx - 1 + segments.length) % segments.length;
+        break;
+      default:
+        return;
+    }
+
+    const target = segments[targetIdx];
+    const oldValue = this.value;
+    this.value = target.value;
+    this._updateSegments();
+    target.focus();
+
+    if (this.value !== oldValue) {
+      this.dispatchEvent(
+        new CustomEvent('segment-change', {
+          detail: { value: this.value },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
+  };
 
   render() {
     return html`
@@ -257,6 +313,10 @@ export class MdSegment extends LitElement {
     }
   `;
 
+  protected override createRenderRoot(): ShadowRoot {
+    return this.attachShadow({ mode: 'open', delegatesFocus: true });
+  }
+
   private _handleClick() {
     if (this.disabled) return;
 
@@ -275,6 +335,7 @@ export class MdSegment extends LitElement {
         role="radio"
         aria-checked="${this.selected}"
         ?disabled="${this.disabled}"
+        tabindex="${this.selected ? 0 : -1}"
         @click="${this._handleClick}"
       >
         <slot name="icon"></slot>

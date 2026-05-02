@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { mdSharedStyles } from './md-shared-styles.js';
 
@@ -17,6 +17,24 @@ export class MdTextArea extends LitElement {
   @property({ type: Number }) rows = 4;
   @property({ type: Number }) maxlength?: number;
   @property({ type: Boolean, attribute: 'hide-counter' }) hideCounter = false;
+
+  /** Visible label text rendered above the textarea */
+  @property({ type: String }) label = '';
+  /** aria-label on the native textarea; use when no visible label is needed */
+  @property({ type: String, attribute: 'aria-label' }) ariaLabel = '';
+  /** ID(s) of external elements that label this field */
+  @property({ type: String, attribute: 'aria-labelledby' }) ariaLabelledBy = '';
+  /** ID(s) of elements that describe this field */
+  @property({ type: String, attribute: 'aria-describedby' }) ariaDescribedBy =
+    '';
+  /** name attribute forwarded to the native textarea */
+  @property({ type: String }) name = '';
+  /** Marks the field as required */
+  @property({ type: Boolean }) required = false;
+  /** Marks the field as invalid */
+  @property({ type: Boolean }) invalid = false;
+
+  private _textareaId = `md-text-area-${Math.random().toString(36).slice(2, 9)}`;
 
   @query('textarea') private _textarea!: HTMLTextAreaElement;
 
@@ -187,6 +205,22 @@ export class MdTextArea extends LitElement {
           color: var(--md-sys-color-on-surface-variant, #cac4d0);
         }
       }
+
+      .field-label {
+        display: block;
+        font-size: var(--md-sys-typescale-body-small-font-size, 12px);
+        font-weight: 500;
+        line-height: 16px;
+        letter-spacing: 0.4px;
+        color: var(--md-sys-color-on-surface-variant, #49454f);
+        margin-bottom: 4px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .field-label {
+          color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        }
+      }
     `,
   ];
 
@@ -229,9 +263,23 @@ export class MdTextArea extends LitElement {
   }
 
   render() {
+    const labelId = `${this._textareaId}-label`;
+    const computedLabelledBy = this.ariaLabel
+      ? nothing
+      : this.ariaLabelledBy || (this.label ? labelId : nothing);
+
     return html`
       <div class="text-area-container" part="container">
+        ${this.label
+          ? html`<label
+              id="${labelId}"
+              for="${this._textareaId}"
+              class="field-label"
+              >${this.label}</label
+            >`
+          : ''}
         <textarea
+          id="${this._textareaId}"
           part="textarea"
           .value="${this.value}"
           placeholder="${this.placeholder}"
@@ -239,6 +287,12 @@ export class MdTextArea extends LitElement {
           rows="${this.rows}"
           maxlength="${this.maxlength || ''}"
           class="${this.variant}"
+          aria-label="${this.ariaLabel || nothing}"
+          aria-labelledby="${computedLabelledBy}"
+          aria-describedby="${this.ariaDescribedBy || nothing}"
+          aria-required="${this.required ? 'true' : nothing}"
+          aria-invalid="${this.invalid ? 'true' : nothing}"
+          name="${this.name || nothing}"
           @input="${this._handleInput}"
           @change="${this._handleChange}"
         ></textarea>
