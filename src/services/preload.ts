@@ -270,16 +270,6 @@ export function schedulePreload(): Promise<void> {
 }
 
 /**
- * Clear all preloaded data
- * Call this when user logs out or when data should be refreshed
- */
-export function clearPreloadCache(): void {
-  sessionStorage.removeItem(getPreloadNotificationsKey());
-  sessionStorage.removeItem(getPreloadBookmarksKey());
-  sessionStorage.removeItem(getPreloadFavoritesKey());
-}
-
-/**
  * Invalidate a specific preload cache
  * Call this when data is known to be stale (e.g., after user action)
  */

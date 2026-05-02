@@ -1,4 +1,4 @@
-import { del, entries, get, set } from 'idb-keyval';
+import { entries, set } from 'idb-keyval';
 
 export interface DraftAttachment {
   id: string;
@@ -118,15 +118,6 @@ export async function saveDraftForContext(
   return savedDraft;
 }
 
-export async function loadDraft(key: string): Promise<DraftPost | null> {
-  const draft = await get<DraftPost>(key);
-  return draft ?? null;
-}
-
 export async function saveDraft(key: string, draft: DraftPost): Promise<void> {
   await set(key, draft);
-}
-
-export async function deleteDraft(key: string): Promise<void> {
-  await del(key);
 }

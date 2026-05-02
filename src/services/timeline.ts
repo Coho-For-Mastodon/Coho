@@ -12,8 +12,6 @@ import {
   getTrendingTags as mastodonGetTrendingTags,
   getTrendingLinks as mastodonGetTrendingLinks,
   getHashtagTimeline as mastodonGetHashtagTimeline,
-  getStatus as mastodonGetStatus,
-  getMediaTimeline as mastodonGetMediaTimeline,
   enrichPostsWithReplyContext as mastodonEnrichPostsWithReplyContext,
   groupSelfThreads as mastodonGroupSelfThreads,
   unfavoritePost as mastodonUnfavoritePost,
@@ -51,21 +49,6 @@ const getLastPageID = (type = 'home'): string => lastPageIDs.get(type) || '';
 /** Set the lastPageID for a specific timeline type */
 const setLastPageID = (type: string, id: string): void => {
   lastPageIDs.set(type, id);
-};
-
-export const getHomeTimeline = async (): Promise<Post[]> => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await apiFetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getTimelinePaginated`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken, server }),
-      skipAuth: true,
-    }
-  );
-  return response.json();
 };
 
 export const mixTimeline = async (type = 'home'): Promise<Post[]> => {
@@ -275,7 +258,7 @@ export const unboostPost = async (id: string) => {
   return mastodonUnfavoritePost(id);
 };
 
-// Use mastodon library's reblogPost but with Firebase fallback
+// Uses Firebase function for reblog — routes through service worker for background-sync support
 export const reblogPost = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
@@ -342,9 +325,6 @@ export const votePoll = async (
   return response.json();
 };
 
-// Use mastodon library's getMediaTimeline
-export const mediaTimeline = mastodonGetMediaTimeline;
-
 export const searchTimeline = async (query: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
@@ -359,9 +339,6 @@ export const searchTimeline = async (query: string) => {
 
 // Use mastodon library's getHashtagTimeline
 export const getHashtagTimeline = mastodonGetHashtagTimeline;
-
-// Use mastodon library's getStatus
-export const getAStatus = mastodonGetStatus;
 
 async function handlePeriodic(): Promise<unknown> {
   const registration: ServiceWorkerRegistration =
