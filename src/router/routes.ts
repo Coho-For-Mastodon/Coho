@@ -43,6 +43,12 @@ const routes: Route<TemplateResult>[] = [
     render: () => html`<app-home></app-home>`,
   },
   {
+    path: '/warp',
+    title: 'warp',
+    plugins: [lazy(() => import('../pages/app-warp.js'))],
+    render: () => html`<app-warp></app-warp>`,
+  },
+  {
     path: '/search',
     title: 'search',
     plugins: [lazy(() => import('../pages/search-page.js'))],

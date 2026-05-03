@@ -39,6 +39,7 @@ export class SettingsDrawerContent extends LitElement {
   @property({ type: Boolean }) wellnessMode = false;
   @property({ type: Boolean }) dataSaverMode = false;
   @property({ type: Boolean }) hapticsEnabled = true;
+  @property({ type: Boolean }) experimental3dTimelineEnabled = false;
   @property({ type: Boolean }) appThemeLoaded = false;
 
   @state() private isAndroid = false;
@@ -55,6 +56,10 @@ export class SettingsDrawerContent extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 16px;
+      margin-top: 16px;
+    }
+
+    #warp-timeline-button {
       margin-top: 16px;
     }
 
@@ -358,6 +363,10 @@ export class SettingsDrawerContent extends LitElement {
     router.navigate('/announcements');
   }
 
+  private _openWarpTimeline() {
+    router.navigate('/warp');
+  }
+
   private _formatAnnouncementDate(iso: string): string {
     try {
       return new Intl.DateTimeFormat(undefined, {
@@ -393,6 +402,17 @@ export class SettingsDrawerContent extends LitElement {
     const checked = (e.target as HTMLInputElement).checked;
     this.dispatchEvent(
       new CustomEvent('haptics-change', {
+        detail: { checked },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  private handleExperimental3dTimelineToggle(e: Event) {
+    const checked = (e.target as HTMLInputElement).checked;
+    this.dispatchEvent(
+      new CustomEvent('experimental-3d-timeline-change', {
         detail: { checked },
         bubbles: true,
         composed: true,
@@ -519,6 +539,31 @@ export class SettingsDrawerContent extends LitElement {
             ${msg('Vibrate on actions like likes, boosts, and publishing.')}
           </p>
 
+          <md-divider></md-divider>
+
+          <div class="setting-row">
+            <h4>${msg('Experimental 3D Timeline')}</h4>
+            <md-switch
+              @sl-change="${(e: Event) =>
+                this.handleExperimental3dTimelineToggle(e)}"
+              ?checked="${this.experimental3dTimelineEnabled}"
+            ></md-switch>
+          </div>
+          <p class="setting-description">
+            ${msg('Try an experitment in exploring posts in 3D.')}
+          </p>
+
+          ${this.experimental3dTimelineEnabled
+            ? html`
+                <md-button
+                  variant="tonal"
+                  @click="${() => this._openWarpTimeline()}"
+                  id="warp-timeline-button"
+                >
+                  ${msg('Open Warp Timeline')}
+                </md-button>
+              `
+            : nothing}
           ${this.isAndroid
             ? html`
                 <md-divider></md-divider>
