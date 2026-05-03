@@ -1,22 +1,6 @@
 const root = await navigator.storage.getDirectory();
 const mediaDir = await root.getDirectoryHandle('media', { create: true });
 
-export async function addMedia(file: File) {
-  // write file to private origin storage
-  // add file to mediaDir
-  const newHandle = await mediaDir.getFileHandle(file.name, { create: true });
-  const writable = await newHandle.createWritable();
-  await writable.write(file);
-  await writable.close();
-}
-
-export async function getMedia(name: string) {
-  // get file from mediaDir
-  const fileHandle = await mediaDir.getFileHandle(name);
-  const file = await fileHandle.getFile();
-  return file;
-}
-
 export async function getAllMedia() {
   // get all files from mediaDir
   const promises = [];

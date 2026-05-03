@@ -4,8 +4,9 @@
  * Precaches critical lazy-loaded components during idle time so they're
  * available offline. Uses the Network Information API to tier precaching:
  *
- * - All connections (including slow/unknown): Post dialog + its full dep tree
- * - Fast connections (4g): Additional happy-path pages (notifications, search, etc.)
+ * - Slow connections or data-saver on: No precaching
+ * - Moderate/unknown connections: Post dialog + its full dep tree
+ * - Fast connections (4g confirmed): Post dialog + additional happy-path pages
  *
  * The SW's cache-first strategy for scripts means once a chunk is fetched,
  * it's cached permanently (hashed filenames = immutable assets).
@@ -19,9 +20,9 @@ type PrecacheTask = () => Promise<unknown>;
  * Determine the precaching tier based on network and user settings.
  *
  * Returns:
- * - 'none'     : data saver is on — skip all precaching
- * - 'critical' : slow/unknown connection — only post dialog
- * - 'extended' : fast connection — post dialog + more pages
+ * - 'none'     : data saver is on OR slow connection — skip all precaching
+ * - 'critical' : moderate or unknown connection — only post dialog
+ * - 'extended' : fast connection (4g confirmed) — post dialog + more pages
  */
 async function getPrecacheTier(): Promise<'none' | 'critical' | 'extended'> {
   // Respect the app's data saver setting

@@ -39,7 +39,6 @@ export class SettingsDrawerContent extends LitElement {
   @property({ type: Boolean }) wellnessMode = false;
   @property({ type: Boolean }) dataSaverMode = false;
   @property({ type: Boolean }) hapticsEnabled = true;
-  @property({ type: Boolean }) userTermsLoaded = false;
   @property({ type: Boolean }) appThemeLoaded = false;
 
   @state() private isAndroid = false;
@@ -479,16 +478,6 @@ export class SettingsDrawerContent extends LitElement {
             </div>
           </div>
         </md-card>
-
-        <!-- Interests Card -->
-        ${this.userTermsLoaded
-          ? html`
-              <md-card variant="filled">
-                <h3 slot="header">${msg('Interests')}</h3>
-                <user-terms></user-terms>
-              </md-card>
-            `
-          : nothing}
 
         <!-- Preferences Card -->
         <md-card variant="filled">

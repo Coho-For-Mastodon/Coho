@@ -1,5 +1,4 @@
 import { fileOpen } from 'browser-fs-access';
-import { addMedia } from './media';
 import type { Account } from '../mastodon/types/account';
 import { Post, PostPublishResult } from '../interfaces/Post';
 import type { MediaAttachment } from '../mastodon/types/media';
@@ -290,26 +289,6 @@ export async function waitForMediaProcessing(
   throw new Error(`Media ${id} processing timed out after ${maxElapsed}ms`);
 }
 
-export async function uploadMediaFromURL(
-  url: string
-): Promise<MediaAttachment> {
-  const apiUrl = buildMastodonUrl('/api/v2/media');
-  const response = await apiFetch(apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url }),
-    skipResponseCheck: true,
-  });
-
-  const data: MediaAttachment = await response.json();
-
-  if (response.status === 202) {
-    return waitForMediaProcessing(data.id);
-  }
-
-  return data;
-}
-
 export async function uploadMediaBlob(blob: Blob): Promise<MediaAttachment> {
   const formData = new FormData();
   formData.append('file', blob);
@@ -340,61 +319,6 @@ export async function pickMedia(): Promise<File[]> {
   } catch {
     return [];
   }
-}
-
-export async function uploadMediaFile(file: File): Promise<MediaAttachment> {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const apiUrl = buildMastodonUrl('/api/v2/media');
-  const response = await apiFetch(apiUrl, {
-    method: 'POST',
-    body: formData,
-    skipResponseCheck: true,
-  });
-
-  let data: MediaAttachment = await response.json();
-
-  if (response.status === 202) {
-    data = await waitForMediaProcessing(data.id);
-  }
-
-  await addMedia(file);
-  return data;
-}
-
-export async function uploadImageAsFormData(): Promise<MediaAttachment[]> {
-  const files = await fileOpen({
-    mimeTypes: ['image/*', 'video/*'],
-    multiple: true,
-  });
-
-  let uploaded: MediaAttachment[] = [];
-
-  const apiUrl = buildMastodonUrl('/api/v2/media');
-
-  for (let i = 0; i < files.length; i++) {
-    const formData = new FormData();
-    formData.append('file', files[i]);
-
-    const response = await apiFetch(apiUrl, {
-      method: 'POST',
-      body: formData,
-      skipResponseCheck: true,
-    });
-
-    let data: MediaAttachment = await response.json();
-
-    if (response.status === 202) {
-      data = await waitForMediaProcessing(data.id);
-    }
-
-    uploaded = [...uploaded, data];
-
-    await addMedia(files[i]);
-  }
-
-  return uploaded;
 }
 
 export async function updateMedia(

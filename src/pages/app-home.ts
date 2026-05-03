@@ -78,7 +78,6 @@ export class AppHome extends LitElement {
 
   // Lazy loading states for drawer components
   @state() appThemeLoaded: boolean = false;
-  @state() userTermsLoaded: boolean = false;
   @state() rightClickLoaded: boolean = false;
 
   // Lazy loading states for dialogs
@@ -498,7 +497,6 @@ export class AppHome extends LitElement {
 
   async openSettingsDrawer() {
     await Promise.all([
-      this.loadUserTerms(),
       this.loadAppTheme(),
       import('../components/otter-drawer'),
       import('../components/settings-drawer-content'),
@@ -864,12 +862,6 @@ export class AppHome extends LitElement {
     }
   }
 
-  async loadUserTerms() {
-    if (await lazyLoad('userTerms', componentLoaders.userTerms)) {
-      this.userTermsLoaded = true;
-    }
-  }
-
   async loadRightClick() {
     if (
       await lazyLoad('rightClick', async () => {
@@ -1157,7 +1149,6 @@ export class AppHome extends LitElement {
               .wellnessMode="${this.wellnessMode}"
               .dataSaverMode="${this.dataSaverMode}"
               .hapticsEnabled="${this.hapticsEnabled}"
-              .userTermsLoaded="${this.userTermsLoaded}"
               .appThemeLoaded="${this.appThemeLoaded}"
               @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleWellnessMode(e.detail.checked)}"

@@ -1,5 +1,3 @@
-import { set } from 'idb-keyval';
-import { getUsersPosts } from './account';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 import { Post } from '../interfaces/Post';
 import { getTimelineLimit } from '../utils/network-monitor';
@@ -12,8 +10,6 @@ import {
   getTrendingTags as mastodonGetTrendingTags,
   getTrendingLinks as mastodonGetTrendingLinks,
   getHashtagTimeline as mastodonGetHashtagTimeline,
-  getStatus as mastodonGetStatus,
-  getMediaTimeline as mastodonGetMediaTimeline,
   enrichPostsWithReplyContext as mastodonEnrichPostsWithReplyContext,
   groupSelfThreads as mastodonGroupSelfThreads,
   unfavoritePost as mastodonUnfavoritePost,
@@ -51,98 +47,6 @@ const getLastPageID = (type = 'home'): string => lastPageIDs.get(type) || '';
 /** Set the lastPageID for a specific timeline type */
 const setLastPageID = (type: string, id: string): void => {
   lastPageIDs.set(type, id);
-};
-
-export const getHomeTimeline = async (): Promise<Post[]> => {
-  const accessToken = getAccessToken();
-  const server = getServer();
-  const response = await apiFetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/getTimelinePaginated`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken, server }),
-      skipAuth: true,
-    }
-  );
-  return response.json();
-};
-
-export const mixTimeline = async (type = 'home'): Promise<Post[]> => {
-  perfMark(`timeline-fetch-start:mixed`);
-  // run getPaginatedHomeTimeline and getTrendingStatuses in parallel
-  const [homeResult, trendingResult, searchedResult] = await Promise.allSettled(
-    [
-      getPaginatedHomeTimeline(type),
-      getTrendingStatuses(),
-      addSomeInterestFinds(),
-    ]
-  );
-
-  // Extract successful results as arrays, fallback to empty array on failure
-  const home =
-    homeResult.status === 'fulfilled' && Array.isArray(homeResult.value)
-      ? homeResult.value
-      : [];
-  const trending =
-    trendingResult.status === 'fulfilled' && Array.isArray(trendingResult.value)
-      ? trendingResult.value
-      : [];
-  const searched =
-    searchedResult.status === 'fulfilled' && Array.isArray(searchedResult.value)
-      ? searchedResult.value
-      : [];
-
-  const timeline = home.concat(trending);
-  const timeline2 = timeline.concat(searched);
-
-  set('latest-mixed-timeline', timeline2);
-
-  perfMark('timeline-fetch-end:mixed');
-  perfMeasure(
-    'Timeline fetch (mixed)',
-    'timeline-fetch-start:mixed',
-    'timeline-fetch-end:mixed'
-  );
-
-  return timeline2;
-};
-
-export const addSomeInterestFinds = async (): Promise<Post[]> => {
-  const { get } = await import('idb-keyval');
-  const interests = await get('interests');
-
-  if (interests && interests.length > 0) {
-    const interest = interests[Math.floor(Math.random() * interests.length)];
-
-    const accessToken = getAccessToken();
-    const url = buildMastodonUrl('/api/v2/search', {
-      q: interest,
-      resolve: true,
-      limit: 5,
-      type: 'accounts',
-    });
-
-    const response = await apiFetch(url, {
-      skipAuth: !accessToken,
-    });
-    const data = await response.json();
-
-    if (data.accounts && data.accounts.length > 0) {
-      // get statuses from account
-      const account =
-        data.accounts[Math.floor(Math.random() * data.accounts.length)];
-
-      // get posts from account
-      const posts = await getUsersPosts(account.id);
-
-      return posts.slice(0, 5);
-    } else {
-      return [];
-    }
-  } else {
-    return [];
-  }
 };
 
 // Wrapper for preview timeline with pagination state
@@ -189,11 +93,6 @@ export const getPaginatedHomeTimeline = async (
   }
 
   const accessToken = getAccessToken();
-
-  // Normalize type
-  if (type === 'for you') {
-    type = 'home';
-  }
 
   // Use provided maxId, fall back to lastPageID for this type, or fetch from beginning
   const effectiveMaxId = maxId || getLastPageID(type);
@@ -275,7 +174,7 @@ export const unboostPost = async (id: string) => {
   return mastodonUnfavoritePost(id);
 };
 
-// Use mastodon library's reblogPost but with Firebase fallback
+// Uses Firebase function for reblog — routes through service worker for background-sync support
 export const reblogPost = async (id: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
@@ -342,9 +241,6 @@ export const votePoll = async (
   return response.json();
 };
 
-// Use mastodon library's getMediaTimeline
-export const mediaTimeline = mastodonGetMediaTimeline;
-
 export const searchTimeline = async (query: string) => {
   const accessToken = getAccessToken();
   const server = getServer();
@@ -359,9 +255,6 @@ export const searchTimeline = async (query: string) => {
 
 // Use mastodon library's getHashtagTimeline
 export const getHashtagTimeline = mastodonGetHashtagTimeline;
-
-// Use mastodon library's getStatus
-export const getAStatus = mastodonGetStatus;
 
 async function handlePeriodic(): Promise<unknown> {
   const registration: ServiceWorkerRegistration =

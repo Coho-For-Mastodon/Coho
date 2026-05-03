@@ -6,8 +6,6 @@
  * Split into generic (library-reusable) and Coho-specific types.
  */
 
-import type { get, set } from 'idb-keyval';
-
 // ============================================================================
 // Generic SW Types (library-reusable)
 // ============================================================================
@@ -118,10 +116,6 @@ export interface PushSubscriptionChangeEvent extends ExtendableEvent {
  * Use this as the type for `self` in SW modules.
  */
 export type CohoServiceWorkerGlobalScope = ServiceWorkerGlobalScope & {
-  idbKeyval: {
-    get: typeof get;
-    set: typeof set;
-  };
   widgets?: {
     updateByTag: (
       tag: string,

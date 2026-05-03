@@ -93,11 +93,3 @@ export function getPickerEmojis(): EmojiCategory[] {
   }
   return categories;
 }
-
-/**
- * Reset the in-memory cache.  Useful when switching accounts.
- */
-export function clearCustomEmojiCache(): void {
-  emojiList = null;
-  emojiMap = null;
-}

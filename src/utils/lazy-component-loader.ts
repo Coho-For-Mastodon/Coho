@@ -88,7 +88,6 @@ export const componentLoaders = {
 
   // Drawer components
   appTheme: () => import('../components/app-theme'),
-  userTerms: () => import('../components/user-terms'),
   rightClick: () => import('../components/right-click'),
 
   // Dialog components

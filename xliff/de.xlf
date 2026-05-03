@@ -526,62 +526,6 @@
   <source>Open Settings</source>
   <target>Einstellungen öffnen</target>
 </trans-unit>
-<trans-unit id="sc565503c7584ed60">
-  <source>Interests</source>
-  <target>Interessen</target>
-</trans-unit>
-<trans-unit id="se088dfba6684a16f">
-  <source>Technology</source>
-  <target>Technologie</target>
-</trans-unit>
-<trans-unit id="s8a127bd255333eda">
-  <source>Sports</source>
-  <target>Sport</target>
-</trans-unit>
-<trans-unit id="sb0a26af3eb6ab88e">
-  <source>Politics</source>
-  <target>Politik</target>
-</trans-unit>
-<trans-unit id="sb8f030e19d93bb79">
-  <source>Entertainment</source>
-  <target>Unterhaltung</target>
-</trans-unit>
-<trans-unit id="s233ae776268cd44b">
-  <source>Business</source>
-  <target>Wirtschaft</target>
-</trans-unit>
-<trans-unit id="s08ce549fa4d15dfd">
-  <source>Science</source>
-  <target>Wissenschaft</target>
-</trans-unit>
-<trans-unit id="sbaf0a7c417e388af">
-  <source>Health</source>
-  <target>Gesundheit</target>
-</trans-unit>
-<trans-unit id="sbb87af74ab3706b9">
-  <source>Travel</source>
-  <target>Reisen</target>
-</trans-unit>
-<trans-unit id="s07a00d850d958329">
-  <source>Food</source>
-  <target>Essen</target>
-</trans-unit>
-<trans-unit id="s19617036a468a75f">
-  <source>Fashion</source>
-  <target>Mode</target>
-</trans-unit>
-<trans-unit id="sbec848a6b81917c0">
-  <source>Lifestyle</source>
-  <target>Lifestyle</target>
-</trans-unit>
-<trans-unit id="sf9f8d719a044edca">
-  <source>Art</source>
-  <target>Kunst</target>
-</trans-unit>
-<trans-unit id="s9ca372a6096ddd54">
-  <source>Music</source>
-  <target>Musik</target>
-</trans-unit>
 <trans-unit id="sdc71496dfa9818bc">
   <source>Explore</source>
   <target>Entdecken</target>

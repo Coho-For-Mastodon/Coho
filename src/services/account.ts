@@ -123,41 +123,6 @@ export const editAccount = async (
   return data as CredentialAccount;
 };
 
-export const getPeers = async () => {
-  const response = await apiFetch(
-    'https://mastodon.social/api/v1/instance/peers',
-    { skipAuth: true }
-  );
-  const data = await response.json();
-
-  // return first 300
-  return data.slice(0, 50);
-};
-
-export const checkFollowing = async (id: string) => {
-  try {
-    const accessToken = getAccessToken();
-    const server = getServer();
-    const response = await apiFetch(
-      `${FIREBASE_FUNCTIONS_BASE_URL}/isFollowing`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken, server, id }),
-        skipAuth: true,
-      }
-    );
-    const data = await response.json();
-
-    return data;
-  } catch {
-    const server = getServer();
-    if (server) {
-      await initAuth(server);
-    }
-  }
-};
-
 let currentUser: Account | null = null;
 
 /**

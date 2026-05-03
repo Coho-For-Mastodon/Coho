@@ -176,16 +176,6 @@ export async function isNativeSpeechRecognitionAvailable(): Promise<boolean> {
 }
 
 /**
- * Get the speech recognition mode available on this device.
- */
-export async function getNativeSpeechMode(): Promise<
-  'advanced' | 'basic' | 'unavailable'
-> {
-  await isNativeSpeechRecognitionAvailable();
-  return cachedSpeechStatus?.mode ?? 'unavailable';
-}
-
-/**
  * Start native speech recognition from the microphone.
  * Returns a promise that resolves with the final transcribed text
  * when recognition ends (after calling nativeStopSpeechRecognition).

@@ -8,7 +8,6 @@ import type {
 } from '../mastodon/types';
 import {
   getFilters as mastodonGetFilters,
-  getFilter as mastodonGetFilter,
   createFilter as mastodonCreateFilter,
   updateFilter as mastodonUpdateFilter,
   deleteFilter as mastodonDeleteFilter,
@@ -16,10 +15,6 @@ import {
 
 export const getFilters = async (): Promise<Filter[]> => {
   return mastodonGetFilters();
-};
-
-export const getFilter = async (id: string): Promise<Filter> => {
-  return mastodonGetFilter(id);
 };
 
 export const createFilter = async (

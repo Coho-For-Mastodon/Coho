@@ -42,9 +42,6 @@ describe('app-timeline actions', () => {
 
     el.timelineType = 'federated';
     expect(el.timelineTitle).toBe('Federated');
-
-    el.timelineType = 'home and some trending';
-    expect(el.timelineTitle).toBe('Home & Trending');
   });
 
   it('updates timeline when data changes', async () => {

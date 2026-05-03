@@ -107,23 +107,6 @@ export const translate = async (
   }
 };
 
-export const createAPost = async (prompt: string) => {
-  // Use Firebase Function
-  const response = await fetch(
-    `${FIREBASE_FUNCTIONS_BASE_URL}/generateStatus`,
-    {
-      method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json',
-      }),
-      body: JSON.stringify({ prompt }),
-    }
-  );
-  const data = await response.json();
-
-  return data;
-};
-
 /**
  * Check if Chrome's Proofreader API is available on this device
  */
@@ -512,13 +495,6 @@ export const isOnDeviceTranslationAvailable = (): boolean => {
     // Not in Capacitor context
   }
   return 'Translator' in window;
-};
-
-/**
- * Check if on-device summarization is available via Chrome's Summarizer API
- */
-export const isOnDeviceSummarizationAvailable = (): boolean => {
-  return 'summarizer' in window;
 };
 
 // Lazy-loaded Whisper worker for transformers.js

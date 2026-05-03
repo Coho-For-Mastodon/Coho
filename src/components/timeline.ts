@@ -11,7 +11,6 @@ import {
   enrichPostsWithReplyContext,
   groupSelfThreads,
   getPaginatedHomeTimeline,
-  mixTimeline,
   prefetchNextPage,
   resetLastPageID,
 } from '../services/timeline';
@@ -168,8 +167,6 @@ export class Timeline extends LitElement {
     | 'local'
     | 'federated'
     | 'media'
-    | 'for you'
-    | 'home and some trending'
     | `list:${string}` = 'home';
 
   @property({ type: Boolean }) guestMode: boolean = false;
@@ -182,8 +179,6 @@ export class Timeline extends LitElement {
   private get _filterContext(): FilterContext {
     switch (this.timelineType) {
       case 'home':
-      case 'for you':
-      case 'home and some trending':
       case 'media':
         return 'home';
       case 'local':
@@ -214,10 +209,6 @@ export class Timeline extends LitElement {
         return 'Federated';
       case 'media':
         return 'Media';
-      case 'for you':
-        return 'For You';
-      case 'home and some trending':
-        return 'Home & Trending';
       default:
         return 'Timeline';
     }
@@ -1048,9 +1039,14 @@ export class Timeline extends LitElement {
       const savedTimelineType = await get('timelineType');
 
       if (savedTimelineType) {
+        const legacyMap: Record<string, string> = {
+          'public': 'federated',
+          'for you': 'home',
+          'home and some trending': 'home',
+        };
         const migratedTimelineType =
-          savedTimelineType === 'public' ? 'federated' : savedTimelineType;
-        this.timelineType = migratedTimelineType;
+          legacyMap[savedTimelineType] ?? savedTimelineType;
+        this.timelineType = migratedTimelineType as typeof this.timelineType;
         if (migratedTimelineType !== savedTimelineType) {
           const { set } = await import('idb-keyval');
           await set('timelineType', migratedTimelineType);
@@ -1186,9 +1182,6 @@ export class Timeline extends LitElement {
   /** Fetch raw posts for the current timeline type. */
   private async _fetchTimelinePosts(): Promise<Post[]> {
     switch (this.timelineType) {
-      case 'for you':
-      case 'home and some trending':
-        return mixTimeline('home');
       case 'home':
         return getPaginatedHomeTimeline('home');
       case 'local': {
@@ -1227,13 +1220,8 @@ export class Timeline extends LitElement {
     let timelineData: Post[] = [];
     switch (this.timelineType) {
       case 'home':
-      case 'for you':
-      case 'home and some trending':
       case 'media':
-        timelineData = await getPaginatedHomeTimeline(
-          this.timelineType ? this.timelineType : 'home',
-          lastPostId
-        );
+        timelineData = await getPaginatedHomeTimeline('home', lastPostId);
         break;
       case 'local': {
         const { getPublicTimeline } = await import('../services/timeline');
@@ -1302,11 +1290,6 @@ export class Timeline extends LitElement {
 
       // Fetch fresh data based on timeline type
       switch (this.timelineType) {
-        case 'for you':
-        case 'home and some trending': {
-          freshPosts = await mixTimeline('home');
-          break;
-        }
         case 'home': {
           freshPosts = await getPaginatedHomeTimeline('home');
           break;
@@ -1453,14 +1436,7 @@ export class Timeline extends LitElement {
   }
 
   async changeTimelineType(
-    type:
-      | 'home'
-      | 'local'
-      | 'federated'
-      | 'media'
-      | 'for you'
-      | 'home and some trending'
-      | `list:${string}`
+    type: 'home' | 'local' | 'federated' | 'media' | `list:${string}`
   ) {
     this.timelineType = type;
 
@@ -1536,17 +1512,6 @@ export class Timeline extends LitElement {
               <md-menu>
                 <md-menu-item @click="${() => this.changeTimelineType('home')}">
                   Home
-                </md-menu-item>
-                <md-menu-item
-                  @click="${() => this.changeTimelineType('for you')}"
-                >
-                  For You
-                </md-menu-item>
-                <md-menu-item
-                  @click="${() =>
-                    this.changeTimelineType('home and some trending')}"
-                >
-                  Home & Trending
                 </md-menu-item>
                 <md-divider></md-divider>
                 <md-menu-item
