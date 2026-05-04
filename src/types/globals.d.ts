@@ -2,6 +2,7 @@ export {};
 
 declare global {
   interface Window {
+    __COHO_ENABLE_PERF_OBSERVER__?: boolean;
     summarizer: {
       capabilities(): Promise<{ available: string }>;
       create(options: unknown): Promise<SummarizerSession>;

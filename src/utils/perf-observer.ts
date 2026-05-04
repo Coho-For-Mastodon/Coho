@@ -23,6 +23,26 @@ const RESET_STYLE = 'color:inherit;font-weight:normal';
 const WARN_STYLE = 'color:#ff6d00;font-weight:bold';
 const ERROR_STYLE = 'color:#d50000;font-weight:bold';
 
+export const PERF_OBSERVER_DEVTOOLS_FLAG = '__COHO_ENABLE_PERF_OBSERVER__';
+export const PERF_OBSERVER_STORAGE_KEY = 'coho:enablePerfObserver';
+
+function isPersistentPerfFlagEnabled(): boolean {
+  try {
+    return localStorage.getItem(PERF_OBSERVER_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function isPerfInstrumentationEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  return (
+    window[PERF_OBSERVER_DEVTOOLS_FLAG] === true ||
+    isPersistentPerfFlagEnabled()
+  );
+}
+
 function log(message: string, ...args: unknown[]) {
   console.debug(PREFIX + ' ' + message, LABEL_STYLE, RESET_STYLE, ...args);
 }
@@ -38,6 +58,8 @@ function warn(message: string, ...args: unknown[]) {
  * Safe to call at any time — silently no-ops if the Performance API is absent.
  */
 export function perfMark(name: string): void {
+  if (!isPerfInstrumentationEnabled()) return;
+
   try {
     performance.mark(name);
   } catch {
@@ -53,6 +75,8 @@ export function perfMark(name: string): void {
  *               measurement ends at "now".
  */
 export function perfMeasure(label: string, start: string, end?: string): void {
+  if (!isPerfInstrumentationEnabled()) return;
+
   try {
     const measure = end
       ? performance.measure(label, start, end)
@@ -88,7 +112,12 @@ let initialized = false;
  * calls are no-ops.
  */
 export function initPerfObserver(): void {
-  if (initialized || typeof PerformanceObserver === 'undefined') return;
+  if (
+    initialized ||
+    !isPerfInstrumentationEnabled() ||
+    typeof PerformanceObserver === 'undefined'
+  )
+    return;
   initialized = true;
 
   _observeLCP();
