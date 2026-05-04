@@ -404,7 +404,6 @@ export const templates = {
   saf458952feffaf42: `Create a list`,
   s99775221d3003db4: `Creating...`,
   s1bfc5d13a351d84f: `Create list`,
-  sa958d9ee50941ce7: `Search to add people (optional)`,
   sfa288e022c504e9b: `Your lists`,
   sdf17192a9579f884: `Loading lists...`,
   s89fa7b1bb77d0a04: `No lists yet. Create one above.`,

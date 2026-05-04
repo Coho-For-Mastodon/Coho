@@ -4,6 +4,7 @@ import { localized, msg } from '@lit/localize';
 
 import './md/md-dialog';
 import './md/md-button';
+import './md/md-icon-button';
 import './md/md-text-field';
 import './md/md-divider';
 import './list-edit-dialog';
@@ -41,59 +42,75 @@ export class ListsDialog extends LitElement {
 
   static styles = css`
     md-dialog::part(dialog) {
-      max-width: 560px;
+      max-width: 620px;
       width: 92vw;
     }
 
     .content {
       display: flex;
       flex-direction: column;
+      gap: 18px;
+    }
+
+    .section {
+      display: grid;
       gap: 12px;
     }
 
     .section-title {
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--md-sys-color-on-surface-variant, #49454f);
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      margin-bottom: 8px;
     }
 
     .create-form {
       display: grid;
-      gap: 10px;
-      padding: 12px;
-      border-radius: var(--md-sys-shape-corner-large);
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-surface-container, #f3edf7) 72%,
-        transparent
-      );
+      gap: 12px;
     }
 
     .create-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 10px;
+      gap: 12px;
       align-items: end;
+    }
+
+    .field-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-label {
+      color: var(--md-sys-color-on-surface-variant, #49454f);
+      font-size: 12px;
+      font-weight: 600;
     }
 
     .list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+      min-height: 160px;
       max-height: min(38vh, 360px);
       overflow-y: auto;
-      padding-right: 2px;
+      padding-right: 4px;
+    }
+
+    .list-placeholder .empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
     }
 
     .list-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
+      gap: 16px;
+      min-height: 64px;
+      padding: 10px 8px 10px 16px;
       border-radius: var(--md-sys-shape-corner-medium);
       border: 1px solid
         color-mix(
@@ -122,7 +139,7 @@ export class ListsDialog extends LitElement {
 
     .list-title {
       font-weight: 600;
-      font-size: 15px;
+      font-size: 16px;
       color: var(--md-sys-color-on-surface, #1d1b20);
       min-width: 0;
     }
@@ -130,7 +147,7 @@ export class ListsDialog extends LitElement {
     .list-meta {
       font-size: 11px;
       color: var(--md-sys-color-on-surface-variant, #49454f);
-      padding: 3px 8px;
+      padding: 4px 9px;
       border-radius: var(--md-sys-shape-corner-full);
       background: color-mix(
         in srgb,
@@ -142,8 +159,19 @@ export class ListsDialog extends LitElement {
     .list-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 2px;
       flex-shrink: 0;
+    }
+
+    .list-actions md-icon-button::part(base) {
+      height: 36px;
+      padding: 7px;
+      width: 36px;
+    }
+
+    .list-actions md-icon-button::part(icon) {
+      height: 20px;
+      width: 20px;
     }
 
     .empty {
@@ -160,20 +188,29 @@ export class ListsDialog extends LitElement {
     }
 
     .policy-toggle {
-      display: flex;
-      gap: 6px;
+      display: inline-flex;
+      width: fit-content;
+      max-width: 100%;
+      gap: 4px;
       flex-wrap: wrap;
+      padding: 4px;
+      border-radius: var(--md-sys-shape-corner-full);
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-surface-container-highest, #36343b) 48%,
+        transparent
+      );
     }
 
     .policy-chip {
-      padding: 4px 10px;
-      min-height: 30px;
+      padding: 5px 12px;
+      min-height: 32px;
       border-radius: var(--md-sys-shape-corner-full);
-      border: 1px solid var(--md-sys-color-outline, #79747e);
+      border: none;
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
-      color: var(--md-sys-color-on-surface, #1d1b20);
+      color: var(--md-sys-color-on-surface-variant, #49454f);
       background: transparent;
     }
 
@@ -181,6 +218,54 @@ export class ListsDialog extends LitElement {
       background: var(--md-sys-color-primary-container, #eaddff);
       border-color: transparent;
       color: var(--md-sys-color-on-primary-container, #21005d);
+    }
+
+    .member-disclosure {
+      border-top: 1px solid
+        color-mix(
+          in srgb,
+          var(--md-sys-color-outline-variant, #79747e) 52%,
+          transparent
+        );
+      padding-top: 4px;
+    }
+
+    .member-disclosure summary {
+      -webkit-tap-highlight-color: transparent;
+      align-items: center;
+      border-radius: var(--md-sys-shape-corner-full);
+      color: var(--md-sys-color-primary, var(--sl-color-primary-600));
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 13px;
+      font-weight: 600;
+      gap: 6px;
+      list-style: none;
+      min-height: 36px;
+      padding: 0 10px;
+      width: fit-content;
+    }
+
+    .member-disclosure summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .member-disclosure summary::before {
+      content: '+';
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .member-disclosure[open] summary::before {
+      content: '-';
+    }
+
+    .member-disclosure summary:hover {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-primary, var(--sl-color-primary-600)) 9%,
+        transparent
+      );
     }
 
     .member-search-results {
@@ -249,6 +334,7 @@ export class ListsDialog extends LitElement {
     .member-picker {
       display: grid;
       gap: 8px;
+      padding-top: 8px;
     }
 
     .member-pill {
@@ -310,6 +396,14 @@ export class ListsDialog extends LitElement {
     @media (max-width: 520px) {
       .create-row {
         grid-template-columns: 1fr;
+      }
+
+      .policy-toggle {
+        width: 100%;
+      }
+
+      .policy-chip {
+        flex: 1 1 auto;
       }
 
       .list-item {
@@ -545,7 +639,7 @@ export class ListsDialog extends LitElement {
         @md-dialog-hide=${() => this.hide()}
       >
         <div class="content">
-          <div>
+          <div class="section">
             <div class="section-title">${msg('Create a list')}</div>
             <div class="create-form">
               <div class="create-row">
@@ -564,100 +658,119 @@ export class ListsDialog extends LitElement {
                   ${this.submitting ? msg('Creating...') : msg('Create list')}
                 </md-button>
               </div>
-              ${this._renderPolicyToggle(
-                this.newRepliesPolicy,
-                this._setNewPolicy.bind(this)
-              )}
-              <div class="member-picker">
-                <md-text-field
-                  .value=${this.newMemberSearch}
-                  placeholder=${msg('Search to add people (optional)')}
-                  @input=${this._onNewMemberSearchInput}
-                ></md-text-field>
-                ${this.newMembers.length > 0
-                  ? html`
-                      <div class="selected-members">
-                        ${this.newMembers.map(
-                          (account) => html`
-                            <div class="member-pill">
-                              <img
-                                src="${account.avatar_static}"
-                                alt=""
-                                loading="lazy"
-                              />
-                              <span class="member-pill-label">
-                                ${account.display_name || account.username}
-                              </span>
-                              <button
-                                class="member-pill-remove"
-                                type="button"
-                                aria-label=${msg('Remove')}
-                                @click=${() => this._unstageNewMember(account)}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          `
-                        )}
-                      </div>
-                    `
-                  : nothing}
-                ${this.newMemberSearching
-                  ? html`<div class="search-hint">${msg('Searching...')}</div>`
-                  : this.newMemberSearch.trim() &&
-                      this.newMemberResults.length === 0 &&
-                      !this.newMemberSearching
-                    ? html`<div class="search-hint">
-                        ${msg('No results found.')}
-                      </div>`
-                    : nothing}
-                ${this.newMemberResults.length > 0
-                  ? html`
-                      <div class="member-search-results">
-                        ${this.newMemberResults.map(
-                          (account) => html`
-                            <div class="account-row">
-                              <img
-                                class="account-avatar"
-                                src="${account.avatar_static}"
-                                alt=""
-                                loading="lazy"
-                              />
-                              <div class="account-info">
-                                <div class="account-display-name">
-                                  ${account.display_name || account.username}
-                                </div>
-                                <div class="account-acct">@${account.acct}</div>
-                              </div>
-                              <md-button
-                                size="small"
-                                variant="tonal"
-                                @click=${() => this._stageNewMember(account)}
-                              >
-                                ${msg('Add')}
-                              </md-button>
-                            </div>
-                          `
-                        )}
-                      </div>
-                    `
-                  : nothing}
+              <div class="field-group">
+                <div class="field-label">${msg('Replies policy')}</div>
+                ${this._renderPolicyToggle(
+                  this.newRepliesPolicy,
+                  this._setNewPolicy.bind(this)
+                )}
               </div>
+              <details class="member-disclosure">
+                <summary>
+                  ${this.newMembers.length > 0
+                    ? msg('Add people') + ` (${this.newMembers.length})`
+                    : msg('Add people')}
+                </summary>
+                <div class="member-picker">
+                  <md-text-field
+                    .value=${this.newMemberSearch}
+                    placeholder=${msg('Search for accounts')}
+                    @input=${this._onNewMemberSearchInput}
+                  ></md-text-field>
+                  ${this.newMembers.length > 0
+                    ? html`
+                        <div class="selected-members">
+                          ${this.newMembers.map(
+                            (account) => html`
+                              <div class="member-pill">
+                                <img
+                                  src="${account.avatar_static}"
+                                  alt=""
+                                  loading="lazy"
+                                />
+                                <span class="member-pill-label">
+                                  ${account.display_name || account.username}
+                                </span>
+                                <button
+                                  class="member-pill-remove"
+                                  type="button"
+                                  aria-label=${msg('Remove')}
+                                  @click=${() =>
+                                    this._unstageNewMember(account)}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            `
+                          )}
+                        </div>
+                      `
+                    : nothing}
+                  ${this.newMemberSearching
+                    ? html`<div class="search-hint">
+                        ${msg('Searching...')}
+                      </div>`
+                    : this.newMemberSearch.trim() &&
+                        this.newMemberResults.length === 0 &&
+                        !this.newMemberSearching
+                      ? html`<div class="search-hint">
+                          ${msg('No results found.')}
+                        </div>`
+                      : nothing}
+                  ${this.newMemberResults.length > 0
+                    ? html`
+                        <div class="member-search-results">
+                          ${this.newMemberResults.map(
+                            (account) => html`
+                              <div class="account-row">
+                                <img
+                                  class="account-avatar"
+                                  src="${account.avatar_static}"
+                                  alt=""
+                                  loading="lazy"
+                                />
+                                <div class="account-info">
+                                  <div class="account-display-name">
+                                    ${account.display_name || account.username}
+                                  </div>
+                                  <div class="account-acct">
+                                    @${account.acct}
+                                  </div>
+                                </div>
+                                <md-button
+                                  size="small"
+                                  variant="tonal"
+                                  @click=${() => this._stageNewMember(account)}
+                                >
+                                  ${msg('Add')}
+                                </md-button>
+                              </div>
+                            `
+                          )}
+                        </div>
+                      `
+                    : nothing}
+                </div>
+              </details>
             </div>
           </div>
 
           <md-divider></md-divider>
 
-          <div>
+          <div class="section">
             <div class="section-title">${msg('Your lists')}</div>
             ${this.errorMessage
               ? html`<div class="error">${this.errorMessage}</div>`
               : nothing}
             ${this.loading
-              ? html`<div class="empty">${msg('Loading lists...')}</div>`
+              ? html`<div class="list list-placeholder">
+                  <div class="empty">${msg('Loading lists...')}</div>
+                </div>`
               : this.lists.length === 0
-                ? html`<div class="empty">
-                    ${msg('No lists yet. Create one above.')}
+                ? html`<div class="list list-placeholder">
+                    <div class="empty">
+                      ${msg('No lists yet. Create one above.')}
+                    </div>
                   </div>`
                 : html`
                     <div class="list">
@@ -672,22 +785,20 @@ export class ListsDialog extends LitElement {
                               </div>
                             </div>
                             <div class="list-actions">
-                              <md-button
-                                variant="text"
-                                size="small"
+                              <md-icon-button
+                                src="/assets/create-outline.svg"
+                                label=${msg('Edit')}
+                                title=${msg('Edit')}
                                 @click=${() => this._openEditDialog(list)}
                                 ?disabled=${this.submitting}
-                              >
-                                ${msg('Edit')}
-                              </md-button>
-                              <md-button
-                                variant="text"
-                                size="small"
+                              ></md-icon-button>
+                              <md-icon-button
+                                src="/assets/trash-outline.svg"
+                                label=${msg('Delete')}
+                                title=${msg('Delete')}
                                 @click=${() => this._handleDelete(list.id)}
                                 ?disabled=${this.submitting}
-                              >
-                                ${msg('Delete')}
-                              </md-button>
+                              ></md-icon-button>
                             </div>
                           </div>
                         `;

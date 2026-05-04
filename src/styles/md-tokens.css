@@ -116,8 +116,16 @@
     /* Primary Colors - dynamically updated by theme system */
     --md-sys-color-primary: var(--sl-color-primary-600);
     --md-sys-color-on-primary: #3d0d24;
-    --md-sys-color-primary-container: #5c1a3a;
-    --md-sys-color-on-primary-container: #ffe0ee;
+    --md-sys-color-primary-container: color-mix(
+      in srgb,
+      var(--md-sys-color-primary) 30%,
+      #2a2a2a
+    );
+    --md-sys-color-on-primary-container: color-mix(
+      in srgb,
+      var(--md-sys-color-primary) 40%,
+      #ffffff
+    );
 
     /* Secondary Colors - derived from primary for theming */
     --md-sys-color-secondary: var(--sl-color-primary-600);
