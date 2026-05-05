@@ -1,21 +1,41 @@
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 
+const normalizeLanguageCode = (language: string) =>
+  language.split('-')[0].toLowerCase();
+
+async function translateWithMastodon(
+  statusId: string | undefined,
+  language: string
+) {
+  if (!statusId) {
+    throw new Error('Mastodon translation fallback requires a status ID');
+  }
+
+  const { translateStatus } = await import('./posts');
+  const data = await translateStatus(statusId, language);
+
+  // Mastodon returns HTML in content; keep dialog output plain text.
+  return data.content.replace(/(<([^>]+)>)/gi, '');
+}
+
 export const translate = async (
   prompt: string,
   language: string = 'en-us',
   statusId?: string
 ) => {
   // Normalize target language code (e.g., 'en-us' -> 'en')
-  const targetLanguage = language.split('-')[0].toLowerCase();
+  const targetLanguage = normalizeLanguageCode(language);
 
   // Detect source language up front (shared by native + Chrome paths)
   let sourceLanguage = 'en';
-  if ('LanguageDetector' in window) {
+  let hasDetectedSourceLanguage = false;
+  if (typeof window.LanguageDetector !== 'undefined') {
     try {
       const detector = await window.LanguageDetector.create();
       const results = await detector.detect(prompt);
       if (results && results.length > 0 && results[0].confidence > 0.5) {
-        sourceLanguage = results[0].detectedLanguage;
+        sourceLanguage = normalizeLanguageCode(results[0].detectedLanguage);
+        hasDetectedSourceLanguage = true;
       }
       detector.destroy();
     } catch (err) {
@@ -25,14 +45,17 @@ export const translate = async (
     // Fallback to native ML Kit language detection on Android
     try {
       const { nativeDetectLanguage } = await import('./native-ai');
-      sourceLanguage = await nativeDetectLanguage(prompt);
+      sourceLanguage = normalizeLanguageCode(
+        await nativeDetectLanguage(prompt)
+      );
+      hasDetectedSourceLanguage = true;
     } catch {
       // Not on Android or native detection failed
     }
   }
 
-  // Skip translation if source and target are the same
-  if (sourceLanguage === targetLanguage) {
+  // Skip translation only when detection confidently says source and target match.
+  if (hasDetectedSourceLanguage && sourceLanguage === targetLanguage) {
     return prompt;
   }
 
@@ -61,8 +84,12 @@ export const translate = async (
 
   // Use Chrome's built-in Translator API
   try {
+    if (!hasDetectedSourceLanguage) {
+      throw new Error('Source language detection unavailable');
+    }
+
     // Check if the API is available
-    if (!('Translator' in window)) {
+    if (typeof window.Translator === 'undefined') {
       throw new Error('Translator API not available');
     }
 
@@ -94,16 +121,7 @@ export const translate = async (
     return translatedText;
   } catch (error) {
     console.error('Translator API error:', error);
-    if (!statusId) {
-      throw new Error('Mastodon translation fallback requires a status ID');
-    }
-
-    const targetLanguage = language.split('-')[0].toLowerCase();
-    const { translateStatus } = await import('./posts');
-    const data = await translateStatus(statusId, targetLanguage);
-
-    // Mastodon returns HTML in content; keep dialog output plain text.
-    return data.content.replace(/(<([^>]+)>)/gi, '');
+    return translateWithMastodon(statusId, targetLanguage);
   }
 };
 
@@ -494,7 +512,7 @@ export const isOnDeviceTranslationAvailable = (): boolean => {
   } catch {
     // Not in Capacitor context
   }
-  return 'Translator' in window;
+  return typeof window.Translator !== 'undefined';
 };
 
 // Lazy-loaded Whisper worker for transformers.js

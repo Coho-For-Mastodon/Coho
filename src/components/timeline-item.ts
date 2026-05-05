@@ -124,12 +124,6 @@ export class TimelineItem extends LitElement {
       }
 
       md-card::part(base) {
-        border: 1px solid
-          color-mix(
-            in srgb,
-            var(--md-sys-color-outline-variant, #2b2930) 60%,
-            transparent
-          );
         transition:
           background 0.2s ease,
           border-color 0.2s ease;
