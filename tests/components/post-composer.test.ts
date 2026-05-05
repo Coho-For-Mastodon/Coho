@@ -14,6 +14,7 @@ vi.mock('../../src/utils/optimistic-updates', () => ({
 
 import '../../src/components/post-composer';
 import type { PostComposer } from '../../src/components/post-composer';
+import type { Post } from '../../src/interfaces/Post';
 import { setupAuth } from '../setup';
 
 // Helper to wait for animation frame
@@ -96,6 +97,34 @@ describe('post-composer multi-image upload', () => {
 
       // The mock instance returns max_media_attachments: 4
       expect((el as any).maxMediaAttachments).toBe(4);
+    });
+  });
+
+  describe('dialog mode layout', () => {
+    it('keeps reply footer in flow and uses a subtle reply indicator', async () => {
+      const replyTo = {
+        account: { acct: 'alice@example.social' },
+      } as Post;
+      const el = await fixture<PostComposer>(html`
+        <post-composer compact dialog-mode .replyTo=${replyTo}></post-composer>
+      `);
+
+      await elementUpdated(el);
+      await waitForFrames(3);
+
+      const footer = el.shadowRoot?.querySelector('.footer-actions');
+      const indicator = el.shadowRoot?.querySelector('.replying-to-indicator');
+
+      expect(el.hasAttribute('dialog-mode')).toBe(true);
+      expect(footer).toBeTruthy();
+      expect(indicator).toBeTruthy();
+      expect(getComputedStyle(footer as Element).position).toBe('static');
+      expect(getComputedStyle(indicator as Element).backgroundColor).toBe(
+        'rgba(0, 0, 0, 0)'
+      );
+      expect(getComputedStyle(indicator as Element).borderBottomStyle).toBe(
+        'solid'
+      );
     });
   });
 

@@ -17,7 +17,7 @@ import type { Post } from '../interfaces/Post';
 @customElement('post-dialog')
 export class PostDialog extends LitElement {
   @state() isMobile: boolean = false;
-  @state() isEditing: boolean = false;
+  @state() private dialogMode: 'new' | 'reply' | 'quote' | 'edit' = 'new';
 
   @query('#notify-dialog') private notifyDialog!: MdDialog;
   @query('post-composer') private composer!: PostComposer;
@@ -69,6 +69,7 @@ export class PostDialog extends LitElement {
     origin?: { x: number; y: number },
     shareText?: string
   ) {
+    this.dialogMode = 'new';
     await this.updateComplete;
     await customElements.whenDefined('md-dialog');
 
@@ -89,6 +90,7 @@ export class PostDialog extends LitElement {
   }
 
   public openReplyDialog(post: Post) {
+    this.dialogMode = 'reply';
     this.updateComplete.then(() => {
       if (this.composer) {
         this.composer.replyTo = post;
@@ -98,6 +100,7 @@ export class PostDialog extends LitElement {
   }
 
   public openQuoteDialog(post: Post) {
+    this.dialogMode = 'quote';
     this.updateComplete.then(() => {
       if (this.composer) {
         this.composer.quotedPost = post;
@@ -107,7 +110,7 @@ export class PostDialog extends LitElement {
   }
 
   public openEditDialog(post: Post) {
-    this.isEditing = true;
+    this.dialogMode = 'edit';
     this.updateComplete.then(() => {
       if (this.composer) {
         this.composer.editingPost = post;
@@ -168,7 +171,26 @@ export class PostDialog extends LitElement {
     if (this.composer) {
       this.composer.reset();
     }
-    this.isEditing = false;
+    this.dialogMode = 'new';
+  }
+
+  private get dialogLabel() {
+    switch (this.dialogMode) {
+      case 'reply':
+        return msg('Reply');
+      case 'quote':
+        return msg('Quote Post');
+      case 'edit':
+        return msg('Edit Post');
+      case 'new':
+        return msg('New Post');
+      default:
+        return msg('New Post');
+    }
+  }
+
+  private get composerRows() {
+    return this.dialogMode === 'reply' ? 3 : 6;
   }
 
   private _handleDraftSaved() {
@@ -190,17 +212,18 @@ export class PostDialog extends LitElement {
     return html`
       <md-dialog
         id="notify-dialog"
-        label=${this.isEditing ? msg('Edit Post') : msg('New Post')}
+        label=${this.dialogLabel}
         ?fullscreen=${this.isMobile}
         ?no-backdrop-close=${this.isMobile}
         @close=${this._handleDialogClose}
       >
         <post-composer
+          dialog-mode
           @published=${this._handlePublished}
           @draft-saved=${this._handleDraftSaved}
           @open-scheduled-statuses=${(event: Event) =>
             this._handleOpenScheduledStatuses(event)}
-          rows="6"
+          .rows=${this.composerRows}
         ></post-composer>
       </md-dialog>
     `;

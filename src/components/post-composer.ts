@@ -116,6 +116,12 @@ export class PostComposer extends LitElement {
   @property({ type: Boolean }) compact = false;
 
   /**
+   * Whether the composer is rendered inside a dialog/sheet surface.
+   */
+  @property({ type: Boolean, attribute: 'dialog-mode', reflect: true })
+  dialogMode = false;
+
+  /**
    * Placeholder text for the textarea.
    */
   @property({ type: String }) placeholder = '';
@@ -131,6 +137,11 @@ export class PostComposer extends LitElement {
    * Useful for DM thread views where the reply context is implicit.
    */
   @property({ type: Boolean }) hideReplyIndicator = false;
+
+  /**
+   * Hide the reply indicator dismiss button while keeping the reply context visible.
+   */
+  @property({ type: Boolean }) hideReplyDismiss = false;
 
   /**
    * Hide draft save/load UI. Useful for ephemeral contexts like DM threads.
@@ -365,6 +376,7 @@ export class PostComposer extends LitElement {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 8px;
         font-size: 12px;
         color: var(--md-sys-color-on-surface-variant);
         padding: 4px 8px;
@@ -970,6 +982,81 @@ export class PostComposer extends LitElement {
       /* In compact mode (inline reply), footer stays in normal flow */
       :host([compact]) .footer-actions {
         position: static;
+      }
+
+      :host([dialog-mode]) .composer-wrapper {
+        gap: 6px;
+      }
+
+      :host([dialog-mode]) .replying-to-indicator {
+        min-height: 32px;
+        padding: 0 0 2px 2px;
+        background: transparent;
+        border-bottom: 1px solid
+          color-mix(
+            in srgb,
+            var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12)) 70%,
+            transparent
+          );
+        border-radius: 0;
+        color: var(--md-sys-color-on-surface-variant, #cac4d0);
+        font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
+        line-height: 16px;
+      }
+
+      :host([dialog-mode]) .replying-to-indicator span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      :host([dialog-mode]) .replying-to-indicator md-icon-button {
+        flex: 0 0 auto;
+        margin-right: -6px;
+      }
+
+      :host([dialog-mode]) .replying-to-indicator md-icon-button::part(base) {
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+      }
+
+      :host([dialog-mode]) .replying-to-indicator md-icon-button::part(icon) {
+        width: 20px;
+        height: 20px;
+      }
+
+      :host([dialog-mode]) .actions-row {
+        gap: 4px;
+      }
+
+      :host([dialog-mode]) .footer-actions {
+        position: static;
+        align-items: center;
+        gap: 4px 10px;
+        padding-top: 0;
+      }
+
+      :host([dialog-mode]) .footer-actions > div {
+        gap: 6px;
+      }
+
+      :host([dialog-mode]) .footer-meta {
+        min-height: 32px;
+      }
+
+      :host([dialog-mode]) .footer-actions > div:nth-child(2),
+      :host([dialog-mode]) .footer-primary {
+        flex: 0 0 auto;
+      }
+
+      @media (max-width: 820px) {
+        :host([dialog-mode]) .footer-actions {
+          left: auto;
+          right: auto;
+          bottom: auto;
+        }
       }
     `,
   ];
@@ -2769,11 +2856,15 @@ export class PostComposer extends LitElement {
     return html`
       <div class="replying-to-indicator">
         <span>${msg(str`Replying to @${this.replyTo.account.acct}`)}</span>
-        <md-icon-button
-          label=${msg('Dismiss')}
-          src="/assets/close-outline.svg"
-          @click=${() => this.clearReplyTo()}
-        ></md-icon-button>
+        ${this.hideReplyDismiss
+          ? nothing
+          : html`
+              <md-icon-button
+                label=${msg('Dismiss')}
+                src="/assets/close-outline.svg"
+                @click=${() => this.clearReplyTo()}
+              ></md-icon-button>
+            `}
       </div>
     `;
   }

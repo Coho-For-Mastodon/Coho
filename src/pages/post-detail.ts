@@ -177,6 +177,28 @@ export class PostDetail extends LitElement {
         --md-text-area-min-height: 40px;
       }
 
+      :host([embedded]) .composer {
+        max-width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 0;
+        padding: 8px 24px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: var(--md-sys-color-surface, #1e1e24);
+        border-top: 1px solid
+          var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.12));
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      :host([embedded]) .composer-shell {
+        max-width: var(--post-detail-max-width, 720px);
+        margin: 0 auto;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        --md-text-area-min-height: 44px;
+      }
+
       @media (min-width: 820px) {
         main {
           padding-left: 24px;
@@ -652,6 +674,8 @@ export class PostDetail extends LitElement {
                 <div class="composer-shell">
                   <post-composer
                     compact
+                    .dialogMode=${embedded}
+                    .hideReplyDismiss=${embedded && !this.replyingTo}
                     rows="1"
                     .replyTo=${this.replyingTo || this.tweet}
                     placeholder=${msg('Reply to this post...')}
