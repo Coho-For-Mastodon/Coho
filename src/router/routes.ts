@@ -1,5 +1,11 @@
 import { html } from 'lit';
-import { type Route, type NavigationState, Router, lazy } from 'web-router';
+import {
+  type Route,
+  type NavigationState,
+  type RouterPlugin,
+  Router,
+  lazy,
+} from 'web-router';
 import type { TemplateResult } from 'lit';
 import type { Post } from '../interfaces/Post.js';
 import type { Account, Conversation } from '../mastodon/types/index.js';
@@ -176,8 +182,66 @@ const routes: Route<TemplateResult>[] = [
   },
 ];
 
+const viewTransitionDisabledPaths = new Set(['/', '/home']);
+
+function createViewTransitionPolicyPlugin(): RouterPlugin {
+  let currentPathname =
+    typeof window === 'undefined' ? '' : window.location.pathname;
+  let restoreStartViewTransition: (() => void) | undefined;
+
+  const restore = () => {
+    restoreStartViewTransition?.();
+    restoreStartViewTransition = undefined;
+  };
+
+  return {
+    name: 'root-home-view-transition-policy',
+    beforeNavigation: ({ url }) => {
+      const shouldSkipViewTransition =
+        viewTransitionDisabledPaths.has(currentPathname) ||
+        viewTransitionDisabledPaths.has(url.pathname);
+
+      if (
+        !shouldSkipViewTransition ||
+        !('startViewTransition' in document) ||
+        restoreStartViewTransition
+      ) {
+        return;
+      }
+
+      const originalStartViewTransition =
+        document.startViewTransition.bind(document);
+      restoreStartViewTransition = () => {
+        document.startViewTransition = originalStartViewTransition;
+      };
+
+      document.startViewTransition = ((callback: () => void) => {
+        restore();
+        callback();
+        return {
+          ready: Promise.resolve(),
+          finished: Promise.resolve(),
+          updateCallbackDone: Promise.resolve(),
+        };
+      }) as typeof document.startViewTransition;
+    },
+    afterNavigation: ({ url }) => {
+      currentPathname = url.pathname;
+      restore();
+    },
+  };
+}
+
+const viewTransitionPolicyPlugin = createViewTransitionPolicyPlugin();
+const routesWithViewTransitionPolicy = routes.map((route) => ({
+  ...route,
+  plugins: [...(route.plugins ?? []), viewTransitionPolicyPlugin],
+}));
+
 /**
  * Router instance using the Navigation API
  * https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API
  */
-export const router = new Router<TemplateResult>({ routes });
+export const router = new Router<TemplateResult>({
+  routes: routesWithViewTransitionPolicy,
+});
