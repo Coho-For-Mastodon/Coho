@@ -2875,13 +2875,6 @@ export class PostComposer extends LitElement {
     return html`
       <div class="replying-to-indicator">
         <span>${msg(str`Quoting @${this.quotedPost.account.acct}`)}</span>
-        <md-icon-button
-          label=${msg('Dismiss')}
-          src="/assets/close-outline.svg"
-          @click=${() => {
-            this.quotedPost = null;
-          }}
-        ></md-icon-button>
       </div>
     `;
   }
