@@ -154,7 +154,8 @@ export class PostComposerAttachmentManager {
       return;
     }
 
-    const blobToUpload = detail.editedBlob || attachment.file || null;
+    const blobToUpload =
+      detail.editedBlob ?? (attachment.pending ? attachment.file : undefined);
 
     if (blobToUpload) {
       try {
@@ -168,7 +169,7 @@ export class PostComposerAttachmentManager {
                 { type: blobToUpload.type || 'image/jpeg' }
               );
 
-        if (detail.description) {
+        if (detail.description != null) {
           await updateMedia(result.id, detail.description);
         }
 
@@ -217,7 +218,7 @@ export class PostComposerAttachmentManager {
 
     if (!attachment.pending) {
       try {
-        if (detail.description) {
+        if (detail.description != null) {
           await updateMedia(detail.id, detail.description);
         }
         mediaEditDialog?.completeUpload(true);
@@ -240,6 +241,7 @@ export class PostComposerAttachmentManager {
       description,
       pending: true,
       file,
+      type: this.getMediaType(file),
     };
 
     this.host.setState({ attachments: [...state.attachments, newAttachment] });
@@ -311,7 +313,7 @@ export class PostComposerAttachmentManager {
       if (index === -1) return;
 
       const oldPreview = state.attachments[index].preview_url;
-      const isVideo = result.type === 'video';
+      const isVideo = result.type === 'video' || result.type === 'gifv';
       const updatedAttachment: LocalAttachment = {
         id: result.id,
         preview_url: isVideo ? oldPreview : result.preview_url,

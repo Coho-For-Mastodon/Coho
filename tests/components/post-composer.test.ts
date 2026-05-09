@@ -194,6 +194,33 @@ describe('post-composer multi-image upload', () => {
         (el as any).attachments.length >= (el as any).maxMediaAttachments;
       expect(atLimit).toBe(true);
     });
+
+    it('sets attaching while the picker flow is pending', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      let resolvePicker: (() => void) | undefined;
+      const pickerPromise = new Promise<void>((resolve) => {
+        resolvePicker = resolve;
+      });
+      const attachFilesFromPicker = vi
+        .spyOn((el as any).attachmentManager, 'attachFilesFromPicker')
+        .mockImplementation(() => pickerPromise);
+
+      const attachPromise = (el as any).attachFile();
+
+      expect((el as any).attaching).toBe(true);
+      expect(attachFilesFromPicker).toHaveBeenCalledWith({
+        pollEnabled: false,
+      });
+
+      resolvePicker?.();
+      await attachPromise;
+
+      expect((el as any).attaching).toBe(false);
+    });
   });
 
   describe('paste handling', () => {
@@ -546,6 +573,28 @@ describe('post-composer multi-image upload', () => {
   });
 
   describe('media edit image source', () => {
+    it('renders gifv attachments as video previews', async () => {
+      const el = await fixture<PostComposer>(
+        html`<post-composer></post-composer>`
+      );
+      await elementUpdated(el);
+
+      (el as any).attachments = [
+        {
+          id: 'media-gifv',
+          preview_url: 'blob:animated-gif',
+          description: null,
+          pending: false,
+          type: 'gifv',
+        },
+      ];
+
+      await elementUpdated(el);
+
+      expect(el.shadowRoot?.querySelector('.img-preview video')).toBeTruthy();
+      expect(el.shadowRoot?.querySelector('.img-preview img')).toBeNull();
+    });
+
     it('uses a blob URL for edit dialog when attachment has a local file', async () => {
       const el = await fixture<PostComposer>(
         html`<post-composer></post-composer>`

@@ -187,6 +187,9 @@ describe('PostComposerDraftManager', () => {
     expect(host.clearAttachments).toHaveBeenCalled();
     expect(host.restorePendingAttachment).toHaveBeenCalledTimes(1);
     expect(host.restorePendingAttachment.mock.calls[0][0]).toBeInstanceOf(File);
+    expect(host.restorePendingAttachment.mock.calls[0][0].type).toBe(
+      'image/png'
+    );
     expect(host.getState().statusText).toBe('restored draft');
     expect(host.getState().visibility).toBe('private');
     expect(host.getState().sensitive).toBe(true);

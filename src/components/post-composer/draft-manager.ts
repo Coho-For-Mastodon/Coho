@@ -121,13 +121,12 @@ export class PostComposerDraftManager {
     });
 
     for (const attachment of pendingAttachments ?? []) {
-      if (attachment.file instanceof File) {
+      if (attachment.file instanceof Blob) {
         const file =
           attachment.file instanceof File
             ? attachment.file
             : new File([attachment.file], 'draft-attachment', {
-                type:
-                  (attachment.file as Blob).type || 'application/octet-stream',
+                type: attachment.file.type || 'application/octet-stream',
               });
         this.host.restorePendingAttachment(
           file,

@@ -958,9 +958,14 @@ export class PostComposer extends LitElement {
   }
 
   async attachFile() {
-    await this.attachmentManager.attachFilesFromPicker({
-      pollEnabled: this.pollEnabled,
-    });
+    this.attaching = true;
+    try {
+      await this.attachmentManager.attachFilesFromPicker({
+        pollEnabled: this.pollEnabled,
+      });
+    } finally {
+      this.attaching = false;
+    }
   }
 
   removeImage(id: string) {
@@ -2046,7 +2051,8 @@ export class PostComposer extends LitElement {
                             <md-icon src="/assets/brush-outline.svg"></md-icon>
                           </md-icon-button>
                         </div>
-                        ${attachment.type === 'video'
+                        ${attachment.type === 'video' ||
+                        attachment.type === 'gifv'
                           ? html`<video
                               muted
                               preload="metadata"

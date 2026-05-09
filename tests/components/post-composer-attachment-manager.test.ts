@@ -172,6 +172,7 @@ describe('PostComposerAttachmentManager', () => {
   });
 
   it('updates existing media descriptions without reuploading', async () => {
+    const retainedFile = createMockFile('retained.png', 'image/png');
     const host = createHost({
       attachments: [
         {
@@ -179,6 +180,7 @@ describe('PostComposerAttachmentManager', () => {
           preview_url: 'https://cdn.example.com/media-1.png',
           description: null,
           pending: false,
+          file: retainedFile,
         },
       ],
     });
@@ -195,5 +197,124 @@ describe('PostComposerAttachmentManager', () => {
     );
     expect(host.completeUpload).toHaveBeenCalledWith(true);
     expect(host.getState().attachments[0].description).toBe('Updated alt text');
+  });
+
+  it('clears existing media descriptions with an empty string', async () => {
+    const host = createHost({
+      attachments: [
+        {
+          id: 'media-1',
+          preview_url: 'https://cdn.example.com/media-1.png',
+          description: 'Old alt text',
+          pending: false,
+        },
+      ],
+    });
+
+    await host.manager.handleMediaSave({
+      id: 'media-1',
+      description: '',
+    });
+
+    expect(hoisted.uploadMediaBlob).not.toHaveBeenCalled();
+    expect(hoisted.updateMedia).toHaveBeenCalledWith('media-1', '');
+    expect(host.completeUpload).toHaveBeenCalledWith(true);
+    expect(host.getState().attachments[0].description).toBe('');
+  });
+
+  it('uploads edited media and sends blank descriptions', async () => {
+    const editedBlob = new Blob(['edited'], { type: 'image/png' });
+    const host = createHost({
+      attachments: [
+        {
+          id: 'media-1',
+          preview_url: 'https://cdn.example.com/media-1.png',
+          description: 'Old alt text',
+          pending: false,
+        },
+      ],
+    });
+
+    hoisted.uploadMediaBlob.mockResolvedValue({
+      id: 'media-2',
+      preview_url: 'https://cdn.example.com/media-2.png',
+      description: null,
+      type: 'image',
+    });
+
+    await host.manager.handleMediaSave({
+      id: 'media-1',
+      description: '',
+      editedBlob,
+    });
+
+    expect(hoisted.uploadMediaBlob).toHaveBeenCalledWith(editedBlob);
+    expect(hoisted.updateMedia).toHaveBeenCalledWith('media-2', '');
+    expect(host.completeUpload).toHaveBeenCalledWith(true);
+    expect(host.getState().attachments[0]).toEqual(
+      expect.objectContaining({
+        id: 'media-2',
+        preview_url: 'https://cdn.example.com/media-2.png',
+        description: '',
+        pending: false,
+        type: 'image',
+      })
+    );
+    expect(host.getState().attachments[0].file).toBeInstanceOf(File);
+  });
+
+  it('sets media type when restoring pending attachments', () => {
+    const host = createHost();
+    const createSpy = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:restored-video');
+    hoisted.uploadMediaBlob.mockImplementation(() => new Promise(() => {}));
+
+    const videoFile = createMockFile('restored.mp4', 'video/mp4');
+
+    host.manager.restorePendingAttachment(videoFile, 'Video alt text');
+
+    expect(host.getState().attachments[0]).toEqual(
+      expect.objectContaining({
+        preview_url: 'blob:restored-video',
+        description: 'Video alt text',
+        pending: true,
+        file: videoFile,
+        type: 'video',
+      })
+    );
+
+    createSpy.mockRestore();
+  });
+
+  it('keeps local blob previews for gifv upload results', async () => {
+    const host = createHost();
+    const createSpy = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:animated-gif');
+    const revokeSpy = vi.spyOn(URL, 'revokeObjectURL');
+
+    hoisted.uploadMediaBlob.mockResolvedValue({
+      id: 'media-gifv',
+      preview_url: 'https://cdn.example.com/media-gifv.png',
+      description: null,
+      type: 'gifv',
+    });
+
+    host.manager.addFileAttachment(createMockFile('animated.gif', 'image/gif'));
+    await flushPromises();
+
+    expect(host.getState().attachments[0]).toEqual(
+      expect.objectContaining({
+        id: 'media-gifv',
+        preview_url: 'blob:animated-gif',
+        pending: false,
+        type: 'gifv',
+      })
+    );
+    expect(revokeSpy).not.toHaveBeenCalledWith('blob:animated-gif');
+
+    createSpy.mockRestore();
+    revokeSpy.mockRestore();
   });
 });
