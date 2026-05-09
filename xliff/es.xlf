@@ -1002,7 +1002,7 @@
   <source>Disable the poll to attach media.</source>
 </trans-unit>
 <trans-unit id="see68daede2d8aaa1">
-  <source>Maximum <x id="0" equiv-text="${this.maxMediaAttachments}"/> attachments allowed.</source>
+  <source>Maximum <x id="0" equiv-text="${state.maxMediaAttachments}"/> attachments allowed.</source>
 </trans-unit>
 <trans-unit id="s45e6d0c9b559ac46">
   <source>Failed to upload media</source>
@@ -1272,7 +1272,7 @@
   <source>Could not schedule while offline. Reconnect and try again.</source>
 </trans-unit>
 <trans-unit id="sd15851075c069c6d">
-  <source>Post scheduled for <x id="0" equiv-text="${this._formatScheduledDateTime(scheduledAt)}"/>.</source>
+  <source>Post scheduled for <x id="0" equiv-text="${formatScheduledDateTime(scheduledAt)}"/>.</source>
 </trans-unit>
 <trans-unit id="s264cd9c6b80ca0fb">
   <source>Untitled draft</source>
@@ -1638,7 +1638,7 @@
   <source>Accounts</source>
 </trans-unit>
 <trans-unit id="s8201c70d584c2910">
-  <source>File exceeds the server limit of <x id="0" equiv-text="${this._formatBytes(sizeLimit)}"/>.</source>
+  <source>File exceeds the server limit of <x id="0" equiv-text="${this.formatBytes(sizeLimit)}"/>.</source>
 </trans-unit>
 <trans-unit id="s060f62c250a1042e">
   <source>Waiting for media to finish uploading…</source>
