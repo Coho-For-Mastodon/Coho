@@ -15,9 +15,7 @@ import './md/md-checkbox.js';
 import './md/md-dropdown.js';
 import './md/md-menu.js';
 import './md/md-menu-item.js';
-import './media-edit-dialog.js';
 import './md/md-skeleton.js';
-import './handwriting-dialog.js';
 import './quoted-post.js';
 
 import type { MdTextArea } from './md/md-text-area.js';
@@ -37,7 +35,6 @@ import {
   type PublishOrchestratorState,
 } from './post-composer/publish-orchestrator';
 
-import { getStatusSource } from '../services/posts';
 import { getInstanceInfo } from '../services/account';
 import {
   proofread,
@@ -198,6 +195,7 @@ export class PostComposer extends LitElement {
   // Handwriting recognition state
   @state() handwritingAvailable: boolean = false;
   @state() handwritingDialogOpen: boolean = false;
+  @state() handwritingDialogLoaded: boolean = false;
 
   // Emoji picker state
   @state() emojiPickerOpen: boolean = false;
@@ -230,6 +228,8 @@ export class PostComposer extends LitElement {
   private useNativeSpeech: boolean = false;
   private nativeSpeechPromise: Promise<string> | null = null;
   private nativeSpeechPartialCleanup: (() => void) | null = null;
+
+  private mediaEditDialogLoaded = false;
 
   private draftKey: string | null = null;
 
@@ -291,7 +291,7 @@ export class PostComposer extends LitElement {
       imageSizeLimit: this.imageSizeLimit,
       videoSizeLimit: this.videoSizeLimit,
     }),
-    setState: (patch) => {
+    setState: async (patch) => {
       if (patch.attachments !== undefined) {
         this.attachments = patch.attachments;
       }
@@ -302,6 +302,9 @@ export class PostComposer extends LitElement {
         this.activeAttachmentImageSrc = patch.activeAttachmentImageSrc;
       }
       if (patch.editDialogOpen !== undefined) {
+        await import('./media-edit-dialog.js');
+        this.mediaEditDialogLoaded = true;
+        await this.updateComplete;
         this.editDialogOpen = patch.editDialogOpen;
       }
       if (patch.maxMediaAttachments !== undefined) {
@@ -314,7 +317,10 @@ export class PostComposer extends LitElement {
         this.videoSizeLimit = patch.videoSizeLimit;
       }
     },
-    getMediaEditDialog: () => this.mediaEditDialog ?? null,
+    // @ts-expect-error - temporary
+    getMediaEditDialog: () => {
+      return this.shadowRoot?.querySelector('media-edit-dialog') ?? null;
+    },
   });
 
   private draftManager = this._createDraftManager();
@@ -322,8 +328,8 @@ export class PostComposer extends LitElement {
   private publishOrchestrator = this._createPublishOrchestrator();
 
   @query('md-text-area') private textArea!: MdTextArea;
-  @query('media-edit-dialog')
-  private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
+  // @query('media-edit-dialog')
+  // private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
   @query('#emoji-trigger') private _emojiButton!: HTMLElement;
   @query('#more-options-dropdown') private _moreOptionsDropdown?: MdDropdown;
 
@@ -496,6 +502,7 @@ export class PostComposer extends LitElement {
     }
 
     try {
+      const { getStatusSource } = await import('../services/posts');
       const source = await getStatusSource(this.editingPost.id);
       this.value = source.text;
 
@@ -1352,7 +1359,12 @@ export class PostComposer extends LitElement {
 
   // Handwriting
 
-  openHandwritingDialog() {
+  async openHandwritingDialog() {
+    await import('./handwriting-dialog.js');
+    this.handwritingDialogLoaded = true;
+
+    await this.updateComplete;
+
     this.handwritingDialogOpen = true;
   }
 
@@ -2221,21 +2233,23 @@ export class PostComposer extends LitElement {
       </div>
 
       ${this._renderDraftPickerDialog()}
-
-      <media-edit-dialog
-        .open="${this.editDialogOpen}"
-        .imageSrc="${this.activeAttachmentImageSrc}"
-        .description="${this.activeAttachment?.description || ''}"
-        .mediaId="${this.activeAttachment?.id || ''}"
-        @close="${() => this._closeEditDialog()}"
-        @save="${this.handleMediaSave}"
-      ></media-edit-dialog>
-
-      <handwriting-dialog
-        .open="${this.handwritingDialogOpen}"
-        @handwriting-complete="${this.handleHandwritingComplete}"
-        @close="${() => this.handleHandwritingClose()}"
-      ></handwriting-dialog>
+      ${this.mediaEditDialogLoaded
+        ? html`<media-edit-dialog
+            .open="${this.editDialogOpen}"
+            .imageSrc="${this.activeAttachmentImageSrc}"
+            .description="${this.activeAttachment?.description || ''}"
+            .mediaId="${this.activeAttachment?.id || ''}"
+            @close="${() => this._closeEditDialog()}"
+            @save="${this.handleMediaSave}"
+          ></media-edit-dialog>`
+        : nothing}
+      ${this.handwritingDialogLoaded
+        ? html`<handwriting-dialog
+            .open="${this.handwritingDialogOpen}"
+            @handwriting-complete="${this.handleHandwritingComplete}"
+            @close="${() => this.handleHandwritingClose()}"
+          ></handwriting-dialog>`
+        : nothing}
     `;
   }
 }

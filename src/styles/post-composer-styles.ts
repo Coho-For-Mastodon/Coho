@@ -115,6 +115,7 @@ export const postComposerStyles = [
       padding: 4px 8px;
       background: var(--md-sys-color-surface-container-high);
       border-radius: var(--md-sys-shape-corner-small);
+      animation: composerReveal 0.25s cubic-bezier(0.2, 0, 0, 1);
     }
 
     .poll-composer {
@@ -215,11 +216,6 @@ export const postComposerStyles = [
       font-size: var(--md-sys-typescale-title-small-font-size, 14px);
     }
 
-    .schedule-subtitle {
-      color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
-      font-size: var(--md-sys-typescale-label-medium-font-size, 12px);
-    }
-
     .schedule-inputs {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -249,10 +245,6 @@ export const postComposerStyles = [
 
     .mobile-icon-button {
       display: inline-flex;
-    }
-
-    .desktop-button {
-      display: none;
     }
 
     .footer-actions {
@@ -316,8 +308,7 @@ export const postComposerStyles = [
       gap: 6px;
       list-style: none;
       margin-top: 8px;
-      overflow: hidden;
-      overflow-x: scroll;
+      overflow: scroll hidden;
     }
 
     .attachments-list::-webkit-scrollbar {
@@ -391,10 +382,6 @@ export const postComposerStyles = [
     }
 
     .attachments-reveal {
-      animation: composerReveal 0.25s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    .replying-to-indicator {
       animation: composerReveal 0.25s cubic-bezier(0.2, 0, 0, 1);
     }
 
@@ -493,45 +480,8 @@ export const postComposerStyles = [
       transition: opacity 0.2s ease;
     }
 
-    .proofread-button:hover {
-      opacity: 1;
-    }
-
     .proofread-button[disabled] {
       opacity: 0.3;
-    }
-
-    .pen-button {
-      --md-icon-button-icon-size: 18px;
-      transition: opacity 0.2s ease;
-    }
-
-    .pen-button:hover {
-      opacity: 1;
-    }
-
-    @keyframes recording-pulse {
-      0%,
-      100% {
-        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
-      }
-      50% {
-        box-shadow: 0 0 0 8px rgba(244, 67, 54, 0);
-      }
-    }
-
-    @keyframes ai-glow {
-      0%,
-      100% {
-        box-shadow: 0 0 2px 1px rgba(232, 121, 249, 0.5);
-        transform: scale(1);
-      }
-      50% {
-        box-shadow:
-          0 0 6px 2px rgba(232, 121, 249, 0.7),
-          0 0 12px 4px rgba(217, 70, 239, 0.4);
-        transform: scale(1.05);
-      }
     }
 
     @keyframes composerReveal {
@@ -699,6 +649,12 @@ export const postComposerStyles = [
         left: 12px;
         right: 12px;
       }
+
+      :host([dialog-mode]) .footer-actions {
+        left: auto;
+        right: auto;
+        bottom: auto;
+      }
     }
 
     :host([compact]) .footer-actions {
@@ -770,14 +726,6 @@ export const postComposerStyles = [
     :host([dialog-mode]) .footer-actions > div:nth-child(2),
     :host([dialog-mode]) .footer-primary {
       flex: 0 0 auto;
-    }
-
-    @media (max-width: 820px) {
-      :host([dialog-mode]) .footer-actions {
-        left: auto;
-        right: auto;
-        bottom: auto;
-      }
     }
   `,
 ];
