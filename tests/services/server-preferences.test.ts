@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { get, set, del } from 'idb-keyval';
-import { setupAuth } from '../setup';
+import { setupAuth } from '../auth-helpers';
 import type { ServerPreferences } from '../../src/mastodon/types/preferences';
 
 describe('syncServerPreferences (app-index)', () => {

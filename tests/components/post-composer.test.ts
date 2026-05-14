@@ -15,7 +15,7 @@ vi.mock('../../src/utils/optimistic-updates', () => ({
 import '../../src/components/post-composer';
 import type { PostComposer } from '../../src/components/post-composer';
 import type { Post } from '../../src/interfaces/Post';
-import { setupAuth } from '../setup';
+import { setupAuth } from '../auth-helpers';
 
 // Helper to wait for animation frame
 function waitForAnimationFrame(): Promise<void> {

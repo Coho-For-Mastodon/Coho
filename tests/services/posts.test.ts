@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { setupAuth } from '../setup';
-import { mockTimelinePosts, mockEditHistory } from '../mocks/mock-data';
+import { setupAuth } from '../auth-helpers';
+import { mockTimelinePosts } from '../mocks/mock-data';
 
 // Import the service functions we want to test
 import { getPostDetail, getEditHistory } from '../../src/services/posts';
