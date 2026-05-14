@@ -5,7 +5,7 @@ import '../../src/components/timeline';
 import type { Timeline } from '../../src/components/timeline';
 import type { Post } from '../../src/interfaces/Post';
 import { mockTimelinePosts } from '../mocks/mock-data';
-import { setupAuth } from '../setup';
+import { setupAuth } from '../auth-helpers';
 
 // Cast mock data to proper type for tests
 const testPosts = mockTimelinePosts as unknown as Post[];

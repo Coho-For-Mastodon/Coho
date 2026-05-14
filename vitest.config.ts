@@ -6,6 +6,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts', 'src/router/**/*.test.ts'],
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+
     browser: {
       enabled: true,
       provider: playwright(),

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { setupAuth } from '../setup';
+import { setupAuth } from '../auth-helpers';
 import {
   mockAccountProfile,
   mockBlockedAccounts,
