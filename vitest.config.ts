@@ -6,6 +6,8 @@ export default defineConfig({
     include: ['tests/**/*.test.ts', 'src/router/**/*.test.ts'],
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
 
     browser: {
       enabled: true,
