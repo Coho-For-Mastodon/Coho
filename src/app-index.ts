@@ -132,20 +132,11 @@ export class AppIndex extends LitElement {
     await this.handleNativeLaunchCallback();
   }
 
-  /** Load Navigation API / URLPattern polyfills if the browser needs them. */
+  /** Load URLPattern polyfill if the browser needs it. */
   private async _loadPolyfills() {
-    const loads: Promise<unknown>[] = [];
-    if (!('navigation' in window)) {
-      loads.push(
-        import('@virtualstate/navigation').then(({ applyPolyfill }) => {
-          applyPolyfill();
-        })
-      );
-    }
     if (typeof URLPattern === 'undefined') {
-      loads.push(import('urlpattern-polyfill'));
+      await import('urlpattern-polyfill');
     }
-    await Promise.all(loads);
   }
 
   disconnectedCallback() {
