@@ -46,14 +46,17 @@ import {
 import { showInfoToast } from '../utils/optimistic-updates';
 import { type DraftPost } from '../services/drafts';
 import {
-  formatScheduledDateTime,
   getDefaultScheduleDateTime,
-  getScheduleMinDate,
-  getScheduleMinTime,
-  parseScheduledDateTime,
   resolveScheduledAtForSubmission,
 } from './post-composer/schedule';
-import { SCHEDULE_MIN_LEAD_MS } from './post-composer/types';
+
+import type {
+  PollRenderProps,
+  ScheduleRenderProps,
+  ProofreadRenderProps,
+  AttachmentsRenderProps,
+  DraftPickerRenderProps,
+} from './post-composer/render-features';
 
 import type { Post } from '../interfaces/Post';
 import type { Account as MastodonAccount } from '../mastodon/types/account';
@@ -231,6 +234,10 @@ export class PostComposer extends LitElement {
 
   private mediaEditDialogLoaded = false;
 
+  private _features:
+    | typeof import('./post-composer/render-features.js')
+    | null = null;
+
   private draftKey: string | null = null;
 
   private mentionController = new PostComposerMentionController({
@@ -245,35 +252,7 @@ export class PostComposer extends LitElement {
       mentionDropdownWidth: this.mentionDropdownWidth,
       mentionAnchorReady: this.mentionAnchorReady,
     }),
-    setState: (patch) => {
-      if (patch.mentionOpen !== undefined) {
-        this.mentionOpen = patch.mentionOpen;
-      }
-      if (patch.mentionQuery !== undefined) {
-        this.mentionQuery = patch.mentionQuery;
-      }
-      if (patch.mentionResults !== undefined) {
-        this.mentionResults = patch.mentionResults;
-      }
-      if (patch.mentionLoading !== undefined) {
-        this.mentionLoading = patch.mentionLoading;
-      }
-      if (patch.mentionActiveIndex !== undefined) {
-        this.mentionActiveIndex = patch.mentionActiveIndex;
-      }
-      if (patch.mentionAnchorLeft !== undefined) {
-        this.mentionAnchorLeft = patch.mentionAnchorLeft;
-      }
-      if (patch.mentionAnchorTop !== undefined) {
-        this.mentionAnchorTop = patch.mentionAnchorTop;
-      }
-      if (patch.mentionDropdownWidth !== undefined) {
-        this.mentionDropdownWidth = patch.mentionDropdownWidth;
-      }
-      if (patch.mentionAnchorReady !== undefined) {
-        this.mentionAnchorReady = patch.mentionAnchorReady;
-      }
-    },
+    setState: (patch) => Object.assign(this, patch),
     getNativeTextArea: () => this._getNativeTextArea(),
     getTextAreaWrapper: () => this._getTextAreaWrapper(),
     getComposerValue: () => this._getComposerValue(),
@@ -292,29 +271,13 @@ export class PostComposer extends LitElement {
       videoSizeLimit: this.videoSizeLimit,
     }),
     setState: async (patch) => {
-      if (patch.attachments !== undefined) {
-        this.attachments = patch.attachments;
-      }
-      if (patch.activeAttachment !== undefined) {
-        this.activeAttachment = patch.activeAttachment;
-      }
-      if (patch.activeAttachmentImageSrc !== undefined) {
-        this.activeAttachmentImageSrc = patch.activeAttachmentImageSrc;
-      }
-      if (patch.editDialogOpen !== undefined) {
+      const { editDialogOpen, ...rest } = patch;
+      Object.assign(this, rest);
+      if (editDialogOpen !== undefined) {
         await import('./media-edit-dialog.js');
         this.mediaEditDialogLoaded = true;
         await this.updateComplete;
-        this.editDialogOpen = patch.editDialogOpen;
-      }
-      if (patch.maxMediaAttachments !== undefined) {
-        this.maxMediaAttachments = patch.maxMediaAttachments;
-      }
-      if (patch.imageSizeLimit !== undefined) {
-        this.imageSizeLimit = patch.imageSizeLimit;
-      }
-      if (patch.videoSizeLimit !== undefined) {
-        this.videoSizeLimit = patch.videoSizeLimit;
+        this.editDialogOpen = editDialogOpen;
       }
     },
     // @ts-expect-error - temporary
@@ -402,6 +365,16 @@ export class PostComposer extends LitElement {
     }
 
     this._loadDraftForContext();
+
+    this._loadFeatures();
+  }
+
+  private async _loadFeatures() {
+    if (!this._features) {
+      this._features = await import('./post-composer/render-features.js');
+      this.requestUpdate();
+    }
+    return this._features;
   }
 
   protected updated(changedProperties: PropertyValues) {
@@ -802,72 +775,7 @@ export class PostComposer extends LitElement {
   }
 
   private _applyDraftManagerPatch(patch: Partial<DraftManagerState>) {
-    if (patch.statusText !== undefined) {
-      this.statusText = patch.statusText;
-    }
-    if (patch.visibility !== undefined) {
-      this.visibility = patch.visibility;
-    }
-    if (patch.sensitive !== undefined) {
-      this.sensitive = patch.sensitive;
-    }
-    if (patch.spoilerText !== undefined) {
-      this.spoilerText = patch.spoilerText;
-    }
-    if (patch.pollEnabled !== undefined) {
-      this.pollEnabled = patch.pollEnabled;
-    }
-    if (patch.pollOptions !== undefined) {
-      this.pollOptions = patch.pollOptions;
-    }
-    if (patch.pollDurationSeconds !== undefined) {
-      this.pollDurationSeconds = patch.pollDurationSeconds;
-    }
-    if (patch.pollMultiple !== undefined) {
-      this.pollMultiple = patch.pollMultiple;
-    }
-    if (patch.pollError !== undefined) {
-      this.pollError = patch.pollError;
-    }
-    if (patch.scheduleEnabled !== undefined) {
-      this.scheduleEnabled = patch.scheduleEnabled;
-    }
-    if (patch.scheduleDate !== undefined) {
-      this.scheduleDate = patch.scheduleDate;
-    }
-    if (patch.scheduleTime !== undefined) {
-      this.scheduleTime = patch.scheduleTime;
-    }
-    if (patch.scheduleError !== undefined) {
-      this.scheduleError = patch.scheduleError;
-    }
-    if (patch.attachments !== undefined) {
-      this.attachments = patch.attachments;
-    }
-    if (patch.draftStatus !== undefined) {
-      this.draftStatus = patch.draftStatus;
-    }
-    if (patch.availableDrafts !== undefined) {
-      this.availableDrafts = patch.availableDrafts;
-    }
-    if (patch.draftPickerOpen !== undefined) {
-      this.draftPickerOpen = patch.draftPickerOpen;
-    }
-    if (patch.selectedDraftId !== undefined) {
-      this.selectedDraftId = patch.selectedDraftId;
-    }
-    if (patch.draftDirty !== undefined) {
-      this.draftDirty = patch.draftDirty;
-    }
-    if (patch.draftLoaded !== undefined) {
-      this.draftLoaded = patch.draftLoaded;
-    }
-    if (patch.draftKey !== undefined) {
-      this.draftKey = patch.draftKey;
-    }
-    if (patch.lastSavedStatusText !== undefined) {
-      this.lastSavedStatusText = patch.lastSavedStatusText;
-    }
+    Object.assign(this, patch);
   }
 
   private async _syncComposerValueAndWait(value: string) {
@@ -906,12 +814,7 @@ export class PostComposer extends LitElement {
   private _applyPublishOrchestratorPatch(
     patch: Partial<PublishOrchestratorState>
   ) {
-    if (patch.isPublishing !== undefined) {
-      this.isPublishing = patch.isPublishing;
-    }
-    if (patch.publishSuccess !== undefined) {
-      this.publishSuccess = patch.publishSuccess;
-    }
+    Object.assign(this, patch);
   }
 
   private _dispatchSubmit(detail: ComposerSubmitEvent) {
@@ -1823,53 +1726,13 @@ export class PostComposer extends LitElement {
   }
 
   private _renderProofreadResult() {
-    if (!this.proofreadResult) return nothing;
+    if (!this.proofreadResult || !this._features) return nothing;
 
-    if (this.proofreadResult.corrections.length === 0) {
-      return html`
-        <span class="proofread-success">
-          ✓ ${msg('Looks good!')}
-          <md-icon-button
-            class="proofread-button"
-            label=${msg('Dismiss')}
-            src="/assets/close-outline.svg"
-            @click="${() => this.dismissProofread()}"
-          ></md-icon-button>
-        </span>
-      `;
-    }
-
-    return html`
-      <div class="proofread-result-container">
-        <div class="proofread-dropdown">
-          <div class="proofread-dropdown-header">
-            <span class="proofread-dropdown-label">
-              ${msg('Suggested revision')}
-              (${this.proofreadResult.corrections.length}
-              change${this.proofreadResult.corrections.length > 1 ? 's' : ''})
-            </span>
-            <div class="proofread-dropdown-actions">
-              <md-button
-                size="small"
-                variant="filled"
-                pill
-                @click="${() => this.applyCorrections()}"
-                >${msg('Apply')}</md-button
-              >
-              <md-button
-                size="small"
-                variant="text"
-                @click="${() => this.dismissProofread()}"
-                >${msg('Dismiss')}</md-button
-              >
-            </div>
-          </div>
-          <div class="proofread-dropdown-content">
-            <p>${this.proofreadResult.correctedInput}</p>
-          </div>
-        </div>
-      </div>
-    `;
+    return this._features.renderProofreadResult({
+      proofreadResult: this.proofreadResult,
+      onApply: () => this.applyCorrections(),
+      onDismiss: () => this.dismissProofread(),
+    } satisfies ProofreadRenderProps);
   }
 
   private _renderSensitiveWarning() {
@@ -1889,205 +1752,53 @@ export class PostComposer extends LitElement {
   }
 
   private _renderPoll() {
-    if (this.hideActions || !this.pollEnabled) return nothing;
+    if (this.hideActions || !this.pollEnabled || !this._features)
+      return nothing;
 
-    return html`
-      <div class="poll-composer">
-        <div class="poll-header">
-          <div class="poll-title">${msg('Poll')}</div>
-          <div class="poll-subtitle">${msg('Add 2–4 options')}</div>
-        </div>
-
-        <div class="poll-options">
-          ${this.pollOptions.map(
-            (opt, idx) => html`
-              <div class="poll-option-row">
-                <md-text-field
-                  class="poll-option-input"
-                  placeholder=${msg(str`Option ${idx + 1}`)}
-                  .value=${String(opt ?? '')}
-                  @input=${(e: Event) =>
-                    this._setPollOption(idx, this._readInputEventValue(e))}
-                ></md-text-field>
-
-                <md-icon-button
-                  label=${msg('Remove option')}
-                  src="/assets/close-outline.svg"
-                  ?disabled=${this.pollOptions.length <= 2}
-                  @click=${() => this._removePollOption(idx)}
-                ></md-icon-button>
-              </div>
-            `
-          )}
-
-          <div class="poll-actions-row">
-            <md-button
-              variant="text"
-              size="small"
-              pill
-              ?disabled=${this.pollOptions.length >= 4}
-              @click=${() => this._addPollOption()}
-            >
-              ${msg('Add option')}
-            </md-button>
-          </div>
-        </div>
-
-        <div class="poll-settings">
-          <md-select
-            .value=${String(this.pollDurationSeconds)}
-            @change=${(e: CustomEvent<{ value: string }>) =>
-              (this.pollDurationSeconds = parseInt(e.detail.value, 10))}
-            pill
-            style="width: 180px; min-width: 180px;"
-          >
-            <md-option value="${String(5 * 60)}">${msg('5 minutes')}</md-option>
-            <md-option value="${String(30 * 60)}"
-              >${msg('30 minutes')}</md-option
-            >
-            <md-option value="${String(60 * 60)}">${msg('1 hour')}</md-option>
-            <md-option value="${String(6 * 60 * 60)}"
-              >${msg('6 hours')}</md-option
-            >
-            <md-option value="${String(24 * 60 * 60)}"
-              >${msg('1 day')}</md-option
-            >
-            <md-option value="${String(3 * 24 * 60 * 60)}"
-              >${msg('3 days')}</md-option
-            >
-            <md-option value="${String(7 * 24 * 60 * 60)}"
-              >${msg('7 days')}</md-option
-            >
-          </md-select>
-
-          <md-checkbox
-            .checked=${this.pollMultiple}
-            @change=${(e: CustomEvent<{ checked: boolean }>) =>
-              (this.pollMultiple = e.detail.checked)}
-          >
-            ${msg('Allow multiple choices')}
-          </md-checkbox>
-        </div>
-
-        ${this.pollError
-          ? html`<div class="poll-error">${this.pollError}</div>`
-          : null}
-      </div>
-    `;
+    return this._features.renderPoll({
+      pollOptions: this.pollOptions,
+      pollDurationSeconds: this.pollDurationSeconds,
+      pollMultiple: this.pollMultiple,
+      pollError: this.pollError,
+      onSetOption: (idx, val) => this._setPollOption(idx, val),
+      onAddOption: () => this._addPollOption(),
+      onRemoveOption: (idx) => this._removePollOption(idx),
+      onSetDuration: (s) => (this.pollDurationSeconds = s),
+      onSetMultiple: (v) => (this.pollMultiple = v),
+      readInputValue: (e) => this._readInputEventValue(e),
+    } satisfies PollRenderProps);
   }
 
   private _renderSchedule() {
-    if (this.compact || !this.scheduleEnabled || this.editingPost)
+    if (
+      this.compact ||
+      !this.scheduleEnabled ||
+      this.editingPost ||
+      !this._features
+    )
       return nothing;
 
-    const parsed = parseScheduledDateTime(this.scheduleDate, this.scheduleTime);
-    const preview =
-      parsed && parsed.getTime() >= Date.now() + SCHEDULE_MIN_LEAD_MS
-        ? formatScheduledDateTime(parsed.toISOString())
-        : '';
-
-    return html`
-      <div class="schedule-composer">
-        <div class="schedule-header">
-          <div class="schedule-title">${msg('Schedule post')}</div>
-          <md-button
-            variant="text"
-            size="small"
-            @click=${() => this._openScheduledStatuses()}
-          >
-            ${msg('Manage scheduled posts')}
-          </md-button>
-        </div>
-
-        <div class="schedule-inputs">
-          <md-text-field
-            type="date"
-            .value=${this.scheduleDate}
-            .min=${getScheduleMinDate()}
-            @change=${(e: Event) =>
-              this._setScheduleDate(this._readInputEventValue(e))}
-          ></md-text-field>
-          <md-text-field
-            type="time"
-            .value=${this.scheduleTime}
-            .min=${getScheduleMinTime(this.scheduleDate)}
-            step="60"
-            @change=${(e: Event) =>
-              this._setScheduleTime(this._readInputEventValue(e))}
-          ></md-text-field>
-        </div>
-
-        ${preview
-          ? html`<div class="schedule-preview">
-              ${msg(str`Will publish on ${preview}`)}
-            </div>`
-          : nothing}
-        ${this.scheduleError
-          ? html`<div class="schedule-error">${this.scheduleError}</div>`
-          : nothing}
-      </div>
-    `;
+    return this._features.renderSchedule({
+      scheduleDate: this.scheduleDate,
+      scheduleTime: this.scheduleTime,
+      scheduleError: this.scheduleError,
+      onDateChange: (v) => this._setScheduleDate(v),
+      onTimeChange: (v) => this._setScheduleTime(v),
+      onOpenScheduledStatuses: () => this._openScheduledStatuses(),
+      readInputValue: (e) => this._readInputEventValue(e),
+    } satisfies ScheduleRenderProps);
   }
 
   private _renderAttachments() {
     const hasContent = this.attaching || this.attachments.length > 0;
-    if (!hasContent) return nothing;
+    if (!hasContent || !this._features) return nothing;
 
-    return html`
-      <div class="attachments-reveal">
-        ${this.attaching
-          ? html`
-              <div id="attachment-loading">
-                <md-skeleton></md-skeleton>
-              </div>
-            `
-          : this.attachments.length > 0
-            ? html`
-                <ul class="attachments-list">
-                  ${this.attachments.map(
-                    (attachment) => html`
-                      <div class="img-preview">
-                        <div class="preview-actions">
-                          <md-icon-button
-                            size="small"
-                            label=${msg('Remove attachment')}
-                            @click="${() => this.removeImage(attachment.id)}"
-                          >
-                            <md-icon src="/assets/close-outline.svg"></md-icon>
-                          </md-icon-button>
-                          <md-icon-button
-                            size="small"
-                            label=${msg('Edit attachment')}
-                            @click="${() => this.openEditDialog(attachment)}"
-                          >
-                            <md-icon src="/assets/brush-outline.svg"></md-icon>
-                          </md-icon-button>
-                        </div>
-                        ${attachment.type === 'video' ||
-                        attachment.type === 'gifv'
-                          ? html`<video
-                              muted
-                              preload="metadata"
-                              src="${attachment.preview_url}#t=0.5"
-                              controls
-                            ></video>`
-                          : html`<img
-                              src="${attachment.preview_url}"
-                              alt="${attachment.description || ''}"
-                            />`}
-                        ${attachment.pending
-                          ? html`<div class="upload-spinner-overlay">
-                              <div class="upload-spinner"></div>
-                            </div>`
-                          : nothing}
-                      </div>
-                    `
-                  )}
-                </ul>
-              `
-            : nothing}
-      </div>
-    `;
+    return this._features.renderAttachments({
+      attaching: this.attaching,
+      attachments: this.attachments,
+      onRemove: (id) => this.removeImage(id),
+      onEdit: (att) => this.openEditDialog(att),
+    } satisfies AttachmentsRenderProps);
   }
 
   private _renderFooter() {
@@ -2181,45 +1892,17 @@ export class PostComposer extends LitElement {
   }
 
   private _renderDraftPickerDialog() {
-    return html`
-      <md-dialog
-        label=${msg('Load draft')}
-        .open=${this.draftPickerOpen}
-        @md-dialog-hide=${() => this._closeDraftPicker()}
-      >
-        <div class="draft-picker">
-          <p class="draft-picker-copy">
-            ${msg('Choose one of your saved drafts.')}
-          </p>
-          <md-select
-            .value=${this.selectedDraftId}
-            placeholder=${msg('Select a draft')}
-            @change=${this._handleDraftSelectionChange}
-          >
-            ${this.availableDrafts.map(
-              (draft) => html`
-                <md-option value="${draft.id}">
-                  ${this._formatDraftOptionLabel(draft)}
-                </md-option>
-              `
-            )}
-          </md-select>
-        </div>
+    if (!this._features) return nothing;
 
-        <div slot="footer" class="draft-picker-actions">
-          <md-button variant="text" @click=${() => this._closeDraftPicker()}>
-            ${msg('Cancel')}
-          </md-button>
-          <md-button
-            variant="filled"
-            ?disabled=${!this.selectedDraftId}
-            @click=${() => this._loadSelectedDraft()}
-          >
-            ${msg('Load draft')}
-          </md-button>
-        </div>
-      </md-dialog>
-    `;
+    return this._features.renderDraftPickerDialog({
+      draftPickerOpen: this.draftPickerOpen,
+      selectedDraftId: this.selectedDraftId,
+      availableDrafts: this.availableDrafts,
+      onClose: () => this._closeDraftPicker(),
+      onSelectionChange: (e) => this._handleDraftSelectionChange(e),
+      onLoad: () => this._loadSelectedDraft(),
+      formatLabel: (draft) => this._formatDraftOptionLabel(draft),
+    } satisfies DraftPickerRenderProps);
   }
 
   render() {
