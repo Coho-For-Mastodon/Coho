@@ -26,6 +26,7 @@
     "lint:fix": "eslint \"src/**/*.{ts,js}\" \"functions/src/**/*.{ts,js}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
     "test:bundle-size": "playwright test --config playwright.config.ts",
+    "test:perf": "playwright test --config playwright.perf.config.ts",
     "format:check": "prettier --check \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build",

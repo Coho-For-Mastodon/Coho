@@ -1,28 +1,26 @@
 import { defineConfig } from '@playwright/test';
 
 /**
- * Playwright configuration for performance/bundle size tests.
+ * Playwright configuration for runtime performance tests (load time, LCP, etc.).
  * Runs against a production build served via `vite preview`.
  */
 export default defineConfig({
   testDir: './tests/performance',
-  testMatch: /bundle-size\.spec\.ts$/,
-  timeout: 120000,
+  testMatch: /.*-load-time\.spec\.ts$/,
+  timeout: 180000,
   retries: 0,
-  workers: 1, // Run serially to avoid port conflicts
+  workers: 1,
 
   use: {
     baseURL: 'http://localhost:4173',
-    // Disable caching to measure fresh bundle loads
     bypassCSP: true,
   },
 
-  // Build and serve the production bundle before running tests
   webServer: {
     command: 'npm run build && npx vite preview --port 4173',
     port: 4173,
     reuseExistingServer: !process.env.CI,
-    timeout: 180000, // 3 minutes for build + server start
+    timeout: 180000,
   },
 
   reporter: [['list'], ['html', { open: 'never' }]],
