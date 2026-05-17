@@ -313,6 +313,10 @@ export default defineConfig({
             return 'app-login';
           }
 
+          if (id.includes('md-tab')) {
+            return 'md-tabs';
+          }
+
           if (id.includes('node_modules')) {
             if (
               id.includes('/node_modules/lit') ||

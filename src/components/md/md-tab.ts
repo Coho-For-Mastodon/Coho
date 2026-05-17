@@ -60,6 +60,7 @@ export class MdTab extends LitElement {
         min-height: 64px;
         cursor: pointer;
         position: relative;
+        overflow: hidden;
         flex: 1;
         box-sizing: border-box;
 
@@ -189,14 +190,11 @@ export class MdTab extends LitElement {
       }
 
       /* Focus visible ring */
-      :host(:focus-visible) .tab-inner::after {
-        content: '';
-        position: absolute;
-        inset: 4px;
-        border: 2px solid
+      :host(:focus-visible) .tab-inner {
+        outline: 2px solid
           var(--md-sys-color-primary, var(--sl-color-primary-600));
+        outline-offset: -6px;
         border-radius: var(--md-sys-shape-corner-small);
-        pointer-events: none;
       }
 
       /* Active indicator - only shown for non-stacked horizontal tabs */
@@ -251,45 +249,41 @@ export class MdTab extends LitElement {
         }
       }
 
-      /* Ripple effect on click */
-      @keyframes ripple {
-        from {
-          transform: scale(0);
-          opacity: 0.4;
-        }
-        to {
-          transform: scale(1);
-          opacity: 0;
-        }
+      /* CSS-only ripple — expands from center on click */
+      .tab-inner::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(
+          circle,
+          currentColor 10%,
+          transparent 10.01%
+        );
+        background-repeat: no-repeat;
+        background-position: 50%;
+        transform: scale(10, 10);
+        opacity: 0;
+        transition:
+          transform 0.5s,
+          opacity 0.8s;
+        pointer-events: none;
       }
 
-      .ripple {
-        position: absolute;
-        border-radius: var(--md-sys-shape-corner-circle);
-        background: currentColor;
-        pointer-events: none;
-        animation: ripple 0.6s cubic-bezier(0.2, 0, 0, 1);
+      .tab-inner:active::after {
+        transform: scale(0, 0);
+        opacity: 0.25;
+        transition: 0s;
+      }
+
+      /* Stacked variant uses the icon-container pill for press feedback */
+      :host([data-stacked]) .tab-inner::after {
+        display: none;
       }
     `,
   ];
 
-  private _handleClick(e: MouseEvent) {
+  private _handleClick() {
     if (this.disabled) return;
-
-    // Create ripple effect
-    const button = e.currentTarget as HTMLElement;
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const ripple = document.createElement('span');
-    ripple.className = 'ripple';
-    ripple.style.width = ripple.style.height = `${size}px`;
-    ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
-    ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
-
-    button.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
-
-    // Emit tab selected event
     this.dispatchEvent(
       new CustomEvent('tab-selected', {
         detail: { panel: this.panel },
@@ -301,10 +295,9 @@ export class MdTab extends LitElement {
 
   private _handleKeyDown(e: KeyboardEvent) {
     if (this.disabled) return;
-
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      this._handleClick(e as unknown as MouseEvent);
+      this._handleClick();
     }
   }
 

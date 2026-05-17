@@ -207,18 +207,51 @@ export class AppHome extends LitElement {
     // Set up global toast listener for error notifications
     this.setupGlobalToastListener();
 
-    setTimeout(async () => {
-      if (effectiveParams.has('name')) {
-        const names = effectiveParams.getAll('name');
-        await this.handleSharedFiles(names);
+    const hasWebShare = effectiveParams.has('name');
+    const { isNativePlatform } = await import('../utils/platform');
+    const isNative = isNativePlatform();
+
+    if (hasWebShare || isNative) {
+      const { initNativeShareListener, handlePendingShares } =
+        await import('../utils/share-intent-host');
+
+      const shareHandlers = {
+        openNewDialog: (n?: string, o?: { x: number; y: number }, t?: string) =>
+          this.openNewDialog(n, o, t),
+        openDialogAndAttach: async (names: string[]) => {
+          await this.openNewDialog();
+          if (this.postDialog) {
+            await this.postDialog.updateComplete;
+            for (const name of names) {
+              await this.postDialog.shareTarget(name);
+            }
+          }
+        },
+        showError: async (message: string) => {
+          await import('../components/md/md-toast');
+          await this.overlays.show('error-toast');
+          if (this.errorToast) {
+            this.errorToast.message = message;
+            this.errorToast.variant = 'error';
+            this.errorToast.show();
+          }
+        },
+      };
+
+      if (isNative) {
+        this._shareCleanup = await initNativeShareListener(shareHandlers);
       }
 
-      // Check for native Android share intent (cold start)
-      this._checkNativeShareTarget();
-    }, 1000);
-
-    // Listen for share intents that arrive while the app is already open
-    this._initNativeShareListener();
+      setTimeout(
+        () =>
+          handlePendingShares(
+            effectiveParams.getAll('name'),
+            isNative,
+            shareHandlers
+          ),
+        1000
+      );
+    }
 
     window.requestIdleCallback(async () => {
       // Import and init key shortcuts
@@ -373,85 +406,7 @@ export class AppHome extends LitElement {
     });
   }
 
-  async handleSharedFiles(names: string[]) {
-    const { shareTarget } = await import('../services/share-target');
-    const validNames: string[] = [];
-
-    for (const name of names) {
-      const result = await shareTarget(name);
-      if (result.success) {
-        validNames.push(result.decodedName);
-      } else {
-        console.warn('[Share Target] No cached file found for:', name);
-      }
-    }
-
-    if (validNames.length === 0) {
-      await import('../components/md/md-toast');
-      await this.overlays.show('error-toast');
-      if (this.errorToast) {
-        this.errorToast.message = msg(
-          'Failed to load shared image. Please try sharing again.'
-        );
-        this.errorToast.variant = 'error';
-        this.errorToast.show();
-      }
-      return;
-    }
-
-    // Open dialog once, then add all files as attachments
-    await this.openNewDialog();
-
-    if (this.postDialog) {
-      await this.postDialog.updateComplete;
-      for (const name of validNames) {
-        await this.postDialog.shareTarget(name);
-      }
-    }
-  }
-
-  private _nativeShareCleanup: { remove: () => void } | null = null;
-
-  /**
-   * Check for shared content from an Android share intent (cold start).
-   */
-  private async _checkNativeShareTarget() {
-    const { checkNativeShare } =
-      await import('../services/native-share-target');
-    const result = await checkNativeShare();
-    if (result.hasShare) {
-      this._handleNativeShare(result);
-    }
-  }
-
-  /**
-   * Listen for Android share intents that arrive while the app is already
-   * running (warm start via onNewIntent).
-   */
-  private async _initNativeShareListener() {
-    const { onNativeShareIntent } =
-      await import('../services/native-share-target');
-    this._nativeShareCleanup = onNativeShareIntent((result) => {
-      this._handleNativeShare(result);
-    });
-  }
-
-  /**
-   * Process a native share intent result — open the compose dialog with
-   * the shared media file and/or pre-filled text.
-   */
-  private async _handleNativeShare(
-    result: import('../services/native-share-target').NativeShareResult
-  ) {
-    if (result.cachedFileName) {
-      // Media share — the file is already in the shareTarget cache,
-      // so openNewDialog → post-dialog shareTarget will pick it up.
-      await this.openNewDialog(result.cachedFileName, undefined, result.text);
-    } else if (result.text) {
-      // Text-only share (e.g. a URL from Chrome)
-      await this.openNewDialog(undefined, undefined, result.text);
-    }
-  }
+  private _shareCleanup: (() => void) | undefined;
 
   handlePrimaryColor(color: string) {
     document.documentElement.style.setProperty('--sl-color-primary-600', color);
@@ -747,7 +702,7 @@ export class AppHome extends LitElement {
     window.removeEventListener('open-post-dialog', this._handleOpenPostDialog);
 
     // Remove native share intent listener
-    this._nativeShareCleanup?.remove();
+    this._shareCleanup?.();
   }
 
   private _handleSwitchTab = async (event: Event) => {
