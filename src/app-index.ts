@@ -7,8 +7,6 @@ import { initPerfObserver, perfMark, perfMeasure } from './utils/perf-observer';
 // Initialize localization (must be imported early)
 import './config/localization.js';
 
-import './pages/app-login';
-
 /** Lightweight native-platform check that avoids importing @capacitor/core on web. */
 function isCapacitorNative(): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

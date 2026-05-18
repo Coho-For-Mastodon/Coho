@@ -5,6 +5,7 @@ import { msg, localized } from '@lit/localize';
 import '../components/md/md-autocomplete';
 import '../components/md/md-button';
 import type { AutocompleteOption } from '../components/md/md-autocomplete';
+import { perfMarkRouteReady } from '../utils/perf-observer';
 
 // Dynamic import to avoid loading router during SSR
 const getRouter = () => import('../router/routes').then((m) => m.router);
@@ -18,6 +19,12 @@ export class AppLogin extends LitElement {
   @state() loggingIn: boolean = false;
 
   private _searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  firstUpdated() {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => perfMarkRouteReady('login'))
+    );
+  }
 
   static styles = css`
     :host {

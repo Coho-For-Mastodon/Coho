@@ -28,6 +28,7 @@ const routes: Route<TemplateResult>[] = [
   {
     path: '/',
     title: 'login',
+    plugins: [lazy(() => import('../pages/app-login.js'))],
     render: () => html`<app-login></app-login>`,
   },
   {

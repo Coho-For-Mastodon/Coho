@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev-server": "vite --port 3000",
+    "preview": "vite preview --port 3000",
     "dev": "npm run dev-server",
     "dev-task": "vite",
     "build": "npm run localize:build && vite build && npm run ssr:inject",

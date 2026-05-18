@@ -182,7 +182,10 @@ customPlugins.push({
       const chunksToPreload = [
         'auth-session',
         'vendor-idb-keyval',
-        'firebase-',
+        'vendor-web-router',
+        'firebase',
+        'app-home',
+        'api-client',
       ];
       const preloadLinks: string[] = [];
 

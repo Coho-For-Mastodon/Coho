@@ -253,6 +253,7 @@ export const templates = {
   sfdfc05708c242107: `Wie du für andere erscheinst`,
   sfe2f8c98d9edbf7a: `Beitrag nicht gefunden`,
   sff9d51b6c5a73163: `Alt-Text`,
+  sf5ceb5dad8a27f99: `Logging in...`,
   s93c8f5aaa2f14fb6: `Back to login`,
   s59169c4e8fbcdccf: `Signing in…`,
   s2cea62b7e6d106e0: `You have entered offline mode. Coho will still work, including if you close and reopen the app, but some functionality may be limited.`,
@@ -618,5 +619,4 @@ export const templates = {
   sd2f21b91439aa3e9: `Search for a server (e.g. mastodon.social)`,
   s8a43219bc7d86354: `Loading server info...`,
   s32a8dacf6bdadb4b: `Already have an account? Login`,
-  sf5ceb5dad8a27f99: `Logging in...`,
 };

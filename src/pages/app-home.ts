@@ -10,6 +10,8 @@ import '../components/md/md-tab-panel';
 import '../components/offline-notify';
 import '../components/home-tabs-nav';
 import '../components/header';
+import '../components/timeline';
+import '../components/timeline-item';
 
 import { TabController } from '../controllers/tab-controller';
 import {
@@ -42,6 +44,7 @@ import {
   isLoaded,
 } from '../utils/lazy-component-loader';
 import { LazyOverlayManager } from '../utils/lazy-overlay';
+import { perfMarkRouteReady } from '../utils/perf-observer';
 import { Post } from '../interfaces/Post';
 import type { Account } from '../mastodon/types/account';
 import type { Instance, TrendingTag } from '../mastodon/types/instance';
@@ -158,11 +161,6 @@ export class AppHome extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
 
-    // Eagerly start loading the timeline component (non-blocking).
-    // Vite will preload this chunk so the download starts immediately.
-    // The <app-timeline> element upgrades automatically once defined.
-    import('../components/timeline');
-
     const bigScreenQuery = window.matchMedia('(min-width: 821px)');
     if (bigScreenQuery.matches) {
       import('../components/home-sidebar');
@@ -183,6 +181,10 @@ export class AppHome extends LitElement {
   }
 
   async firstUpdated() {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => perfMarkRouteReady('home'))
+    );
+
     // Check if in guest mode
     const { isGuestMode: checkGuestMode } =
       await import('../services/auth-state');
@@ -201,8 +203,7 @@ export class AppHome extends LitElement {
     // Listen for keyboard shortcut to open new post dialog
     window.addEventListener('open-post-dialog', this._handleOpenPostDialog);
 
-    const { getEffectiveParams } = await import('../utils/launch-params');
-    const effectiveParams = getEffectiveParams(window.location);
+    const effectiveParams = new URLSearchParams(window.location.search);
 
     // Set up global toast listener for error notifications
     this.setupGlobalToastListener();
@@ -491,7 +492,7 @@ export class AppHome extends LitElement {
     // Lazy-load drawer and timeline-item for replies
     await Promise.all([
       import('../components/otter-drawer'),
-      import('../components/timeline-item'),
+      // import('../components/timeline-item'),
     ]);
     // Add drawer to DOM first
     await this.overlays.show('replies-drawer');

@@ -14,11 +14,22 @@ import { test, expect, type Page } from '@playwright/test';
 const ITERATIONS = 5;
 const LCP_BUDGET_MS_MEDIAN = 2500;
 
-async function seedHomeSession(page: Page) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function seedHomeSession(page: Page, context: any) {
   await page.addInitScript(() => {
     localStorage.setItem('server', 'tech.lgbt');
     localStorage.setItem('accessToken', 'mock-access-token');
     localStorage.setItem('token', 'mock-access-token');
+  });
+
+  // set up network throttling
+  const client = await context.newCDPSession(page);
+  await client.send('Network.enable');
+  await client.send('Network.emulateNetworkConditions', {
+    offline: false,
+    downloadThroughput: (1.6 * 1024 * 1024) / 8, // 1.6 Mbps
+    uploadThroughput: (750 * 1024) / 8, // 750 Kbps
+    latency: 150, // 150 ms
   });
 
   await page.route('**/api/**', (route) =>
@@ -78,7 +89,7 @@ test.describe('Home page runtime performance', () => {
       // Fresh context per iteration so each run is a cold cache.
       const context = await browser.newContext();
       const page = await context.newPage();
-      await seedHomeSession(page);
+      await seedHomeSession(page, context);
 
       const lcp = await measureLcp(page);
       lcps.push(lcp);

@@ -61,6 +61,16 @@ test.describe('Root route runtime performance', () => {
       const context = await browser.newContext();
       const page = await context.newPage();
 
+      // set up network throttling
+      const client = await context.newCDPSession(page);
+      await client.send('Network.enable');
+      await client.send('Network.emulateNetworkConditions', {
+        offline: false,
+        downloadThroughput: (1.6 * 1024 * 1024) / 8, // 1.6 Mbps
+        uploadThroughput: (750 * 1024) / 8, // 750 Kbps
+        latency: 150, // 150 ms
+      });
+
       const lcp = await measureLcp(page);
       lcps.push(lcp);
 

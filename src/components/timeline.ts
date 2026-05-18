@@ -573,29 +573,37 @@ export class Timeline extends LitElement {
   private _hotkeys: typeof HotkeysType | null = null;
 
   private async _setupKeyboardNavigation() {
-    // Dynamically import hotkeys-js to reduce initial bundle size
-    const { default: hotkeys } = await import('hotkeys-js');
-    this._hotkeys = hotkeys;
+    // load only on first keyboard interaction to reduce initial bundle size, since this is not critical for first paint and may not be used by all users
+    window.addEventListener(
+      'keydown',
+      async () => {
+        if (!this._hotkeys) {
+          const { default: hotkeys } = await import('hotkeys-js');
+          this._hotkeys = hotkeys;
 
-    // Set up j/k navigation with a specific scope for this timeline
-    hotkeys('j,k', this._keyboardScope, (event, handler) => {
-      // Only handle if this timeline is visible/active
-      if (!this.isConnected || this.timeline.length === 0) return;
+          // Set up j/k navigation with a specific scope for this timeline
+          this._hotkeys!('j,k', this._keyboardScope, (event, handler) => {
+            // Only handle if this timeline is visible/active
+            if (!this.isConnected || this.timeline.length === 0) return;
 
-      event.preventDefault();
+            event.preventDefault();
 
-      if (handler.key === 'j') {
-        this._navigateToNextPost();
-      } else if (handler.key === 'k') {
-        this._navigateToPreviousPost();
-      }
-    });
+            if (handler.key === 'j') {
+              this._navigateToNextPost();
+            } else if (handler.key === 'k') {
+              this._navigateToPreviousPost();
+            }
+          });
 
-    // Set scope to allow timeline navigation
-    hotkeys.setScope(this._keyboardScope);
+          // Set scope to allow timeline navigation
+          this._hotkeys!.setScope(this._keyboardScope);
 
-    // Listen for refresh timeline event
-    window.addEventListener('refresh-timeline', this._handleRefreshEvent);
+          // Listen for refresh timeline event
+          window.addEventListener('refresh-timeline', this._handleRefreshEvent);
+        }
+      },
+      { once: true }
+    );
   }
 
   private _handleRefreshEvent = async () => {

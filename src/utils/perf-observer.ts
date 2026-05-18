@@ -102,6 +102,43 @@ export function perfMeasure(label: string, start: string, end?: string): void {
   }
 }
 
+/**
+ * Mark a route as visually ready and log time since navigation start.
+ *
+ * Call from a page component's `firstUpdated()` inside a double rAF so the
+ * mark lands after the browser has painted the initial DOM — that gives a
+ * "time to first usable view" measurement for the route, distinct from
+ * router-level navigate timings.
+ */
+export function perfMarkRouteReady(routeName: string): void {
+  if (!isPerfInstrumentationEnabled()) return;
+
+  try {
+    const markName = `route-ready:${routeName}`;
+    performance.mark(markName);
+    const measure = performance.measure(`Route ready (${routeName})`, {
+      start: 0,
+      end: markName,
+    });
+    const ms = measure.duration.toFixed(1);
+    if (measure.duration > 3000) {
+      console.warn(
+        PREFIX + ` Route ready (${routeName}): %c${ms} ms`,
+        WARN_STYLE,
+        RESET_STYLE,
+        ERROR_STYLE,
+        ''
+      );
+    } else if (measure.duration > 1000) {
+      warn(`Route ready (${routeName}): ${ms} ms`);
+    } else {
+      log(`Route ready (${routeName}): ${ms} ms`);
+    }
+  } catch {
+    // Silently ignore
+  }
+}
+
 // ─── Automatic PerformanceObserver setup ────────────────────────────────────
 
 let initialized = false;
