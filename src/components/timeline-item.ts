@@ -84,11 +84,11 @@ export class TimelineItem extends LitElement {
       }
 
       .thread-connector-bar {
-          width: 100%;
-    background: var(--md-sys-color-primary);
-    height: 8px;
-    border-radius: 8px;
-    margin-left: 20px;
+        width: 100%;
+        background: var(--md-sys-color-primary);
+        height: 8px;
+        border-radius: 8px;
+        margin-left: 20px;
       }
 
       :host([focused]) md-card {
@@ -127,14 +127,13 @@ export class TimelineItem extends LitElement {
         transition:
           background 0.2s ease,
           border-color 0.2s ease;
-        background: var(--md-sys-color-surface-container, #1e1e24);
         padding-left: 10px;
         padding-right: 10px;
         padding-top: 0px;
+        background: var(--md-sys-color-surface-container, #1e1e24);
       }
 
       :host(:hover) md-card::part(base) {
-        background: var(--md-sys-color-surface-container, #1e1e24);
         border-color: var(--md-sys-color-outline-variant, #2b2930);
       }
 
@@ -225,10 +224,7 @@ export class TimelineItem extends LitElement {
         gap: 10px;
         padding: 24px 20px 20px;
         border-radius: var(--md-sys-shape-corner-large, 16px);
-        background: var(
-          --md-sys-color-surface-container-high,
-          rgb(36 36 40)
-        );
+        background: var(--md-sys-color-surface-container-high, rgb(36 36 40));
         border: 1px solid
           color-mix(
             in srgb,
@@ -569,6 +565,7 @@ export class TimelineItem extends LitElement {
         align-items: center;
         justify-content: flex-start;
         gap: 4px;
+      }
 
       .actions md-button {
         background: transparent;
@@ -741,6 +738,12 @@ export class TimelineItem extends LitElement {
         md-card::part(footer) {
           padding-left: 12px;
           padding-bottom: 12px;
+        }
+
+        md-card::part(base) {
+          padding-left: 6px;
+          padding-right: 6px;
+          background: transparent;
         }
       }
 
