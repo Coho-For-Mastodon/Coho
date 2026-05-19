@@ -337,6 +337,21 @@ export class ListsDialog extends LitElement {
       padding-top: 8px;
     }
 
+    @keyframes fadeDown {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .member-picker md-text-field::part(base) {
+      animation: fadeDown 300ms ease;
+    }
+
     .member-pill {
       display: inline-flex;
       align-items: center;
@@ -628,7 +643,7 @@ export class ListsDialog extends LitElement {
   render() {
     return html`
       <list-edit-dialog
-        .list=${this.editingList}
+        .list=${this.editingList!}
         .open=${this.editDialogOpen}
         @list-updated=${this._onListUpdated}
         @md-dialog-hide=${() => (this.editDialogOpen = false)}
@@ -645,6 +660,7 @@ export class ListsDialog extends LitElement {
               <div class="create-row">
                 <md-text-field
                   .value=${this.newTitle}
+                  pill
                   placeholder=${msg('List name')}
                   @input=${(e: InputEvent) =>
                     (this.newTitle = (e.target as HTMLInputElement).value)}
@@ -763,9 +779,16 @@ export class ListsDialog extends LitElement {
               ? html`<div class="error">${this.errorMessage}</div>`
               : nothing}
             ${this.loading
-              ? html`<div class="list list-placeholder">
-                  <div class="empty">${msg('Loading lists...')}</div>
-                </div>`
+              ? html`<div class="list-item list-placeholder">
+                    <div class="empty list-title">
+                      ${msg('Loading lists...')}
+                    </div>
+                  </div>
+                  <div class="list-item list-placeholder">
+                    <div class="empty list-title">
+                      ${msg('Loading lists...')}
+                    </div>
+                  </div> `
               : this.lists.length === 0
                 ? html`<div class="list list-placeholder">
                     <div class="empty">

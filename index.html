@@ -158,6 +158,12 @@
         ::view-transition-new(root) {
           animation: 210ms ease-in both fade-in;
         }
+
+        /* For destinations like /home or /, the leaving page still animates
+           out, but the destination appears instantly with no enter animation. */
+        html.skip-vt-enter::view-transition-new(root) {
+          animation: none;
+        }
       }
 
       /* Skip navigation link */

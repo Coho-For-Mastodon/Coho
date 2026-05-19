@@ -183,52 +183,22 @@ const routes: Route<TemplateResult>[] = [
   },
 ];
 
-const viewTransitionDisabledPaths = new Set(['/', '/home']);
+const skipEnterTransitionPaths = new Set(['/', '/home']);
 
 function createViewTransitionPolicyPlugin(): RouterPlugin {
-  let currentPathname =
-    typeof window === 'undefined' ? '' : window.location.pathname;
-  let restoreStartViewTransition: (() => void) | undefined;
-
-  const restore = () => {
-    restoreStartViewTransition?.();
-    restoreStartViewTransition = undefined;
-  };
-
   return {
-    name: 'root-home-view-transition-policy',
+    name: 'skip-enter-transition-policy',
     beforeNavigation: ({ url }) => {
-      const shouldSkipViewTransition =
-        viewTransitionDisabledPaths.has(currentPathname) ||
-        viewTransitionDisabledPaths.has(url.pathname);
-
-      if (
-        !shouldSkipViewTransition ||
-        !('startViewTransition' in document) ||
-        restoreStartViewTransition
-      ) {
-        return;
+      if (typeof document === 'undefined') return;
+      if (skipEnterTransitionPaths.has(url.pathname)) {
+        document.documentElement.classList.add('skip-vt-enter');
+      } else {
+        document.documentElement.classList.remove('skip-vt-enter');
       }
-
-      const originalStartViewTransition =
-        document.startViewTransition.bind(document);
-      restoreStartViewTransition = () => {
-        document.startViewTransition = originalStartViewTransition;
-      };
-
-      document.startViewTransition = ((callback: () => void) => {
-        restore();
-        callback();
-        return {
-          ready: Promise.resolve(),
-          finished: Promise.resolve(),
-          updateCallbackDone: Promise.resolve(),
-        };
-      }) as typeof document.startViewTransition;
     },
-    afterNavigation: ({ url }) => {
-      currentPathname = url.pathname;
-      restore();
+    afterNavigation: () => {
+      if (typeof document === 'undefined') return;
+      document.documentElement.classList.remove('skip-vt-enter');
     },
   };
 }
