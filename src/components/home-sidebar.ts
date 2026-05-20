@@ -50,10 +50,11 @@ export class HomeSidebar extends LitElement {
       }
 
       .sidebar-card {
-        background: var(--md-sys-color-surface-container, #1e1e24);
         border-radius: var(--md-sys-shape-corner-medium);
         padding: 16px;
         animation: fadeIn 0.3s ease-in-out;
+
+        background: var(--md-sys-color-surface-container, #1e1e24);
       }
 
       .profile-card {

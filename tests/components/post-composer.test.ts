@@ -578,6 +578,7 @@ describe('post-composer multi-image upload', () => {
         html`<post-composer></post-composer>`
       );
       await elementUpdated(el);
+      await (el as any)._loadFeatures();
 
       (el as any).attachments = [
         {

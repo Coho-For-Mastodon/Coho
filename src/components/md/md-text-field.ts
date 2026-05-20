@@ -237,6 +237,7 @@ export class MdTextField extends LitElement {
           placeholder="${this.placeholder}"
           min="${this.min}"
           max="${this.max}"
+          part="base"
           step="${this.step}"
           ?disabled="${this.disabled}"
           class="${this.variant} ${this.pill ? 'pill' : ''}"

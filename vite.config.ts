@@ -5,6 +5,7 @@ import wasm from 'vite-plugin-wasm';
 import { visualizer } from 'rollup-plugin-visualizer';
 import typescript from '@rollup/plugin-typescript';
 import { compileLitTemplates } from '@lit-labs/compiler';
+import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -169,6 +170,20 @@ customPlugins.push({
   },
 });
 
+// Plugin to inline md-tokens.css into the HTML <head> to eliminate a blocking request
+customPlugins.push({
+  name: 'inline-md-tokens',
+  enforce: 'pre',
+  transformIndexHtml(html: string) {
+    const tokensPath = path.resolve(__dirname, 'src/styles/md-tokens.css');
+    const css = readFileSync(tokensPath, 'utf-8');
+    return html.replace(
+      /<!-- md-tokens\.css is inlined by the inline-md-tokens Vite plugin -->/,
+      `<style>${css}</style>`
+    );
+  },
+});
+
 // Plugin to inject modulepreload for critical chunks
 customPlugins.push({
   name: 'inject-modulepreload',
@@ -182,7 +197,10 @@ customPlugins.push({
       const chunksToPreload = [
         'auth-session',
         'vendor-idb-keyval',
-        'firebase-',
+        'vendor-web-router',
+        'firebase',
+        'app-home',
+        'api-client',
       ];
       const preloadLinks: string[] = [];
 
@@ -313,6 +331,10 @@ export default defineConfig({
             return 'app-login';
           }
 
+          if (id.includes('md-tab')) {
+            return 'md-tabs';
+          }
+
           if (id.includes('node_modules')) {
             if (
               id.includes('/node_modules/lit') ||
@@ -346,10 +368,7 @@ export default defineConfig({
       typescript: true,
     }),
     copy({
-      targets: [
-        { src: 'dark.css', dest: 'dist/' },
-        { src: 'src/styles/md-tokens.css', dest: 'dist/code/' },
-      ],
+      targets: [{ src: 'dark.css', dest: 'dist/' }],
     }),
     ...(process.env.ANALYZE_BUNDLE ? [visualizer({ open: true })] : []),
   ],

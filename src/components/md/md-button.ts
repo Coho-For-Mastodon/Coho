@@ -169,12 +169,30 @@ export class MdButton extends LitElement {
           0 6px 10px 4px rgba(0, 0, 0, 0.15);
       }
 
-      /* Ripple effect */
-      @keyframes ripple {
-        to {
-          transform: scale(4);
-          opacity: 0;
-        }
+      /* CSS-only ripple — expands from center on click */
+      button::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(
+          circle,
+          currentColor 10%,
+          transparent 10.01%
+        );
+        background-repeat: no-repeat;
+        background-position: 50%;
+        transform: scale(10, 10);
+        opacity: 0;
+        transition:
+          transform 0.5s,
+          opacity 0.8s;
+        pointer-events: none;
+      }
+
+      button:active::after {
+        transform: scale(0, 0);
+        opacity: 0.25;
+        transition: 0s;
       }
 
       ::slotted(*) {
@@ -223,36 +241,7 @@ export class MdButton extends LitElement {
     if (this.disabled) {
       e.preventDefault();
       e.stopPropagation();
-      return;
     }
-
-    // Create ripple effect
-    const button = this.shadowRoot?.querySelector('button');
-    if (!button) return;
-
-    const ripple = document.createElement('span');
-    const rect = button.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-
-    ripple.style.cssText = `
-      position: absolute;
-      width: ${size}px;
-      height: ${size}px;
-      left: ${x}px;
-      top: ${y}px;
-      background: currentColor;
-      border-radius: var(--md-sys-shape-corner-circle);
-      opacity: 0.3;
-      pointer-events: none;
-      animation: ripple 600ms cubic-bezier(0.4, 0, 0.2, 1);
-    `;
-
-    ripple.addEventListener('animationend', () => ripple.remove(), {
-      once: true,
-    });
-    button.appendChild(ripple);
   }
 
   render() {

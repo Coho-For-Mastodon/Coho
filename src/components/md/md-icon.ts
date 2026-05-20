@@ -33,10 +33,11 @@ async function getAvailableIconNames(): Promise<string[]> {
 }
 
 /**
- * Static in-memory cache for network-loaded SVGs
- * Prevents redundant fetches for the same icon path
+ * In-flight + completed fetch cache keyed by URL.
+ * Storing the Promise (not the result) means concurrent mounts for the same
+ * src share one fetch instead of each firing their own.
  */
-const SVG_CACHE = new Map<string, string>();
+const SVG_CACHE = new Map<string, Promise<string>>();
 
 /**
  * Material Design 3 Icon Component
@@ -198,7 +199,11 @@ export class MdIcon extends LitElement {
   }
 
   /**
-   * Load icon from external source with in-memory caching
+   * Load icon from external source with in-memory caching.
+   *
+   * SVG_CACHE stores the Promise itself so concurrent mounts for the same URL
+   * share one fetch. If slotted content is already present (SSR inline SVG),
+   * we skip the fetch entirely — the icon is already rendered correctly.
    */
   private async loadExternalIcon() {
     if (!this.src) return;
@@ -208,56 +213,51 @@ export class MdIcon extends LitElement {
       return;
     }
 
-    // Check cache first
-    const cached = SVG_CACHE.get(this.src);
-    if (cached) {
-      this.svgContent = cached;
-      this.loadError = false;
-      this._loadedSrc = this.src;
-
-      this.dispatchEvent(
-        new CustomEvent('md-icon-load', {
-          bubbles: true,
-          composed: true,
-          detail: { src: this.src, cached: true },
-        })
-      );
+    // If inline SVG children are already present (e.g. SSR-inlined via unsafeSVG),
+    // skip the fetch — the icon is already rendered correctly in the slot.
+    if (this.childNodes.length > 0) {
       return;
     }
 
-    // Fetch from network
+    const src = this.src;
+
+    // Reuse an in-flight or completed fetch for the same URL
+    let promise = SVG_CACHE.get(src);
+    if (!promise) {
+      promise = fetch(src)
+        .then((r) => {
+          if (!r.ok) throw new Error(`Failed to load icon: ${r.status}`);
+          return r.text();
+        })
+        .catch((error) => {
+          // Evict on failure so a later retry can try again
+          SVG_CACHE.delete(src);
+          throw error;
+        });
+      SVG_CACHE.set(src, promise);
+    }
+
     try {
-      const response = await fetch(this.src);
-      if (!response.ok) {
-        throw new Error(`Failed to load icon: ${response.status}`);
-      }
-
-      const text = await response.text();
-
-      // Cache the result
-      SVG_CACHE.set(this.src, text);
-
+      const text = await promise;
       this.svgContent = text;
       this.loadError = false;
-      this._loadedSrc = this.src;
-
+      this._loadedSrc = src;
       this.dispatchEvent(
         new CustomEvent('md-icon-load', {
           bubbles: true,
           composed: true,
-          detail: { src: this.src, cached: false },
+          detail: { src, cached: true },
         })
       );
     } catch (error) {
       console.error('Error loading icon:', error);
       this.loadError = true;
       this.svgContent = '';
-
       this.dispatchEvent(
         new CustomEvent('md-icon-error', {
           bubbles: true,
           composed: true,
-          detail: { src: this.src, error },
+          detail: { src, error },
         })
       );
     }

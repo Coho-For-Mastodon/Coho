@@ -661,9 +661,7 @@ export function renderReplyContext(
         ></md-button>
       </div>
     </md-card>
-    <div class="thread-connector-bar">
-      <div class="thread-connector-line"></div>
-    </div>
+    <div class="thread-connector-bar"></div>
   `;
 }
 
@@ -856,7 +854,7 @@ export function renderRegularTweet(
         })}
       </div>
     </md-card>
-    ${hasContinuation ? html`<div class="thread-connector-bar"><div class="thread-connector-line"></div></div>` : null}
+    ${hasContinuation ? html`<div class="thread-connector-bar"></div>` : null}
     ${renderThreadContinuation(state, handlers)}
   `;
 }
@@ -913,11 +911,7 @@ export function renderThreadContinuation(
             })}
           </div>
         </md-card>
-        ${hasMore
-          ? html`<div class="thread-connector-bar">
-              <div class="thread-connector-line"></div>
-            </div>`
-          : null}
+        ${hasMore ? html`<div class="thread-connector-bar"></div>` : null}
       `;
     })}
   `;
