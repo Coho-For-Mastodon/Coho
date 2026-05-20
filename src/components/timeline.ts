@@ -149,6 +149,8 @@ export class Timeline extends LitElement {
           .tweet="${tweet}"
           .filterTitles="${filterTitles ?? []}"
         ></timeline-item>
+
+        <div class="line-divider"></div>
       </li>`;
     };
 
@@ -238,6 +240,14 @@ export class Timeline extends LitElement {
 
       timeline-item {
         margin-bottom: 16px;
+      }
+
+      .line-divider {
+        height: 1px;
+        /* width: 100%; */
+        background: #4a4a4a;
+        margin: 8px;
+        display: none;
       }
 
       #list-actions {
@@ -447,6 +457,10 @@ export class Timeline extends LitElement {
 
         #refresh-manual-button {
           display: none;
+        }
+
+        .line-divider {
+          display: block;
         }
       }
 
