@@ -130,11 +130,18 @@ export class ImageGrid extends LitElement {
         object-fit: cover;
         z-index: 1;
         opacity: 0;
-        transition: opacity 0.3s ease-in-out;
+        transition: opacity 0.25s ease-out;
       }
 
       .media-cell img.loaded {
         opacity: 1;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .media-cell img:not(.blurhash-canvas),
+        .media-cell video {
+          transition: none;
+        }
       }
 
       .media-cell video {
@@ -144,7 +151,7 @@ export class ImageGrid extends LitElement {
         object-fit: cover;
         z-index: 1;
         opacity: 0;
-        transition: opacity 0.3s ease-in-out;
+        transition: opacity 0.25s ease-out;
       }
 
       .media-cell video.loaded {
@@ -208,7 +215,22 @@ export class ImageGrid extends LitElement {
 
       if (this.images.length > 0) {
         this.generateBlurhashes();
-        this.updateComplete.then(() => this._observeVideos());
+        this.updateComplete.then(() => {
+          this._observeVideos();
+          this._markCachedImagesLoaded();
+        });
+      }
+    }
+  }
+
+  private _markCachedImagesLoaded() {
+    const imgs = this.shadowRoot?.querySelectorAll<HTMLImageElement>(
+      '.media-cell img:not(.blurhash-canvas)'
+    );
+    if (!imgs) return;
+    for (const img of imgs) {
+      if (img.complete && img.naturalWidth > 0) {
+        img.classList.add('loaded');
       }
     }
   }
@@ -312,16 +334,16 @@ export class ImageGrid extends LitElement {
 
   private handleImageLoad(e: Event) {
     const img = e.target as HTMLImageElement;
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       img.classList.add('loaded');
-    }, 100);
+    });
   }
 
   private _handleVideoLoaded(e: Event) {
     const video = e.target as HTMLVideoElement;
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       video.classList.add('loaded');
-    }, 100);
+    });
   }
 
   private _handleVideoPlay = (e: Event, attachment: MediaAttachment) => {
@@ -417,7 +439,6 @@ export class ImageGrid extends LitElement {
               : image.url}"
             alt="${image.description || msg('Image')}"
             @load="${this.handleImageLoad}"
-            class="${blurhashUrl ? '' : 'loaded'}"
             width="${ifDefined(
               dimensions ? String(dimensions.width) : undefined
             )}"
