@@ -7,8 +7,6 @@ import { initPerfObserver, perfMark, perfMeasure } from './utils/perf-observer';
 // Initialize localization (must be imported early)
 import './config/localization.js';
 
-import './pages/app-login';
-
 /** Lightweight native-platform check that avoids importing @capacitor/core on web. */
 function isCapacitorNative(): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -132,20 +130,11 @@ export class AppIndex extends LitElement {
     await this.handleNativeLaunchCallback();
   }
 
-  /** Load Navigation API / URLPattern polyfills if the browser needs them. */
+  /** Load URLPattern polyfill if the browser needs it. */
   private async _loadPolyfills() {
-    const loads: Promise<unknown>[] = [];
-    if (!('navigation' in window)) {
-      loads.push(
-        import('@virtualstate/navigation').then(({ applyPolyfill }) => {
-          applyPolyfill();
-        })
-      );
-    }
     if (typeof URLPattern === 'undefined') {
-      loads.push(import('urlpattern-polyfill'));
+      await import('urlpattern-polyfill');
     }
-    await Promise.all(loads);
   }
 
   disconnectedCallback() {

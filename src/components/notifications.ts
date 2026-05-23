@@ -215,8 +215,8 @@ export class Notifications extends LitElement {
         flex-direction: column;
         gap: 12px;
         cursor: pointer;
-        background: var(--sl-panel-background-color);
         border-radius: var(--md-sys-shape-corner-medium);
+        background: var(--md-sys-color-surface-container, #1e1e24);
         padding: 16px;
         transition: background 0.2s ease;
         position: relative;
@@ -628,6 +628,8 @@ export class Notifications extends LitElement {
       @media (max-width: 820px) {
         .notification-card {
           border-radius: var(--md-sys-shape-corner-small);
+          background: transparent;
+          padding: 12px 0;
         }
 
         ul {

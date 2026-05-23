@@ -113,12 +113,15 @@ export class MdTab extends LitElement {
         transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
       }
 
-      :host([data-stacked]:hover) .icon-container {
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600)) 8%,
-          transparent
-        );
+      @media (hover: hover) {
+        :host([data-stacked]:hover) .icon-container {
+          background: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600))
+              8%,
+            transparent
+          );
+        }
       }
 
       :host([active][data-stacked]) .icon-container {
@@ -176,8 +179,10 @@ export class MdTab extends LitElement {
       }
 
       /* Only show hover overlay for non-stacked tabs */
-      :host(:not([data-stacked])) .tab-inner:hover::before {
-        opacity: 0.08;
+      @media (hover: hover) {
+        :host(:not([data-stacked])) .tab-inner:hover::before {
+          opacity: 0.08;
+        }
       }
 
       :host(:not([data-stacked])) .tab-inner:active::before {

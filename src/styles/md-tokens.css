@@ -61,7 +61,6 @@
   --md-sys-color-on-surface-variant: #49454f;
 
   /* Surface Container Variants - derived from primary */
-  --md-sys-color-surface-container-lowest: #ffffff;
   --md-sys-color-surface-container-low: color-mix(
     in srgb,
     var(--md-sys-color-primary) 4%,
@@ -94,11 +93,6 @@
   /* Inverse Colors */
   --md-sys-color-inverse-surface: #313033;
   --md-sys-color-inverse-on-surface: #f5eff7;
-  --md-sys-color-inverse-primary: #f9a8d4;
-
-  /* Shadow and Scrim */
-  --md-sys-color-shadow: #000000;
-  --md-sys-color-scrim: #000000;
 
   /* Background Colors (for full-page surfaces) */
   --md-sys-color-background: #ffffff;
@@ -168,7 +162,6 @@
     --md-sys-color-on-surface-variant: #cac4d0;
 
     /* Surface Container Variants */
-    --md-sys-color-surface-container-lowest: #0f0d13;
     --md-sys-color-surface-container-low: #1d1b20;
     --md-sys-color-surface-container: color-mix(
       in srgb,
@@ -185,11 +178,6 @@
     /* Inverse Colors */
     --md-sys-color-inverse-surface: #e6e0e9;
     --md-sys-color-inverse-on-surface: #313033;
-    --md-sys-color-inverse-primary: #d44a8a;
-
-    /* Shadow and Scrim */
-    --md-sys-color-shadow: #000000;
-    --md-sys-color-scrim: #000000;
 
     /* Background Colors */
     --md-sys-color-background: color-mix(
@@ -308,17 +296,10 @@
 
 /* Elevation Tokens (MD3) */
 :root {
-  --md-sys-elevation-level0: none;
   --md-sys-elevation-level1:
     0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
   --md-sys-elevation-level2:
     0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
-  --md-sys-elevation-level3:
-    0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.3);
-  --md-sys-elevation-level4:
-    0px 6px 10px 4px rgba(0, 0, 0, 0.15), 0px 2px 3px 0px rgba(0, 0, 0, 0.3);
-  --md-sys-elevation-level5:
-    0px 8px 12px 6px rgba(0, 0, 0, 0.15), 0px 4px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 /* Shape Tokens (MD3) */
@@ -333,33 +314,10 @@
   --md-sys-shape-corner-circle: 50%;
 }
 
-/* Size Tokens (MD3) */
-:root {
-  --md-sys-size-avatar-large: 88px;
-  --md-sys-size-avatar-medium: 48px;
-  --md-sys-size-avatar-small: 32px;
-  --md-sys-size-avatar-border-width: 4px;
-}
-
 /* Motion Tokens (MD3) */
 :root {
   --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
-  --md-sys-motion-easing-decelerated: cubic-bezier(0, 0, 0, 1);
-  --md-sys-motion-easing-accelerated: cubic-bezier(0.3, 0, 1, 1);
-
-  --md-sys-motion-duration-short1: 50ms;
-  --md-sys-motion-duration-short2: 100ms;
   --md-sys-motion-duration-short3: 150ms;
-  --md-sys-motion-duration-short4: 200ms;
-  --md-sys-motion-duration-medium1: 250ms;
-  --md-sys-motion-duration-medium2: 300ms;
-  --md-sys-motion-duration-medium3: 350ms;
-  --md-sys-motion-duration-medium4: 400ms;
-  --md-sys-motion-duration-long1: 450ms;
-  --md-sys-motion-duration-long2: 500ms;
-  --md-sys-motion-duration-long3: 550ms;
-  --md-sys-motion-duration-long4: 600ms;
 }
 
 /* Scrollbar Tokens (MD3) - Subtle scrollbars for light mode */

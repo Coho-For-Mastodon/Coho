@@ -41,6 +41,9 @@ jobs:
       - name: Bundle size tests
         run: npm run test:bundle-size
 
+      - name: Performance tests
+        run: npm run test:perf
+
       - name: E2E tests
         run: npm run test:e2e
 

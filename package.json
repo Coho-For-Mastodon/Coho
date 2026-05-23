@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev-server": "vite --port 3000",
+    "preview": "vite preview --port 3000",
     "dev": "npm run dev-server",
     "dev-task": "vite",
     "build": "npm run localize:build && vite build && npm run ssr:inject",
@@ -26,6 +27,7 @@
     "lint:fix": "eslint \"src/**/*.{ts,js}\" \"functions/src/**/*.{ts,js}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
     "test:bundle-size": "playwright test --config playwright.config.ts",
+    "test:perf": "playwright test --config playwright.perf.config.ts",
     "format:check": "prettier --check \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build",
@@ -52,7 +54,6 @@
     "@huggingface/transformers": "^4.1.0",
     "@lit-labs/compiler": "^1.1.2",
     "@lit/localize": "^0.12.2",
-    "@virtualstate/navigation": "^1.0.1-alpha.212",
     "browser-fs-access": "^0.38.0",
     "fast-blurhash": "^1.1.4",
     "hotkeys-js": "^4.0.0",
