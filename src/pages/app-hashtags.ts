@@ -6,6 +6,7 @@ import { getTag, followTag, unfollowTag } from '../mastodon/api/tags';
 import type { Post } from '../interfaces/Post';
 import '../components/post-detail-dialog';
 import '../components/md/md-button';
+import '../components/md/md-skeleton-card';
 import type { PostDetailDialog } from '../components/post-detail-dialog';
 
 @localized()
@@ -56,6 +57,11 @@ export class AppHashtags extends LitElement {
       app-timeline {
         flex: 1;
         overflow: hidden;
+        width: 100%;
+        max-width: 600px;
+      }
+
+      .skeletons {
         width: 100%;
         max-width: 600px;
       }
@@ -149,13 +155,17 @@ export class AppHashtags extends LitElement {
             : nothing}
         </div>
 
-        <app-timeline
-          .data=${this.data}
-          .header=${false}
-          .autoLoad=${false}
-          @open="${(e: CustomEvent<{ tweet: Post }>) =>
-            this.handleOpenPost(e.detail.tweet)}"
-        ></app-timeline>
+        ${this.data === undefined
+          ? html`<div class="skeletons">
+              <md-skeleton-card count="5"></md-skeleton-card>
+            </div>`
+          : html`<app-timeline
+              .data=${this.data}
+              .header=${false}
+              .autoLoad=${false}
+              @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                this.handleOpenPost(e.detail.tweet)}"
+            ></app-timeline>`}
       </main>
 
       <!-- Post Detail Dialog -->
