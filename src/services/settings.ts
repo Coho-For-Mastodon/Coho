@@ -6,6 +6,7 @@ export interface Settings {
   focus?: boolean;
   sensitive?: boolean;
   haptics?: boolean;
+  experimental_3d_timeline?: boolean;
 }
 
 export const SETTINGS_CHANGED_EVENT = 'coho-settings-changed';
@@ -18,6 +19,7 @@ const defaultSettings = {
   focus: false,
   sensitive: false,
   haptics: true,
+  experimental_3d_timeline: false,
 };
 
 export async function getSettings(): Promise<Settings> {
@@ -48,6 +50,11 @@ export async function setSettings(settings: Settings) {
     haptics: Object.keys(settings).includes('haptics')
       ? settings.haptics
       : currentSettings.haptics,
+    experimental_3d_timeline: Object.keys(settings).includes(
+      'experimental_3d_timeline'
+    )
+      ? settings.experimental_3d_timeline
+      : currentSettings.experimental_3d_timeline,
   };
 
   // Also store theme color in localStorage for instant access on page load

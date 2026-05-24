@@ -68,6 +68,7 @@ export class AppHome extends LitElement {
   @state() wellnessMode: boolean = false;
   @state() dataSaverMode: boolean = false;
   @state() hapticsEnabled: boolean = true;
+  @state() experimental3dTimelineEnabled: boolean = false;
 
   @state() summary: string = '';
 
@@ -299,6 +300,10 @@ export class AppHome extends LitElement {
           this.handleDataSaverMode(settings.data_saver || false);
 
           this.handleHapticsMode(settings.haptics !== false);
+
+          this.handleExperimental3dTimelineMode(
+            settings.experimental_3d_timeline || false
+          );
         }
 
         // Only check notifications for authenticated users
@@ -522,6 +527,13 @@ export class AppHome extends LitElement {
 
     const { setSettings } = await import('../services/settings');
     setSettings({ haptics: enabled });
+  }
+
+  async handleExperimental3dTimelineMode(enabled: boolean) {
+    this.experimental3dTimelineEnabled = enabled;
+
+    const { setSettings } = await import('../services/settings');
+    setSettings({ experimental_3d_timeline: enabled });
   }
 
   async handleTabChange(event: TabChangeEvent) {
@@ -1105,6 +1117,8 @@ export class AppHome extends LitElement {
               .wellnessMode="${this.wellnessMode}"
               .dataSaverMode="${this.dataSaverMode}"
               .hapticsEnabled="${this.hapticsEnabled}"
+              .experimental3dTimelineEnabled="${this
+                .experimental3dTimelineEnabled}"
               .appThemeLoaded="${this.appThemeLoaded}"
               @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleWellnessMode(e.detail.checked)}"
@@ -1112,6 +1126,9 @@ export class AppHome extends LitElement {
                 this.handleDataSaverMode(e.detail.checked)}"
               @haptics-change="${(e: CustomEvent<{ checked: boolean }>) =>
                 this.handleHapticsMode(e.detail.checked)}"
+              @experimental-3d-timeline-change="${(
+                e: CustomEvent<{ checked: boolean }>
+              ) => this.handleExperimental3dTimelineMode(e.detail.checked)}"
               @open-filters="${() => this.openFiltersDialog()}"
               @open-scheduled-statuses="${() =>
                 this.openScheduledStatusesDialog()}"

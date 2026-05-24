@@ -60,6 +60,7 @@
     "idb-keyval": "^6.2.0",
     "lit": "^3.3.2",
     "marked": "^17.0.1",
+    "three": "^0.184.0",
     "urlpattern-polyfill": "^10.1.0",
     "web-router": "^0.5.0"
   },
@@ -74,6 +75,7 @@
     "@playwright/test": "^1.50.0",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/dom-navigation": "^1.0.6",
+    "@types/three": "^0.184.0",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
     "@vitest/browser": "^4.0.16",
