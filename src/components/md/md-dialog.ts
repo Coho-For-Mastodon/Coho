@@ -33,10 +33,7 @@ export class MdDialog extends LitElement {
         max-height: calc(100vh - 48px);
         background-color: var(--md-sys-color-surface-container-high, #ece6f0);
         color: var(--md-sys-color-on-surface, #1d1b20);
-        box-shadow:
-          0 8px 10px 1px rgba(0, 0, 0, 0.14),
-          0 3px 14px 2px rgba(0, 0, 0, 0.12),
-          0 5px 5px -3px rgba(0, 0, 0, 0.2);
+        box-shadow: var(--md-sys-elevation-level2);
         overflow: hidden;
         transform-origin: var(--md-dialog-origin-x, 50%)
           var(--md-dialog-origin-y, 50%);
@@ -56,7 +53,7 @@ export class MdDialog extends LitElement {
       }
 
       dialog::backdrop {
-        background-color: rgba(0, 0, 0, 0.32);
+        background-color: rgba(0, 0, 0, 0.4);
         backdrop-filter: blur(4px);
       }
 
@@ -113,11 +110,7 @@ export class MdDialog extends LitElement {
       }
 
       .close-btn:hover {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 8%,
-          transparent
-        );
+        background-color: rgba(0, 0, 0, 0.05);
       }
 
       .close-btn:focus-visible {
@@ -141,6 +134,10 @@ export class MdDialog extends LitElement {
 
         dialog::backdrop {
           background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .close-btn:hover {
+          background-color: rgba(255, 255, 255, 0.08);
         }
 
         .dialog-body::-webkit-scrollbar-thumb {
@@ -175,19 +172,19 @@ export class MdDialog extends LitElement {
 
       /* Animation */
       dialog[open] {
-        animation: dialog-show 0.3s cubic-bezier(0.2, 0, 0, 1);
+        animation: dialog-show 0.3s ease;
       }
 
       dialog.closing {
-        animation: dialog-hide 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+        animation: dialog-hide 0.2s ease forwards;
       }
 
       dialog[open]::backdrop {
-        animation: backdrop-show 0.3s cubic-bezier(0.2, 0, 0, 1);
+        animation: backdrop-show 0.3s ease;
       }
 
       dialog.closing::backdrop {
-        animation: backdrop-hide 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+        animation: backdrop-hide 0.2s ease forwards;
       }
 
       @keyframes dialog-show {

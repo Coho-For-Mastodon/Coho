@@ -30,15 +30,8 @@ export class MdSwitch extends LitElement {
       width: 52px;
       height: 32px;
       border-radius: var(--md-sys-shape-corner-large);
-      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
-      background-color: var(
-        --md-switch-track,
-        color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 12%,
-          transparent
-        )
-      );
+      transition: background-color 0.2s ease;
+      background-color: var(--md-switch-track, #d0d0d0);
     }
 
     :host([checked]) .control {
@@ -55,18 +48,15 @@ export class MdSwitch extends LitElement {
       width: 24px;
       height: 24px;
       border-radius: var(--md-sys-shape-corner-circle);
-      background: var(--md-sys-color-surface, #fef7ff);
-      box-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.3),
-        0 1px 3px 1px rgba(0, 0, 0, 0.15);
+      background: #ffffff;
       transition:
-        transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.2s ease,
         background-color 0.2s;
     }
 
     :host([checked]) .thumb {
       transform: translateX(20px);
-      background: var(--md-sys-color-on-primary, #ffffff);
+      background: #ffffff;
     }
 
     .control:focus-visible {
@@ -88,14 +78,10 @@ export class MdSwitch extends LitElement {
 
     @media (prefers-color-scheme: dark) {
       .control {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #e6e1e5) 12%,
-          transparent
-        );
+        background-color: #555555;
       }
       .thumb {
-        background: var(--md-sys-color-surface, #1d1b20);
+        background: #ffffff;
       }
       .label {
         color: var(--md-sys-color-on-surface, #e6e1e5);

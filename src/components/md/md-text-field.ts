@@ -48,9 +48,8 @@ export class MdTextField extends LitElement {
         width: 100%;
         min-height: 40px;
         padding: 12px 16px;
-        border: none;
-        border-radius: var(--md-sys-shape-corner-extra-small)
-          var(--md-sys-shape-corner-extra-small) 0 0;
+        border: 1px solid var(--md-sys-color-outline, #79747e);
+        border-radius: var(--md-sys-shape-corner-medium);
         background-color: var(
           --md-sys-color-surface-container-highest,
           #e6e0e9
@@ -58,13 +57,9 @@ export class MdTextField extends LitElement {
         font-size: var(--md-sys-typescale-body-large-font-size);
         font-weight: 400;
         line-height: 24px;
-        letter-spacing: 0.5px;
+        letter-spacing: 0;
         color: var(--md-sys-color-on-surface, #1d1b20);
-        border-bottom: 1px solid var(--md-sys-color-on-surface-variant, #49454f);
-        transition:
-          background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-          border-bottom-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-          border-bottom-width 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: border-color 0.2s ease;
         box-sizing: border-box;
       }
 
@@ -74,22 +69,12 @@ export class MdTextField extends LitElement {
       }
 
       input:hover:not(:disabled) {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 8%,
-          var(--md-sys-color-surface-container-highest, #e6e0e9)
-        );
+        border-color: var(--md-sys-color-on-surface, #1d1b20);
       }
 
       input:focus {
         outline: none;
-        border-bottom-color: var(--md-sys-color-primary, #6750a4);
-        border-bottom-width: 2px;
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 12%,
-          var(--md-sys-color-surface-container-highest, #e6e0e9)
-        );
+        border-color: var(--md-sys-color-primary, #6750a4);
       }
 
       input:focus-visible {
@@ -110,7 +95,7 @@ export class MdTextField extends LitElement {
       input.outlined {
         background-color: transparent;
         border: 1px solid var(--md-sys-color-outline, #79747e);
-        border-radius: var(--md-sys-shape-corner-extra-small);
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       input.outlined:hover:not(:disabled) {
@@ -120,29 +105,19 @@ export class MdTextField extends LitElement {
 
       input.pill {
         border-radius: var(--md-sys-shape-corner-full);
-        border-bottom: none;
-      }
-
-      input.pill.outlined {
-        border-radius: var(--md-sys-shape-corner-full);
       }
 
       input.outlined:focus {
         border-color: var(--md-sys-color-primary, #6750a4);
-        border-width: 2px;
         background-color: transparent;
-        padding: 11px 15px; /* Adjust for border width change */
       }
 
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
         input {
-          background-color: var(
-            --md-sys-color-surface-container-highest,
-            #49454f
-          );
+          background-color: #333333;
           color: var(--md-sys-color-on-surface, #e6e0e9);
-          border-bottom-color: var(--md-sys-color-outline, #938f99);
+          border-color: var(--md-sys-color-outline, #938f99);
         }
 
         input::placeholder {
@@ -150,20 +125,11 @@ export class MdTextField extends LitElement {
         }
 
         input:hover:not(:disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface, #e6e0e9) 8%,
-            var(--md-sys-color-surface-container-highest, #49454f)
-          );
+          border-color: #cccccc;
         }
 
         input:focus {
-          border-bottom-color: var(--md-sys-color-primary, #d0bcff);
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface, #e6e0e9) 12%,
-            var(--md-sys-color-surface-container-highest, #49454f)
-          );
+          border-color: var(--md-sys-color-primary, #d0bcff);
         }
 
         input:focus-visible {
@@ -172,10 +138,7 @@ export class MdTextField extends LitElement {
         }
 
         input:disabled {
-          background-color: var(
-            --md-sys-color-surface-container-highest,
-            #49454f
-          );
+          background-color: #333333;
         }
 
         input.outlined {

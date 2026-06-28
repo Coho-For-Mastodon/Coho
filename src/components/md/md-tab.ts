@@ -68,14 +68,14 @@ export class MdTab extends LitElement {
         font-size: 12px;
         font-weight: 500;
         line-height: 16px;
-        letter-spacing: 0.5px;
+        letter-spacing: 0;
 
         color: var(
           --md-sys-color-on-surface-variant,
           var(--sl-color-neutral-600)
         );
         background: transparent;
-        transition: color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: color 0.2s ease;
         white-space: nowrap;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
@@ -110,29 +110,17 @@ export class MdTab extends LitElement {
         width: 64px;
         height: 32px;
         border-radius: var(--md-sys-shape-corner-large);
-        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: background-color 0.2s ease;
       }
 
       @media (hover: hover) {
-        :host([data-stacked]:hover) .icon-container {
-          background: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface-variant, var(--sl-color-neutral-600))
-              8%,
-            transparent
-          );
+        :host([data-stacked]:hover) .tab-inner {
+          opacity: 0.8;
         }
       }
 
       :host([active][data-stacked]) .icon-container {
-        background: var(
-          --md-sys-color-secondary-container,
-          color-mix(
-            in srgb,
-            var(--md-sys-color-primary, var(--sl-color-primary-600)) 15%,
-            transparent
-          )
-        );
+        background: transparent;
       }
 
       /* Icon container - default (horizontal top) */
@@ -151,6 +139,7 @@ export class MdTab extends LitElement {
       /* Active state */
       :host([active]) .tab-inner {
         color: var(--md-sys-color-primary, var(--sl-color-primary-600));
+        opacity: 1;
       }
 
       /* Active icon fill */
@@ -166,32 +155,15 @@ export class MdTab extends LitElement {
         pointer-events: none;
       }
 
-      /* Hover overlay */
-      .tab-inner::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: currentColor;
-        opacity: 0;
-        transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
-        pointer-events: none;
-        border-radius: inherit;
+      /* Press feedback */
+      .tab-inner {
+        transition:
+          color 0.2s ease,
+          opacity 0.15s ease;
       }
 
-      /* Only show hover overlay for non-stacked tabs */
-      @media (hover: hover) {
-        :host(:not([data-stacked])) .tab-inner:hover::before {
-          opacity: 0.08;
-        }
-      }
-
-      :host(:not([data-stacked])) .tab-inner:active::before {
-        opacity: 0.12;
-      }
-
-      /* Hide overlay for stacked tabs - hover is on icon-container instead */
-      :host([data-stacked]) .tab-inner::before {
-        display: none;
+      .tab-inner:active {
+        opacity: 0.5;
       }
 
       /* Focus visible ring */
@@ -212,13 +184,13 @@ export class MdTab extends LitElement {
         width: calc(100% - 32px);
         min-width: 24px;
         max-width: 48px;
-        height: 3px;
+        height: 2px;
         border-radius: var(--md-sys-shape-corner-extra-small)
           var(--md-sys-shape-corner-extra-small) 0 0;
         background: var(--md-sys-color-primary, var(--sl-color-primary-600));
         transition:
-          transform 0.2s cubic-bezier(0.2, 0, 0, 1),
-          opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
+          transform 0.2s ease,
+          opacity 0.2s ease;
         opacity: 0;
       }
 
@@ -252,37 +224,6 @@ export class MdTab extends LitElement {
         :host([disabled]) .tab-inner {
           color: var(--md-sys-color-on-surface, var(--sl-color-neutral-600));
         }
-      }
-
-      /* CSS-only ripple — expands from center on click */
-      .tab-inner::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image: radial-gradient(
-          circle,
-          currentColor 10%,
-          transparent 10.01%
-        );
-        background-repeat: no-repeat;
-        background-position: 50%;
-        transform: scale(10, 10);
-        opacity: 0;
-        transition:
-          transform 0.5s,
-          opacity 0.8s;
-        pointer-events: none;
-      }
-
-      .tab-inner:active::after {
-        transform: scale(0, 0);
-        opacity: 0.25;
-        transition: 0s;
-      }
-
-      /* Stacked variant uses the icon-container pill for press feedback */
-      :host([data-stacked]) .tab-inner::after {
-        display: none;
       }
     `,
   ];

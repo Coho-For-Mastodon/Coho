@@ -85,28 +85,18 @@ export class MdAudioPlayer extends LitElement {
         background: var(--md-sys-color-primary, var(--sl-color-primary-600));
         color: var(--md-sys-color-on-primary, white);
         cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: all 0.2s ease;
         padding: 0;
         outline: none;
       }
 
       .play-button:hover {
-        box-shadow:
-          0px 1px 2px rgba(0, 0, 0, 0.3),
-          0px 1px 3px 1px rgba(0, 0, 0, 0.15);
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-primary, var(--sl-color-primary-600)) 92%,
-          var(--md-sys-color-on-primary, white) 8%
-        );
+        /* no shadow */
+        filter: brightness(0.92);
       }
 
       .play-button:active {
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-primary, var(--sl-color-primary-600)) 88%,
-          var(--md-sys-color-on-primary, white) 12%
-        );
+        opacity: 0.7;
       }
 
       .play-button:focus-visible {

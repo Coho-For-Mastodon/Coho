@@ -63,7 +63,7 @@ export class MdIconButton extends LitElement {
       background: transparent;
       color: var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.7));
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      transition: all 0.2s ease;
       font-size: 24px;
       outline: none;
     }
@@ -97,67 +97,24 @@ export class MdIconButton extends LitElement {
 
     /* Hover states */
     .icon-button:not(:disabled):hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-on-surface, white) 8%,
-        transparent
-      );
+      background: rgba(255, 255, 255, 0.08); /* Dark mode default */
     }
 
     .icon-button--filled:not(:disabled):hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-primary, var(--sl-color-primary-600)) 92%,
-        var(--md-sys-color-on-primary, white) 8%
-      );
-      box-shadow:
-        0px 1px 2px rgba(0, 0, 0, 0.3),
-        0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: brightness(0.92);
     }
 
     .icon-button--filled-tonal:not(:disabled):hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12)) 92%,
-        var(--md-sys-color-on-secondary-container, white) 8%
-      );
-      box-shadow:
-        0px 1px 2px rgba(0, 0, 0, 0.2),
-        0px 1px 3px 1px rgba(0, 0, 0, 0.1);
+      filter: brightness(1.1);
     }
 
     .icon-button--outlined:not(:disabled):hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-on-surface, white) 8%,
-        transparent
-      );
-      border-color: var(--md-sys-color-outline, rgba(255, 255, 255, 0.2));
+      background: rgba(255, 255, 255, 0.08);
     }
 
     /* Active states */
     .icon-button:not(:disabled):active {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-on-surface, white) 12%,
-        transparent
-      );
-    }
-
-    .icon-button--filled:not(:disabled):active {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-primary, var(--sl-color-primary-600)) 88%,
-        var(--md-sys-color-on-primary, white) 12%
-      );
-    }
-
-    .icon-button--filled-tonal:not(:disabled):active {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12)) 88%,
-        var(--md-sys-color-on-secondary-container, white) 12%
-      );
+      opacity: 0.7;
     }
 
     /* Focus state */
@@ -181,11 +138,7 @@ export class MdIconButton extends LitElement {
       }
 
       .icon-button:not(:disabled):hover {
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, black) 8%,
-          transparent
-        );
+        background: rgba(0, 0, 0, 0.05);
       }
 
       .icon-button--filled-tonal {
@@ -201,20 +154,7 @@ export class MdIconButton extends LitElement {
       }
 
       .icon-button--outlined:not(:disabled):hover {
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, black) 8%,
-          transparent
-        );
-        border-color: var(--md-sys-color-outline, rgba(0, 0, 0, 0.2));
-      }
-
-      .icon-button:not(:disabled):active {
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, black) 12%,
-          transparent
-        );
+        background: rgba(0, 0, 0, 0.05);
       }
     }
 

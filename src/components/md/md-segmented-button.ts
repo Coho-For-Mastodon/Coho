@@ -40,7 +40,7 @@ export class MdSegmentedButton extends LitElement {
     .container {
       display: flex;
       background: var(--md-sys-color-surface-container, #f3edf7);
-      border-radius: var(--md-sys-shape-corner-extra-large);
+      border-radius: var(--md-sys-shape-corner-medium);
       padding: 4px;
       gap: 0;
       overflow-x: auto;
@@ -189,10 +189,10 @@ export class MdSegment extends LitElement {
       color: var(--md-sys-color-on-surface-variant, #49454f);
       font-family: inherit;
       font-size: var(--md-sys-typescale-label-large-font-size, 14px);
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      border-radius: var(--md-sys-shape-corner-small);
+      transition: all 0.2s ease;
       white-space: nowrap;
       width: 100%;
       min-height: 40px;
@@ -211,19 +211,13 @@ export class MdSegment extends LitElement {
     }
 
     button:active:not(:disabled) {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-on-surface, #1d1b20) 12%,
-        transparent
-      );
+      opacity: 0.7;
     }
 
     :host([selected]) button {
-      background: var(
-        --sl-color-primary-600,
-        var(--md-sys-color-primary, #6750a4)
-      );
-      color: white;
+      background: #ffffff;
+      color: var(--md-sys-color-on-surface, #1a1a1a);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     :host([selected]) button:focus-visible {
@@ -248,11 +242,9 @@ export class MdSegment extends LitElement {
       }
 
       :host([selected]) button {
-        background: var(
-          --sl-color-primary-600,
-          var(--md-sys-color-primary, #6750a4)
-        );
-        color: white;
+        background: #3d3d3d;
+        color: var(--md-sys-color-on-surface, #f0f0f0);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
       }
     }
   `;

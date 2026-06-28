@@ -63,16 +63,16 @@ export class MdAutocomplete extends LitElement {
       width: 100%;
       min-height: 40px;
       padding: 12px 16px;
-      border: none;
-      border-radius: 52px;
+      border: 1px solid var(--md-sys-color-outline, #79747e);
+      border-radius: var(--md-sys-shape-corner-medium);
       background-color: var(--_surface-container-highest);
       font-family: inherit;
       font-size: var(--md-sys-typescale-body-large-font-size);
       font-weight: 400;
       line-height: 24px;
-      letter-spacing: 0.5px;
+      letter-spacing: 0;
       color: var(--_on-surface);
-      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+      transition: border-color 0.2s ease;
       box-sizing: border-box;
     }
 
@@ -82,11 +82,7 @@ export class MdAutocomplete extends LitElement {
     }
 
     input:hover {
-      background-color: color-mix(
-        in srgb,
-        var(--_on-surface) 8%,
-        var(--_surface-container-highest)
-      );
+      border-color: var(--_on-surface);
     }
 
     input:focus-visible {
@@ -96,11 +92,7 @@ export class MdAutocomplete extends LitElement {
 
     input:focus {
       outline: none;
-      background-color: color-mix(
-        in srgb,
-        var(--_on-surface) 12%,
-        var(--_surface-container-highest)
-      );
+      border-color: var(--md-sys-color-primary, #6750a4);
     }
 
     .dropdown {
@@ -115,21 +107,19 @@ export class MdAutocomplete extends LitElement {
       max-height: 300px;
       overflow-y: auto;
       background-color: var(--_surface-container);
-      border-radius: 12px;
-      box-shadow:
-        0 2px 6px 2px rgba(0, 0, 0, 0.15),
-        0 1px 2px rgba(0, 0, 0, 0.3);
+      border-radius: var(--md-sys-shape-corner-large);
+      box-shadow: var(--md-sys-elevation-level2);
       opacity: 0;
-      transform: scaleY(0.95);
+      transform: translateY(-6px);
       transform-origin: var(--md-autocomplete-origin-y, top) left;
       transition:
-        opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
-        transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+        opacity 0.15s ease,
+        transform 0.15s ease;
     }
 
     .dropdown:popover-open {
       opacity: 1;
-      transform: scaleY(1);
+      transform: translateY(0);
     }
 
     .dropdown::backdrop {
@@ -142,24 +132,23 @@ export class MdAutocomplete extends LitElement {
       gap: 2px;
       padding: 12px 16px;
       cursor: pointer;
-      transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
+      transition: background-color 0.15s ease;
     }
 
     .dropdown-item:hover,
     .dropdown-item.highlighted {
-      background-color: color-mix(
-        in srgb,
-        var(--_on-surface) 8%,
-        var(--_surface-container)
-      );
+      background-color: rgba(0, 0, 0, 0.06); /* Default light mode */
     }
 
     .dropdown-item:active {
-      background-color: color-mix(
-        in srgb,
-        var(--_on-surface) 12%,
-        var(--_surface-container)
-      );
+      opacity: 0.7;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .dropdown-item:hover,
+      .dropdown-item.highlighted {
+        background-color: rgba(255, 255, 255, 0.08);
+      }
     }
 
     .dropdown-item:last-child {
