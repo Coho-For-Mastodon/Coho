@@ -13,6 +13,7 @@ export class MdDialog extends LitElement {
   @property({ type: Boolean }) fullscreen = false;
   @property({ type: Boolean, attribute: 'no-backdrop-close' }) noBackdropClose =
     false;
+  @property({ type: String }) type: 'dialog' | 'sheet' = 'dialog';
 
   @query('dialog') dialog!: HTMLDialogElement;
 
@@ -170,13 +171,20 @@ export class MdDialog extends LitElement {
         }
       }
 
-      /* Animation */
       dialog[open] {
         animation: dialog-show 0.3s ease;
       }
 
+      dialog.sheet[open] {
+        animation: sheet-show 0.3s cubic-bezier(0.2, 0, 0, 1);
+      }
+
       dialog.closing {
         animation: dialog-hide 0.2s ease forwards;
+      }
+
+      dialog.sheet.closing {
+        animation: sheet-hide 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
       }
 
       dialog[open]::backdrop {
@@ -226,6 +234,34 @@ export class MdDialog extends LitElement {
           opacity: 0;
         }
       }
+
+      /* Sheet Type Styles */
+      dialog.sheet {
+        margin: auto auto 0 auto;
+        width: 100vw;
+        max-width: 100vw;
+        max-height: calc(100dvh - 20px);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+      @keyframes sheet-show {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes sheet-hide {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(100%);
+        }
+      }
     `,
   ];
 
@@ -235,7 +271,7 @@ export class MdDialog extends LitElement {
     return html`
       <dialog
         part="dialog"
-        class="${this.fullscreen ? 'fullscreen' : ''}"
+        class="${this.fullscreen ? 'fullscreen' : ''} ${this.type === 'sheet' ? 'sheet' : ''}"
         aria-labelledby="${this._titleId}"
         @close="${this._handleClose}"
         @cancel="${this._handleCancel}"
@@ -296,7 +332,7 @@ export class MdDialog extends LitElement {
         this.dialog.showModal();
         this.open = true;
 
-        if (this.openOrigin) {
+        if (this.openOrigin && this.type !== 'sheet') {
           const rect = this.dialog.getBoundingClientRect();
           const originX = this.openOrigin.x - rect.left;
           const originY = this.openOrigin.y - rect.top;

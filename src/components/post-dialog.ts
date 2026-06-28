@@ -43,14 +43,6 @@ export class PostDialog extends LitElement {
         min-height: 60vh;
       }
     }
-
-    @media (max-width: 820px) {
-      md-dialog::part(dialog) {
-        min-width: 100vw;
-        min-height: 100vh;
-        margin-top: calc(env(safe-area-inset-top, 0px));
-      }
-    }
   `;
 
   protected async firstUpdated() {
@@ -213,7 +205,7 @@ export class PostDialog extends LitElement {
       <md-dialog
         id="notify-dialog"
         label=${this.dialogLabel}
-        ?fullscreen=${this.isMobile}
+        type=${this.isMobile ? 'sheet' : 'dialog'}
         ?no-backdrop-close=${this.isMobile}
         @close=${this._handleDialogClose}
       >
