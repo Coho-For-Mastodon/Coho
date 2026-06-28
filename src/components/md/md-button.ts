@@ -10,11 +10,7 @@ import { mdSharedStyles } from './md-shared-styles.js';
 @customElement('md-button')
 export class MdButton extends LitElement {
   @property({ type: String }) variant:
-    | 'filled'
-    | 'outlined'
-    | 'text'
-    | 'tonal'
-    | 'fab' = 'filled';
+    'filled' | 'outlined' | 'text' | 'tonal' | 'fab' = 'filled';
   @property({ type: String }) size: 'small' | 'medium' = 'medium';
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) pill = false;

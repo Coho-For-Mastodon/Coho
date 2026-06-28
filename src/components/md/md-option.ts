@@ -175,9 +175,9 @@ export class MdOption extends LitElement {
   render() {
     return html`
       <div
-        class="option ${this.selected ? 'selected' : ''} ${this.disabled
-          ? 'disabled'
-          : ''}"
+        class="option ${this.selected ? 'selected' : ''} ${
+          this.disabled ? 'disabled' : ''
+        }"
         role="option"
         aria-selected="${this.selected ? 'true' : 'false'}"
         aria-disabled="${this.disabled ? 'true' : 'false'}"

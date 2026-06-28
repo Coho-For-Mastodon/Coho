@@ -283,23 +283,25 @@ export class MdMenuItem extends LitElement {
         @click="${this._handleClick}"
         @keydown="${this._handleKeydown}"
       >
-        ${this.selected
-          ? html`<span class="check-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>`
-          : html`<div class="prefix"><slot name="prefix"></slot></div>`}
+        ${
+          this.selected
+            ? html`<span class="check-icon">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>`
+            : html`<div class="prefix"><slot name="prefix"></slot></div>`
+        }
         <div class="content">
           <slot></slot>
         </div>

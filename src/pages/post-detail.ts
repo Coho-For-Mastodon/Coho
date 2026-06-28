@@ -529,9 +529,11 @@ export class PostDetail extends LitElement {
     // Show skeleton while loading
     if (this.loading) {
       return html`
-        ${!embedded
-          ? html`<app-header ?enableBack="${true}"></app-header>`
-          : null}
+        ${
+          !embedded
+            ? html`<app-header ?enableBack="${true}"></app-header>`
+            : null
+        }
         <main>
           <div class="scroller">
             <section class="post-section">
@@ -545,9 +547,11 @@ export class PostDetail extends LitElement {
     // Show error state
     if (this.error) {
       return html`
-        ${!embedded
-          ? html`<app-header ?enableBack="${true}"></app-header>`
-          : null}
+        ${
+          !embedded
+            ? html`<app-header ?enableBack="${true}"></app-header>`
+            : null
+        }
         <main>
           <div class="scroller">
             <section class="post-section error-state">
@@ -562,9 +566,11 @@ export class PostDetail extends LitElement {
     // No tweet to display
     if (!this.tweet) {
       return html`
-        ${!embedded
-          ? html`<app-header ?enableBack="${true}"></app-header>`
-          : null}
+        ${
+          !embedded
+            ? html`<app-header ?enableBack="${true}"></app-header>`
+            : null
+        }
         <main>
           <div class="scroller">
             <section class="post-section">
@@ -576,9 +582,9 @@ export class PostDetail extends LitElement {
     }
 
     return html`
-      ${!embedded
-        ? html`<app-header ?enableBack="${true}"></app-header>`
-        : null}
+      ${
+        !embedded ? html`<app-header ?enableBack="${true}"></app-header>` : null
+      }
 
       <main>
         <div class="scroller">
@@ -599,11 +605,13 @@ export class PostDetail extends LitElement {
                   @edit="${(e: CustomEvent<{ tweet: Post }>) =>
                     this.handleEditPost(e.detail.tweet)}"
                 ></timeline-item>
-                ${index < this.ancestors.length - 1
-                  ? html`<div class="ancestor-connector">
-                      <div class="ancestor-connector-line"></div>
-                    </div>`
-                  : nothing}
+                ${
+                  index < this.ancestors.length - 1
+                    ? html`<div class="ancestor-connector">
+                        <div class="ancestor-connector-line"></div>
+                      </div>`
+                    : nothing
+                }
               `;
             })}
           </section>
@@ -623,73 +631,79 @@ export class PostDetail extends LitElement {
             ></timeline-item>
           </section>
 
-          ${this.quotes.length > 0
-            ? html`
-                <section class="replies-section">
-                  <h2 class="replies-title">${msg('Quotes')}</h2>
-                  ${this.quotes.map(
-                    (quotePost) => html`
-                      <timeline-item
-                        .tweet=${quotePost}
-                        ?guestMode=${this.isGuestMode}
-                        @open=${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.handleOpenPost(e)}
-                        @reply-clicked=${(e: CustomEvent) =>
-                          this.handleReplyClick(e)}
-                        @quote-clicked=${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.handleQuoteClick(e)}
-                        @edit=${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.handleEditPost(e.detail.tweet)}
-                      ></timeline-item>
-                    `
-                  )}
-                </section>
-              `
-            : nothing}
-          ${this.replyTree.length > 0
-            ? html`
-                <section class="replies-section">
-                  <h2 class="replies-title">${msg('Replies')}</h2>
-                  ${this.replyTree.map(
-                    (node) => html`
-                      <thread-branch
-                        .node=${node}
-                        ?guestMode=${this.isGuestMode}
-                        @open=${(e: CustomEvent<{ tweet: Post }>) =>
-                          this.handleOpenPost(e)}
-                        @reply-clicked=${(e: CustomEvent) =>
-                          this.handleReplyClick(e)}
-                      ></thread-branch>
-                    `
-                  )}
-                </section>
-              `
-            : nothing}
+          ${
+            this.quotes.length > 0
+              ? html`
+                  <section class="replies-section">
+                    <h2 class="replies-title">${msg('Quotes')}</h2>
+                    ${this.quotes.map(
+                      (quotePost) => html`
+                        <timeline-item
+                          .tweet=${quotePost}
+                          ?guestMode=${this.isGuestMode}
+                          @open=${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleOpenPost(e)}
+                          @reply-clicked=${(e: CustomEvent) =>
+                            this.handleReplyClick(e)}
+                          @quote-clicked=${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleQuoteClick(e)}
+                          @edit=${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleEditPost(e.detail.tweet)}
+                        ></timeline-item>
+                      `
+                    )}
+                  </section>
+                `
+              : nothing
+          }
+          ${
+            this.replyTree.length > 0
+              ? html`
+                  <section class="replies-section">
+                    <h2 class="replies-title">${msg('Replies')}</h2>
+                    ${this.replyTree.map(
+                      (node) => html`
+                        <thread-branch
+                          .node=${node}
+                          ?guestMode=${this.isGuestMode}
+                          @open=${(e: CustomEvent<{ tweet: Post }>) =>
+                            this.handleOpenPost(e)}
+                          @reply-clicked=${(e: CustomEvent) =>
+                            this.handleReplyClick(e)}
+                        ></thread-branch>
+                      `
+                    )}
+                  </section>
+                `
+              : nothing
+          }
         </div>
 
-        ${this.isGuestMode
-          ? nothing
-          : html`
-              <footer class="composer">
-                <div class="composer-shell">
-                  <post-composer
-                    compact
-                    .dialogMode=${embedded}
-                    .hideReplyDismiss=${embedded && !this.replyingTo}
-                    rows="1"
-                    .replyTo=${this.replyingTo || this.tweet}
-                    placeholder=${msg('Reply to this post...')}
-                    @published=${() => this.handleReplyPublished()}
-                    @reply-cleared=${() => {
-                      this.replyingTo = null;
-                      if (this.replyComposer && this.tweet) {
-                        this.replyComposer.replyTo = this.tweet;
-                      }
-                    }}
-                  ></post-composer>
-                </div>
-              </footer>
-            `}
+        ${
+          this.isGuestMode
+            ? nothing
+            : html`
+                <footer class="composer">
+                  <div class="composer-shell">
+                    <post-composer
+                      compact
+                      .dialogMode=${embedded}
+                      .hideReplyDismiss=${embedded && !this.replyingTo}
+                      rows="1"
+                      .replyTo=${this.replyingTo || this.tweet}
+                      placeholder=${msg('Reply to this post...')}
+                      @published=${() => this.handleReplyPublished()}
+                      @reply-cleared=${() => {
+                        this.replyingTo = null;
+                        if (this.replyComposer && this.tweet) {
+                          this.replyComposer.replyTo = this.tweet;
+                        }
+                      }}
+                    ></post-composer>
+                  </div>
+                </footer>
+              `
+        }
 
         <post-dialog
           @published=${() => this.handleReplyPublished()}

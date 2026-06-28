@@ -635,52 +635,58 @@ export class ConversationThread extends LitElement {
         ${this._renderParticipantsBar()}
 
         <div class="scroller scrollbar-hidden">
-          ${this.loading
-            ? html`
-                <div class="messages-container">
-                  ${this._renderSkeletonBubbles()}
-                </div>
-              `
-            : this.error
+          ${
+            this.loading
               ? html`
-                  <div class="state-container">
-                    <span class="error-message">${this.error}</span>
-                    <md-button @click=${this._loadThread}>
-                      ${msg('Retry')}
-                    </md-button>
+                  <div class="messages-container">
+                    ${this._renderSkeletonBubbles()}
                   </div>
                 `
-              : html`
-                  <div class="messages-container">
-                    ${this.loadingThread
-                      ? this._renderSkeletonBubbles()
-                      : nothing}
-                    ${this.messages.map((message, index) =>
-                      this._renderMessage(
-                        message,
-                        index > 0 ? this.messages[index - 1] : null
-                      )
-                    )}
-                  </div>
-                `}
+              : this.error
+                ? html`
+                    <div class="state-container">
+                      <span class="error-message">${this.error}</span>
+                      <md-button @click=${this._loadThread}>
+                        ${msg('Retry')}
+                      </md-button>
+                    </div>
+                  `
+                : html`
+                    <div class="messages-container">
+                      ${
+                        this.loadingThread
+                          ? this._renderSkeletonBubbles()
+                          : nothing
+                      }
+                      ${this.messages.map((message, index) =>
+                        this._renderMessage(
+                          message,
+                          index > 0 ? this.messages[index - 1] : null
+                        )
+                      )}
+                    </div>
+                  `
+          }
         </div>
 
-        ${!this.loading && !this.error
-          ? html`
-              <div class="composer-footer">
-                <post-composer
-                  compact
-                  hideReplyIndicator
-                  hideDrafts
-                  rows="1"
-                  .replyTo=${this._getReplyTarget()}
-                  .visibility=${'direct'}
-                  placeholder=${msg('Write a message...')}
-                  @published=${() => this._handleReplyPublished()}
-                ></post-composer>
-              </div>
-            `
-          : nothing}
+        ${
+          !this.loading && !this.error
+            ? html`
+                <div class="composer-footer">
+                  <post-composer
+                    compact
+                    hideReplyIndicator
+                    hideDrafts
+                    rows="1"
+                    .replyTo=${this._getReplyTarget()}
+                    .visibility=${'direct'}
+                    placeholder=${msg('Write a message...')}
+                    @published=${() => this._handleReplyPublished()}
+                  ></post-composer>
+                </div>
+              `
+            : nothing
+        }
       </main>
     `;
   }
@@ -775,11 +781,13 @@ export class ConversationThread extends LitElement {
     const showDate = this._shouldShowDateSeparator(message, previousMessage);
 
     return html`
-      ${showDate
-        ? html`<div class="date-separator">
-            ${this._formatDate(message.created_at)}
-          </div>`
-        : nothing}
+      ${
+        showDate
+          ? html`<div class="date-separator">
+              ${this._formatDate(message.created_at)}
+            </div>`
+          : nothing
+      }
       <div class="message ${isMine ? 'mine' : 'theirs'}">
         <img
           class="message-avatar"
@@ -788,41 +796,46 @@ export class ConversationThread extends LitElement {
           loading="lazy"
         />
         <div class="bubble">
-          ${!isMine && this.participants.length > 1
-            ? html`<span class="bubble-sender"
-                >${message.account.display_name ||
-                message.account.username}</span
-              >`
-            : nothing}
+          ${
+            !isMine && this.participants.length > 1
+              ? html`<span class="bubble-sender"
+                  >${
+                    message.account.display_name || message.account.username
+                  }</span
+                >`
+              : nothing
+          }
           <div class="bubble-content">${unsafeHTML(message.content)}</div>
-          ${message.media_attachments && message.media_attachments.length > 0
-            ? html`
-                <div class="bubble-media">
-                  ${message.media_attachments.map((media) =>
-                    media.type === 'video'
-                      ? html`<video
-                          src="${media.url}"
-                          controls
-                          preload="metadata"
-                          poster="${media.preview_url}"
-                        ></video>`
-                      : media.type === 'audio'
-                        ? html`<audio
-                            controls
+          ${
+            message.media_attachments && message.media_attachments.length > 0
+              ? html`
+                  <div class="bubble-media">
+                    ${message.media_attachments.map((media) =>
+                      media.type === 'video'
+                        ? html`<video
                             src="${media.url}"
+                            controls
                             preload="metadata"
-                            style="width: 100%;"
-                            aria-label=${media.description || msg('Audio')}
-                          ></audio>`
-                        : html`<img
-                            src="${media.preview_url || media.url}"
-                            alt="${media.description || ''}"
-                            loading="lazy"
-                          />`
-                  )}
-                </div>
-              `
-            : nothing}
+                            poster="${media.preview_url}"
+                          ></video>`
+                        : media.type === 'audio'
+                          ? html`<audio
+                              controls
+                              src="${media.url}"
+                              preload="metadata"
+                              style="width: 100%;"
+                              aria-label=${media.description || msg('Audio')}
+                            ></audio>`
+                          : html`<img
+                              src="${media.preview_url || media.url}"
+                              alt="${media.description || ''}"
+                              loading="lazy"
+                            />`
+                    )}
+                  </div>
+                `
+              : nothing
+          }
           <div class="bubble-meta">
             <span class="bubble-time"
               >${this._formatTime(message.created_at)}</span

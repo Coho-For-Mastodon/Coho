@@ -214,24 +214,26 @@ export class ReportDialog extends LitElement {
             ></md-text-area>
           </div>
 
-          ${this._isRemoteAccount
-            ? html`
-                <div class="forward-option">
-                  <md-checkbox
-                    .checked=${this._forward}
-                    @change=${this._handleForwardChange}
-                  ></md-checkbox>
-                  <div class="forward-label">
-                    <span>${msg('Forward to remote server')}</span>
-                    <small
-                      >${msg(
-                        'This user is from another server. Forward a copy of this report to their moderators.'
-                      )}</small
-                    >
+          ${
+            this._isRemoteAccount
+              ? html`
+                  <div class="forward-option">
+                    <md-checkbox
+                      .checked=${this._forward}
+                      @change=${this._handleForwardChange}
+                    ></md-checkbox>
+                    <div class="forward-label">
+                      <span>${msg('Forward to remote server')}</span>
+                      <small
+                        >${msg(
+                          'This user is from another server. Forward a copy of this report to their moderators.'
+                        )}</small
+                      >
+                    </div>
                   </div>
-                </div>
-              `
-            : null}
+                `
+              : null
+          }
         </div>
 
         <div slot="footer" class="footer-actions">

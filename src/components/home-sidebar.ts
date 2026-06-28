@@ -345,42 +345,51 @@ export class HomeSidebar extends LitElement {
             </div>
           </div>
 
-          ${this.user && this.user.avatar
-            ? html`<img
-                class="profile-avatar"
-                src="${this.user.avatar}"
-                alt="${this.user.display_name}"
-                role="button"
-                tabindex="0"
-                aria-label=${msg('View my profile')}
-                title=${msg('View my profile')}
-                @click="${() => this.viewMyProfile()}"
-                @keydown="${(event: KeyboardEvent) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    this.viewMyProfile();
-                  }
-                }}"
-              />`
-            : html`<md-skeleton
-                id="profile-avatar"
-                shape="circle"
-                width="80px"
-                height="80px"
-              ></md-skeleton>`}
+          ${
+            this.user && this.user.avatar
+              ? html`<img
+                  class="profile-avatar"
+                  src="${this.user.avatar}"
+                  alt="${this.user.display_name}"
+                  role="button"
+                  tabindex="0"
+                  aria-label=${msg('View my profile')}
+                  title=${msg('View my profile')}
+                  @click="${() => this.viewMyProfile()}"
+                  @keydown="${(event: KeyboardEvent) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      this.viewMyProfile();
+                    }
+                  }}"
+                />`
+              : html`<md-skeleton
+                  id="profile-avatar"
+                  shape="circle"
+                  width="80px"
+                  height="80px"
+                ></md-skeleton>`
+          }
 
           <div id="username-block">
             <h3>
-              ${this.user
-                ? this.user.display_name
-                : html`<md-skeleton width="100px" height="25px"></md-skeleton>`}
+              ${
+                this.user
+                  ? this.user.display_name
+                  : html`<md-skeleton
+                      width="100px"
+                      height="25px"
+                    ></md-skeleton>`
+              }
             </h3>
           </div>
 
           <p id="user-url">
-            ${this.user
-              ? this.user.url
-              : html`<md-skeleton width="100px" height="19px"></md-skeleton>`}
+            ${
+              this.user
+                ? this.user.url
+                : html`<md-skeleton width="100px" height="19px"></md-skeleton>`
+            }
           </p>
 
           <div class="profile-stats">
@@ -388,17 +397,21 @@ export class HomeSidebar extends LitElement {
               variant="outlined"
               clickable
               @click="${() => this.goToFollowers()}"
-              >${this.user
-                ? msg(str`${this.user.followers_count} followers`)
-                : msg('0 followers')}
+              >${
+                this.user
+                  ? msg(str`${this.user.followers_count} followers`)
+                  : msg('0 followers')
+              }
             </md-badge>
             <md-badge
               variant="outlined"
               clickable
               @click="${() => this.goToFollowing()}"
-              >${this.user
-                ? msg(str`${this.user.following_count} following`)
-                : msg('0 following')}
+              >${
+                this.user
+                  ? msg(str`${this.user.following_count} following`)
+                  : msg('0 following')
+              }
             </md-badge>
           </div>
         </div>

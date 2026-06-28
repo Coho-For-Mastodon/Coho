@@ -20,8 +20,8 @@
     "openai": "^6.8.1"
   },
   "devDependencies": {
-    "firebase-functions-test": "^3.1.0",
-    "typescript": "^5.3.0"
+    "firebase-functions-test": "^3.5.0",
+    "typescript": "^5.9.3"
   },
   "private": true
 }

@@ -279,6 +279,10 @@ export class Router extends EventTarget {
           }
         ).startViewTransition(updateDOM);
 
+        // Catch rejections on all promises to prevent unhandled rejection errors
+        transition.ready.catch(() => {});
+        transition.updateCallbackDone.catch(() => {});
+
         await transition.finished;
         moveFocusToMain();
       } catch (e) {
@@ -361,8 +365,7 @@ export class Router extends EventTarget {
    * ```
    */
   getNavigationState<T extends NavigationState = NavigationState>():
-    | T
-    | undefined {
+    T | undefined {
     return window.navigation?.currentEntry?.getState() as T | undefined;
   }
 

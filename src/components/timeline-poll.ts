@@ -348,35 +348,37 @@ export class TimelinePoll extends LitElement {
 
           return html`
             <div class="option-row">
-              ${showResults
-                ? html`
-                    <div
-                      style="display:flex; flex-direction:column; gap:6px; flex:1; min-width:0;"
-                    >
+              ${
+                showResults
+                  ? html`
                       <div
-                        style="display:flex; justify-content:space-between; gap:12px;"
+                        style="display:flex; flex-direction:column; gap:6px; flex:1; min-width:0;"
                       >
                         <div
-                          style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                          style="display:flex; justify-content:space-between; gap:12px;"
                         >
-                          ${opt.title}
+                          <div
+                            style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                          >
+                            ${opt.title}
+                          </div>
+                          <div style="flex:0 0 auto;">${pct}%</div>
                         </div>
-                        <div style="flex:0 0 auto;">${pct}%</div>
+                        <div class="bar" aria-hidden="true">
+                          <div style="width:${pct}%"></div>
+                        </div>
                       </div>
-                      <div class="bar" aria-hidden="true">
-                        <div style="width:${pct}%"></div>
-                      </div>
-                    </div>
-                  `
-                : html`
-                    <md-checkbox
-                      .checked=${isChecked}
-                      .value=${String(idx)}
-                      @change=${(e: Event) => this._onCheckboxChange(e, idx)}
-                    >
-                      ${opt.title}
-                    </md-checkbox>
-                  `}
+                    `
+                  : html`
+                      <md-checkbox
+                        .checked=${isChecked}
+                        .value=${String(idx)}
+                        @change=${(e: Event) => this._onCheckboxChange(e, idx)}
+                      >
+                        ${opt.title}
+                      </md-checkbox>
+                    `
+              }
             </div>
           `;
         })}
@@ -418,21 +420,23 @@ export class TimelinePoll extends LitElement {
         <div class="footer" @click=${(e: Event) => e.stopPropagation()}>
           <div class="hint">${this._renderFooterHint(poll, showResults)}</div>
 
-          ${showResults
-            ? html``
-            : html`
-                <md-button
-                  variant="filled"
-                  size="small"
-                  pill
-                  ?disabled=${this.submitting ||
-                  this.selected.length === 0 ||
-                  isExpired}
-                  @click=${this._submitVote}
-                >
-                  ${this.submitting ? msg('Voting…') : msg('Vote')}
-                </md-button>
-              `}
+          ${
+            showResults
+              ? html``
+              : html`
+                  <md-button
+                    variant="filled"
+                    size="small"
+                    pill
+                    ?disabled=${
+                      this.submitting || this.selected.length === 0 || isExpired
+                    }
+                    @click=${this._submitVote}
+                  >
+                    ${this.submitting ? msg('Voting…') : msg('Vote')}
+                  </md-button>
+                `
+          }
         </div>
 
         ${this.error ? html`<div class="error">${this.error}</div>` : null}

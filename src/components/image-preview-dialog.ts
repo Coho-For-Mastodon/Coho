@@ -502,14 +502,17 @@ export class ImagePreviewDialog extends LitElement {
           @touchcancel="${this.handleTouchEnd}"
         >
           <div class="image-wrapper">
-            ${!this.loaded && this.placeholderWidth && this.placeholderHeight
-              ? html`<div
-                  class="placeholder-gradient ${this.loaded ? 'hidden' : ''}"
-                  style="width: ${this.placeholderWidth}px; height: ${this
-                    .placeholderHeight}px;"
-                  aria-hidden="true"
-                ></div>`
-              : null}
+            ${
+              !this.loaded && this.placeholderWidth && this.placeholderHeight
+                ? html`<div
+                    class="placeholder-gradient ${this.loaded ? 'hidden' : ''}"
+                    style="width: ${this.placeholderWidth}px; height: ${
+                      this.placeholderHeight
+                    }px;"
+                    aria-hidden="true"
+                  ></div>`
+                : null
+            }
             <img
               class="${this.loaded ? 'loaded' : ''}"
               .src="${this.src}"
@@ -520,14 +523,16 @@ export class ImagePreviewDialog extends LitElement {
               @load="${this.handleImageLoad}"
             />
           </div>
-          ${this.alt
-            ? html`<div
-                class="caption"
-                @click="${(e: Event) => e.stopPropagation()}"
-              >
-                ${this.alt}
-              </div>`
-            : ''}
+          ${
+            this.alt
+              ? html`<div
+                  class="caption"
+                  @click="${(e: Event) => e.stopPropagation()}"
+                >
+                  ${this.alt}
+                </div>`
+              : ''
+          }
         </div>
       </dialog>
     `;

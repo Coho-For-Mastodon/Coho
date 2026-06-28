@@ -35,10 +35,7 @@ export class MdIconButton extends LitElement {
 
   /** Button variant */
   @property({ type: String }) variant:
-    | 'standard'
-    | 'filled'
-    | 'filled-tonal'
-    | 'outlined' = 'standard';
+    'standard' | 'filled' | 'filled-tonal' | 'outlined' = 'standard';
 
   /** Whether the button is disabled */
   @property({ type: Boolean }) disabled = false;
@@ -307,11 +304,13 @@ export class MdIconButton extends LitElement {
         title=${ifDefined(this.title || undefined)}
       >
         <div part="icon" class="icon">
-          ${this.name
-            ? html`<md-icon name="${this.name}"></md-icon>`
-            : this.src
-              ? html`<md-icon src="${this.src}"></md-icon>`
-              : html`<slot></slot>`}
+          ${
+            this.name
+              ? html`<md-icon name="${this.name}"></md-icon>`
+              : this.src
+                ? html`<md-icon src="${this.src}"></md-icon>`
+                : html`<slot></slot>`
+          }
         </div>
       </button>
     `;

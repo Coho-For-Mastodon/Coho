@@ -169,8 +169,7 @@ export const getCurrentUser = async (): Promise<Account | undefined> => {
     // Network error — try to get cached user from IndexedDB when offline
     try {
       const cachedUser = (await get(getCurrentUserCacheKey())) as
-        | Account
-        | undefined;
+        Account | undefined;
       if (cachedUser) {
         currentUser = cachedUser;
         return cachedUser;

@@ -270,43 +270,51 @@ export class AppDomainBlocks extends LitElement {
             ?disabled=${this._importing}
             @click=${this._openImportPicker}
           >
-            ${this._importing
-              ? this._importProgress
-                ? msg(str`Importing… ${this._importProgress}`)
-                : msg('Importing…')
-              : msg('Import CSV')}
+            ${
+              this._importing
+                ? this._importProgress
+                  ? msg(str`Importing… ${this._importProgress}`)
+                  : msg('Importing…')
+                : msg('Import CSV')
+            }
           </md-button>
         </div>
         <ul class="scrollbar-hidden">
-          ${this.loading && this.domains.length === 0
-            ? Array.from({ length: 6 }, () => {
-                return html`
-                  <li class="skeleton-row">
-                    <div class="skeleton-lines">
-                      <md-skeleton width="200px" height="16px"></md-skeleton>
-                    </div>
-                  </li>
-                `;
-              })
-            : this.domains.length === 0
-              ? html`<li class="empty-state">${msg('No blocked domains.')}</li>`
-              : this.domains.map((domain) => {
+          ${
+            this.loading && this.domains.length === 0
+              ? Array.from({ length: 6 }, () => {
                   return html`
-                    <li>
-                      <span class="domain-name">${domain}</span>
-                      <md-button
-                        variant="text"
-                        size="small"
-                        ?disabled=${this._unblockingDomains.has(domain)}
-                        @click=${() => this._unblock(domain)}
-                      >
-                        ${this._unblockingDomains.has(domain)
-                          ? msg('Unblocking...')
-                          : msg('Unblock')}
-                      </md-button>
+                    <li class="skeleton-row">
+                      <div class="skeleton-lines">
+                        <md-skeleton width="200px" height="16px"></md-skeleton>
+                      </div>
                     </li>
                   `;
-                })}
+                })
+              : this.domains.length === 0
+                ? html`<li class="empty-state">
+                    ${msg('No blocked domains.')}
+                  </li>`
+                : this.domains.map((domain) => {
+                    return html`
+                      <li>
+                        <span class="domain-name">${domain}</span>
+                        <md-button
+                          variant="text"
+                          size="small"
+                          ?disabled=${this._unblockingDomains.has(domain)}
+                          @click=${() => this._unblock(domain)}
+                        >
+                          ${
+                            this._unblockingDomains.has(domain)
+                              ? msg('Unblocking...')
+                              : msg('Unblock')
+                          }
+                        </md-button>
+                      </li>
+                    `;
+                  })
+          }
         </ul>
       </main>
     `;

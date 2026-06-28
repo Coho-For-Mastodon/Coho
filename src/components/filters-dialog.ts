@@ -579,22 +579,26 @@ export class FiltersDialog extends LitElement {
           </md-button>
         </div>
 
-        ${this._errorMessage
-          ? html`<div class="error">${this._errorMessage}</div>`
-          : nothing}
-        ${this._loading
-          ? html`<div class="empty">${msg('Loading filters...')}</div>`
-          : this._filters.length === 0
-            ? html`<div class="empty">
-                ${msg('No filters yet. Create one to curate your timeline.')}
-              </div>`
-            : html`
-                <div class="filter-list">
-                  ${this._filters.map((filter) =>
-                    this._renderFilterItem(filter)
-                  )}
-                </div>
-              `}
+        ${
+          this._errorMessage
+            ? html`<div class="error">${this._errorMessage}</div>`
+            : nothing
+        }
+        ${
+          this._loading
+            ? html`<div class="empty">${msg('Loading filters...')}</div>`
+            : this._filters.length === 0
+              ? html`<div class="empty">
+                  ${msg('No filters yet. Create one to curate your timeline.')}
+                </div>`
+              : html`
+                  <div class="filter-list">
+                    ${this._filters.map((filter) =>
+                      this._renderFilterItem(filter)
+                    )}
+                  </div>
+                `
+        }
       </div>
     `;
   }
@@ -632,11 +636,13 @@ export class FiltersDialog extends LitElement {
             (ctx) => html`<span class="chip">${this._formatContext(ctx)}</span>`
           )}
         </div>
-        ${filter.keywords.length > 0
-          ? html`<div class="filter-keywords">
-              ${filter.keywords.map((kw) => kw.keyword).join(', ')}
-            </div>`
-          : nothing}
+        ${
+          filter.keywords.length > 0
+            ? html`<div class="filter-keywords">
+                ${filter.keywords.map((kw) => kw.keyword).join(', ')}
+              </div>`
+            : nothing
+        }
         <div class="filter-expiry">
           ${this._formatExpiry(filter.expires_at)}
         </div>
@@ -747,15 +753,17 @@ export class FiltersDialog extends LitElement {
                       ></md-checkbox>
                       ${msg('Whole word')}
                     </label>
-                    ${this._formKeywords.length > 1
-                      ? html`<md-button
-                          variant="text"
-                          size="small"
-                          @click=${() => this._removeKeyword(i)}
-                        >
-                          ${msg('Remove')}
-                        </md-button>`
-                      : nothing}
+                    ${
+                      this._formKeywords.length > 1
+                        ? html`<md-button
+                            variant="text"
+                            size="small"
+                            @click=${() => this._removeKeyword(i)}
+                          >
+                            ${msg('Remove')}
+                          </md-button>`
+                        : nothing
+                    }
                   </div>
                 `
               )}
@@ -765,9 +773,11 @@ export class FiltersDialog extends LitElement {
             </md-button>
           </div>
 
-          ${this._errorMessage
-            ? html`<div class="error">${this._errorMessage}</div>`
-            : nothing}
+          ${
+            this._errorMessage
+              ? html`<div class="error">${this._errorMessage}</div>`
+              : nothing
+          }
 
           <div class="form-actions">
             <md-button
@@ -782,11 +792,13 @@ export class FiltersDialog extends LitElement {
               @click=${isEdit ? this._handleUpdate : this._handleCreate}
               ?disabled=${this._submitting || !this._formTitle.trim()}
             >
-              ${this._submitting
-                ? msg('Saving...')
-                : isEdit
-                  ? msg('Save changes')
-                  : msg('Create filter')}
+              ${
+                this._submitting
+                  ? msg('Saving...')
+                  : isEdit
+                    ? msg('Save changes')
+                    : msg('Create filter')
+              }
             </md-button>
           </div>
         </div>
@@ -808,9 +820,11 @@ export class FiltersDialog extends LitElement {
         .open=${this.open}
         @md-dialog-hide=${() => this.hide()}
       >
-        ${this._view === 'list'
-          ? this._renderListView()
-          : this._renderFormView()}
+        ${
+          this._view === 'list'
+            ? this._renderListView()
+            : this._renderFormView()
+        }
       </md-dialog>
     `;
   }

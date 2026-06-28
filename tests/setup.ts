@@ -1,7 +1,7 @@
 import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 import { setupWorker } from 'msw/browser';
 import { handlers } from './mocks/handlers';
-import { page } from '@vitest/browser/context';
+import { page } from 'vitest/browser';
 
 // Set up MSW worker for browser
 const worker = setupWorker(...handlers);

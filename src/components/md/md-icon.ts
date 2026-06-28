@@ -282,9 +282,11 @@ export class MdIcon extends LitElement {
         aria-hidden="${hasLabel ? 'false' : 'true'}"
         aria-label="${ifDefined(hasLabel ? this.label : undefined)}"
       >
-        ${this.svgContent
-          ? html`<div part="svg">${unsafeSVG(this.svgContent)}</div>`
-          : html`<slot></slot>`}
+        ${
+          this.svgContent
+            ? html`<div part="svg">${unsafeSVG(this.svgContent)}</div>`
+            : html`<slot></slot>`
+        }
       </div>
     `;
   }

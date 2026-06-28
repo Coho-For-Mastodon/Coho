@@ -135,56 +135,61 @@ export class AppFollowRequests extends LitElement {
       <main>
         <h2>${msg('Follow Requests')}</h2>
         <ul class="scrollbar-hidden">
-          ${this.loading && this.accounts.length === 0
-            ? Array.from({ length: 6 }, () => {
-                return html`
-                  <li class="skeleton-row">
-                    <md-skeleton
-                      shape="circle"
-                      width="50px"
-                      height="50px"
-                    ></md-skeleton>
-                    <div class="skeleton-lines">
-                      <md-skeleton width="160px" height="16px"></md-skeleton>
-                      <md-skeleton
-                        width="120px"
-                        height="12px"
-                        style="margin-top: 6px;"
-                      ></md-skeleton>
-                    </div>
-                  </li>
-                `;
-              })
-            : this.accounts.length === 0
-              ? html`<li class="empty-state">
-                  ${msg('No pending follow requests.')}
-                </li>`
-              : this.accounts.map((account) => {
-                  const processing = this._processingIds.has(account.id);
+          ${
+            this.loading && this.accounts.length === 0
+              ? Array.from({ length: 6 }, () => {
                   return html`
-                    <li>
-                      <user-profile list-row .account=${account}></user-profile>
-                      <div class="actions">
-                        <md-button
-                          variant="filled"
-                          size="small"
-                          ?disabled=${processing}
-                          @click=${() => this._authorize(account)}
-                        >
-                          ${processing ? msg('...') : msg('Accept')}
-                        </md-button>
-                        <md-button
-                          variant="text"
-                          size="small"
-                          ?disabled=${processing}
-                          @click=${() => this._reject(account)}
-                        >
-                          ${msg('Reject')}
-                        </md-button>
+                    <li class="skeleton-row">
+                      <md-skeleton
+                        shape="circle"
+                        width="50px"
+                        height="50px"
+                      ></md-skeleton>
+                      <div class="skeleton-lines">
+                        <md-skeleton width="160px" height="16px"></md-skeleton>
+                        <md-skeleton
+                          width="120px"
+                          height="12px"
+                          style="margin-top: 6px;"
+                        ></md-skeleton>
                       </div>
                     </li>
                   `;
-                })}
+                })
+              : this.accounts.length === 0
+                ? html`<li class="empty-state">
+                    ${msg('No pending follow requests.')}
+                  </li>`
+                : this.accounts.map((account) => {
+                    const processing = this._processingIds.has(account.id);
+                    return html`
+                      <li>
+                        <user-profile
+                          list-row
+                          .account=${account}
+                        ></user-profile>
+                        <div class="actions">
+                          <md-button
+                            variant="filled"
+                            size="small"
+                            ?disabled=${processing}
+                            @click=${() => this._authorize(account)}
+                          >
+                            ${processing ? msg('...') : msg('Accept')}
+                          </md-button>
+                          <md-button
+                            variant="text"
+                            size="small"
+                            ?disabled=${processing}
+                            @click=${() => this._reject(account)}
+                          >
+                            ${msg('Reject')}
+                          </md-button>
+                        </div>
+                      </li>
+                    `;
+                  })
+          }
         </ul>
       </main>
     `;

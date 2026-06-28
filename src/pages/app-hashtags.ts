@@ -137,35 +137,41 @@ export class AppHashtags extends LitElement {
       <main>
         <div class="tag-header">
           <h3>${this.tag ? `#${this.tag}` : ''}</h3>
-          ${this._following !== null
-            ? html`
-                <md-button
-                  variant=${this._following ? 'outlined' : 'filled'}
-                  size="small"
-                  ?disabled=${this._toggling}
-                  @click=${() => this._toggleFollow()}
-                >
-                  ${this._toggling
-                    ? msg('...')
-                    : this._following
-                      ? msg('Unfollow')
-                      : msg('Follow')}
-                </md-button>
-              `
-            : nothing}
+          ${
+            this._following !== null
+              ? html`
+                  <md-button
+                    variant=${this._following ? 'outlined' : 'filled'}
+                    size="small"
+                    ?disabled=${this._toggling}
+                    @click=${() => this._toggleFollow()}
+                  >
+                    ${
+                      this._toggling
+                        ? msg('...')
+                        : this._following
+                          ? msg('Unfollow')
+                          : msg('Follow')
+                    }
+                  </md-button>
+                `
+              : nothing
+          }
         </div>
 
-        ${this.data === undefined
-          ? html`<div class="skeletons">
-              <md-skeleton-card count="5"></md-skeleton-card>
-            </div>`
-          : html`<app-timeline
-              .data=${this.data}
-              .header=${false}
-              .autoLoad=${false}
-              @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                this.handleOpenPost(e.detail.tweet)}"
-            ></app-timeline>`}
+        ${
+          this.data === undefined
+            ? html`<div class="skeletons">
+                <md-skeleton-card count="5"></md-skeleton-card>
+              </div>`
+            : html`<app-timeline
+                .data=${this.data}
+                .header=${false}
+                .autoLoad=${false}
+                @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                  this.handleOpenPost(e.detail.tweet)}"
+              ></app-timeline>`
+        }
       </main>
 
       <!-- Post Detail Dialog -->

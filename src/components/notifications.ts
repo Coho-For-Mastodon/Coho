@@ -1141,22 +1141,24 @@ export class Notifications extends LitElement {
           @click="${(e: Event) => handleStatusContentClick(e, status)}"
           .innerHTML="${parseEmojis(content, status.emojis || [])}"
         ></div>
-        ${mediaAttachments.length > 0
-          ? html`
-              <div class="post-preview-media">
-                ${mediaAttachments
-                  .slice(0, 4)
-                  .map(
-                    (media) => html`
-                      <img
-                        src="${media.preview_url}"
-                        alt="${media.description || 'Media attachment'}"
-                      />
-                    `
-                  )}
-              </div>
-            `
-          : nothing}
+        ${
+          mediaAttachments.length > 0
+            ? html`
+                <div class="post-preview-media">
+                  ${mediaAttachments
+                    .slice(0, 4)
+                    .map(
+                      (media) => html`
+                        <img
+                          src="${media.preview_url}"
+                          alt="${media.description || 'Media attachment'}"
+                        />
+                      `
+                    )}
+                </div>
+              `
+            : nothing
+        }
         ${renderLinkCard(
           card,
           (url: string) => {
@@ -1381,24 +1383,26 @@ export class Notifications extends LitElement {
           </div>
 
           <div class="follow-actions">
-            ${isFollowing
-              ? html`
-                  <md-button variant="outlined" pill size="small" disabled>
-                    ${msg('Following')}
-                  </md-button>
-                `
-              : html`
-                  <md-button
-                    variant="filled"
-                    pill
-                    size="small"
-                    class="follow-back-btn"
-                    ?disabled="${isLoading}"
-                    @click="${(e: Event) => this.followBack(account.id, e)}"
-                  >
-                    ${isLoading ? msg('Following...') : msg('Follow Back')}
-                  </md-button>
-                `}
+            ${
+              isFollowing
+                ? html`
+                    <md-button variant="outlined" pill size="small" disabled>
+                      ${msg('Following')}
+                    </md-button>
+                  `
+                : html`
+                    <md-button
+                      variant="filled"
+                      pill
+                      size="small"
+                      class="follow-back-btn"
+                      ?disabled="${isLoading}"
+                      @click="${(e: Event) => this.followBack(account.id, e)}"
+                    >
+                      ${isLoading ? msg('Following...') : msg('Follow Back')}
+                    </md-button>
+                  `
+            }
           </div>
         </div>
       </li>
@@ -1416,12 +1420,14 @@ export class Notifications extends LitElement {
         class="notification-card ${type} ${isDMLoading ? 'dm-loading' : ''}"
         @click="${() => this.openPost(notification.status)}"
       >
-        ${isDMLoading
-          ? html`<div class="dm-loading-overlay">
-              <div class="dm-loading-spinner"></div>
-              <span>${msg('Opening conversation…')}</span>
-            </div>`
-          : nothing}
+        ${
+          isDMLoading
+            ? html`<div class="dm-loading-overlay">
+                <div class="dm-loading-spinner"></div>
+                <span>${msg('Opening conversation…')}</span>
+              </div>`
+            : nothing
+        }
         <div class="notification-header">
           <div class="notification-icon ${type}">
             ${this.getNotificationIcon(type)}
@@ -1485,14 +1491,16 @@ export class Notifications extends LitElement {
     return html`
       <div class="notification-wrapper">
         ${this.renderNotification(notification)}
-        ${isLastItem && this.loadingMore
-          ? html`
-              <div id="load-more-indicator">
-                <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
-                <span>${msg('Loading more...')}</span>
-              </div>
-            `
-          : nothing}
+        ${
+          isLastItem && this.loadingMore
+            ? html`
+                <div id="load-more-indicator">
+                  <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
+                  <span>${msg('Loading more...')}</span>
+                </div>
+              `
+            : nothing
+        }
       </div>
     `;
   };
@@ -1516,13 +1524,15 @@ export class Notifications extends LitElement {
             >${msg('Push Notifications')}</md-switch
           >
         </div>
-        ${this.subbed
-          ? html`<md-icon-button
-              src="/assets/options-outline.svg"
-              label="${msg('Notification settings')}"
-              @click="${() => this._openNotificationPreferences()}"
-            ></md-icon-button>`
-          : nothing}
+        ${
+          this.subbed
+            ? html`<md-icon-button
+                src="/assets/options-outline.svg"
+                label="${msg('Notification settings')}"
+                @click="${() => this._openNotificationPreferences()}"
+              ></md-icon-button>`
+            : nothing
+        }
       </div>
 
       <md-segmented-button
@@ -1535,73 +1545,83 @@ export class Notifications extends LitElement {
         <md-segment value="mentions">${msg('Mentions')}</md-segment>
         <md-segment value="follows">${msg('Follows')}</md-segment>
         <md-segment value="requests"
-          >${msg('Requests')}${this.followRequests.length > 0
-            ? html` (${this.followRequests.length})`
-            : nothing}</md-segment
+          >${msg('Requests')}${
+            this.followRequests.length > 0
+              ? html` (${this.followRequests.length})`
+              : nothing
+          }</md-segment
         >
       </md-segmented-button>
 
       <div class="panel ${this.activeSegment === 'all' ? 'active' : ''}">
-        ${allNotifications.length > 0
-          ? html`<div class="scroller-fallback">
-              ${allNotifications.map((n, i) =>
-                this._renderNotificationItem(n, i)
-              )}
-            </div>`
-          : html`
-              <div id="no">
-                <img src="/assets/notify-done.svg" alt="no notifications" />
-                <p>${msg('No notifications yet')}</p>
-              </div>
-            `}
+        ${
+          allNotifications.length > 0
+            ? html`<div class="scroller-fallback">
+                ${allNotifications.map((n, i) =>
+                  this._renderNotificationItem(n, i)
+                )}
+              </div>`
+            : html`
+                <div id="no">
+                  <img src="/assets/notify-done.svg" alt="no notifications" />
+                  <p>${msg('No notifications yet')}</p>
+                </div>
+              `
+        }
       </div>
 
       <div class="panel ${this.activeSegment === 'mentions' ? 'active' : ''}">
-        ${mentionNotifications.length > 0
-          ? html`<div class="scroller-fallback">
-              ${mentionNotifications.map((n, i) =>
-                this._renderNotificationItem(n, i)
-              )}
-            </div>`
-          : html`
-              <div id="no">
-                <img src="/assets/notify-done.svg" alt="no mentions" />
-                <p>${msg('No mentions yet')}</p>
-              </div>
-            `}
+        ${
+          mentionNotifications.length > 0
+            ? html`<div class="scroller-fallback">
+                ${mentionNotifications.map((n, i) =>
+                  this._renderNotificationItem(n, i)
+                )}
+              </div>`
+            : html`
+                <div id="no">
+                  <img src="/assets/notify-done.svg" alt="no mentions" />
+                  <p>${msg('No mentions yet')}</p>
+                </div>
+              `
+        }
       </div>
 
       <div class="panel ${this.activeSegment === 'follows' ? 'active' : ''}">
-        ${followNotifications.length > 0
-          ? html`<div class="scroller-fallback">
-              ${followNotifications.map((n, i) =>
-                this._renderNotificationItem(n, i)
-              )}
-            </div>`
-          : html`
-              <div id="no">
-                <img src="/assets/notify-done.svg" alt="no followers" />
-                <p>${msg('No new followers yet')}</p>
-              </div>
-            `}
+        ${
+          followNotifications.length > 0
+            ? html`<div class="scroller-fallback">
+                ${followNotifications.map((n, i) =>
+                  this._renderNotificationItem(n, i)
+                )}
+              </div>`
+            : html`
+                <div id="no">
+                  <img src="/assets/notify-done.svg" alt="no followers" />
+                  <p>${msg('No new followers yet')}</p>
+                </div>
+              `
+        }
       </div>
 
       <div class="panel ${this.activeSegment === 'requests' ? 'active' : ''}">
-        ${this.followRequests.length > 0
-          ? html`<div class="scroller-fallback">
-              ${this.followRequests.map(
-                (account) =>
-                  html`<div class="notification-wrapper">
-                    ${this.renderFollowRequestCard(account)}
-                  </div>`
-              )}
-            </div>`
-          : html`
-              <div id="no">
-                <img src="/assets/notify-done.svg" alt="no follow requests" />
-                <p>${msg('No pending follow requests')}</p>
-              </div>
-            `}
+        ${
+          this.followRequests.length > 0
+            ? html`<div class="scroller-fallback">
+                ${this.followRequests.map(
+                  (account) =>
+                    html`<div class="notification-wrapper">
+                      ${this.renderFollowRequestCard(account)}
+                    </div>`
+                )}
+              </div>`
+            : html`
+                <div id="no">
+                  <img src="/assets/notify-done.svg" alt="no follow requests" />
+                  <p>${msg('No pending follow requests')}</p>
+                </div>
+              `
+        }
       </div>
     `;
   }

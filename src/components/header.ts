@@ -214,97 +214,109 @@ export class AppHeader extends LitElement {
     return html`
       <header>
         <div id="back-button-block">
-          ${this.enableBack
-            ? html`<md-icon-button
-                @click="${() => this.goBack()}"
-                title=${msg('back')}
-                label=${msg('back')}
-                size="small"
-                pill
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="ionicon"
-                  viewBox="0 0 512 512"
+          ${
+            this.enableBack
+              ? html`<md-icon-button
+                  @click="${() => this.goBack()}"
+                  title=${msg('back')}
+                  label=${msg('back')}
+                  size="small"
+                  pill
                 >
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="48"
-                    d="M328 112L184 256l144 144"
-                  />
-                </svg>
-              </md-icon-button>`
-            : html`<img
-                src="/assets/icons/new-icons/icon-48x48.png"
-                alt="App Icon"
-                width="28"
-                height="28"
-              />`}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="ionicon"
+                    viewBox="0 0 512 512"
+                  >
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="48"
+                      d="M328 112L184 256l144 144"
+                    />
+                  </svg>
+                </md-icon-button>`
+              : html`<img
+                  src="/assets/icons/new-icons/icon-48x48.png"
+                  alt="App Icon"
+                  width="28"
+                  height="28"
+                />`
+          }
         </div>
 
         <div id="actions">
-          ${!this.enableBack
-            ? html`
-                ${this.showInstall
-                  ? html`<md-icon-button
-                      title=${msg('Install App')}
-                      label=${msg('Install App')}
-                      id="install-button"
-                      @click="${() => this.openInstall()}"
-                    >
-                      <md-icon src="/assets/download-outline.svg"></md-icon>
-                    </md-icon-button>`
-                  : nothing}
-                ${this.showMessages
-                  ? html`<md-icon-button
-                      title=${msg('Messages')}
-                      label=${msg('Messages')}
-                      id="messages-button"
-                      @click="${() => this._openMessages()}"
-                    >
-                      <md-icon src="/assets/chatbox-outline.svg"></md-icon>
-                    </md-icon-button>`
-                  : nothing}
-                ${this.showAccountSwitcher
-                  ? html`<md-icon-button
-                      title=${msg('Switch accounts')}
-                      label=${msg('Switch accounts')}
-                      id="account-switcher-button"
-                      @click="${(event: Event) =>
-                        this.openAccountSwitcher(event)}"
-                    >
-                      ${this.renderAccountSwitcherContent()}
-                    </md-icon-button>`
-                  : nothing}
-                ${this.guestMode
-                  ? html`<md-icon-button
-                      id="login-button"
-                      title=${msg('Sign In')}
-                      label=${msg('Sign In')}
-                      @click="${() => {
-                        setAuthRedirect(
-                          `${window.location.pathname}${window.location.search}${window.location.hash}`
-                        );
-                        import('../router/routes').then((m) =>
-                          m.router.navigate('/')
-                        );
-                      }}"
-                    >
-                      <md-icon name="log-in"></md-icon>
-                    </md-icon-button>`
-                  : html`<md-icon-button
-                      id="settings-button"
-                      title=${msg('Open Settings')}
-                      label=${msg('Open Settings')}
-                      @click="${() => this.openSettings()}"
-                    >
-                      <md-icon src="/assets/settings-outline.svg"></md-icon>
-                    </md-icon-button>`}
-              `
-            : nothing}
+          ${
+            !this.enableBack
+              ? html`
+                  ${
+                    this.showInstall
+                      ? html`<md-icon-button
+                          title=${msg('Install App')}
+                          label=${msg('Install App')}
+                          id="install-button"
+                          @click="${() => this.openInstall()}"
+                        >
+                          <md-icon src="/assets/download-outline.svg"></md-icon>
+                        </md-icon-button>`
+                      : nothing
+                  }
+                  ${
+                    this.showMessages
+                      ? html`<md-icon-button
+                          title=${msg('Messages')}
+                          label=${msg('Messages')}
+                          id="messages-button"
+                          @click="${() => this._openMessages()}"
+                        >
+                          <md-icon src="/assets/chatbox-outline.svg"></md-icon>
+                        </md-icon-button>`
+                      : nothing
+                  }
+                  ${
+                    this.showAccountSwitcher
+                      ? html`<md-icon-button
+                          title=${msg('Switch accounts')}
+                          label=${msg('Switch accounts')}
+                          id="account-switcher-button"
+                          @click="${(event: Event) =>
+                            this.openAccountSwitcher(event)}"
+                        >
+                          ${this.renderAccountSwitcherContent()}
+                        </md-icon-button>`
+                      : nothing
+                  }
+                  ${
+                    this.guestMode
+                      ? html`<md-icon-button
+                          id="login-button"
+                          title=${msg('Sign In')}
+                          label=${msg('Sign In')}
+                          @click="${() => {
+                            setAuthRedirect(
+                              `${window.location.pathname}${window.location.search}${window.location.hash}`
+                            );
+                            import('../router/routes').then((m) =>
+                              m.router.navigate('/')
+                            );
+                          }}"
+                        >
+                          <md-icon name="log-in"></md-icon>
+                        </md-icon-button>`
+                      : html`<md-icon-button
+                          id="settings-button"
+                          title=${msg('Open Settings')}
+                          label=${msg('Open Settings')}
+                          @click="${() => this.openSettings()}"
+                        >
+                          <md-icon src="/assets/settings-outline.svg"></md-icon>
+                        </md-icon-button>`
+                  }
+                `
+              : nothing
+          }
         </div>
       </header>
     `;

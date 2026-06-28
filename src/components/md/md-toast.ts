@@ -308,34 +308,40 @@ export class MdToast extends LitElement {
     return html`
       <div class="toast-container" role="status" aria-live="polite">
         <div class="message">${this.message}</div>
-        ${this.actionLabel || this.closable
-          ? html`
-              <div class="actions">
-                ${this.actionLabel
-                  ? html`
-                      <button
-                        class="action-button"
-                        @click=${this.handleActionClick}
-                        aria-label=${this.actionLabel}
-                      >
-                        ${this.actionLabel}
-                      </button>
-                    `
-                  : ''}
-                ${this.closable
-                  ? html`
-                      <button
-                        class="close-button"
-                        @click=${this.handleCloseClick}
-                        aria-label="Close"
-                      >
-                        ✕
-                      </button>
-                    `
-                  : ''}
-              </div>
-            `
-          : ''}
+        ${
+          this.actionLabel || this.closable
+            ? html`
+                <div class="actions">
+                  ${
+                    this.actionLabel
+                      ? html`
+                          <button
+                            class="action-button"
+                            @click=${this.handleActionClick}
+                            aria-label=${this.actionLabel}
+                          >
+                            ${this.actionLabel}
+                          </button>
+                        `
+                      : ''
+                  }
+                  ${
+                    this.closable
+                      ? html`
+                          <button
+                            class="close-button"
+                            @click=${this.handleCloseClick}
+                            aria-label="Close"
+                          >
+                            ✕
+                          </button>
+                        `
+                      : ''
+                  }
+                </div>
+              `
+            : ''
+        }
       </div>
     `;
   }

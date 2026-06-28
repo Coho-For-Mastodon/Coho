@@ -43,8 +43,7 @@ export class MdTabs extends LitElement {
    * Orientation of tabs: horizontal (top/bottom) or vertical (side)
    */
   @property({ type: String, reflect: true }) orientation:
-    | 'horizontal'
-    | 'vertical' = 'horizontal';
+    'horizontal' | 'vertical' = 'horizontal';
 
   /**
    * Placement of tab bar
@@ -52,10 +51,7 @@ export class MdTabs extends LitElement {
    * - start/end for vertical orientation (side navigation)
    */
   @property({ type: String, reflect: true }) placement:
-    | 'top'
-    | 'bottom'
-    | 'start'
-    | 'end' = 'top';
+    'top' | 'bottom' | 'start' | 'end' = 'top';
 
   /**
    * Active panel name
@@ -473,11 +469,13 @@ export class MdTabs extends LitElement {
         class="tab-bar"
         role="tablist"
         aria-orientation="${this.orientation}"
-        focusgroup=${supportsNativeFocusgroup
-          ? this.orientation === 'vertical'
-            ? 'tablist nomemory block'
-            : 'tablist nomemory'
-          : nothing}
+        focusgroup=${
+          supportsNativeFocusgroup
+            ? this.orientation === 'vertical'
+              ? 'tablist nomemory block'
+              : 'tablist nomemory'
+            : nothing
+        }
         @focusin=${supportsNativeFocusgroup ? this._handleTabFocused : nothing}
       >
         <slot name="nav" @slotchange="${() => this._updatePanels()}"></slot>

@@ -209,32 +209,38 @@ export class QuotedPost extends LitElement {
             )}
           ></div>
 
-          ${hasMedia
-            ? html`
-                <div
-                  class="quote-media ${this.post.media_attachments.length > 1
-                    ? 'quote-media--multi'
-                    : ''}"
-                >
-                  ${this.post.media_attachments
-                    .slice(0, 2)
-                    .map(
-                      (att) => html`
-                        <img
-                          src=${att.preview_url || att.url}
-                          alt=${att.description || ''}
-                          loading="lazy"
-                        />
-                      `
-                    )}
-                </div>
-              `
-            : nothing}
-          ${hasNestedQuote
-            ? html`<div class="nested-quote-notice">
-                ${msg('Contains a quote post')}
-              </div>`
-            : nothing}
+          ${
+            hasMedia
+              ? html`
+                  <div
+                    class="quote-media ${
+                      this.post.media_attachments.length > 1
+                        ? 'quote-media--multi'
+                        : ''
+                    }"
+                  >
+                    ${this.post.media_attachments
+                      .slice(0, 2)
+                      .map(
+                        (att) => html`
+                          <img
+                            src=${att.preview_url || att.url}
+                            alt=${att.description || ''}
+                            loading="lazy"
+                          />
+                        `
+                      )}
+                  </div>
+                `
+              : nothing
+          }
+          ${
+            hasNestedQuote
+              ? html`<div class="nested-quote-notice">
+                  ${msg('Contains a quote post')}
+                </div>`
+              : nothing
+          }
         </div>
       </div>
     `;

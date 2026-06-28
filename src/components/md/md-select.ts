@@ -529,45 +529,46 @@ export class MdSelect extends LitElement {
     return html`
       <div class="select-container">
         <div
-          class="select-input ${this.variant} ${this._open ? 'open' : ''} ${this
-            .disabled
-            ? 'disabled'
-            : ''} ${this.pill ? 'pill' : ''} ${this.iconOnly
-            ? 'icon-only'
-            : ''}"
+          class="select-input ${this.variant} ${this._open ? 'open' : ''} ${
+            this.disabled ? 'disabled' : ''
+          } ${this.pill ? 'pill' : ''} ${this.iconOnly ? 'icon-only' : ''}"
           @click=${this._handleInputClick}
           tabindex="${this.disabled ? -1 : 0}"
           role="combobox"
           aria-expanded="${this._open ? 'true' : 'false'}"
           aria-haspopup="listbox"
           aria-controls="${this._listboxId}"
-          aria-activedescendant="${this._open && this._highlightedIndex >= 0
-            ? `${this._listboxId}-opt-${this._highlightedIndex}`
-            : ''}"
+          aria-activedescendant="${
+            this._open && this._highlightedIndex >= 0
+              ? `${this._listboxId}-opt-${this._highlightedIndex}`
+              : ''
+          }"
           aria-label="${ariaLabel}"
         >
-          ${this.iconOnly && this.iconSrc
-            ? html`<md-icon
-                class="icon-only-image"
-                src="${this.iconSrc}"
-                label="${ariaLabel}"
-              ></md-icon>`
-            : html`
-                <span
-                  class="select-label ${isPlaceholder ? 'placeholder' : ''}"
-                >
-                  ${displayLabel}
-                </span>
-                <svg
-                  class="dropdown-icon"
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M7 10l5 5 5-5z" fill="currentColor" />
-                </svg>
-              `}
+          ${
+            this.iconOnly && this.iconSrc
+              ? html`<md-icon
+                  class="icon-only-image"
+                  src="${this.iconSrc}"
+                  label="${ariaLabel}"
+                ></md-icon>`
+              : html`
+                  <span
+                    class="select-label ${isPlaceholder ? 'placeholder' : ''}"
+                  >
+                    ${displayLabel}
+                  </span>
+                  <svg
+                    class="dropdown-icon"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M7 10l5 5 5-5z" fill="currentColor" />
+                  </svg>
+                `
+          }
         </div>
 
         <div

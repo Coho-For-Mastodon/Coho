@@ -399,14 +399,16 @@ export class AccountManager extends LitElement {
       <div class="account-row ${isActive ? 'active' : ''}">
         <div class="account-main">
           <div class="account-avatar">
-            ${account.avatar
-              ? html`<img
-                  src="${account.avatar}"
-                  alt="${account.displayName}"
-                />`
-              : html`<div class="avatar-placeholder">
-                  ${this.getInitials(account)}
-                </div>`}
+            ${
+              account.avatar
+                ? html`<img
+                    src="${account.avatar}"
+                    alt="${account.displayName}"
+                  />`
+                : html`<div class="avatar-placeholder">
+                    ${this.getInitials(account)}
+                  </div>`
+            }
           </div>
 
           <div class="account-meta">
@@ -419,17 +421,19 @@ export class AccountManager extends LitElement {
         </div>
 
         <div class="account-actions">
-          ${isActive
-            ? nothing
-            : html`
-                <md-button
-                  variant="tonal"
-                  ?disabled=${this.mutating}
-                  @click=${() => this.switchToAccount(account.accountKey)}
-                >
-                  ${msg('Switch')}
-                </md-button>
-              `}
+          ${
+            isActive
+              ? nothing
+              : html`
+                  <md-button
+                    variant="tonal"
+                    ?disabled=${this.mutating}
+                    @click=${() => this.switchToAccount(account.accountKey)}
+                  >
+                    ${msg('Switch')}
+                  </md-button>
+                `
+          }
           <md-button
             variant="text"
             ?disabled=${this.mutating}
@@ -457,13 +461,15 @@ export class AccountManager extends LitElement {
           </div>
 
           <div class="accounts">
-            ${this.accounts.length > 0
-              ? this.accounts.map((account) => this.renderAccount(account))
-              : html`
-                  <p class="empty-state">
-                    ${msg('No saved accounts yet. Add one below to sign in.')}
-                  </p>
-                `}
+            ${
+              this.accounts.length > 0
+                ? this.accounts.map((account) => this.renderAccount(account))
+                : html`
+                    <p class="empty-state">
+                      ${msg('No saved accounts yet. Add one below to sign in.')}
+                    </p>
+                  `
+            }
           </div>
         </section>
 
@@ -493,9 +499,11 @@ export class AccountManager extends LitElement {
               ?disabled=${this.addingAccount || !this.chosenServer.trim()}
               @click=${this.addAccount}
             >
-              ${this.addingAccount
-                ? msg('Starting OAuth...')
-                : msg('Add account')}
+              ${
+                this.addingAccount
+                  ? msg('Starting OAuth...')
+                  : msg('Add account')
+              }
             </md-button>
           </div>
         </section>

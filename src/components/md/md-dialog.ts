@@ -265,13 +265,15 @@ export class MdDialog extends LitElement {
           <slot></slot>
         </div>
 
-        ${this._hasFooterSlot()
-          ? html`
-              <div class="dialog-footer">
-                <slot name="footer"></slot>
-              </div>
-            `
-          : ''}
+        ${
+          this._hasFooterSlot()
+            ? html`
+                <div class="dialog-footer">
+                  <slot name="footer"></slot>
+                </div>
+              `
+            : ''
+        }
       </dialog>
     `;
   }

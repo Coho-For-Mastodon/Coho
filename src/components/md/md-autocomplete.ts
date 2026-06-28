@@ -354,9 +354,11 @@ export class MdAutocomplete extends LitElement {
         role="combobox"
         aria-autocomplete="list"
         aria-controls="${this._listboxId}"
-        aria-activedescendant="${showDropdown && this._highlightedIndex >= 0
-          ? `${this._listboxId}-opt-${this._highlightedIndex}`
-          : ''}"
+        aria-activedescendant="${
+          showDropdown && this._highlightedIndex >= 0
+            ? `${this._listboxId}-opt-${this._highlightedIndex}`
+            : ''
+        }"
         aria-expanded="${showDropdown ? 'true' : 'false'}"
         aria-haspopup="listbox"
       />
@@ -367,31 +369,35 @@ export class MdAutocomplete extends LitElement {
         popover="auto"
         @toggle=${this._handleDropdownToggle}
       >
-        ${this.loading
-          ? html`<div class="dropdown-status">Loading...</div>`
-          : this.options.map(
-              (option, index) => html`
-                <div
-                  class="dropdown-item ${index === this._highlightedIndex
-                    ? 'highlighted'
-                    : ''}"
-                  id="${this._listboxId}-opt-${index}"
-                  role="option"
-                  aria-selected="${index === this._highlightedIndex
-                    ? 'true'
-                    : 'false'}"
-                  @click="${() => this._selectOption(option)}"
-                  @mouseenter="${() => (this._highlightedIndex = index)}"
-                >
-                  <div class="item-label">${option.label}</div>
-                  ${option.description
-                    ? html`<div class="item-description">
-                        ${option.description}
-                      </div>`
-                    : null}
-                </div>
-              `
-            )}
+        ${
+          this.loading
+            ? html`<div class="dropdown-status">Loading...</div>`
+            : this.options.map(
+                (option, index) => html`
+                  <div
+                    class="dropdown-item ${
+                      index === this._highlightedIndex ? 'highlighted' : ''
+                    }"
+                    id="${this._listboxId}-opt-${index}"
+                    role="option"
+                    aria-selected="${
+                      index === this._highlightedIndex ? 'true' : 'false'
+                    }"
+                    @click="${() => this._selectOption(option)}"
+                    @mouseenter="${() => (this._highlightedIndex = index)}"
+                  >
+                    <div class="item-label">${option.label}</div>
+                    ${
+                      option.description
+                        ? html`<div class="item-description">
+                            ${option.description}
+                          </div>`
+                        : null
+                    }
+                  </div>
+                `
+              )
+        }
       </div>
     `;
   }

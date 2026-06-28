@@ -386,23 +386,25 @@ export class ListEditDialog extends LitElement {
           </div>
           <div class="account-acct">@${account.acct}</div>
         </div>
-        ${action === 'remove'
-          ? html`
-              <md-button
-                variant="text"
-                @click=${() => this._removeAccount(account)}
-              >
-                ${msg('Remove')}
-              </md-button>
-            `
-          : html`
-              <md-button
-                variant="tonal"
-                @click=${() => this._addAccount(account)}
-              >
-                ${msg('Add')}
-              </md-button>
-            `}
+        ${
+          action === 'remove'
+            ? html`
+                <md-button
+                  variant="text"
+                  @click=${() => this._removeAccount(account)}
+                >
+                  ${msg('Remove')}
+                </md-button>
+              `
+            : html`
+                <md-button
+                  variant="tonal"
+                  @click=${() => this._addAccount(account)}
+                >
+                  ${msg('Add')}
+                </md-button>
+              `
+        }
       </div>
     `;
   }
@@ -416,9 +418,11 @@ export class ListEditDialog extends LitElement {
         @md-dialog-hide=${() => this.hide()}
       >
         <div class="content">
-          ${this.errorMessage
-            ? html`<div class="error">${this.errorMessage}</div>`
-            : nothing}
+          ${
+            this.errorMessage
+              ? html`<div class="error">${this.errorMessage}</div>`
+              : nothing
+          }
 
           <div>
             <div class="section-title">${listTitle}</div>
@@ -447,37 +451,39 @@ export class ListEditDialog extends LitElement {
 
           <div>
             <div class="section-title">${msg('Members')}</div>
-            ${this.loadingMembers
-              ? html`<div class="empty">${msg('Loading members...')}</div>`
-              : this.members.length === 0
-                ? html`<div class="empty">${msg('No members yet.')}</div>`
-                : html`
-                    <div class="account-list">
-                      ${this.members.map(
-                        (account) => html`
-                          <div class="member-pill">
-                            <img
-                              class="account-avatar"
-                              src="${account.avatar_static}"
-                              alt=""
-                              loading="lazy"
-                            />
-                            <span class="member-pill-label">
-                              ${account.display_name || account.username}
-                            </span>
-                            <button
-                              class="member-pill-remove"
-                              type="button"
-                              aria-label=${msg('Remove')}
-                              @click=${() => this._removeAccount(account)}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        `
-                      )}
-                    </div>
-                  `}
+            ${
+              this.loadingMembers
+                ? html`<div class="empty">${msg('Loading members...')}</div>`
+                : this.members.length === 0
+                  ? html`<div class="empty">${msg('No members yet.')}</div>`
+                  : html`
+                      <div class="account-list">
+                        ${this.members.map(
+                          (account) => html`
+                            <div class="member-pill">
+                              <img
+                                class="account-avatar"
+                                src="${account.avatar_static}"
+                                alt=""
+                                loading="lazy"
+                              />
+                              <span class="member-pill-label">
+                                ${account.display_name || account.username}
+                              </span>
+                              <button
+                                class="member-pill-remove"
+                                type="button"
+                                aria-label=${msg('Remove')}
+                                @click=${() => this._removeAccount(account)}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          `
+                        )}
+                      </div>
+                    `
+            }
           </div>
 
           <md-divider></md-divider>
@@ -489,26 +495,30 @@ export class ListEditDialog extends LitElement {
               placeholder=${msg('Search for accounts')}
               @input=${this._onSearchInput}
             ></md-text-field>
-            ${this.searching
-              ? html`<div class="empty" style="margin-top:8px">
-                  ${msg('Searching...')}
-                </div>`
-              : this.searchQuery.trim() &&
-                  this.searchResults.length === 0 &&
-                  !this.searching
+            ${
+              this.searching
                 ? html`<div class="empty" style="margin-top:8px">
-                    ${msg('No results found.')}
+                    ${msg('Searching...')}
                   </div>`
-                : nothing}
-            ${this.searchResults.length > 0
-              ? html`
-                  <div class="search-results">
-                    ${this.searchResults.map((account) =>
-                      this._renderAccountRow(account, 'add')
-                    )}
-                  </div>
-                `
-              : nothing}
+                : this.searchQuery.trim() &&
+                    this.searchResults.length === 0 &&
+                    !this.searching
+                  ? html`<div class="empty" style="margin-top:8px">
+                      ${msg('No results found.')}
+                    </div>`
+                  : nothing
+            }
+            ${
+              this.searchResults.length > 0
+                ? html`
+                    <div class="search-results">
+                      ${this.searchResults.map((account) =>
+                        this._renderAccountRow(account, 'add')
+                      )}
+                    </div>
+                  `
+                : nothing
+            }
           </div>
         </div>
       </md-dialog>

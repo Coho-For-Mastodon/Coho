@@ -421,9 +421,9 @@ export class MdAudioPlayer extends LitElement {
           <div class="time">
             <span>${this._formatTime(this._currentTime)}</span>
             <span
-              >${this._loading
-                ? '-:--'
-                : this._formatTime(this._duration)}</span
+              >${
+                this._loading ? '-:--' : this._formatTime(this._duration)
+              }</span
             >
           </div>
         </div>

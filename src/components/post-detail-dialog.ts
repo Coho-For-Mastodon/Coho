@@ -336,12 +336,14 @@ export class PostDetailDialog extends LitElement {
         </div>
 
         <div class="dialog-body">
-          ${this.post
-            ? html`<post-detail
-                embedded
-                .passed_tweet="${this.post}"
-              ></post-detail>`
-            : null}
+          ${
+            this.post
+              ? html`<post-detail
+                  embedded
+                  .passed_tweet="${this.post}"
+                ></post-detail>`
+              : null
+          }
         </div>
       </dialog>
     `;

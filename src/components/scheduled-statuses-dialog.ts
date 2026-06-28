@@ -438,190 +438,213 @@ export class ScheduledStatusesDialog extends LitElement {
             ${msg('Review, reschedule, or cancel posts queued for publishing.')}
           </p>
 
-          ${this._errorMessage
-            ? html`<p class="error">${this._errorMessage}</p>`
-            : nothing}
-          ${this._loading
-            ? html`
-                <div class="loading">${msg('Loading scheduled posts...')}</div>
-              `
-            : this._statuses.length === 0
+          ${
+            this._errorMessage
+              ? html`<p class="error">${this._errorMessage}</p>`
+              : nothing
+          }
+          ${
+            this._loading
               ? html`
-                  <div class="empty">
-                    ${msg('No scheduled posts right now.')}
+                  <div class="loading">
+                    ${msg('Loading scheduled posts...')}
                   </div>
                 `
-              : html`
-                  <div class="list">
-                    ${this._statuses.map((status) => {
-                      const isExpanded = this._expandedId === status.id;
-                      const isEditing = this._editingId === status.id;
-                      const isSaving = this._savingId === status.id;
-                      const isCanceling = this._cancelingId === status.id;
-                      const statusText =
-                        status.params?.text?.trim() ||
-                        msg('(No text in this scheduled post)');
-                      const warningText = status.params?.warning_text?.trim();
-                      const mediaCount = status.media_attachments?.length ?? 0;
-                      const pollCount =
-                        status.params?.poll?.options?.length ?? 0;
+              : this._statuses.length === 0
+                ? html`
+                    <div class="empty">
+                      ${msg('No scheduled posts right now.')}
+                    </div>
+                  `
+                : html`
+                    <div class="list">
+                      ${this._statuses.map((status) => {
+                        const isExpanded = this._expandedId === status.id;
+                        const isEditing = this._editingId === status.id;
+                        const isSaving = this._savingId === status.id;
+                        const isCanceling = this._cancelingId === status.id;
+                        const statusText =
+                          status.params?.text?.trim() ||
+                          msg('(No text in this scheduled post)');
+                        const warningText = status.params?.warning_text?.trim();
+                        const mediaCount =
+                          status.media_attachments?.length ?? 0;
+                        const pollCount =
+                          status.params?.poll?.options?.length ?? 0;
 
-                      return html`
-                        <div class="item">
-                          <div class="item-top">
-                            <div class="item-time">
-                              ${this._formatScheduledDateTime(
-                                status.scheduled_at
-                              )}
+                        return html`
+                          <div class="item">
+                            <div class="item-top">
+                              <div class="item-time">
+                                ${this._formatScheduledDateTime(
+                                  status.scheduled_at
+                                )}
+                              </div>
+
+                              <div class="item-actions">
+                                <md-button
+                                  variant="text"
+                                  size="small"
+                                  ?disabled=${isSaving || isCanceling}
+                                  @click=${() => this._toggleDetails(status.id)}
+                                >
+                                  ${
+                                    isExpanded
+                                      ? msg('Hide details')
+                                      : msg('View details')
+                                  }
+                                </md-button>
+                                <md-button
+                                  variant="text"
+                                  size="small"
+                                  ?disabled=${isSaving || isCanceling}
+                                  @click=${() => this._startEditing(status)}
+                                >
+                                  ${msg('Reschedule')}
+                                </md-button>
+                                <md-button
+                                  variant="text"
+                                  size="small"
+                                  ?disabled=${isSaving || isCanceling}
+                                  @click=${() =>
+                                    this._cancelScheduledStatus(status.id)}
+                                >
+                                  ${
+                                    isCanceling
+                                      ? msg('Canceling...')
+                                      : msg('Cancel post')
+                                  }
+                                </md-button>
+                              </div>
                             </div>
 
-                            <div class="item-actions">
-                              <md-button
-                                variant="text"
-                                size="small"
-                                ?disabled=${isSaving || isCanceling}
-                                @click=${() => this._toggleDetails(status.id)}
-                              >
-                                ${isExpanded
-                                  ? msg('Hide details')
-                                  : msg('View details')}
-                              </md-button>
-                              <md-button
-                                variant="text"
-                                size="small"
-                                ?disabled=${isSaving || isCanceling}
-                                @click=${() => this._startEditing(status)}
-                              >
-                                ${msg('Reschedule')}
-                              </md-button>
-                              <md-button
-                                variant="text"
-                                size="small"
-                                ?disabled=${isSaving || isCanceling}
-                                @click=${() =>
-                                  this._cancelScheduledStatus(status.id)}
-                              >
-                                ${isCanceling
-                                  ? msg('Canceling...')
-                                  : msg('Cancel post')}
-                              </md-button>
-                            </div>
+                            ${
+                              isExpanded || isEditing
+                                ? html`
+                                    <div class="details">
+                                      <p class="status-text">${statusText}</p>
+
+                                      <div class="meta">
+                                        <span class="chip"
+                                          >${this._formatVisibility(
+                                            status.params?.visibility
+                                          )}</span
+                                        >
+                                        ${
+                                          warningText
+                                            ? html`
+                                                <span class="chip"
+                                                  >${msg('Content warning')}</span
+                                                >
+                                              `
+                                            : nothing
+                                        }
+                                        ${
+                                          mediaCount > 0
+                                            ? html`
+                                                <span class="chip"
+                                                  >${msg(
+                                                    str`${mediaCount} attachments`
+                                                  )}</span
+                                                >
+                                              `
+                                            : nothing
+                                        }
+                                        ${
+                                          pollCount > 0
+                                            ? html`
+                                                <span class="chip"
+                                                  >${msg(
+                                                    str`Poll (${pollCount} options)`
+                                                  )}</span
+                                                >
+                                              `
+                                            : nothing
+                                        }
+                                      </div>
+
+                                      ${
+                                        isEditing
+                                          ? html`
+                                              <div class="edit-block">
+                                                <div class="field-grid">
+                                                  <label class="field">
+                                                    <span class="field-label"
+                                                      >${msg('Date')}</span
+                                                    >
+                                                    <md-text-field
+                                                      type="date"
+                                                      .value=${this._scheduleDate}
+                                                      .min=${this._getScheduleMinDate()}
+                                                      @input=${(
+                                                        event: CustomEvent<{
+                                                          value: string;
+                                                        }>
+                                                      ) =>
+                                                        this._setScheduleDate(
+                                                          event.detail.value
+                                                        )}
+                                                    ></md-text-field>
+                                                  </label>
+                                                  <label class="field">
+                                                    <span class="field-label"
+                                                      >${msg('Time')}</span
+                                                    >
+                                                    <md-text-field
+                                                      type="time"
+                                                      .value=${this._scheduleTime}
+                                                      .min=${this._getScheduleMinTime()}
+                                                      step="60"
+                                                      @input=${(
+                                                        event: CustomEvent<{
+                                                          value: string;
+                                                        }>
+                                                      ) =>
+                                                        this._setScheduleTime(
+                                                          event.detail.value
+                                                        )}
+                                                    ></md-text-field>
+                                                  </label>
+                                                </div>
+
+                                                <div class="edit-actions">
+                                                  <md-button
+                                                    variant="text"
+                                                    size="small"
+                                                    ?disabled=${isSaving}
+                                                    @click=${() =>
+                                                      this._stopEditing()}
+                                                  >
+                                                    ${msg('Keep current time')}
+                                                  </md-button>
+                                                  <md-button
+                                                    variant="filled"
+                                                    size="small"
+                                                    ?disabled=${isSaving}
+                                                    @click=${() =>
+                                                      this._saveSchedule()}
+                                                  >
+                                                    ${
+                                                      isSaving
+                                                        ? msg('Saving...')
+                                                        : msg('Save')
+                                                    }
+                                                  </md-button>
+                                                </div>
+                                              </div>
+                                            `
+                                          : nothing
+                                      }
+                                    </div>
+                                  `
+                                : nothing
+                            }
                           </div>
-
-                          ${isExpanded || isEditing
-                            ? html`
-                                <div class="details">
-                                  <p class="status-text">${statusText}</p>
-
-                                  <div class="meta">
-                                    <span class="chip"
-                                      >${this._formatVisibility(
-                                        status.params?.visibility
-                                      )}</span
-                                    >
-                                    ${warningText
-                                      ? html`
-                                          <span class="chip"
-                                            >${msg('Content warning')}</span
-                                          >
-                                        `
-                                      : nothing}
-                                    ${mediaCount > 0
-                                      ? html`
-                                          <span class="chip"
-                                            >${msg(
-                                              str`${mediaCount} attachments`
-                                            )}</span
-                                          >
-                                        `
-                                      : nothing}
-                                    ${pollCount > 0
-                                      ? html`
-                                          <span class="chip"
-                                            >${msg(
-                                              str`Poll (${pollCount} options)`
-                                            )}</span
-                                          >
-                                        `
-                                      : nothing}
-                                  </div>
-
-                                  ${isEditing
-                                    ? html`
-                                        <div class="edit-block">
-                                          <div class="field-grid">
-                                            <label class="field">
-                                              <span class="field-label"
-                                                >${msg('Date')}</span
-                                              >
-                                              <md-text-field
-                                                type="date"
-                                                .value=${this._scheduleDate}
-                                                .min=${this._getScheduleMinDate()}
-                                                @input=${(
-                                                  event: CustomEvent<{
-                                                    value: string;
-                                                  }>
-                                                ) =>
-                                                  this._setScheduleDate(
-                                                    event.detail.value
-                                                  )}
-                                              ></md-text-field>
-                                            </label>
-                                            <label class="field">
-                                              <span class="field-label"
-                                                >${msg('Time')}</span
-                                              >
-                                              <md-text-field
-                                                type="time"
-                                                .value=${this._scheduleTime}
-                                                .min=${this._getScheduleMinTime()}
-                                                step="60"
-                                                @input=${(
-                                                  event: CustomEvent<{
-                                                    value: string;
-                                                  }>
-                                                ) =>
-                                                  this._setScheduleTime(
-                                                    event.detail.value
-                                                  )}
-                                              ></md-text-field>
-                                            </label>
-                                          </div>
-
-                                          <div class="edit-actions">
-                                            <md-button
-                                              variant="text"
-                                              size="small"
-                                              ?disabled=${isSaving}
-                                              @click=${() =>
-                                                this._stopEditing()}
-                                            >
-                                              ${msg('Keep current time')}
-                                            </md-button>
-                                            <md-button
-                                              variant="filled"
-                                              size="small"
-                                              ?disabled=${isSaving}
-                                              @click=${() =>
-                                                this._saveSchedule()}
-                                            >
-                                              ${isSaving
-                                                ? msg('Saving...')
-                                                : msg('Save')}
-                                            </md-button>
-                                          </div>
-                                        </div>
-                                      `
-                                    : nothing}
-                                </div>
-                              `
-                            : nothing}
-                        </div>
-                      `;
-                    })}
-                  </div>
-                `}
+                        `;
+                      })}
+                    </div>
+                  `
+          }
         </div>
       </md-dialog>
     `;

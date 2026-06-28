@@ -67,39 +67,43 @@ export class Appfollowing extends LitElement {
       <main>
         <h2>${msg('You are Following')}</h2>
         <ul class="scrollbar-hidden">
-          ${this.loading && this.following.length === 0
-            ? Array.from({ length: 6 }, () => {
-                return html`
-                  <li class="skeleton-row">
-                    <md-skeleton
-                      shape="circle"
-                      width="50px"
-                      height="50px"
-                    ></md-skeleton>
-                    <div class="skeleton-lines">
-                      <md-skeleton width="160px" height="16px"></md-skeleton>
-                      <md-skeleton
-                        width="120px"
-                        height="12px"
-                        style="margin-top: 6px;"
-                      ></md-skeleton>
-                    </div>
-                  </li>
-                `;
-              })
-            : this.following.length === 0
-              ? html`<li class="empty-state">
-                  ${msg('Not following anyone yet.')}
-                </li>`
-              : this.following.map((follower) => {
+          ${
+            this.loading && this.following.length === 0
+              ? Array.from({ length: 6 }, () => {
                   return html`
-                    ${follower && follower.id
-                      ? html`<li>
-                          <user-profile .account=${follower}></user-profile>
-                        </li>`
-                      : null}
+                    <li class="skeleton-row">
+                      <md-skeleton
+                        shape="circle"
+                        width="50px"
+                        height="50px"
+                      ></md-skeleton>
+                      <div class="skeleton-lines">
+                        <md-skeleton width="160px" height="16px"></md-skeleton>
+                        <md-skeleton
+                          width="120px"
+                          height="12px"
+                          style="margin-top: 6px;"
+                        ></md-skeleton>
+                      </div>
+                    </li>
                   `;
-                })}
+                })
+              : this.following.length === 0
+                ? html`<li class="empty-state">
+                    ${msg('Not following anyone yet.')}
+                  </li>`
+                : this.following.map((follower) => {
+                    return html`
+                      ${
+                        follower && follower.id
+                          ? html`<li>
+                              <user-profile .account=${follower}></user-profile>
+                            </li>`
+                          : null
+                      }
+                    `;
+                  })
+          }
         </ul>
       </main>
     `;

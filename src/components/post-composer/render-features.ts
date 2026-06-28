@@ -152,14 +152,18 @@ export function renderSchedule(p: ScheduleRenderProps): TemplateResult {
         ></md-text-field>
       </div>
 
-      ${preview
-        ? html`<div class="schedule-preview">
-            ${msg(str`Will publish on ${preview}`)}
-          </div>`
-        : nothing}
-      ${p.scheduleError
-        ? html`<div class="schedule-error">${p.scheduleError}</div>`
-        : nothing}
+      ${
+        preview
+          ? html`<div class="schedule-preview">
+              ${msg(str`Will publish on ${preview}`)}
+            </div>`
+          : nothing
+      }
+      ${
+        p.scheduleError
+          ? html`<div class="schedule-error">${p.scheduleError}</div>`
+          : nothing
+      }
     </div>
   `;
 }
@@ -232,57 +236,63 @@ export interface AttachmentsRenderProps {
 export function renderAttachments(p: AttachmentsRenderProps): TemplateResult {
   return html`
     <div class="attachments-reveal">
-      ${p.attaching
-        ? html`
-            <div id="attachment-loading">
-              <md-skeleton></md-skeleton>
-            </div>
-          `
-        : p.attachments.length > 0
+      ${
+        p.attaching
           ? html`
-              <ul class="attachments-list">
-                ${p.attachments.map(
-                  (attachment) => html`
-                    <div class="img-preview">
-                      <div class="preview-actions">
-                        <md-icon-button
-                          size="small"
-                          label=${msg('Remove attachment')}
-                          @click="${() => p.onRemove(attachment.id)}"
-                        >
-                          <md-icon src="/assets/close-outline.svg"></md-icon>
-                        </md-icon-button>
-                        <md-icon-button
-                          size="small"
-                          label=${msg('Edit attachment')}
-                          @click="${() => p.onEdit(attachment)}"
-                        >
-                          <md-icon src="/assets/brush-outline.svg"></md-icon>
-                        </md-icon-button>
-                      </div>
-                      ${attachment.type === 'video' ||
-                      attachment.type === 'gifv'
-                        ? html`<video
-                            muted
-                            preload="metadata"
-                            src="${attachment.preview_url}#t=0.5"
-                            controls
-                          ></video>`
-                        : html`<img
-                            src="${attachment.preview_url}"
-                            alt="${attachment.description || ''}"
-                          />`}
-                      ${attachment.pending
-                        ? html`<div class="upload-spinner-overlay">
-                            <div class="upload-spinner"></div>
-                          </div>`
-                        : nothing}
-                    </div>
-                  `
-                )}
-              </ul>
+              <div id="attachment-loading">
+                <md-skeleton></md-skeleton>
+              </div>
             `
-          : nothing}
+          : p.attachments.length > 0
+            ? html`
+                <ul class="attachments-list">
+                  ${p.attachments.map(
+                    (attachment) => html`
+                      <div class="img-preview">
+                        <div class="preview-actions">
+                          <md-icon-button
+                            size="small"
+                            label=${msg('Remove attachment')}
+                            @click="${() => p.onRemove(attachment.id)}"
+                          >
+                            <md-icon src="/assets/close-outline.svg"></md-icon>
+                          </md-icon-button>
+                          <md-icon-button
+                            size="small"
+                            label=${msg('Edit attachment')}
+                            @click="${() => p.onEdit(attachment)}"
+                          >
+                            <md-icon src="/assets/brush-outline.svg"></md-icon>
+                          </md-icon-button>
+                        </div>
+                        ${
+                          attachment.type === 'video' ||
+                          attachment.type === 'gifv'
+                            ? html`<video
+                                muted
+                                preload="metadata"
+                                src="${attachment.preview_url}#t=0.5"
+                                controls
+                              ></video>`
+                            : html`<img
+                                src="${attachment.preview_url}"
+                                alt="${attachment.description || ''}"
+                              />`
+                        }
+                        ${
+                          attachment.pending
+                            ? html`<div class="upload-spinner-overlay">
+                                <div class="upload-spinner"></div>
+                              </div>`
+                            : nothing
+                        }
+                      </div>
+                    `
+                  )}
+                </ul>
+              `
+            : nothing
+      }
     </div>
   `;
 }

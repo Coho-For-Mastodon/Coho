@@ -667,76 +667,82 @@ export class AppMessages extends LitElement {
         </div>
 
         <div class="scroller scrollbar-hidden">
-          ${this.loading
-            ? html`
-                <div class="conversation-list">
-                  ${[1, 2, 3, 4, 5, 6].map(
-                    () => html`
-                      <div class="skeleton-row">
-                        <div class="skeleton-avatar"></div>
-                        <div class="skeleton-lines">
-                          <div class="skeleton-line short"></div>
-                          <div class="skeleton-line"></div>
-                        </div>
-                      </div>
-                    `
-                  )}
-                </div>
-              `
-            : this.error
+          ${
+            this.loading
               ? html`
-                  <div class="error-state">
-                    <span class="error-message">${this.error}</span>
-                    <md-button @click=${this._loadConversations}>
-                      ${msg('Retry')}
-                    </md-button>
+                  <div class="conversation-list">
+                    ${[1, 2, 3, 4, 5, 6].map(
+                      () => html`
+                        <div class="skeleton-row">
+                          <div class="skeleton-avatar"></div>
+                          <div class="skeleton-lines">
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-line"></div>
+                          </div>
+                        </div>
+                      `
+                    )}
                   </div>
                 `
-              : this.conversations.length === 0
+              : this.error
                 ? html`
-                    <div class="empty-state">
-                      <svg
-                        class="empty-icon"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 512 512"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="32"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      >
-                        <path
-                          d="M408 64H104a56.16 56.16 0 00-56 56v192a56.16 56.16 0 0056 56h40v80l93.72-78.14a8 8 0 015.13-1.86H408a56.16 56.16 0 0056-56V120a56.16 56.16 0 00-56-56z"
-                        />
-                      </svg>
-                      <span class="empty-title">${msg('No messages yet')}</span>
-                      <span class="empty-subtitle"
-                        >${msg(
-                          'Direct messages will appear here. Tap the compose icon to start a conversation.'
-                        )}</span
-                      >
-                      <md-button
-                        variant="filled"
-                        @click=${this._openNewMessage}
-                      >
-                        ${msg('Start a conversation')}
+                    <div class="error-state">
+                      <span class="error-message">${this.error}</span>
+                      <md-button @click=${this._loadConversations}>
+                        ${msg('Retry')}
                       </md-button>
                     </div>
                   `
-                : html`
-                    <div class="conversation-list">
-                      ${this.conversations.map((conv) =>
-                        this._renderConversationCard(conv)
-                      )}
-                      ${this.loadingMore
-                        ? html`
-                            <div class="loading-more">
-                              <div class="loading-spinner"></div>
-                            </div>
-                          `
-                        : nothing}
-                    </div>
-                  `}
+                : this.conversations.length === 0
+                  ? html`
+                      <div class="empty-state">
+                        <svg
+                          class="empty-icon"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 512 512"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="32"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <path
+                            d="M408 64H104a56.16 56.16 0 00-56 56v192a56.16 56.16 0 0056 56h40v80l93.72-78.14a8 8 0 015.13-1.86H408a56.16 56.16 0 0056-56V120a56.16 56.16 0 00-56-56z"
+                          />
+                        </svg>
+                        <span class="empty-title"
+                          >${msg('No messages yet')}</span
+                        >
+                        <span class="empty-subtitle"
+                          >${msg(
+                            'Direct messages will appear here. Tap the compose icon to start a conversation.'
+                          )}</span
+                        >
+                        <md-button
+                          variant="filled"
+                          @click=${this._openNewMessage}
+                        >
+                          ${msg('Start a conversation')}
+                        </md-button>
+                      </div>
+                    `
+                  : html`
+                      <div class="conversation-list">
+                        ${this.conversations.map((conv) =>
+                          this._renderConversationCard(conv)
+                        )}
+                        ${
+                          this.loadingMore
+                            ? html`
+                                <div class="loading-more">
+                                  <div class="loading-spinner"></div>
+                                </div>
+                              `
+                            : nothing
+                        }
+                      </div>
+                    `
+          }
 
           <div class="fab">
             <md-button
@@ -775,47 +781,49 @@ export class AppMessages extends LitElement {
           </div>
 
           <div class="search-results scrollbar-hidden">
-            ${this.searching
-              ? html`<div class="search-hint">
-                  <div class="loading-spinner" style="margin: 0 auto;"></div>
-                </div>`
-              : this.searchQuery.trim().length < 2
+            ${
+              this.searching
                 ? html`<div class="search-hint">
-                    ${msg('Search for a user to message')}
+                    <div class="loading-spinner" style="margin: 0 auto;"></div>
                   </div>`
-                : this.searchResults.length === 0
+                : this.searchQuery.trim().length < 2
                   ? html`<div class="search-hint">
-                      ${msg('No users found')}
+                      ${msg('Search for a user to message')}
                     </div>`
-                  : this.searchResults.map(
-                      (account) => html`
-                        <div
-                          class="account-row"
-                          @click=${() => this._selectRecipient(account)}
-                          role="button"
-                          tabindex="0"
-                          @keydown=${(e: KeyboardEvent) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              this._selectRecipient(account);
-                            }
-                          }}
-                        >
-                          <img
-                            class="account-avatar"
-                            src="${account.avatar}"
-                            alt=""
-                            loading="lazy"
-                          />
-                          <div class="account-info">
-                            <div class="account-display-name">
-                              ${account.display_name || account.username}
+                  : this.searchResults.length === 0
+                    ? html`<div class="search-hint">
+                        ${msg('No users found')}
+                      </div>`
+                    : this.searchResults.map(
+                        (account) => html`
+                          <div
+                            class="account-row"
+                            @click=${() => this._selectRecipient(account)}
+                            role="button"
+                            tabindex="0"
+                            @keydown=${(e: KeyboardEvent) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                this._selectRecipient(account);
+                              }
+                            }}
+                          >
+                            <img
+                              class="account-avatar"
+                              src="${account.avatar}"
+                              alt=""
+                              loading="lazy"
+                            />
+                            <div class="account-info">
+                              <div class="account-display-name">
+                                ${account.display_name || account.username}
+                              </div>
+                              <div class="account-handle">@${account.acct}</div>
                             </div>
-                            <div class="account-handle">@${account.acct}</div>
                           </div>
-                        </div>
-                      `
-                    )}
+                        `
+                      )
+            }
           </div>
         </div>
       </md-dialog>

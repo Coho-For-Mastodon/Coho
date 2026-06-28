@@ -397,10 +397,7 @@ export class AppHome extends LitElement {
         if (this.errorToast) {
           this.errorToast.message = customEvent.detail.message;
           this.errorToast.variant = customEvent.detail.variant as
-            | 'error'
-            | 'warning'
-            | 'info'
-            | 'success';
+            'error' | 'warning' | 'info' | 'success';
           this.errorToast.show();
         }
       }
@@ -902,64 +899,66 @@ export class AppHome extends LitElement {
     const headerAccount = this.getHeaderAccountIdentity();
 
     return html`
-      ${this.rightClickLoaded
-        ? html`
-            <right-click>
-              <md-menu>
-                <md-menu-item @menu-item-click=${() => this.openNewDialog()}>
-                  <md-icon slot="prefix" name="add"></md-icon>
-                  ${msg('New Post')}
-                </md-menu-item>
+      ${
+        this.rightClickLoaded
+          ? html`
+              <right-click>
+                <md-menu>
+                  <md-menu-item @menu-item-click=${() => this.openNewDialog()}>
+                    <md-icon slot="prefix" name="add"></md-icon>
+                    ${msg('New Post')}
+                  </md-menu-item>
 
-                <md-menu-item
-                  @click="${() =>
-                    this.tabController.openATab('search', (n) =>
-                      this.loadTabComponent(n)
-                    )}"
-                >
-                  <md-icon slot="prefix" name="search"></md-icon>
-                  ${msg('Explore')}
-                </md-menu-item>
-                <md-menu-item
-                  @click="${() =>
-                    this.tabController.openATab('notifications', (n) =>
-                      this.loadTabComponent(n)
-                    )}"
-                >
-                  <md-icon slot="prefix" name="notifications"></md-icon>
-                  ${msg('Notifications')}
-                </md-menu-item>
-                <md-menu-item
-                  @click="${() =>
-                    this.tabController.openATab('messages', (n) =>
-                      this.loadTabComponent(n)
-                    )}"
-                >
-                  <md-icon slot="prefix" name="chatbox"></md-icon>
-                  ${msg('Messages')}
-                </md-menu-item>
-                <md-menu-item
-                  @click="${() =>
-                    this.tabController.openATab('bookmarks', (n) =>
-                      this.loadTabComponent(n)
-                    )}"
-                >
-                  <md-icon slot="prefix" name="bookmark"></md-icon>
-                  ${msg('Saved')}
-                </md-menu-item>
-                <md-menu-item
-                  @click="${() =>
-                    this.tabController.openATab('faves', (n) =>
-                      this.loadTabComponent(n)
-                    )}"
-                >
-                  <md-icon slot="prefix" name="heart"></md-icon>
-                  ${msg('Favorites')}
-                </md-menu-item>
-              </md-menu>
-            </right-click>
-          `
-        : null}
+                  <md-menu-item
+                    @click="${() =>
+                      this.tabController.openATab('search', (n) =>
+                        this.loadTabComponent(n)
+                      )}"
+                  >
+                    <md-icon slot="prefix" name="search"></md-icon>
+                    ${msg('Explore')}
+                  </md-menu-item>
+                  <md-menu-item
+                    @click="${() =>
+                      this.tabController.openATab('notifications', (n) =>
+                        this.loadTabComponent(n)
+                      )}"
+                  >
+                    <md-icon slot="prefix" name="notifications"></md-icon>
+                    ${msg('Notifications')}
+                  </md-menu-item>
+                  <md-menu-item
+                    @click="${() =>
+                      this.tabController.openATab('messages', (n) =>
+                        this.loadTabComponent(n)
+                      )}"
+                  >
+                    <md-icon slot="prefix" name="chatbox"></md-icon>
+                    ${msg('Messages')}
+                  </md-menu-item>
+                  <md-menu-item
+                    @click="${() =>
+                      this.tabController.openATab('bookmarks', (n) =>
+                        this.loadTabComponent(n)
+                      )}"
+                  >
+                    <md-icon slot="prefix" name="bookmark"></md-icon>
+                    ${msg('Saved')}
+                  </md-menu-item>
+                  <md-menu-item
+                    @click="${() =>
+                      this.tabController.openATab('faves', (n) =>
+                        this.loadTabComponent(n)
+                      )}"
+                  >
+                    <md-icon slot="prefix" name="heart"></md-icon>
+                    ${msg('Favorites')}
+                  </md-menu-item>
+                </md-menu>
+              </right-click>
+            `
+          : null
+      }
 
       <app-header
         @open-bot-drawer="${() => this.openBotDrawer()}"
@@ -980,28 +979,30 @@ export class AppHome extends LitElement {
       <offline-notify></offline-notify>
 
       <!-- PWA Install - component always in DOM for install detection, dialog is lazy -->
-      ${this.overlays.isVisible('install-dialog')
-        ? html`
-            <md-dialog
-              id="install-dialog"
-              .label="${msg('Install Coho')}"
-              @md-dialog-hide="${() => this.overlays.hide('install-dialog')}"
-            >
+      ${
+        this.overlays.isVisible('install-dialog')
+          ? html`
+              <md-dialog
+                id="install-dialog"
+                .label="${msg('Install Coho')}"
+                @md-dialog-hide="${() => this.overlays.hide('install-dialog')}"
+              >
+                <pwa-install
+                  @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
+                  @pwa-install-success="${() => this.handleInstallSuccess()}"
+                  @pwa-installed="${() => this.handleInstallSuccess()}"
+                ></pwa-install>
+              </md-dialog>
+            `
+          : html`
               <pwa-install
+                style="display: none;"
                 @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
                 @pwa-install-success="${() => this.handleInstallSuccess()}"
                 @pwa-installed="${() => this.handleInstallSuccess()}"
               ></pwa-install>
-            </md-dialog>
-          `
-        : html`
-            <pwa-install
-              style="display: none;"
-              @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
-              @pwa-install-success="${() => this.handleInstallSuccess()}"
-              @pwa-installed="${() => this.handleInstallSuccess()}"
-            ></pwa-install>
-          `}
+            `
+      }
 
       <!-- Summary Dialog - only in DOM when needed -->
       ${this.overlays.render(
@@ -1132,22 +1133,24 @@ export class AppHome extends LitElement {
             .label="${msg('Comments')}"
             @otter-hide="${() => this.overlays.hide('replies-drawer')}"
           >
-            ${this.replies.length > 0
-              ? html`<ul>
-                  ${this.replies.map((reply) => {
-                    return html`
-                      <timeline-item
-                        ?show="${false}"
-                        .tweet="${reply}"
-                      ></timeline-item>
-                    `;
-                  })}
-                </ul>`
-              : html`
-                  <div id="no-replies">
-                    <p>${msg('No comments yet.')}</p>
-                  </div>
-                `}
+            ${
+              this.replies.length > 0
+                ? html`<ul>
+                    ${this.replies.map((reply) => {
+                      return html`
+                        <timeline-item
+                          ?show="${false}"
+                          .tweet="${reply}"
+                        ></timeline-item>
+                      `;
+                    })}
+                  </ul>`
+                : html`
+                    <div id="no-replies">
+                      <p>${msg('No comments yet.')}</p>
+                    </div>
+                  `
+            }
           </otter-drawer>
         `
       )}
@@ -1196,102 +1199,124 @@ export class AppHome extends LitElement {
             ></app-timeline>
           </md-tab-panel>
           <md-tab-panel name="media">
-            ${this.loadedTabs.has('media')
-              ? html`<app-timeline
-                  timelineType="media"
-                  .lists="${this.lists}"
-                  @manage-lists="${() => this.openListsDialog()}"
-                  @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
-                    this.openListMembershipDialog(event.detail.account)}"
-                ></app-timeline>`
-              : nothing}
+            ${
+              this.loadedTabs.has('media')
+                ? html`<app-timeline
+                    timelineType="media"
+                    .lists="${this.lists}"
+                    @manage-lists="${() => this.openListsDialog()}"
+                    @add-to-list="${(
+                      event: CustomEvent<{ account: Account }>
+                    ) => this.openListMembershipDialog(event.detail.account)}"
+                  ></app-timeline>`
+                : nothing
+            }
           </md-tab-panel>
           <md-tab-panel name="messages">
-            ${this.loadedTabs.has('messages')
-              ? html`<app-messages></app-messages>`
-              : nothing}
+            ${
+              this.loadedTabs.has('messages')
+                ? html`<app-messages></app-messages>`
+                : nothing
+            }
           </md-tab-panel>
           <md-tab-panel name="custom">
-            ${this.loadedTabs.has('custom')
-              ? html`<app-timeline
-                  timelineType="federated"
-                  .lists="${this.lists}"
-                  @manage-lists="${() => this.openListsDialog()}"
-                  @add-to-list="${(event: CustomEvent<{ account: Account }>) =>
-                    this.openListMembershipDialog(event.detail.account)}"
-                ></app-timeline>`
-              : nothing}
+            ${
+              this.loadedTabs.has('custom')
+                ? html`<app-timeline
+                    timelineType="federated"
+                    .lists="${this.lists}"
+                    @manage-lists="${() => this.openListsDialog()}"
+                    @add-to-list="${(
+                      event: CustomEvent<{ account: Account }>
+                    ) => this.openListMembershipDialog(event.detail.account)}"
+                  ></app-timeline>`
+                : nothing
+            }
           </md-tab-panel>
           <md-tab-panel name="bookmarks">
-            ${this.loadedTabs.has('bookmarks')
-              ? html`<app-bookmarks
-                  @open="${($event: CustomEvent) =>
-                    this.handleOpenTweet($event.detail.tweet)}"
-                  @edit="${($event: CustomEvent<{ tweet: Post }>) =>
-                    this.handleEditPost($event.detail.tweet)}"
-                ></app-bookmarks>`
-              : nothing}
+            ${
+              this.loadedTabs.has('bookmarks')
+                ? html`<app-bookmarks
+                    @open="${($event: CustomEvent) =>
+                      this.handleOpenTweet($event.detail.tweet)}"
+                    @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+                      this.handleEditPost($event.detail.tweet)}"
+                  ></app-bookmarks>`
+                : nothing
+            }
           </md-tab-panel>
           <md-tab-panel name="faves">
-            ${this.loadedTabs.has('faves')
-              ? html`<app-favorites
-                  @open="${($event: CustomEvent) =>
-                    this.handleOpenTweet($event.detail.tweet)}"
-                  @edit="${($event: CustomEvent<{ tweet: Post }>) =>
-                    this.handleEditPost($event.detail.tweet)}"
-                ></app-favorites>`
-              : nothing}
+            ${
+              this.loadedTabs.has('faves')
+                ? html`<app-favorites
+                    @open="${($event: CustomEvent) =>
+                      this.handleOpenTweet($event.detail.tweet)}"
+                    @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+                      this.handleEditPost($event.detail.tweet)}"
+                  ></app-favorites>`
+                : nothing
+            }
           </md-tab-panel>
           <md-tab-panel name="notifications">
-            ${this.loadedTabs.has('notifications')
-              ? html`<app-notifications
-                  @open="${($event: CustomEvent) =>
-                    this.handleOpenTweet($event.detail.tweet)}"
-                  @edit="${($event: CustomEvent<{ tweet: Post }>) =>
-                    this.handleEditPost($event.detail.tweet)}"
-                ></app-notifications>`
-              : nothing}
+            ${
+              this.loadedTabs.has('notifications')
+                ? html`<app-notifications
+                    @open="${($event: CustomEvent) =>
+                      this.handleOpenTweet($event.detail.tweet)}"
+                    @edit="${($event: CustomEvent<{ tweet: Post }>) =>
+                      this.handleEditPost($event.detail.tweet)}"
+                  ></app-notifications>`
+                : nothing
+            }
           </md-tab-panel>
           <md-tab-panel name="search">
-            ${this.loadedTabs.has('search')
-              ? html`<search-page></search-page>`
-              : nothing}
+            ${
+              this.loadedTabs.has('search')
+                ? html`<search-page></search-page>`
+                : nothing
+            }
           </md-tab-panel>
         </md-tabs>
 
-        ${!this.isMobile
-          ? html`
-              <home-sidebar
-                .user="${this.user}"
-                .trendingTags="${this.trendingTags}"
-                .trendingTagsLoading="${this.trendingTagsLoading}"
-                .isGuestMode="${this.isGuestMode}"
-                @open-account-switcher="${(event: OpenAccountSwitcherEvent) =>
-                  this.openAccountSwitcherDialog(event.detail?.origin)}"
-              ></home-sidebar>
-            `
-          : nothing}
-        ${this.isGuestMode
-          ? nothing
-          : html`
-              <div id="mobile-actions">
-                <md-button
-                  variant="fab"
-                  @click="${(event: MouseEvent) =>
-                    this.openNewDialog(
-                      undefined,
-                      this._originFromEvent(event)
-                    )}"
-                >
-                  <md-icon src="/assets/add-outline.svg"></md-icon>
-                </md-button>
-              </div>
-            `}
+        ${
+          !this.isMobile
+            ? html`
+                <home-sidebar
+                  .user="${this.user}"
+                  .trendingTags="${this.trendingTags}"
+                  .trendingTagsLoading="${this.trendingTagsLoading}"
+                  .isGuestMode="${this.isGuestMode}"
+                  @open-account-switcher="${(event: OpenAccountSwitcherEvent) =>
+                    this.openAccountSwitcherDialog(event.detail?.origin)}"
+                ></home-sidebar>
+              `
+            : nothing
+        }
+        ${
+          this.isGuestMode
+            ? nothing
+            : html`
+                <div id="mobile-actions">
+                  <md-button
+                    variant="fab"
+                    @click="${(event: MouseEvent) =>
+                      this.openNewDialog(
+                        undefined,
+                        this._originFromEvent(event)
+                      )}"
+                  >
+                    <md-icon src="/assets/add-outline.svg"></md-icon>
+                  </md-button>
+                </div>
+              `
+        }
       </main>
 
-      ${this.isGuestMode
-        ? html`<guest-login-banner></guest-login-banner>`
-        : nothing}
+      ${
+        this.isGuestMode
+          ? html`<guest-login-banner></guest-login-banner>`
+          : nothing
+      }
 
       <!-- Translation Toast - only in DOM when needed -->
       ${this.overlays.render(

@@ -235,8 +235,7 @@ export class PostComposer extends LitElement {
   private mediaEditDialogLoaded = false;
 
   private _features:
-    | typeof import('./post-composer/render-features.js')
-    | null = null;
+    typeof import('./post-composer/render-features.js') | null = null;
 
   private draftKey: string | null = null;
 
@@ -1404,15 +1403,17 @@ export class PostComposer extends LitElement {
     return html`
       <div class="replying-to-indicator">
         <span>${msg(str`Replying to @${this.replyTo.account.acct}`)}</span>
-        ${this.hideReplyDismiss
-          ? nothing
-          : html`
-              <md-icon-button
-                label=${msg('Dismiss')}
-                src="/assets/close-outline.svg"
-                @click=${() => this.clearReplyTo()}
-              ></md-icon-button>
-            `}
+        ${
+          this.hideReplyDismiss
+            ? nothing
+            : html`
+                <md-icon-button
+                  label=${msg('Dismiss')}
+                  src="/assets/close-outline.svg"
+                  @click=${() => this.clearReplyTo()}
+                ></md-icon-button>
+              `
+        }
       </div>
     `;
   }
@@ -1442,44 +1443,46 @@ export class PostComposer extends LitElement {
 
     return html`
       <div class="mention-dropdown" role="listbox" style="${mentionStyle}">
-        ${this.mentionLoading
-          ? html`<div class="mention-state">${msg('Searching...')}</div>`
-          : this.mentionResults.length === 0
-            ? html`<div class="mention-state">
-                ${msg('No matching accounts')}
-              </div>`
-            : this.mentionResults.map((account, index) => {
-                const displayName =
-                  account.display_name?.trim() || account.acct;
-                const avatar =
-                  account.avatar_static ||
-                  account.avatar ||
-                  '/assets/icons/new-icons/icon-72x72.png';
-                const isActive = index === this.mentionActiveIndex;
+        ${
+          this.mentionLoading
+            ? html`<div class="mention-state">${msg('Searching...')}</div>`
+            : this.mentionResults.length === 0
+              ? html`<div class="mention-state">
+                  ${msg('No matching accounts')}
+                </div>`
+              : this.mentionResults.map((account, index) => {
+                  const displayName =
+                    account.display_name?.trim() || account.acct;
+                  const avatar =
+                    account.avatar_static ||
+                    account.avatar ||
+                    '/assets/icons/new-icons/icon-72x72.png';
+                  const isActive = index === this.mentionActiveIndex;
 
-                return html`
-                  <div
-                    class="mention-item ${isActive ? 'active' : ''}"
-                    role="option"
-                    aria-selected=${isActive}
-                    @mouseenter=${() => {
-                      if (this.mentionActiveIndex !== index) {
-                        this.mentionActiveIndex = index;
-                      }
-                    }}
-                    @mousedown=${(event: MouseEvent) => {
-                      event.preventDefault();
-                      this._applyMention(account);
-                    }}
-                  >
-                    <img class="mention-avatar" src="${avatar}" alt="" />
-                    <div class="mention-text">
-                      <span class="mention-name">${displayName}</span>
-                      <span class="mention-acct">@${account.acct}</span>
+                  return html`
+                    <div
+                      class="mention-item ${isActive ? 'active' : ''}"
+                      role="option"
+                      aria-selected=${isActive}
+                      @mouseenter=${() => {
+                        if (this.mentionActiveIndex !== index) {
+                          this.mentionActiveIndex = index;
+                        }
+                      }}
+                      @mousedown=${(event: MouseEvent) => {
+                        event.preventDefault();
+                        this._applyMention(account);
+                      }}
+                    >
+                      <img class="mention-avatar" src="${avatar}" alt="" />
+                      <div class="mention-text">
+                        <span class="mention-name">${displayName}</span>
+                        <span class="mention-acct">@${account.acct}</span>
+                      </div>
                     </div>
-                  </div>
-                `;
-              })}
+                  `;
+                })
+        }
       </div>
     `;
   }
@@ -1592,26 +1595,30 @@ export class PostComposer extends LitElement {
     return html`
       <div class="actions-row">
         <!-- Visibility selector -->
-        ${!this.compact
-          ? html`
-              <md-select
-                .value=${this.visibility}
-                .placeholder=${msg('Post visibility')}
-                .iconSrc=${this._getVisibilityIconSrc()}
-                .iconLabel=${msg('Post visibility')}
-                @change=${(e: CustomEvent<{ value: string }>) =>
-                  (this.visibility = e.detail.value)}
-                title=${this._getVisibilityDisplayLabel()}
-                variant="filled"
-                icon-only
-              >
-                <md-option value="public">${msg('Public')}</md-option>
-                <md-option value="unlisted">${msg('Unlisted')}</md-option>
-                <md-option value="private">${msg('Followers Only')}</md-option>
-                <md-option value="direct">${msg('Direct')}</md-option>
-              </md-select>
-            `
-          : nothing}
+        ${
+          !this.compact
+            ? html`
+                <md-select
+                  .value=${this.visibility}
+                  .placeholder=${msg('Post visibility')}
+                  .iconSrc=${this._getVisibilityIconSrc()}
+                  .iconLabel=${msg('Post visibility')}
+                  @change=${(e: CustomEvent<{ value: string }>) =>
+                    (this.visibility = e.detail.value)}
+                  title=${this._getVisibilityDisplayLabel()}
+                  variant="filled"
+                  icon-only
+                >
+                  <md-option value="public">${msg('Public')}</md-option>
+                  <md-option value="unlisted">${msg('Unlisted')}</md-option>
+                  <md-option value="private"
+                    >${msg('Followers Only')}</md-option
+                  >
+                  <md-option value="direct">${msg('Direct')}</md-option>
+                </md-select>
+              `
+            : nothing
+        }
 
         <md-icon-button
           class="mobile-icon-button"
@@ -1636,9 +1643,11 @@ export class PostComposer extends LitElement {
           label=${msg('Attach Media')}
           src="/assets/attach-outline.svg"
           @click="${() => this.attachFile()}"
-          ?disabled=${this.pollEnabled ||
-          this.quotedPost != null ||
-          this.attachments.length >= this.maxMediaAttachments}
+          ?disabled=${
+            this.pollEnabled ||
+            this.quotedPost != null ||
+            this.attachments.length >= this.maxMediaAttachments
+          }
         ></md-icon-button>
 
         <!-- Overflow menu -->
@@ -1649,27 +1658,32 @@ export class PostComposer extends LitElement {
             .label=${msg('More options')}
           ></md-icon-button>
           <md-menu>
-            ${!this.compact
-              ? html`
-                  <md-menu-item
-                    .selected=${this.scheduleEnabled}
-                    @click=${() => this._toggleSchedule()}
-                  >
-                    <md-icon
-                      slot="prefix"
-                      src="/assets/calendar-outline.svg"
-                    ></md-icon>
-                    ${this.scheduleEnabled
-                      ? msg('Edit scheduled time')
-                      : msg('Schedule post')}
-                  </md-menu-item>
-                `
-              : nothing}
+            ${
+              !this.compact
+                ? html`
+                    <md-menu-item
+                      .selected=${this.scheduleEnabled}
+                      @click=${() => this._toggleSchedule()}
+                    >
+                      <md-icon
+                        slot="prefix"
+                        src="/assets/calendar-outline.svg"
+                      ></md-icon>
+                      ${
+                        this.scheduleEnabled
+                          ? msg('Edit scheduled time')
+                          : msg('Schedule post')
+                      }
+                    </md-menu-item>
+                  `
+                : nothing
+            }
 
             <md-menu-item
               .selected=${this.pollEnabled}
-              ?disabled=${this.attachments.length > 0 ||
-              this.quotedPost != null}
+              ?disabled=${
+                this.attachments.length > 0 || this.quotedPost != null
+              }
               @click=${() => this._togglePoll()}
             >
               <md-icon
@@ -1679,44 +1693,54 @@ export class PostComposer extends LitElement {
               ${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
             </md-menu-item>
 
-            ${this.proofreaderAvailable
-              ? html`
-                  <md-menu-item
-                    ?disabled=${!this.hasStatus || this.proofreading}
-                    @click=${() => this.doProofread()}
-                    title=${this.proofreading ? '' : 'On-device AI'}
-                  >
-                    <md-icon
-                      slot="prefix"
-                      src="/assets/sparkles-outline.svg"
-                    ></md-icon>
-                    ${this.proofreading ? msg('Checking...') : msg('Proofread')}
-                  </md-menu-item>
-                `
-              : nothing}
-            ${this.speechToTextAvailable
-              ? html`
-                  <md-menu-item
-                    ?disabled=${this.isTranscribing}
-                    @click=${() => this.toggleRecording()}
-                    title=${this.isRecording || this.isTranscribing
-                      ? ''
-                      : 'On-device AI'}
-                  >
-                    <md-icon
-                      slot="prefix"
-                      src="${this.isRecording
-                        ? '/assets/stop-circle-outline.svg'
-                        : '/assets/mic-outline.svg'}"
-                    ></md-icon>
-                    ${this.isRecording
-                      ? msg('Stop recording')
-                      : this.isTranscribing
-                        ? msg('Transcribing...')
-                        : msg('Voice input')}
-                  </md-menu-item>
-                `
-              : nothing}
+            ${
+              this.proofreaderAvailable
+                ? html`
+                    <md-menu-item
+                      ?disabled=${!this.hasStatus || this.proofreading}
+                      @click=${() => this.doProofread()}
+                      title=${this.proofreading ? '' : 'On-device AI'}
+                    >
+                      <md-icon
+                        slot="prefix"
+                        src="/assets/sparkles-outline.svg"
+                      ></md-icon>
+                      ${this.proofreading ? msg('Checking...') : msg('Proofread')}
+                    </md-menu-item>
+                  `
+                : nothing
+            }
+            ${
+              this.speechToTextAvailable
+                ? html`
+                    <md-menu-item
+                      ?disabled=${this.isTranscribing}
+                      @click=${() => this.toggleRecording()}
+                      title=${
+                        this.isRecording || this.isTranscribing
+                          ? ''
+                          : 'On-device AI'
+                      }
+                    >
+                      <md-icon
+                        slot="prefix"
+                        src="${
+                          this.isRecording
+                            ? '/assets/stop-circle-outline.svg'
+                            : '/assets/mic-outline.svg'
+                        }"
+                      ></md-icon>
+                      ${
+                        this.isRecording
+                          ? msg('Stop recording')
+                          : this.isTranscribing
+                            ? msg('Transcribing...')
+                            : msg('Voice input')
+                      }
+                    </md-menu-item>
+                  `
+                : nothing
+            }
           </md-menu>
         </md-dropdown>
       </div>
@@ -1827,59 +1851,73 @@ export class PostComposer extends LitElement {
     return html`
       <div class="footer-actions">
         <div class="footer-meta">
-          ${hasSavedDrafts
-            ? html`
-                <md-button
-                  size="small"
-                  variant="text"
-                  class="draft-action has-drafts"
-                  @click="${() => this._openDraftPicker()}"
-                >
-                  ${msg('Load draft')}
-                </md-button>
-              `
-            : nothing}
-          ${canSaveDraft
-            ? html`
-                <md-button
-                  size="small"
-                  variant="text"
-                  class="draft-action"
-                  @click="${() => this._saveDraft()}"
-                >
-                  ${msg('Save draft')}
-                </md-button>
-              `
-            : nothing}
-          ${this.draftStatus === 'saving'
-            ? html`<span class="draft-status">${msg('Saving draft...')}</span>`
-            : this.draftStatus === 'saved'
-              ? html`<span
-                  class="draft-status saved"
-                  @animationend=${this._handleDraftStatusAnimationEnd}
-                  >${msg('Draft saved')}</span
+          ${
+            hasSavedDrafts
+              ? html`
+                  <md-button
+                    size="small"
+                    variant="text"
+                    class="draft-action has-drafts"
+                    @click="${() => this._openDraftPicker()}"
+                  >
+                    ${msg('Load draft')}
+                  </md-button>
+                `
+              : nothing
+          }
+          ${
+            canSaveDraft
+              ? html`
+                  <md-button
+                    size="small"
+                    variant="text"
+                    class="draft-action"
+                    @click="${() => this._saveDraft()}"
+                  >
+                    ${msg('Save draft')}
+                  </md-button>
+                `
+              : nothing
+          }
+          ${
+            this.draftStatus === 'saving'
+              ? html`<span class="draft-status"
+                  >${msg('Saving draft...')}</span
                 >`
-              : nothing}
+              : this.draftStatus === 'saved'
+                ? html`<span
+                    class="draft-status saved"
+                    @animationend=${this._handleDraftStatusAnimationEnd}
+                    >${msg('Draft saved')}</span
+                  >`
+                : nothing
+          }
         </div>
         <div class="footer-primary">
-          ${this.hasStatus
-            ? html`<span
-                class="char-count ${this.charCount >= this.maxChars
-                  ? 'over-limit'
-                  : this.charCount >= this.maxChars * 0.9
-                    ? 'near-limit'
-                    : ''}"
-                role="status"
-                aria-live="polite"
-                >${this.charCount}/${this.maxChars}</span
-              >`
-            : nothing}
+          ${
+            this.hasStatus
+              ? html`<span
+                  class="char-count ${
+                    this.charCount >= this.maxChars
+                      ? 'over-limit'
+                      : this.charCount >= this.maxChars * 0.9
+                        ? 'near-limit'
+                        : ''
+                  }"
+                  role="status"
+                  aria-live="polite"
+                  >${this.charCount}/${this.maxChars}</span
+                >`
+              : nothing
+          }
           <md-button
-            ?disabled="${(!this.hasStatus && !this.publishSuccess) ||
-            this.attaching ||
-            this.attachments.some((a) => a.pending) ||
-            this.isPublishing ||
-            this.publishSuccess}"
+            ?disabled="${
+              (!this.hasStatus && !this.publishSuccess) ||
+              this.attaching ||
+              this.attachments.some((a) => a.pending) ||
+              this.isPublishing ||
+              this.publishSuccess
+            }"
             pill
             variant="filled"
             @click="${() => this._handleSubmit()}"
@@ -1916,23 +1954,27 @@ export class PostComposer extends LitElement {
       </div>
 
       ${this._renderDraftPickerDialog()}
-      ${this.mediaEditDialogLoaded
-        ? html`<media-edit-dialog
-            .open="${this.editDialogOpen}"
-            .imageSrc="${this.activeAttachmentImageSrc}"
-            .description="${this.activeAttachment?.description || ''}"
-            .mediaId="${this.activeAttachment?.id || ''}"
-            @close="${() => this._closeEditDialog()}"
-            @save="${this.handleMediaSave}"
-          ></media-edit-dialog>`
-        : nothing}
-      ${this.handwritingDialogLoaded
-        ? html`<handwriting-dialog
-            .open="${this.handwritingDialogOpen}"
-            @handwriting-complete="${this.handleHandwritingComplete}"
-            @close="${() => this.handleHandwritingClose()}"
-          ></handwriting-dialog>`
-        : nothing}
+      ${
+        this.mediaEditDialogLoaded
+          ? html`<media-edit-dialog
+              .open="${this.editDialogOpen}"
+              .imageSrc="${this.activeAttachmentImageSrc}"
+              .description="${this.activeAttachment?.description || ''}"
+              .mediaId="${this.activeAttachment?.id || ''}"
+              @close="${() => this._closeEditDialog()}"
+              @save="${this.handleMediaSave}"
+            ></media-edit-dialog>`
+          : nothing
+      }
+      ${
+        this.handwritingDialogLoaded
+          ? html`<handwriting-dialog
+              .open="${this.handwritingDialogOpen}"
+              @handwriting-complete="${this.handleHandwritingComplete}"
+              @close="${() => this.handleHandwritingClose()}"
+            ></handwriting-dialog>`
+          : nothing
+      }
     `;
   }
 }

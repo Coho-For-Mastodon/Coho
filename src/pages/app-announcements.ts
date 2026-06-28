@@ -131,8 +131,7 @@ export class AppAnnouncements extends LitElement {
     try {
       const { get } = await import('idb-keyval');
       const cached = (await get(SERVER_ANNOUNCEMENTS_IDB_KEY)) as
-        | Announcement[]
-        | undefined;
+        Announcement[] | undefined;
       if (cached?.length) {
         this.announcements = this._sortAnnouncements(cached);
       }
@@ -229,28 +228,32 @@ export class AppAnnouncements extends LitElement {
       <md-card variant="filled">
         <div class="announcement-meta">
           <span>${this._formatDate(a.published_at)}</span>
-          ${unread
-            ? html`<span class="unread-badge">${msg('Unread')}</span>`
-            : nothing}
+          ${
+            unread
+              ? html`<span class="unread-badge">${msg('Unread')}</span>`
+              : nothing
+          }
         </div>
         <div
           class="announcement-body"
           .innerHTML=${parseEmojis(a.content, a.emojis ?? [])}
         ></div>
-        ${unread
-          ? html`
-              <div class="announcement-actions">
-                <md-button
-                  variant="text"
-                  size="small"
-                  ?disabled=${dismissing}
-                  @click=${() => this._dismiss(a)}
-                >
-                  ${dismissing ? msg('…') : msg('Dismiss')}
-                </md-button>
-              </div>
-            `
-          : nothing}
+        ${
+          unread
+            ? html`
+                <div class="announcement-actions">
+                  <md-button
+                    variant="text"
+                    size="small"
+                    ?disabled=${dismissing}
+                    @click=${() => this._dismiss(a)}
+                  >
+                    ${dismissing ? msg('…') : msg('Dismiss')}
+                  </md-button>
+                </div>
+              `
+            : nothing
+        }
       </md-card>
     `;
   }
@@ -274,17 +277,19 @@ export class AppAnnouncements extends LitElement {
           </md-button>
         </div>
 
-        ${showSkeleton
-          ? this.renderSkeleton()
-          : this.announcements.length === 0
-            ? html`<p class="empty-state">
-                ${msg('No announcements from your server right now.')}
-              </p>`
-            : html`
-                <div class="list">
-                  ${this.announcements.map((a) => this.renderAnnouncement(a))}
-                </div>
-              `}
+        ${
+          showSkeleton
+            ? this.renderSkeleton()
+            : this.announcements.length === 0
+              ? html`<p class="empty-state">
+                  ${msg('No announcements from your server right now.')}
+                </p>`
+              : html`
+                  <div class="list">
+                    ${this.announcements.map((a) => this.renderAnnouncement(a))}
+                  </div>
+                `
+        }
       </main>
     `;
   }

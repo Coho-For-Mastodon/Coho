@@ -348,8 +348,7 @@ export function setupNativePushListeners(): void {
     'pushNotificationActionPerformed',
     async (action) => {
       const data = action.notification.data as
-        | Record<string, string>
-        | undefined;
+        Record<string, string> | undefined;
       const targetUrl = getTargetUrl(data || {});
 
       // Lazy-import router to avoid circular dependencies

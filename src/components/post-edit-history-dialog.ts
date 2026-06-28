@@ -163,15 +163,17 @@ export class PostEditHistoryDialog extends LitElement {
         label=${msg('Edit history')}
         @md-dialog-hide=${() => this.hide()}
       >
-        ${this.loading
-          ? this.renderSkeleton()
-          : this.error
-            ? html`<div class="error-message">${this.error}</div>`
-            : this.history.length === 0
-              ? html`<div class="empty-message">
-                  ${msg('No edit history available.')}
-                </div>`
-              : this.renderHistory()}
+        ${
+          this.loading
+            ? this.renderSkeleton()
+            : this.error
+              ? html`<div class="error-message">${this.error}</div>`
+              : this.history.length === 0
+                ? html`<div class="empty-message">
+                    ${msg('No edit history available.')}
+                  </div>`
+                : this.renderHistory()
+        }
       </md-dialog>
     `;
   }
@@ -202,43 +204,53 @@ export class PostEditHistoryDialog extends LitElement {
             <div class="history-item">
               <div class="version-header">
                 <span class="version-badge">
-                  ${isOriginal
-                    ? msg('Original')
-                    : msg(str`Version ${versionNum}`)}
+                  ${
+                    isOriginal
+                      ? msg('Original')
+                      : msg(str`Version ${versionNum}`)
+                  }
                 </span>
                 <span class="version-date"
                   >${this.formatDate(version.created_at)}</span
                 >
-                ${version.sensitive
-                  ? html`<span class="sensitive-badge"
-                      >${msg('Sensitive')}</span
-                    >`
-                  : nothing}
+                ${
+                  version.sensitive
+                    ? html`<span class="sensitive-badge"
+                        >${msg('Sensitive')}</span
+                      >`
+                    : nothing
+                }
               </div>
-              ${version.spoiler_text
-                ? html`<div class="spoiler-text">${version.spoiler_text}</div>`
-                : nothing}
+              ${
+                version.spoiler_text
+                  ? html`<div class="spoiler-text">
+                      ${version.spoiler_text}
+                    </div>`
+                  : nothing
+              }
               <div
                 class="version-content"
                 .innerHTML=${parseEmojis(version.content, version.emojis || [])}
               ></div>
-              ${version.media_attachments &&
-              version.media_attachments.length > 0
-                ? html`
-                    <div class="media-thumbnails">
-                      ${version.media_attachments.map(
-                        (media) => html`
-                          <img
-                            class="media-thumbnail"
-                            src=${media.preview_url || media.url}
-                            alt=${media.description || ''}
-                            loading="lazy"
-                          />
-                        `
-                      )}
-                    </div>
-                  `
-                : nothing}
+              ${
+                version.media_attachments &&
+                version.media_attachments.length > 0
+                  ? html`
+                      <div class="media-thumbnails">
+                        ${version.media_attachments.map(
+                          (media) => html`
+                            <img
+                              class="media-thumbnail"
+                              src=${media.preview_url || media.url}
+                              alt=${media.description || ''}
+                              loading="lazy"
+                            />
+                          `
+                        )}
+                      </div>
+                    `
+                  : nothing
+              }
             </div>
           `;
         })}

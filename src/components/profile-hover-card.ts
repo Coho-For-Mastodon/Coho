@@ -341,12 +341,14 @@ export class ProfileHoverCard extends LitElement {
           </div>
         </div>
 
-        ${account.note
-          ? html`<div
-              class="bio"
-              .innerHTML="${parseEmojis(account.note, account.emojis)}"
-            ></div>`
-          : nothing}
+        ${
+          account.note
+            ? html`<div
+                class="bio"
+                .innerHTML="${parseEmojis(account.note, account.emojis)}"
+              ></div>`
+            : nothing
+        }
 
         <div class="stats">
           <div class="stat">

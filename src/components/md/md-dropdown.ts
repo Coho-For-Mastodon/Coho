@@ -14,10 +14,7 @@ export class MdDropdown extends LitElement {
   @property({ type: Boolean, attribute: 'close-on-scroll' })
   closeOnScroll = false;
   @property({ type: String }) placement:
-    | 'bottom-start'
-    | 'bottom-end'
-    | 'top-start'
-    | 'top-end' = 'bottom-start';
+    'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' = 'bottom-start';
   @property({ type: Number }) distance = 8;
 
   @query('slot[name="trigger"]') triggerSlot!: HTMLSlotElement;
@@ -309,8 +306,7 @@ export class MdDropdown extends LitElement {
     this._detachOpenListeners();
 
     const triggerEl = this.triggerSlot?.assignedElements()[0] as
-      | HTMLElement
-      | undefined;
+      HTMLElement | undefined;
     this._scrollTargets = triggerEl
       ? this._collectScrollTargets(triggerEl)
       : [window];

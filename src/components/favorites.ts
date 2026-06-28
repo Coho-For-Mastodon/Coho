@@ -72,11 +72,15 @@ export class Favorites extends LitElement {
   render() {
     return html`
       <timeline-list>
-        ${this.isLoading
-          ? html`<md-skeleton-card count="5"></md-skeleton-card>`
-          : this.favorites.map((favorite: Post) => {
-              return html` <timeline-item .tweet=${favorite}></timeline-item> `;
-            })}
+        ${
+          this.isLoading
+            ? html`<md-skeleton-card count="5"></md-skeleton-card>`
+            : this.favorites.map((favorite: Post) => {
+                return html`
+                  <timeline-item .tweet=${favorite}></timeline-item>
+                `;
+              })
+        }
       </timeline-list>
     `;
   }

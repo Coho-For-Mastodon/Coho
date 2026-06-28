@@ -109,60 +109,70 @@ export class HomeTabsNav extends LitElement {
           >${this.getInlineSvg('notifications', 'notifications')}</md-icon
         >
         <span class="tab-label">${msg('Notifications')}</span>
-        ${this.hasNewNotifications
-          ? html`<span class="notification-dot"></span>`
-          : nothing}
-        ${this.isGuestMode
-          ? html`<md-icon
-              slot="suffix"
-              name="lock-closed"
-              style="font-size: 12px; opacity: 0.5;"
-            ></md-icon>`
-          : nothing}
+        ${
+          this.hasNewNotifications
+            ? html`<span class="notification-dot"></span>`
+            : nothing
+        }
+        ${
+          this.isGuestMode
+            ? html`<md-icon
+                slot="suffix"
+                name="lock-closed"
+                style="font-size: 12px; opacity: 0.5;"
+              ></md-icon>`
+            : nothing
+        }
       </md-tab>
       <md-tab panel="bookmarks" ?disabled="${this.isGuestMode}">
         <md-icon slot="icon" src="${this.getIconSrc('bookmarks', 'bookmark')}"
           >${this.getInlineSvg('bookmarks', 'bookmark')}</md-icon
         >
         <span class="tab-label">${msg('Saved')}</span>
-        ${this.isGuestMode
-          ? html`<md-icon
-              slot="suffix"
-              name="lock-closed"
-              style="font-size: 12px; opacity: 0.5;"
-            ></md-icon>`
-          : nothing}
+        ${
+          this.isGuestMode
+            ? html`<md-icon
+                slot="suffix"
+                name="lock-closed"
+                style="font-size: 12px; opacity: 0.5;"
+              ></md-icon>`
+            : nothing
+        }
       </md-tab>
       <md-tab panel="faves" ?disabled="${this.isGuestMode}">
         <md-icon slot="icon" src="${this.getIconSrc('faves', 'heart')}"
           >${this.getInlineSvg('faves', 'heart')}</md-icon
         >
         <span class="tab-label">${msg('Favorites')}</span>
-        ${this.isGuestMode
-          ? html`<md-icon
-              slot="suffix"
-              name="lock-closed"
-              style="font-size: 12px; opacity: 0.5;"
-            ></md-icon>`
-          : nothing}
+        ${
+          this.isGuestMode
+            ? html`<md-icon
+                slot="suffix"
+                name="lock-closed"
+                style="font-size: 12px; opacity: 0.5;"
+              ></md-icon>`
+            : nothing
+        }
       </md-tab>
 
-      ${this.isGuestMode
-        ? nothing
-        : html`
-            <div class="new-post-container">
-              <md-button
-                variant="fab"
-                class="new-post-btn"
-                @click="${this._handleOpenNewPost}"
-                title="New Post"
-              >
-                <md-icon src="/assets/add-outline.svg"
-                  >${unsafeSVG(ICONS['add-outline'])}</md-icon
+      ${
+        this.isGuestMode
+          ? nothing
+          : html`
+              <div class="new-post-container">
+                <md-button
+                  variant="fab"
+                  class="new-post-btn"
+                  @click="${this._handleOpenNewPost}"
+                  title="New Post"
                 >
-              </md-button>
-            </div>
-          `}
+                  <md-icon src="/assets/add-outline.svg"
+                    >${unsafeSVG(ICONS['add-outline'])}</md-icon
+                  >
+                </md-button>
+              </div>
+            `
+      }
 
       <md-tab panel="media" style="display: none;"></md-tab>
       <md-tab panel="messages" style="display: none;"></md-tab>

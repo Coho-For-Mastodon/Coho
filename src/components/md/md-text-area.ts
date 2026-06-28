@@ -242,13 +242,15 @@ export class MdTextArea extends LitElement {
           @input="${this._handleInput}"
           @change="${this._handleChange}"
         ></textarea>
-        ${this.maxlength && !this.hideCounter
-          ? html`
-              <div class="char-counter">
-                ${this.value.length} / ${this.maxlength}
-              </div>
-            `
-          : ''}
+        ${
+          this.maxlength && !this.hideCounter
+            ? html`
+                <div class="char-counter">
+                  ${this.value.length} / ${this.maxlength}
+                </div>
+              `
+            : ''
+        }
       </div>
     `;
   }

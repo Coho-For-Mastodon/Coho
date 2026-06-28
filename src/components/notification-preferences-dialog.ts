@@ -342,9 +342,11 @@ export class NotificationPreferencesDialog extends LitElement {
         label="${msg('Notification Preferences')}"
         @md-dialog-hide="${() => this._close()}"
       >
-        ${this._error
-          ? html`<div class="error-message">${this._error}</div>`
-          : nothing}
+        ${
+          this._error
+            ? html`<div class="error-message">${this._error}</div>`
+            : nothing
+        }
         ${this._loading ? this._renderSkeleton() : this._renderPreferences()}
 
         <div slot="footer" class="footer-actions">
@@ -355,17 +357,19 @@ export class NotificationPreferencesDialog extends LitElement {
           >
             ${msg('Cancel')}
           </md-button>
-          ${this._hasSubscription && !this._loading
-            ? html`
-                <md-button
-                  variant="filled"
-                  @click="${() => this._save()}"
-                  ?disabled="${this._saving}"
-                >
-                  ${this._saving ? msg('Saving...') : msg('Save')}
-                </md-button>
-              `
-            : nothing}
+          ${
+            this._hasSubscription && !this._loading
+              ? html`
+                  <md-button
+                    variant="filled"
+                    @click="${() => this._save()}"
+                    ?disabled="${this._saving}"
+                  >
+                    ${this._saving ? msg('Saving...') : msg('Save')}
+                  </md-button>
+                `
+              : nothing
+          }
         </div>
       </md-dialog>
     `;

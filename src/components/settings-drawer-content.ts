@@ -218,8 +218,7 @@ export class SettingsDrawerContent extends LitElement {
       const { SERVER_ANNOUNCEMENTS_IDB_KEY } =
         await import('../mastodon/api/announcements.js');
       const list = (await get(SERVER_ANNOUNCEMENTS_IDB_KEY)) as
-        | Announcement[]
-        | undefined;
+        Announcement[] | undefined;
       if (list?.length) {
         const sorted = [...list].sort(
           (a, b) =>
@@ -406,18 +405,20 @@ export class SettingsDrawerContent extends LitElement {
         <!-- Profile Card -->
         <md-card variant="filled">
           <div class="profile-inner">
-            ${this.user && this.user.avatar
-              ? html`<img
-                  @click="${() => this.viewMyProfile()}"
-                  src="${this.user.avatar}"
-                  alt="${this.user.display_name}"
-                />`
-              : html`<md-skeleton
-                  id="profile-avatar"
-                  shape="circle"
-                  width="4em"
-                  height="4em"
-                ></md-skeleton>`}
+            ${
+              this.user && this.user.avatar
+                ? html`<img
+                    @click="${() => this.viewMyProfile()}"
+                    src="${this.user.avatar}"
+                    alt="${this.user.display_name}"
+                  />`
+                : html`<md-skeleton
+                    id="profile-avatar"
+                    shape="circle"
+                    width="4em"
+                    height="4em"
+                  ></md-skeleton>`
+            }
             <div id="username-block">
               <h3>${this.user ? this.user.display_name : msg('Loading...')}</h3>
 
@@ -463,17 +464,21 @@ export class SettingsDrawerContent extends LitElement {
                 variant="filled"
                 clickable
                 @click="${() => this.goToFollowers()}"
-                >${this.user
-                  ? msg(str`${this.user.followers_count} followers`)
-                  : msg('0 followers')}
+                >${
+                  this.user
+                    ? msg(str`${this.user.followers_count} followers`)
+                    : msg('0 followers')
+                }
               </md-badge>
               <md-badge
                 variant="filled"
                 clickable
                 @click="${() => this.goToFollowing()}"
-                >${this.user
-                  ? msg(str`${this.user.following_count} following`)
-                  : msg('0 following')}
+                >${
+                  this.user
+                    ? msg(str`${this.user.following_count} following`)
+                    : msg('0 following')
+                }
               </md-badge>
             </div>
           </div>
@@ -519,29 +524,33 @@ export class SettingsDrawerContent extends LitElement {
             ${msg('Vibrate on actions like likes, boosts, and publishing.')}
           </p>
 
-          ${this.isAndroid
-            ? html`
-                <md-divider></md-divider>
+          ${
+            this.isAndroid
+              ? html`
+                  <md-divider></md-divider>
 
-                <div class="setting-row">
-                  <h4>${msg('Sync to Watch')}</h4>
-                  <md-button
-                    variant="filled"
-                    @click="${() => this.syncToWatch()}"
-                    ?disabled="${this.syncingToWatch || this.syncedToWatch}"
-                  >
-                    ${this.syncedToWatch
-                      ? msg('Synced ✓')
-                      : this.syncingToWatch
-                        ? msg('Syncing…')
-                        : msg('Sync')}
-                  </md-button>
-                </div>
-                <p class="setting-description">
-                  ${msg('Send your account credentials to your Wear OS watch.')}
-                </p>
-              `
-            : nothing}
+                  <div class="setting-row">
+                    <h4>${msg('Sync to Watch')}</h4>
+                    <md-button
+                      variant="filled"
+                      @click="${() => this.syncToWatch()}"
+                      ?disabled="${this.syncingToWatch || this.syncedToWatch}"
+                    >
+                      ${
+                        this.syncedToWatch
+                          ? msg('Synced ✓')
+                          : this.syncingToWatch
+                            ? msg('Syncing…')
+                            : msg('Sync')
+                      }
+                    </md-button>
+                  </div>
+                  <p class="setting-description">
+                    ${msg('Send your account credentials to your Wear OS watch.')}
+                  </p>
+                `
+              : nothing
+          }
         </md-card>
 
         <md-toast></md-toast>
@@ -550,14 +559,16 @@ export class SettingsDrawerContent extends LitElement {
         <account-settings></account-settings>
 
         <!-- Theme Card -->
-        ${this.appThemeLoaded
-          ? html`
-              <md-card variant="filled">
-                <h3 slot="header">${msg('Theme')}</h3>
-                <app-theme></app-theme>
-              </md-card>
-            `
-          : nothing}
+        ${
+          this.appThemeLoaded
+            ? html`
+                <md-card variant="filled">
+                  <h3 slot="header">${msg('Theme')}</h3>
+                  <app-theme></app-theme>
+                </md-card>
+              `
+            : nothing
+        }
 
         <!-- Content & Safety Card -->
         <md-card variant="filled">
@@ -655,34 +666,36 @@ export class SettingsDrawerContent extends LitElement {
         </md-card>
 
         <!-- Server Announcement Card -->
-        ${this.latestAnnouncement
-          ? html`
-              <md-card variant="filled">
-                <h3 slot="header">${msg('Server announcements')}</h3>
+        ${
+          this.latestAnnouncement
+            ? html`
+                <md-card variant="filled">
+                  <h3 slot="header">${msg('Server announcements')}</h3>
 
-                <p class="announcement-date">
-                  ${this._formatAnnouncementDate(
-                    this.latestAnnouncement.published_at
-                  )}
-                </p>
-                <div
-                  class="announcement-body"
-                  .innerHTML=${parseEmojis(
-                    this.latestAnnouncement.content,
-                    this.latestAnnouncement.emojis ?? []
-                  )}
-                ></div>
-                <div class="announcement-footer">
-                  <md-button
-                    variant="text"
-                    @click="${() => this._openAnnouncements()}"
-                  >
-                    ${msg('View all')}
-                  </md-button>
-                </div>
-              </md-card>
-            `
-          : nothing}
+                  <p class="announcement-date">
+                    ${this._formatAnnouncementDate(
+                      this.latestAnnouncement.published_at
+                    )}
+                  </p>
+                  <div
+                    class="announcement-body"
+                    .innerHTML=${parseEmojis(
+                      this.latestAnnouncement.content,
+                      this.latestAnnouncement.emojis ?? []
+                    )}
+                  ></div>
+                  <div class="announcement-footer">
+                    <md-button
+                      variant="text"
+                      @click="${() => this._openAnnouncements()}"
+                    >
+                      ${msg('View all')}
+                    </md-button>
+                  </div>
+                </md-card>
+              `
+            : nothing
+        }
 
         <!-- Keyboard Shortcuts Card -->
         <md-card variant="filled">
@@ -709,27 +722,31 @@ export class SettingsDrawerContent extends LitElement {
         </md-card>
 
         <!-- Instance Info Card -->
-        ${this.instanceInfo
-          ? html`
-              <md-card variant="filled">
-                <h3 slot="header">${msg('Instance Info')}</h3>
+        ${
+          this.instanceInfo
+            ? html`
+                <md-card variant="filled">
+                  <h3 slot="header">${msg('Instance Info')}</h3>
 
-                ${this.instanceInfo.thumbnail
-                  ? html`<img
-                      class="instance-img"
-                      src="${this.instanceInfo.thumbnail}"
-                      alt="${this.instanceInfo.title}"
-                    />`
-                  : nothing}
-                <p>${this.instanceInfo.title}</p>
+                  ${
+                    this.instanceInfo.thumbnail
+                      ? html`<img
+                          class="instance-img"
+                          src="${this.instanceInfo.thumbnail}"
+                          alt="${this.instanceInfo.title}"
+                        />`
+                      : nothing
+                  }
+                  <p>${this.instanceInfo.title}</p>
 
-                <div
-                  class="instance-description"
-                  .innerHTML="${this.instanceInfo.description}"
-                ></div>
-              </md-card>
-            `
-          : nothing}
+                  <div
+                    class="instance-description"
+                    .innerHTML="${this.instanceInfo.description}"
+                  ></div>
+                </md-card>
+              `
+            : nothing
+        }
 
         <!-- Build Info -->
         <div class="build-info">

@@ -683,9 +683,11 @@ export class ListsDialog extends LitElement {
               </div>
               <details class="member-disclosure">
                 <summary>
-                  ${this.newMembers.length > 0
-                    ? msg('Add people') + ` (${this.newMembers.length})`
-                    : msg('Add people')}
+                  ${
+                    this.newMembers.length > 0
+                      ? msg('Add people') + ` (${this.newMembers.length})`
+                      : msg('Add people')
+                  }
                 </summary>
                 <div class="member-picker">
                   <md-text-field
@@ -693,79 +695,85 @@ export class ListsDialog extends LitElement {
                     placeholder=${msg('Search for accounts')}
                     @input=${this._onNewMemberSearchInput}
                   ></md-text-field>
-                  ${this.newMembers.length > 0
-                    ? html`
-                        <div class="selected-members">
-                          ${this.newMembers.map(
-                            (account) => html`
-                              <div class="member-pill">
-                                <img
-                                  src="${account.avatar_static}"
-                                  alt=""
-                                  loading="lazy"
-                                />
-                                <span class="member-pill-label">
-                                  ${account.display_name || account.username}
-                                </span>
-                                <button
-                                  class="member-pill-remove"
-                                  type="button"
-                                  aria-label=${msg('Remove')}
-                                  @click=${() =>
-                                    this._unstageNewMember(account)}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            `
-                          )}
-                        </div>
-                      `
-                    : nothing}
-                  ${this.newMemberSearching
-                    ? html`<div class="search-hint">
-                        ${msg('Searching...')}
-                      </div>`
-                    : this.newMemberSearch.trim() &&
-                        this.newMemberResults.length === 0 &&
-                        !this.newMemberSearching
-                      ? html`<div class="search-hint">
-                          ${msg('No results found.')}
-                        </div>`
-                      : nothing}
-                  ${this.newMemberResults.length > 0
-                    ? html`
-                        <div class="member-search-results">
-                          ${this.newMemberResults.map(
-                            (account) => html`
-                              <div class="account-row">
-                                <img
-                                  class="account-avatar"
-                                  src="${account.avatar_static}"
-                                  alt=""
-                                  loading="lazy"
-                                />
-                                <div class="account-info">
-                                  <div class="account-display-name">
+                  ${
+                    this.newMembers.length > 0
+                      ? html`
+                          <div class="selected-members">
+                            ${this.newMembers.map(
+                              (account) => html`
+                                <div class="member-pill">
+                                  <img
+                                    src="${account.avatar_static}"
+                                    alt=""
+                                    loading="lazy"
+                                  />
+                                  <span class="member-pill-label">
                                     ${account.display_name || account.username}
-                                  </div>
-                                  <div class="account-acct">
-                                    @${account.acct}
-                                  </div>
+                                  </span>
+                                  <button
+                                    class="member-pill-remove"
+                                    type="button"
+                                    aria-label=${msg('Remove')}
+                                    @click=${() =>
+                                      this._unstageNewMember(account)}
+                                  >
+                                    ×
+                                  </button>
                                 </div>
-                                <md-button
-                                  size="small"
-                                  variant="tonal"
-                                  @click=${() => this._stageNewMember(account)}
-                                >
-                                  ${msg('Add')}
-                                </md-button>
-                              </div>
-                            `
-                          )}
-                        </div>
-                      `
-                    : nothing}
+                              `
+                            )}
+                          </div>
+                        `
+                      : nothing
+                  }
+                  ${
+                    this.newMemberSearching
+                      ? html`<div class="search-hint">
+                          ${msg('Searching...')}
+                        </div>`
+                      : this.newMemberSearch.trim() &&
+                          this.newMemberResults.length === 0 &&
+                          !this.newMemberSearching
+                        ? html`<div class="search-hint">
+                            ${msg('No results found.')}
+                          </div>`
+                        : nothing
+                  }
+                  ${
+                    this.newMemberResults.length > 0
+                      ? html`
+                          <div class="member-search-results">
+                            ${this.newMemberResults.map(
+                              (account) => html`
+                                <div class="account-row">
+                                  <img
+                                    class="account-avatar"
+                                    src="${account.avatar_static}"
+                                    alt=""
+                                    loading="lazy"
+                                  />
+                                  <div class="account-info">
+                                    <div class="account-display-name">
+                                      ${account.display_name || account.username}
+                                    </div>
+                                    <div class="account-acct">
+                                      @${account.acct}
+                                    </div>
+                                  </div>
+                                  <md-button
+                                    size="small"
+                                    variant="tonal"
+                                    @click=${() => this._stageNewMember(account)}
+                                  >
+                                    ${msg('Add')}
+                                  </md-button>
+                                </div>
+                              `
+                            )}
+                          </div>
+                        `
+                      : nothing
+                  }
                 </div>
               </details>
             </div>
@@ -775,59 +783,63 @@ export class ListsDialog extends LitElement {
 
           <div class="section">
             <div class="section-title">${msg('Your lists')}</div>
-            ${this.errorMessage
-              ? html`<div class="error">${this.errorMessage}</div>`
-              : nothing}
-            ${this.loading
-              ? html`<div class="list-item list-placeholder">
-                    <div class="empty list-title">
-                      ${msg('Loading lists...')}
+            ${
+              this.errorMessage
+                ? html`<div class="error">${this.errorMessage}</div>`
+                : nothing
+            }
+            ${
+              this.loading
+                ? html`<div class="list-item list-placeholder">
+                      <div class="empty list-title">
+                        ${msg('Loading lists...')}
+                      </div>
                     </div>
-                  </div>
-                  <div class="list-item list-placeholder">
-                    <div class="empty list-title">
-                      ${msg('Loading lists...')}
-                    </div>
-                  </div> `
-              : this.lists.length === 0
-                ? html`<div class="list list-placeholder">
-                    <div class="empty">
-                      ${msg('No lists yet. Create one above.')}
-                    </div>
-                  </div>`
-                : html`
-                    <div class="list">
-                      ${this.lists.map((list) => {
-                        const repliesPolicy = list.replies_policy ?? 'list';
-                        return html`
-                          <div class="list-item">
-                            <div class="list-main">
-                              <div class="list-title">${list.title}</div>
-                              <div class="list-meta">
-                                ${this._formatRepliesPolicy(repliesPolicy)}
+                    <div class="list-item list-placeholder">
+                      <div class="empty list-title">
+                        ${msg('Loading lists...')}
+                      </div>
+                    </div> `
+                : this.lists.length === 0
+                  ? html`<div class="list list-placeholder">
+                      <div class="empty">
+                        ${msg('No lists yet. Create one above.')}
+                      </div>
+                    </div>`
+                  : html`
+                      <div class="list">
+                        ${this.lists.map((list) => {
+                          const repliesPolicy = list.replies_policy ?? 'list';
+                          return html`
+                            <div class="list-item">
+                              <div class="list-main">
+                                <div class="list-title">${list.title}</div>
+                                <div class="list-meta">
+                                  ${this._formatRepliesPolicy(repliesPolicy)}
+                                </div>
+                              </div>
+                              <div class="list-actions">
+                                <md-icon-button
+                                  src="/assets/create-outline.svg"
+                                  label=${msg('Edit')}
+                                  title=${msg('Edit')}
+                                  @click=${() => this._openEditDialog(list)}
+                                  ?disabled=${this.submitting}
+                                ></md-icon-button>
+                                <md-icon-button
+                                  src="/assets/trash-outline.svg"
+                                  label=${msg('Delete')}
+                                  title=${msg('Delete')}
+                                  @click=${() => this._handleDelete(list.id)}
+                                  ?disabled=${this.submitting}
+                                ></md-icon-button>
                               </div>
                             </div>
-                            <div class="list-actions">
-                              <md-icon-button
-                                src="/assets/create-outline.svg"
-                                label=${msg('Edit')}
-                                title=${msg('Edit')}
-                                @click=${() => this._openEditDialog(list)}
-                                ?disabled=${this.submitting}
-                              ></md-icon-button>
-                              <md-icon-button
-                                src="/assets/trash-outline.svg"
-                                label=${msg('Delete')}
-                                title=${msg('Delete')}
-                                @click=${() => this._handleDelete(list.id)}
-                                ?disabled=${this.submitting}
-                              ></md-icon-button>
-                            </div>
-                          </div>
-                        `;
-                      })}
-                    </div>
-                  `}
+                          `;
+                        })}
+                      </div>
+                    `
+            }
           </div>
         </div>
       </md-dialog>

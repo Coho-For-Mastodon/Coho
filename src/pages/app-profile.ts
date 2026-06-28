@@ -1519,47 +1519,58 @@ export class AppProfile extends LitElement {
 
           return html`
             <div class="media-item" @click=${() => this.handleOpenPost(post)}>
-              ${isAudio
-                ? html`<div
-                    style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--md-sys-color-surface-container, #1e1e24);"
-                  >
-                    <md-icon
-                      name="musical-notes"
-                      style="font-size: 48px; color: var(--md-sys-color-primary, #c0c7ff);"
-                    ></md-icon>
-                  </div>`
-                : html`<img
-                    src="${attachment.preview_url || attachment.url}"
-                    alt="${attachment.description || ''}"
-                    loading="lazy"
-                  />`}
-              ${isVideo
-                ? html`
-                    <div class="media-indicator">
-                      <md-icon name="play" style="font-size: 16px;"></md-icon>
-                    </div>
-                  `
-                : null}
-              ${isAudio
-                ? html`
-                    <div class="media-indicator">
+              ${
+                isAudio
+                  ? html`<div
+                      style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--md-sys-color-surface-container, #1e1e24);"
+                    >
                       <md-icon
                         name="musical-notes"
-                        style="font-size: 16px;"
+                        style="font-size: 48px; color: var(--md-sys-color-primary, #c0c7ff);"
                       ></md-icon>
-                    </div>
-                  `
-                : null}
-              ${post.media_attachments && post.media_attachments.length > 1
-                ? html`
-                    <div
-                      class="media-indicator"
-                      style="right: auto; left: 6px;"
-                    >
-                      <md-icon name="albums" style="font-size: 16px;"></md-icon>
-                    </div>
-                  `
-                : null}
+                    </div>`
+                  : html`<img
+                      src="${attachment.preview_url || attachment.url}"
+                      alt="${attachment.description || ''}"
+                      loading="lazy"
+                    />`
+              }
+              ${
+                isVideo
+                  ? html`
+                      <div class="media-indicator">
+                        <md-icon name="play" style="font-size: 16px;"></md-icon>
+                      </div>
+                    `
+                  : null
+              }
+              ${
+                isAudio
+                  ? html`
+                      <div class="media-indicator">
+                        <md-icon
+                          name="musical-notes"
+                          style="font-size: 16px;"
+                        ></md-icon>
+                      </div>
+                    `
+                  : null
+              }
+              ${
+                post.media_attachments && post.media_attachments.length > 1
+                  ? html`
+                      <div
+                        class="media-indicator"
+                        style="right: auto; left: 6px;"
+                      >
+                        <md-icon
+                          name="albums"
+                          style="font-size: 16px;"
+                        ></md-icon>
+                      </div>
+                    `
+                  : null
+              }
             </div>
           `;
         })}
@@ -1568,14 +1579,16 @@ export class AppProfile extends LitElement {
       <!-- Sentinel for infinite scroll -->
       <div id="media-sentinel" style="height: 20px; width: 100%;"></div>
 
-      ${this.loadingMorePosts
-        ? html`<div
-            class="load-more-indicator"
-            style="text-align: center; padding: 20px;"
-          >
-            <md-skeleton width="100px" height="20px"></md-skeleton>
-          </div>`
-        : null}
+      ${
+        this.loadingMorePosts
+          ? html`<div
+              class="load-more-indicator"
+              style="text-align: center; padding: 20px;"
+            >
+              <md-skeleton width="100px" height="20px"></md-skeleton>
+            </div>`
+          : null
+      }
     `;
   }
 
@@ -1616,26 +1629,32 @@ export class AppProfile extends LitElement {
 
         <!-- Banner -->
         <div id="banner">
-          ${this.user?.header
-            ? html`
-                ${!this.bannerFailed
-                  ? html`<img
-                      id="banner-img"
-                      src="${this.user.header}"
-                      alt="Profile banner"
-                      @load=${() => this._handleBannerLoad()}
-                      @error=${() => this._handleBannerError()}
-                      style="opacity: ${this.bannerReady ? 1 : 0};"
-                    />`
-                  : null}
-                ${!this.bannerReady || this.bannerFailed
-                  ? html`<md-skeleton
-                      id="banner-skeleton"
-                      class="skeleton-overlay"
-                    ></md-skeleton>`
-                  : null}
-              `
-            : html`<md-skeleton id="banner-skeleton"></md-skeleton>`}
+          ${
+            this.user?.header
+              ? html`
+                  ${
+                    !this.bannerFailed
+                      ? html`<img
+                          id="banner-img"
+                          src="${this.user.header}"
+                          alt="Profile banner"
+                          @load=${() => this._handleBannerLoad()}
+                          @error=${() => this._handleBannerError()}
+                          style="opacity: ${this.bannerReady ? 1 : 0};"
+                        />`
+                      : null
+                  }
+                  ${
+                    !this.bannerReady || this.bannerFailed
+                      ? html`<md-skeleton
+                          id="banner-skeleton"
+                          class="skeleton-overlay"
+                        ></md-skeleton>`
+                      : null
+                  }
+                `
+              : html`<md-skeleton id="banner-skeleton"></md-skeleton>`
+          }
         </div>
 
         <!-- Profile Header -->
@@ -1643,331 +1662,385 @@ export class AppProfile extends LitElement {
           <!-- Avatar (overlapping banner) -->
           <div id="avatar-container">
             <div id="avatar-stack">
-              ${this.user?.avatar && !this.avatarFailed
-                ? html`<img
-                    id="avatar"
-                    src="${this.user.avatar}"
-                    alt="${this.user.display_name}'s avatar"
-                    @load=${() => this._handleAvatarLoad()}
-                    @error=${() => this._handleAvatarError()}
-                    style="opacity: ${this.avatarReady ? 1 : 0};"
-                  />`
-                : null}
-              ${!this.user?.avatar || !this.avatarReady || this.avatarFailed
-                ? html`<md-skeleton
-                    id="avatar-skeleton"
-                    class="skeleton-overlay"
-                  ></md-skeleton>`
-                : null}
+              ${
+                this.user?.avatar && !this.avatarFailed
+                  ? html`<img
+                      id="avatar"
+                      src="${this.user.avatar}"
+                      alt="${this.user.display_name}'s avatar"
+                      @load=${() => this._handleAvatarLoad()}
+                      @error=${() => this._handleAvatarError()}
+                      style="opacity: ${this.avatarReady ? 1 : 0};"
+                    />`
+                  : null
+              }
+              ${
+                !this.user?.avatar || !this.avatarReady || this.avatarFailed
+                  ? html`<md-skeleton
+                      id="avatar-skeleton"
+                      class="skeleton-overlay"
+                    ></md-skeleton>`
+                  : null
+              }
             </div>
           </div>
 
           <!-- Actions row (follow, menu) -->
           <div id="actions-row">
-            ${!this.isOwnProfile && this.user
-              ? html`
-                  ${this.followStatusLoaded
-                    ? html`
-                        ${this.followed
-                          ? html`<md-button
-                              variant="outlined"
-                              @click="${() => this.unfollow()}"
-                              >${msg('Following')}</md-button
-                            >`
-                          : html`<md-button
-                              variant="filled"
-                              @click="${() => this.follow()}"
-                              >${msg('Follow')}</md-button
-                            >`}
-                        ${this.followed
-                          ? html`<md-icon-button
-                              name="${this.notifying
-                                ? 'notifications'
-                                : 'notifications-off'}"
-                              .label="${this.notifying
-                                ? msg(
-                                    str`Turn off post notifications for @${this.user?.acct}`
-                                  )
-                                : msg(
-                                    str`Notify me when @${this.user?.acct} posts`
-                                  )}"
-                              title="${this.notifying
-                                ? msg('Turn off post notifications')
-                                : msg('Notify me when this user posts')}"
-                              @click="${() => this.toggleNotify()}"
-                            ></md-icon-button>`
-                          : null}
-                        <md-dropdown placement="bottom-end">
-                          <md-icon-button
-                            slot="trigger"
-                            name="ellipsis-vertical"
-                            .label="${msg('More options')}"
-                          ></md-icon-button>
-                          <md-menu>
-                            ${this.muted
-                              ? html`<md-menu-item
-                                  @click="${() => this.unmute()}"
+            ${
+              !this.isOwnProfile && this.user
+                ? html`
+                    ${
+                      this.followStatusLoaded
+                        ? html`
+                            ${
+                              this.followed
+                                ? html`<md-button
+                                    variant="outlined"
+                                    @click="${() => this.unfollow()}"
+                                    >${msg('Following')}</md-button
+                                  >`
+                                : html`<md-button
+                                    variant="filled"
+                                    @click="${() => this.follow()}"
+                                    >${msg('Follow')}</md-button
+                                  >`
+                            }
+                            ${
+                              this.followed
+                                ? html`<md-icon-button
+                                    name="${
+                                      this.notifying
+                                        ? 'notifications'
+                                        : 'notifications-off'
+                                    }"
+                                    .label="${
+                                      this.notifying
+                                        ? msg(
+                                            str`Turn off post notifications for @${this.user?.acct}`
+                                          )
+                                        : msg(
+                                            str`Notify me when @${this.user?.acct} posts`
+                                          )
+                                    }"
+                                    title="${
+                                      this.notifying
+                                        ? msg('Turn off post notifications')
+                                        : msg('Notify me when this user posts')
+                                    }"
+                                    @click="${() => this.toggleNotify()}"
+                                  ></md-icon-button>`
+                                : null
+                            }
+                            <md-dropdown placement="bottom-end">
+                              <md-icon-button
+                                slot="trigger"
+                                name="ellipsis-vertical"
+                                .label="${msg('More options')}"
+                              ></md-icon-button>
+                              <md-menu>
+                                ${
+                                  this.muted
+                                    ? html`<md-menu-item
+                                        @click="${() => this.unmute()}"
+                                      >
+                                        <md-icon
+                                          slot="prefix"
+                                          name="volume-mute"
+                                        ></md-icon>
+                                        ${msg('Unmute')}
+                                      </md-menu-item>`
+                                    : html`<md-menu-item
+                                        @click="${() => this.mute()}"
+                                      >
+                                        <md-icon
+                                          slot="prefix"
+                                          name="volume-mute"
+                                        ></md-icon>
+                                        ${msg('Mute')}
+                                      </md-menu-item>`
+                                }
+                                ${
+                                  this.blocked
+                                    ? html`<md-menu-item
+                                        @click="${() => this.unblock()}"
+                                      >
+                                        <md-icon
+                                          slot="prefix"
+                                          name="ban"
+                                        ></md-icon>
+                                        ${msg('Unblock')}
+                                      </md-menu-item>`
+                                    : html`<md-menu-item
+                                        @click="${() => this.block()}"
+                                      >
+                                        <md-icon
+                                          slot="prefix"
+                                          name="ban"
+                                        ></md-icon>
+                                        ${msg('Block')}
+                                      </md-menu-item>`
+                                }
+                                <md-menu-item
+                                  @click="${() => this.openListMembershipDialog()}"
                                 >
                                   <md-icon
                                     slot="prefix"
-                                    name="volume-mute"
+                                    name="albums"
                                   ></md-icon>
-                                  ${msg('Unmute')}
-                                </md-menu-item>`
-                              : html`<md-menu-item
-                                  @click="${() => this.mute()}"
+                                  ${msg('Add to list')}
+                                </md-menu-item>
+                                <md-menu-item
+                                  @click="${() => this.openReportDialog()}"
                                 >
-                                  <md-icon
-                                    slot="prefix"
-                                    name="volume-mute"
-                                  ></md-icon>
-                                  ${msg('Mute')}
-                                </md-menu-item>`}
-                            ${this.blocked
-                              ? html`<md-menu-item
-                                  @click="${() => this.unblock()}"
-                                >
-                                  <md-icon slot="prefix" name="ban"></md-icon>
-                                  ${msg('Unblock')}
-                                </md-menu-item>`
-                              : html`<md-menu-item
-                                  @click="${() => this.block()}"
-                                >
-                                  <md-icon slot="prefix" name="ban"></md-icon>
-                                  ${msg('Block')}
-                                </md-menu-item>`}
-                            <md-menu-item
-                              @click="${() => this.openListMembershipDialog()}"
-                            >
-                              <md-icon slot="prefix" name="albums"></md-icon>
-                              ${msg('Add to list')}
-                            </md-menu-item>
-                            <md-menu-item
-                              @click="${() => this.openReportDialog()}"
-                            >
-                              <md-icon slot="prefix" name="flag"></md-icon>
-                              ${msg('Report')}
-                            </md-menu-item>
-                          </md-menu>
-                        </md-dropdown>
-                      `
-                    : html`
-                        <div id="actions-skeleton" aria-hidden="true">
-                          <md-skeleton class="action-button"></md-skeleton>
-                          <md-skeleton
-                            class="action-icon"
-                            shape="circle"
-                          ></md-skeleton>
-                        </div>
-                      `}
-                `
-              : null}
+                                  <md-icon slot="prefix" name="flag"></md-icon>
+                                  ${msg('Report')}
+                                </md-menu-item>
+                              </md-menu>
+                            </md-dropdown>
+                          `
+                        : html`
+                            <div id="actions-skeleton" aria-hidden="true">
+                              <md-skeleton class="action-button"></md-skeleton>
+                              <md-skeleton
+                                class="action-icon"
+                                shape="circle"
+                              ></md-skeleton>
+                            </div>
+                          `
+                    }
+                  `
+                : null
+            }
           </div>
 
           <!-- Profile Info -->
           <div id="profile-info">
-            ${this.user
-              ? html`
-                  <h1 id="display-name">${this.user.display_name}</h1>
-                  <p id="handle">@${this.user.acct}</p>
+            ${
+              this.user
+                ? html`
+                    <h1 id="display-name">${this.user.display_name}</h1>
+                    <p id="handle">@${this.user.acct}</p>
 
-                  ${this.followed && this.following
-                    ? html`<span id="mutuals-badge">
-                        <md-icon
-                          name="people"
-                          style="font-size: 14px;"
-                        ></md-icon>
-                        ${msg('Mutuals')}
-                      </span>`
-                    : null}
-                  ${this.user.note
-                    ? html`<div id="bio" .innerHTML=${this.user.note}></div>`
-                    : null}
+                    ${
+                      this.followed && this.following
+                        ? html`<span id="mutuals-badge">
+                            <md-icon
+                              name="people"
+                              style="font-size: 14px;"
+                            ></md-icon>
+                            ${msg('Mutuals')}
+                          </span>`
+                        : null
+                    }
+                    ${
+                      this.user.note
+                        ? html`<div
+                            id="bio"
+                            .innerHTML=${this.user.note}
+                          ></div>`
+                        : null
+                    }
 
-                  <div id="stats-row">
-                    <span class="stat" @click="${() => this.goToFollowing()}">
-                      <span class="stat-count"
-                        >${(
-                          this.user.following_count ?? 0
-                        ).toLocaleString()}</span
-                      >
-                      <span class="stat-label">${msg('Following')}</span>
-                    </span>
-                    <span class="stat" @click="${() => this.goToFollowers()}">
-                      <span class="stat-count"
-                        >${(
-                          this.user.followers_count ?? 0
-                        ).toLocaleString()}</span
-                      >
-                      <span class="stat-label">${msg('Followers')}</span>
-                    </span>
-                  </div>
-
-                  ${this.familiarFollowers.length > 0
-                    ? this._renderFamiliarFollowers()
-                    : null}
-                  ${this.user.fields && this.user.fields.length > 0
-                    ? html`
-                        <div id="fields">
-                          ${this.user.fields.map(
-                            (field) => html`
-                              <div class="field-row">
-                                <span
-                                  class="field-name"
-                                  .innerHTML="${field.name}"
-                                ></span>
-                                <span
-                                  class="field-value"
-                                  .innerHTML="${field.value}"
-                                ></span>
-                              </div>
-                            `
-                          )}
-                        </div>
-                      `
-                    : null}
-                `
-              : html`
-                  <md-skeleton id="display-name-skeleton"></md-skeleton>
-                  <md-skeleton id="handle-skeleton"></md-skeleton>
-                  <div id="stats-skeleton" aria-hidden="true">
-                    <md-skeleton width="96px" height="18px"></md-skeleton>
-                    <md-skeleton width="110px" height="18px"></md-skeleton>
-                  </div>
-                  <div id="bio-skeleton">
-                    <md-skeleton></md-skeleton>
-                    <md-skeleton></md-skeleton>
-                    <md-skeleton></md-skeleton>
-                  </div>
-                  <div id="fields-skeleton" aria-hidden="true">
-                    <div class="field-skeleton-row">
-                      <md-skeleton class="field-name"></md-skeleton>
-                      <md-skeleton class="field-value"></md-skeleton>
+                    <div id="stats-row">
+                      <span class="stat" @click="${() => this.goToFollowing()}">
+                        <span class="stat-count"
+                          >${(
+                            this.user.following_count ?? 0
+                          ).toLocaleString()}</span
+                        >
+                        <span class="stat-label">${msg('Following')}</span>
+                      </span>
+                      <span class="stat" @click="${() => this.goToFollowers()}">
+                        <span class="stat-count"
+                          >${(
+                            this.user.followers_count ?? 0
+                          ).toLocaleString()}</span
+                        >
+                        <span class="stat-label">${msg('Followers')}</span>
+                      </span>
                     </div>
-                    <div class="field-skeleton-row">
-                      <md-skeleton class="field-name"></md-skeleton>
-                      <md-skeleton class="field-value"></md-skeleton>
+
+                    ${
+                      this.familiarFollowers.length > 0
+                        ? this._renderFamiliarFollowers()
+                        : null
+                    }
+                    ${
+                      this.user.fields && this.user.fields.length > 0
+                        ? html`
+                            <div id="fields">
+                              ${this.user.fields.map(
+                                (field) => html`
+                                  <div class="field-row">
+                                    <span
+                                      class="field-name"
+                                      .innerHTML="${field.name}"
+                                    ></span>
+                                    <span
+                                      class="field-value"
+                                      .innerHTML="${field.value}"
+                                    ></span>
+                                  </div>
+                                `
+                              )}
+                            </div>
+                          `
+                        : null
+                    }
+                  `
+                : html`
+                    <md-skeleton id="display-name-skeleton"></md-skeleton>
+                    <md-skeleton id="handle-skeleton"></md-skeleton>
+                    <div id="stats-skeleton" aria-hidden="true">
+                      <md-skeleton width="96px" height="18px"></md-skeleton>
+                      <md-skeleton width="110px" height="18px"></md-skeleton>
                     </div>
-                  </div>
-                `}
+                    <div id="bio-skeleton">
+                      <md-skeleton></md-skeleton>
+                      <md-skeleton></md-skeleton>
+                      <md-skeleton></md-skeleton>
+                    </div>
+                    <div id="fields-skeleton" aria-hidden="true">
+                      <div class="field-skeleton-row">
+                        <md-skeleton class="field-name"></md-skeleton>
+                        <md-skeleton class="field-value"></md-skeleton>
+                      </div>
+                      <div class="field-skeleton-row">
+                        <md-skeleton class="field-name"></md-skeleton>
+                        <md-skeleton class="field-value"></md-skeleton>
+                      </div>
+                    </div>
+                  `
+            }
           </div>
         </div>
 
         <!-- Tabs -->
         <div id="tabs-container">
-          ${this.loadingProfile
-            ? html`
-                <div id="tabs-skeleton" aria-hidden="true">
-                  <md-skeleton></md-skeleton>
-                  <md-skeleton></md-skeleton>
-                  <md-skeleton></md-skeleton>
-                </div>
-              `
-            : html`
-                <md-segmented-button
-                  .value="${this.activeSegment}"
-                  aria-label="${msg('Profile content')}"
-                  @segment-change="${(e: CustomEvent) =>
-                    this.handleSegmentChange(e)}"
-                >
-                  <md-segment value="posts">${msg('Posts')}</md-segment>
-                  <md-segment value="posts_replies"
-                    >${msg('Replies')}</md-segment
+          ${
+            this.loadingProfile
+              ? html`
+                  <div id="tabs-skeleton" aria-hidden="true">
+                    <md-skeleton></md-skeleton>
+                    <md-skeleton></md-skeleton>
+                    <md-skeleton></md-skeleton>
+                  </div>
+                `
+              : html`
+                  <md-segmented-button
+                    .value="${this.activeSegment}"
+                    aria-label="${msg('Profile content')}"
+                    @segment-change="${(e: CustomEvent) =>
+                      this.handleSegmentChange(e)}"
                   >
-                  <md-segment value="media">${msg('Media')}</md-segment>
-                </md-segmented-button>
-              `}
+                    <md-segment value="posts">${msg('Posts')}</md-segment>
+                    <md-segment value="posts_replies"
+                      >${msg('Replies')}</md-segment
+                    >
+                    <md-segment value="media">${msg('Media')}</md-segment>
+                  </md-segmented-button>
+                `
+          }
         </div>
 
         <!-- Posts -->
         <div id="posts-container">
-          ${showPinned
-            ? html`
-                <div id="pinned-section">
-                  <div id="pinned-header">
-                    <md-icon name="bookmark" size="18px"></md-icon>
-                    <span>${msg('Pinned')}</span>
+          ${
+            showPinned
+              ? html`
+                  <div id="pinned-section">
+                    <div id="pinned-header">
+                      <md-icon name="bookmark" size="18px"></md-icon>
+                      <span>${msg('Pinned')}</span>
+                    </div>
+                    <ul id="pinned-list">
+                      ${this.pinnedPosts.map(
+                        (post) => html`
+                          <li class="post-item">
+                            <timeline-item
+                              @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                                this.handleOpenPost(e.detail.tweet)}"
+                              @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                                this.editPost(e.detail.tweet)}"
+                              @reply-clicked="${(
+                                e: CustomEvent<{ tweet: Post }>
+                              ) => this._handleReplyClicked(e)}"
+                              @quote-clicked="${(
+                                e: CustomEvent<{ tweet: Post }>
+                              ) => this._handleQuoteClicked(e)}"
+                              @delete="${() => this.reloadPosts()}"
+                              @pin-change="${(e: CustomEvent) =>
+                                this.handlePinChange(e)}"
+                              .tweet=${post}
+                              ?guestMode="${this.isGuestMode}"
+                              ?allowPin="${
+                                this.isOwnProfile && !this.isGuestMode
+                              }"
+                            ></timeline-item>
+                          </li>
+                        `
+                      )}
+                    </ul>
+                    <md-divider></md-divider>
                   </div>
-                  <ul id="pinned-list">
-                    ${this.pinnedPosts.map(
-                      (post) => html`
-                        <li class="post-item">
-                          <timeline-item
-                            @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                              this.handleOpenPost(e.detail.tweet)}"
-                            @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                              this.editPost(e.detail.tweet)}"
-                            @reply-clicked="${(
-                              e: CustomEvent<{ tweet: Post }>
-                            ) => this._handleReplyClicked(e)}"
-                            @quote-clicked="${(
-                              e: CustomEvent<{ tweet: Post }>
-                            ) => this._handleQuoteClicked(e)}"
-                            @delete="${() => this.reloadPosts()}"
-                            @pin-change="${(e: CustomEvent) =>
-                              this.handlePinChange(e)}"
-                            .tweet=${post}
-                            ?guestMode="${this.isGuestMode}"
-                            ?allowPin="${this.isOwnProfile &&
-                            !this.isGuestMode}"
-                          ></timeline-item>
-                        </li>
-                      `
-                    )}
-                  </ul>
-                  <md-divider></md-divider>
-                </div>
-              `
-            : null}
-          ${this.loadingPosts && this.posts.length === 0 && !showPinned
-            ? html`<md-skeleton-card count="5"></md-skeleton-card>`
-            : this.activeSegment === 'media'
-              ? this.renderMediaGrid()
-              : html`
-                  <ul
-                    class="scroller-fallback ${this.loadingPosts
-                      ? 'posts-loading'
-                      : ''}"
-                    role="list"
-                  >
-                    ${visiblePosts.map(
-                      (post) => html`
-                        <li class="post-item">
-                          <timeline-item
-                            @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                              this.handleOpenPost(e.detail.tweet)}"
-                            @edit="${(e: CustomEvent<{ tweet: Post }>) =>
-                              this.editPost(e.detail.tweet)}"
-                            @reply-clicked="${(
-                              e: CustomEvent<{ tweet: Post }>
-                            ) => this._handleReplyClicked(e)}"
-                            @quote-clicked="${(
-                              e: CustomEvent<{ tweet: Post }>
-                            ) => this._handleQuoteClicked(e)}"
-                            @delete="${() => this.reloadPosts()}"
-                            @pin-change="${(e: CustomEvent) =>
-                              this.handlePinChange(e)}"
-                            .tweet=${post}
-                            ?guestMode="${this.isGuestMode}"
-                            ?allowPin="${this.isOwnProfile &&
-                            !this.isGuestMode}"
-                          ></timeline-item>
-                        </li>
-                      `
-                    )}
-                    ${this.loadingMorePosts
-                      ? html`<li
-                          class="load-more-indicator"
-                          style="list-style: none;"
-                        >
-                          <md-skeleton
-                            width="100%"
-                            height="120px"
-                          ></md-skeleton>
-                        </li>`
-                      : null}
-                  </ul>
-                `}
+                `
+              : null
+          }
+          ${
+            this.loadingPosts && this.posts.length === 0 && !showPinned
+              ? html`<md-skeleton-card count="5"></md-skeleton-card>`
+              : this.activeSegment === 'media'
+                ? this.renderMediaGrid()
+                : html`
+                    <ul
+                      class="scroller-fallback ${
+                        this.loadingPosts ? 'posts-loading' : ''
+                      }"
+                      role="list"
+                    >
+                      ${visiblePosts.map(
+                        (post) => html`
+                          <li class="post-item">
+                            <timeline-item
+                              @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                                this.handleOpenPost(e.detail.tweet)}"
+                              @edit="${(e: CustomEvent<{ tweet: Post }>) =>
+                                this.editPost(e.detail.tweet)}"
+                              @reply-clicked="${(
+                                e: CustomEvent<{ tweet: Post }>
+                              ) => this._handleReplyClicked(e)}"
+                              @quote-clicked="${(
+                                e: CustomEvent<{ tweet: Post }>
+                              ) => this._handleQuoteClicked(e)}"
+                              @delete="${() => this.reloadPosts()}"
+                              @pin-change="${(e: CustomEvent) =>
+                                this.handlePinChange(e)}"
+                              .tweet=${post}
+                              ?guestMode="${this.isGuestMode}"
+                              ?allowPin="${
+                                this.isOwnProfile && !this.isGuestMode
+                              }"
+                            ></timeline-item>
+                          </li>
+                        `
+                      )}
+                      ${
+                        this.loadingMorePosts
+                          ? html`<li
+                              class="load-more-indicator"
+                              style="list-style: none;"
+                            >
+                              <md-skeleton
+                                width="100%"
+                                height="120px"
+                              ></md-skeleton>
+                            </li>`
+                          : null
+                      }
+                    </ul>
+                  `
+          }
         </div>
 
         <report-dialog
@@ -1978,21 +2051,25 @@ export class AppProfile extends LitElement {
           @report-cancel=${this.handleReportCancel}
         ></report-dialog>
 
-        ${this.showListMembershipDialog
-          ? html`<list-membership-dialog
-              .open=${this.showListMembershipDialog}
-              .account=${this.user ?? null}
-              @md-dialog-hide=${() => (this.showListMembershipDialog = false)}
-              @open-manage-lists=${() =>
-                this.handleOpenManageListsFromMembership()}
-            ></list-membership-dialog>`
-          : null}
-        ${this.showListsDialog
-          ? html`<lists-dialog
-              .open=${this.showListsDialog}
-              @md-dialog-hide=${() => (this.showListsDialog = false)}
-            ></lists-dialog>`
-          : null}
+        ${
+          this.showListMembershipDialog
+            ? html`<list-membership-dialog
+                .open=${this.showListMembershipDialog}
+                .account=${this.user ?? null}
+                @md-dialog-hide=${() => (this.showListMembershipDialog = false)}
+                @open-manage-lists=${() =>
+                  this.handleOpenManageListsFromMembership()}
+              ></list-membership-dialog>`
+            : null
+        }
+        ${
+          this.showListsDialog
+            ? html`<lists-dialog
+                .open=${this.showListsDialog}
+                @md-dialog-hide=${() => (this.showListsDialog = false)}
+              ></lists-dialog>`
+            : null
+        }
 
         <!-- Post Detail Dialog -->
         <post-detail-dialog></post-detail-dialog>

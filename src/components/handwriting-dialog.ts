@@ -459,11 +459,13 @@ export class HandwritingDialog extends LitElement {
               @click=${() => this.handleDone()}
               ?disabled=${!this.hasContent || this.isRecognizing}
             >
-              ${this.isRecognizing
-                ? html`<span class="recognizing-spinner"></span> ${msg(
-                      'Recognizing...'
-                    )}`
-                : msg('Done')}
+              ${
+                this.isRecognizing
+                  ? html`<span class="recognizing-spinner"></span> ${msg(
+                        'Recognizing...'
+                      )}`
+                  : msg('Done')
+              }
             </md-button>
           </div>
         </div>
