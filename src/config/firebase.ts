@@ -18,8 +18,9 @@ const isLocal =
   (window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1') &&
   import.meta.env.MODE !== 'test' &&
-  // Capacitor's WebView runs on https://localhost but should use production APIs
-  window.location.protocol !== 'https:';
+  // Capacitor's WebView runs on https://localhost or capacitor://localhost but should use production APIs
+  window.location.protocol !== 'https:' &&
+  window.location.protocol !== 'capacitor:';
 
 // Export the appropriate base URL
 export const FIREBASE_FUNCTIONS_BASE_URL = isLocal

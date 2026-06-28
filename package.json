@@ -31,7 +31,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "patch-package"
   },
   "lint-staged": {
     "*.{ts,js}": [
@@ -54,6 +55,7 @@
     "@huggingface/transformers": "^4.1.0",
     "@lit-labs/compiler": "^1.1.2",
     "@lit/localize": "^0.12.2",
+    "@virtualstate/navigation": "^1.0.1-alpha.212",
     "browser-fs-access": "^0.38.0",
     "fast-blurhash": "^1.2.0",
     "hotkeys-js": "^4.0.4",
@@ -66,6 +68,7 @@
   "devDependencies": {
     "@capacitor/android": "^8.4.1",
     "@capacitor/cli": "^8.4.1",
+    "@capacitor/ios": "^8.4.1",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.39.4",
     "@lit-labs/ssr": "^4.1.0",
@@ -87,6 +90,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "msw": "^2.14.6",
+    "patch-package": "^8.0.1",
     "playwright": "^1.61.1",
     "prettier": "^3.9.1",
     "rollup-plugin-copy": "^3.4.0",

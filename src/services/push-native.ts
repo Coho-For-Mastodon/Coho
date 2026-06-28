@@ -10,6 +10,7 @@
  */
 
 import { PushNotifications } from '@capacitor/push-notifications';
+import { getPlatform } from '../utils/platform.js';
 import { getClientConfig } from '../mastodon/config/client';
 import { FIREBASE_FUNCTIONS_BASE_URL } from '../config/firebase';
 
@@ -308,6 +309,7 @@ const NOTIFICATION_CHANNELS: Array<{
  * duplicate creates but preserves user-customised settings.
  */
 async function ensureNotificationChannels(): Promise<void> {
+  if (getPlatform() !== 'android') return;
   for (const ch of NOTIFICATION_CHANNELS) {
     await PushNotifications.createChannel(ch);
   }

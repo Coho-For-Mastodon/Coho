@@ -1,0 +1,45 @@
+diff --git a/node_modules/web-router/dist/web-router.js b/node_modules/web-router/dist/web-router.js
+index 4e92f3d..fb9d6ee 100644
+--- a/node_modules/web-router/dist/web-router.js
++++ b/node_modules/web-router/dist/web-router.js
+@@ -15,7 +15,11 @@ class h extends EventTarget {
+     this.navigateHandler = (t) => {
+       const e = new URL(t.destination.url);
+       if (e.origin !== window.location.origin || t.downloadRequest || t.formData || !t.canIntercept) return;
+-      const n = this.matchRoute(e.pathname);
++      let path = e.pathname;
++      if (e.protocol === 'capacitor:' && path.startsWith('//localhost')) {
++        path = path.replace('//localhost', '') || '/';
++      }
++      const n = this.matchRoute(path);
+       n && t.intercept({
+         focusReset: "manual",
+         scroll: "manual",
+@@ -24,7 +28,12 @@ class h extends EventTarget {
+         }
+       });
+     }, window.navigation.addEventListener("navigate", this.navigateHandler), this.popstateHandler = () => {
+-      const t = new URL(window.location.href), e = this.matchRoute(t.pathname);
++      const t = new URL(window.location.href);
++      let path = t.pathname;
++      if (t.protocol === 'capacitor:' && path.startsWith('//localhost')) {
++        path = path.replace('//localhost', '') || '/';
++      }
++      const e = this.matchRoute(path);
+       e && this.hasRouteChanged(e, t) && this.handleNavigation(e.route, e.params, { url: t });
+     }, window.addEventListener("popstate", this.popstateHandler);
+   }
+@@ -104,7 +113,12 @@ class h extends EventTarget {
+       this.patterns.set(a, n);
+     }
+     this.setupNavigationListeners(), this.initialized = !0;
+-    const t = new URL(window.location.href), e = this.matchRoute(t.pathname);
++    const t = new URL(window.location.href);
++    let path = t.pathname;
++    if (t.protocol === 'capacitor:' && path.startsWith('//localhost')) {
++      path = path.replace('//localhost', '') || '/';
++    }
++    const e = this.matchRoute(path);
+     e && await this.handleNavigation(e.route, e.params, { url: t });
+   }
+   render() {
