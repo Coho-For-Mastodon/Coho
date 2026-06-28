@@ -180,11 +180,7 @@
     --md-sys-color-inverse-on-surface: #313033;
 
     /* Background Colors */
-    --md-sys-color-background: color-mix(
-      in srgb,
-      var(--md-sys-color-primary) 5%,
-      #141314
-    );
+    --md-sys-color-background: #141314;
     --md-sys-color-on-background: #e6e0e9;
   }
 }

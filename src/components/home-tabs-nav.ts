@@ -90,19 +90,23 @@ export class HomeTabsNav extends LitElement {
 
   render() {
     return html`
-      <md-tab panel="general" @click="${this._handleReload}">
+      <md-tab panel="general" style="order: 1" @click="${this._handleReload}">
         <md-icon slot="icon" src="${this.getIconSrc('general', 'home')}"
           >${this.getInlineSvg('general', 'home')}</md-icon
         >
         <span class="tab-label">${msg('Home')}</span>
       </md-tab>
-      <md-tab panel="search">
+      <md-tab panel="search" style="order: 2">
         <md-icon slot="icon" src="${this.getIconSrc('search', 'search')}"
           >${this.getInlineSvg('search', 'search')}</md-icon
         >
         <span class="tab-label">${msg('Explore')}</span>
       </md-tab>
-      <md-tab panel="notifications" ?disabled="${this.isGuestMode}">
+      <md-tab
+        panel="notifications"
+        style="order: 3"
+        ?disabled="${this.isGuestMode}"
+      >
         <md-icon
           slot="icon"
           src="${this.getIconSrc('notifications', 'notifications')}"
@@ -124,7 +128,11 @@ export class HomeTabsNav extends LitElement {
             : nothing
         }
       </md-tab>
-      <md-tab panel="bookmarks" ?disabled="${this.isGuestMode}">
+      <md-tab
+        panel="bookmarks"
+        style="order: 4"
+        ?disabled="${this.isGuestMode}"
+      >
         <md-icon slot="icon" src="${this.getIconSrc('bookmarks', 'bookmark')}"
           >${this.getInlineSvg('bookmarks', 'bookmark')}</md-icon
         >
@@ -139,7 +147,7 @@ export class HomeTabsNav extends LitElement {
             : nothing
         }
       </md-tab>
-      <md-tab panel="faves" ?disabled="${this.isGuestMode}">
+      <md-tab panel="faves" style="order: 5" ?disabled="${this.isGuestMode}">
         <md-icon slot="icon" src="${this.getIconSrc('faves', 'heart')}"
           >${this.getInlineSvg('faves', 'heart')}</md-icon
         >
@@ -159,7 +167,7 @@ export class HomeTabsNav extends LitElement {
         this.isGuestMode
           ? nothing
           : html`
-              <div class="new-post-container">
+              <div class="new-post-container" style="order: 6">
                 <md-button
                   variant="fab"
                   class="new-post-btn"
@@ -174,9 +182,9 @@ export class HomeTabsNav extends LitElement {
             `
       }
 
-      <md-tab panel="media" style="display: none;"></md-tab>
-      <md-tab panel="messages" style="display: none;"></md-tab>
-      <md-tab panel="custom" style="display: none;"></md-tab>
+      <md-tab panel="media" style="display: none; order: 7;"></md-tab>
+      <md-tab panel="messages" style="display: none; order: 8;"></md-tab>
+      <md-tab panel="custom" style="display: none; order: 9;"></md-tab>
     `;
   }
 }

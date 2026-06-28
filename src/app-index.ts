@@ -174,7 +174,7 @@ export class AppIndex extends LitElement {
     const deviceColor = await getAndroidDynamicColor();
     if (deviceColor) {
       localStorage.setItem('coho-theme-color', deviceColor);
-      applyThemeColor(deviceColor, { useIdleCallback: true });
+      applyThemeColor(deviceColor);
       return;
     }
 
@@ -185,13 +185,13 @@ export class AppIndex extends LitElement {
       if (!localStorage.getItem('coho-theme-color')) {
         localStorage.setItem('coho-theme-color', potentialColor);
       }
-      applyThemeColor(potentialColor, { useIdleCallback: true });
+      applyThemeColor(potentialColor);
     } else {
       // get css variable color
       const color = getComputedStyle(document.body).getPropertyValue(
         '--sl-color-primary-600'
       );
-      applyThemeColor(color, { useIdleCallback: true });
+      applyThemeColor(color);
     }
   }
 
