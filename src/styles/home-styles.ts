@@ -151,7 +151,7 @@ export const homeStyles = css`
     display: none;
   }
 
-  @media (min-width: 821px) and (max-width: 1030px) {
+  @media (min-width: 821px) and (max-width: 1023px) {
     main {
       grid-template-columns: 1fr;
     }

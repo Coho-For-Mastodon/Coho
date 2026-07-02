@@ -128,10 +128,13 @@ export class Router extends EventTarget {
   private setupNavigationListeners(): void {
     // Listen for Navigation API navigate events (handles anchor clicks, back/forward, etc.)
     window.navigation.addEventListener('navigate', (event) => {
-      // Only handle same-origin navigations
+      // Only handle same-origin navigations (or capacitor protocol where origin is null)
       const url = new URL(event.destination.url);
 
-      if (url.origin !== window.location.origin) {
+      if (
+        url.origin !== window.location.origin &&
+        url.protocol !== 'capacitor:'
+      ) {
         return;
       }
 
@@ -145,7 +148,12 @@ export class Router extends EventTarget {
         return;
       }
 
-      const route = this.matchRoute(url.pathname);
+      let path = url.pathname;
+      if (url.protocol === 'capacitor:' && path.startsWith('//localhost')) {
+        path = path.replace('//localhost', '') || '/';
+      }
+
+      const route = this.matchRoute(path);
       if (!route) {
         return; // Let the browser handle unknown routes
       }

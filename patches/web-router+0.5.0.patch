@@ -1,12 +1,19 @@
 diff --git a/node_modules/web-router/dist/web-router.js b/node_modules/web-router/dist/web-router.js
-index 4e92f3d..fb9d6ee 100644
+index 4e92f3d..e1b1879 100644
 --- a/node_modules/web-router/dist/web-router.js
 +++ b/node_modules/web-router/dist/web-router.js
-@@ -15,7 +15,11 @@ class h extends EventTarget {
+@@ -14,8 +14,17 @@ class h extends EventTarget {
+   setupNavigationListeners() {
      this.navigateHandler = (t) => {
        const e = new URL(t.destination.url);
-       if (e.origin !== window.location.origin || t.downloadRequest || t.formData || !t.canIntercept) return;
+-      if (e.origin !== window.location.origin || t.downloadRequest || t.formData || !t.canIntercept) return;
 -      const n = this.matchRoute(e.pathname);
++      if (
++        (e.origin !== window.location.origin && e.protocol !== 'capacitor:') ||
++        t.downloadRequest ||
++        t.formData ||
++        !t.canIntercept
++      ) return;
 +      let path = e.pathname;
 +      if (e.protocol === 'capacitor:' && path.startsWith('//localhost')) {
 +        path = path.replace('//localhost', '') || '/';
@@ -15,7 +22,7 @@ index 4e92f3d..fb9d6ee 100644
        n && t.intercept({
          focusReset: "manual",
          scroll: "manual",
-@@ -24,7 +28,12 @@ class h extends EventTarget {
+@@ -24,7 +33,12 @@ class h extends EventTarget {
          }
        });
      }, window.navigation.addEventListener("navigate", this.navigateHandler), this.popstateHandler = () => {
@@ -29,7 +36,7 @@ index 4e92f3d..fb9d6ee 100644
        e && this.hasRouteChanged(e, t) && this.handleNavigation(e.route, e.params, { url: t });
      }, window.addEventListener("popstate", this.popstateHandler);
    }
-@@ -104,7 +113,12 @@ class h extends EventTarget {
+@@ -104,7 +118,12 @@ class h extends EventTarget {
        this.patterns.set(a, n);
      }
      this.setupNavigationListeners(), this.initialized = !0;
