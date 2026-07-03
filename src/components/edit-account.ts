@@ -495,8 +495,10 @@ export class EditAccount extends LitElement {
               <div class="image-preview-container">
                 <img
                   class="avatar-preview"
-                  src=${this.avatarPreviewUrl ||
-                  '/assets/icons/new-icons/icon-256x256.png'}
+                  src=${
+                    this.avatarPreviewUrl ||
+                    '/assets/icons/new-icons/icon-256x256.png'
+                  }
                   alt=${msg('Avatar preview')}
                 />
                 <div class="image-change-overlay" @click=${this.changeAvatar}>
@@ -510,8 +512,10 @@ export class EditAccount extends LitElement {
               <div class="image-preview-container">
                 <img
                   class="header-preview"
-                  src=${this.headerPreviewUrl ||
-                  '/assets/icons/new-icons/icon-256x256.png'}
+                  src=${
+                    this.headerPreviewUrl ||
+                    '/assets/icons/new-icons/icon-256x256.png'
+                  }
                   alt=${msg('Header preview')}
                 />
                 <div class="image-change-overlay" @click=${this.changeHeader}>
@@ -605,18 +609,20 @@ export class EditAccount extends LitElement {
                 </div>
               `
             )}
-            ${this.fields.length < LIMITS.maxFields
-              ? html`
-                  <md-button
-                    variant="tonal"
-                    class="add-field-btn"
-                    @click=${this.addField}
-                  >
-                    <md-icon name="add" slot="prefix"></md-icon>
-                    ${msg('Add Field')}
-                  </md-button>
-                `
-              : nothing}
+            ${
+              this.fields.length < LIMITS.maxFields
+                ? html`
+                    <md-button
+                      variant="tonal"
+                      class="add-field-btn"
+                      @click=${this.addField}
+                    >
+                      <md-icon name="add" slot="prefix"></md-icon>
+                      ${msg('Add Field')}
+                    </md-button>
+                  `
+                : nothing
+            }
           </div>
         </div>
       </div>

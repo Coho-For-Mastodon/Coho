@@ -311,21 +311,23 @@ export class Search extends LitElement {
           @input="${this._handleInput}"
           @keydown="${this._handleKeyDown}"
         />
-        ${this._loading
-          ? html`<span
-              class="trailing-icon"
-              aria-live="polite"
-              aria-label=${msg('Searching')}
-            >
-              <span class="spinner"></span>
-            </span>`
-          : this.avatar
-            ? html`<img
-                class="trailing-avatar"
-                src="${this.avatar}"
-                alt="Profile"
-              />`
-            : html``}
+        ${
+          this._loading
+            ? html`<span
+                class="trailing-icon"
+                aria-live="polite"
+                aria-label=${msg('Searching')}
+              >
+                <span class="spinner"></span>
+              </span>`
+            : this.avatar
+              ? html`<img
+                  class="trailing-avatar"
+                  src="${this.avatar}"
+                  alt="Profile"
+                />`
+              : html``
+        }
       </div>
     `;
   }

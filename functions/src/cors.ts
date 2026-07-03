@@ -7,6 +7,8 @@ export const allowedOrigins = [
   'http://localhost:3000',
   // Capacitor Android WebView origin (androidScheme: 'https' in capacitor.config.ts)
   'https://localhost',
+  // Capacitor iOS WebView origin
+  'capacitor://localhost',
 ];
 
 export function applyCors(

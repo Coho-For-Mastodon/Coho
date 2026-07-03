@@ -1,11 +1,7 @@
 export const SCHEDULE_MIN_LEAD_MS = 5 * 60 * 1000;
 
 export type LocalAttachmentType =
-  | 'image'
-  | 'video'
-  | 'gifv'
-  | 'audio'
-  | 'unknown';
+  'image' | 'video' | 'gifv' | 'audio' | 'unknown';
 
 export interface LocalAttachment {
   id: string;

@@ -10,11 +10,7 @@ import { mdSharedStyles } from './md-shared-styles.js';
 @customElement('md-button')
 export class MdButton extends LitElement {
   @property({ type: String }) variant:
-    | 'filled'
-    | 'outlined'
-    | 'text'
-    | 'tonal'
-    | 'fab' = 'filled';
+    'filled' | 'outlined' | 'text' | 'tonal' | 'fab' = 'filled';
   @property({ type: String }) size: 'small' | 'medium' = 'medium';
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) pill = false;
@@ -38,26 +34,13 @@ export class MdButton extends LitElement {
         gap: 8px;
         border: none;
         cursor: pointer;
-        font-weight: 500;
-        letter-spacing: 0.1px;
-        transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+        font-weight: 600;
+        letter-spacing: 0;
+        transition: all 200ms ease;
         overflow: hidden;
         white-space: nowrap;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
-      }
-
-      button::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: currentColor;
-        opacity: 0;
-        transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
-      }
-
-      button:hover::before {
-        opacity: 0.08;
       }
 
       button:focus-visible {
@@ -65,8 +48,8 @@ export class MdButton extends LitElement {
         outline-offset: 2px;
       }
 
-      button:active::before {
-        opacity: 0.12;
+      button:active:not(:disabled) {
+        opacity: 0.7;
       }
 
       button:disabled {
@@ -95,19 +78,13 @@ export class MdButton extends LitElement {
         border-radius: var(--md-sys-shape-corner-full);
       }
 
-      /* Filled variant (default) */
       button.filled {
         background: var(--md-sys-color-primary, #6750a4);
         color: var(--md-sys-color-on-primary, #ffffff);
-        box-shadow:
-          0 1px 2px rgba(0, 0, 0, 0.3),
-          0 1px 3px 1px rgba(0, 0, 0, 0.15);
       }
 
-      button.filled:hover {
-        box-shadow:
-          0 1px 2px rgba(0, 0, 0, 0.3),
-          0 2px 6px 2px rgba(0, 0, 0, 0.15);
+      button.filled:hover:not(:disabled) {
+        filter: brightness(0.92);
       }
 
       button.filled:disabled,
@@ -115,14 +92,24 @@ export class MdButton extends LitElement {
       button.tonal:disabled,
       button.fab:disabled {
         background: color-mix(in srgb, currentColor 12%, transparent);
-        box-shadow: none;
       }
 
-      /* Outlined variant */
       button.outlined {
         background: transparent;
         color: var(--md-sys-color-primary, #6750a4);
         border: 1px solid var(--md-sys-color-outline, #79747e);
+      }
+
+      button.outlined:hover:not(:disabled),
+      button.text:hover:not(:disabled) {
+        background: rgba(0, 0, 0, 0.04);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        button.outlined:hover:not(:disabled),
+        button.text:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.08);
+        }
       }
 
       button.outlined:disabled {
@@ -135,22 +122,21 @@ export class MdButton extends LitElement {
         color: var(--md-sys-color-primary, #6750a4);
       }
 
-      /* Tonal variant */
       button.tonal {
         background: var(--md-sys-color-secondary-container, #e8def8);
         color: var(--md-sys-color-on-secondary-container, #1d192b);
       }
 
-      /* FAB (Floating Action Button) variant */
+      button.tonal:hover:not(:disabled) {
+        filter: brightness(0.92);
+      }
+
       button.fab {
         background: var(
           --md-sys-color-primary,
           var(--sl-color-primary-600, #6750a4)
         );
         color: var(--md-sys-color-on-primary, #ffffff);
-        box-shadow:
-          0 1px 3px rgba(0, 0, 0, 0.3),
-          0 4px 8px 3px rgba(0, 0, 0, 0.15);
         width: 56px;
         height: 56px;
         border-radius: var(--md-sys-shape-corner-large);
@@ -163,37 +149,11 @@ export class MdButton extends LitElement {
         border-radius: var(--md-sys-shape-corner-medium);
       }
 
-      button.fab:hover {
-        box-shadow:
-          0 2px 3px rgba(0, 0, 0, 0.3),
-          0 6px 10px 4px rgba(0, 0, 0, 0.15);
+      button.fab:hover:not(:disabled) {
+        filter: brightness(0.92);
       }
 
-      /* CSS-only ripple — expands from center on click */
-      button::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image: radial-gradient(
-          circle,
-          currentColor 10%,
-          transparent 10.01%
-        );
-        background-repeat: no-repeat;
-        background-position: 50%;
-        transform: scale(10, 10);
-        opacity: 0;
-        transition:
-          transform 0.5s,
-          opacity 0.8s;
-        pointer-events: none;
-      }
-
-      button:active::after {
-        transform: scale(0, 0);
-        opacity: 0.25;
-        transition: 0s;
-      }
+      /* Ripple removed */
 
       ::slotted(*) {
         pointer-events: none;

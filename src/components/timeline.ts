@@ -165,11 +165,7 @@ export class Timeline extends LitElement {
   private _pullToRefreshSetup: boolean = false;
 
   @property({ type: String }) timelineType:
-    | 'home'
-    | 'local'
-    | 'federated'
-    | 'media'
-    | `list:${string}` = 'home';
+    'home' | 'local' | 'federated' | 'media' | `list:${string}` = 'home';
 
   @property({ type: Boolean }) guestMode: boolean = false;
 
@@ -1517,81 +1513,89 @@ export class Timeline extends LitElement {
 
   render() {
     return html`
-      ${this.header
-        ? html`<div id="timeline-header">
-            <md-dropdown>
-              <div slot="trigger" class="timeline-title">
-                <span>${this.timelineTitle}</span>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M7 10l5 5 5-5z" fill="currentColor" />
-                </svg>
-              </div>
+      ${
+        this.header
+          ? html`<div id="timeline-header">
+              <md-dropdown>
+                <div slot="trigger" class="timeline-title">
+                  <span>${this.timelineTitle}</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M7 10l5 5 5-5z" fill="currentColor" />
+                  </svg>
+                </div>
 
-              <md-menu>
-                <md-menu-item @click="${() => this.changeTimelineType('home')}">
-                  Home
-                </md-menu-item>
-                <md-divider></md-divider>
-                <md-menu-item
-                  @click="${() => this.changeTimelineType('local')}"
-                >
-                  Local
-                </md-menu-item>
-                <md-menu-item
-                  @click="${() => this.changeTimelineType('federated')}"
-                >
-                  Federated
-                </md-menu-item>
-                ${!this.guestMode
-                  ? html`
-                      <md-divider></md-divider>
-                      ${this.lists.map(
-                        (list) => html`
+                <md-menu>
+                  <md-menu-item
+                    @click="${() => this.changeTimelineType('home')}"
+                  >
+                    Home
+                  </md-menu-item>
+                  <md-divider></md-divider>
+                  <md-menu-item
+                    @click="${() => this.changeTimelineType('local')}"
+                  >
+                    Local
+                  </md-menu-item>
+                  <md-menu-item
+                    @click="${() => this.changeTimelineType('federated')}"
+                  >
+                    Federated
+                  </md-menu-item>
+                  ${
+                    !this.guestMode
+                      ? html`
+                          <md-divider></md-divider>
+                          ${this.lists.map(
+                            (list) => html`
+                              <md-menu-item
+                                @click=${() =>
+                                  this.changeTimelineType(`list:${list.id}`)}
+                              >
+                                ${list.title}
+                              </md-menu-item>
+                            `
+                          )}
+                          ${
+                            this.lists.length
+                              ? html`<md-divider></md-divider>`
+                              : null
+                          }
                           <md-menu-item
                             @click=${() =>
-                              this.changeTimelineType(`list:${list.id}`)}
+                              this.dispatchEvent(
+                                new CustomEvent('manage-lists', {
+                                  bubbles: true,
+                                  composed: true,
+                                })
+                              )}
                           >
-                            ${list.title}
+                            Manage lists...
                           </md-menu-item>
                         `
-                      )}
-                      ${this.lists.length
-                        ? html`<md-divider></md-divider>`
-                        : null}
-                      <md-menu-item
-                        @click=${() =>
-                          this.dispatchEvent(
-                            new CustomEvent('manage-lists', {
-                              bubbles: true,
-                              composed: true,
-                            })
-                          )}
-                      >
-                        Manage lists...
-                      </md-menu-item>
-                    `
-                  : null}
-              </md-menu>
-            </md-dropdown>
+                      : null
+                  }
+                </md-menu>
+              </md-dropdown>
 
-            <md-icon-button
-              id="refresh-manual-button"
-              circle
-              @click="${async () => {
-                const { clearTimelineCache } =
-                  await import('../services/timeline-cache');
-                clearTimelineCache(this.timelineType);
-                this.refreshTimeline(true);
-              }}"
-            >
-              <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
-            </md-icon-button>
-          </div>`
-        : null}
+              <md-icon-button
+                id="refresh-manual-button"
+                circle
+                @click="${async () => {
+                  const { clearTimelineCache } =
+                    await import('../services/timeline-cache');
+                  clearTimelineCache(this.timelineType);
+                  this.refreshTimeline(true);
+                }}"
+              >
+                <md-icon src="/assets/refresh-circle-outline.svg"></md-icon>
+              </md-icon-button>
+            </div>`
+          : null
+      }
 
       <div id="refresh-indicator">
         <div class="indicator-container">
@@ -1599,43 +1603,52 @@ export class Timeline extends LitElement {
         </div>
       </div>
 
-      ${this.pendingNewPosts.length > 0
-        ? html`
-            <div id="new-posts-button">
-              <md-button
-                variant="filled"
-                @click="${() => this.showPendingPosts()}"
+      ${
+        this.pendingNewPosts.length > 0
+          ? html`
+              <div id="new-posts-button">
+                <md-button
+                  variant="filled"
+                  @click="${() => this.showPendingPosts()}"
+                >
+                  <md-icon
+                    slot="prefix"
+                    src="/assets/arrow-up-outline.svg"
+                  ></md-icon>
+                  ${this.pendingNewPosts.length} new
+                  post${this.pendingNewPosts.length === 1 ? '' : 's'}
+                </md-button>
+              </div>
+            `
+          : null
+      }
+      ${
+        this.loadingData && this.timeline.length === 0
+          ? html`<md-skeleton-card count="5"></md-skeleton-card>`
+          : html`
+              <ul
+                id="mainList"
+                part="list"
+                class="scroller-fallback scrollbar-hidden"
+                role="list"
               >
-                <md-icon
-                  slot="prefix"
-                  src="/assets/arrow-up-outline.svg"
-                ></md-icon>
-                ${this.pendingNewPosts.length} new
-                post${this.pendingNewPosts.length === 1 ? '' : 's'}
-              </md-button>
-            </div>
-          `
-        : null}
-      ${this.loadingData && this.timeline.length === 0
-        ? html`<md-skeleton-card count="5"></md-skeleton-card>`
-        : html`
-            <ul
-              id="mainList"
-              part="list"
-              class="scroller-fallback scrollbar-hidden"
-              role="list"
-            >
-              ${this.timeline.map((item, index) =>
-                this._renderTimelineItem(item, index)
-              )}
-              ${this.loadingData
-                ? html`<li id="load-more-indicator" style="list-style: none;">
-                    <md-icon src="/assets/loading-indicator.svg"></md-icon>
-                    Loading more...
-                  </li>`
-                : null}
-            </ul>
-          `}
+                ${this.timeline.map((item, index) =>
+                  this._renderTimelineItem(item, index)
+                )}
+                ${
+                  this.loadingData
+                    ? html`<li
+                        id="load-more-indicator"
+                        style="list-style: none;"
+                      >
+                        <md-icon src="/assets/loading-indicator.svg"></md-icon>
+                        Loading more...
+                      </li>`
+                    : null
+                }
+              </ul>
+            `
+      }
     `;
   }
 }

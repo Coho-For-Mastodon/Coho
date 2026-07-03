@@ -31,36 +31,23 @@ export class MdOption extends LitElement {
         font-size: var(--md-sys-typescale-body-large-font-size);
         font-weight: 400;
         line-height: 24px;
-        letter-spacing: 0.5px;
+        letter-spacing: 0;
         color: var(--md-sys-color-on-surface, #1d1b20);
-        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: background-color 0.2s ease;
         position: relative;
         overflow: hidden;
       }
 
       .option:hover:not(.disabled) {
-        background-color: var(--md-sys-color-on-surface, #1d1b20);
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 8%,
-          transparent
-        );
+        background-color: rgba(0, 0, 0, 0.04);
       }
 
       .option:active:not(.disabled) {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 12%,
-          transparent
-        );
+        background-color: rgba(0, 0, 0, 0.06);
       }
 
       .option.selected {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-primary, #6750a4) 12%,
-          transparent
-        );
+        background-color: var(--md-sys-color-secondary-container, #f3edf7);
         font-weight: 500;
       }
 
@@ -81,36 +68,15 @@ export class MdOption extends LitElement {
         height: 24px;
         fill: var(--md-sys-color-primary, #6750a4);
         opacity: 0;
-        transition: opacity 0.15s cubic-bezier(0.2, 0, 0, 1);
+        transition: opacity 0.15s ease;
+        transition: opacity 0.15s;
       }
 
       .option.selected .checkmark {
         opacity: 1;
       }
 
-      /* Ripple effect */
-      .option::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: var(--md-sys-shape-corner-circle);
-        background-color: currentColor;
-        opacity: 0;
-        transform: translate(-50%, -50%);
-        transition:
-          width 0.3s,
-          height 0.3s,
-          opacity 0.3s;
-      }
-
-      .option:active:not(.disabled)::before {
-        width: 100%;
-        height: 100%;
-        opacity: 0.1;
-      }
+      /* Ripple removed */
 
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
@@ -119,27 +85,15 @@ export class MdOption extends LitElement {
         }
 
         .option:hover:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface, #e6e1e5) 8%,
-            transparent
-          );
+          background-color: rgba(255, 255, 255, 0.08);
         }
 
         .option:active:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface, #e6e1e5) 12%,
-            transparent
-          );
+          background-color: rgba(255, 255, 255, 0.12);
         }
 
         .option.selected {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-primary, #d0bcff) 12%,
-            transparent
-          );
+          background-color: var(--md-sys-color-secondary-container, #4a3045);
         }
 
         .checkmark {
@@ -154,19 +108,11 @@ export class MdOption extends LitElement {
         }
 
         .option:hover:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface-light, #1d1b20) 8%,
-            transparent
-          );
+          background-color: rgba(0, 0, 0, 0.04);
         }
 
         .option:active:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface-light, #1d1b20) 12%,
-            transparent
-          );
+          background-color: rgba(0, 0, 0, 0.06);
         }
       }
     `,
@@ -175,9 +121,9 @@ export class MdOption extends LitElement {
   render() {
     return html`
       <div
-        class="option ${this.selected ? 'selected' : ''} ${this.disabled
-          ? 'disabled'
-          : ''}"
+        class="option ${this.selected ? 'selected' : ''} ${
+          this.disabled ? 'disabled' : ''
+        }"
         role="option"
         aria-selected="${this.selected ? 'true' : 'false'}"
         aria-disabled="${this.disabled ? 'true' : 'false'}"

@@ -225,33 +225,39 @@ export class ListMembershipDialog extends LitElement {
       >
         <div class="content">
           <div class="intro">
-            ${displayName
-              ? msg(str`Choose lists for ${displayName}`)
-              : msg('Choose lists for this account')}
+            ${
+              displayName
+                ? msg(str`Choose lists for ${displayName}`)
+                : msg('Choose lists for this account')
+            }
           </div>
 
-          ${this.errorMessage
-            ? html`<div class="error">${this.errorMessage}</div>`
-            : nothing}
-          ${this.loading
-            ? html`<div class="empty">${msg('Loading lists...')}</div>`
-            : this.lists.length === 0
-              ? html` <div class="empty">${msg('No lists yet.')}</div> `
-              : html`
-                  <div class="list">
-                    ${this.lists.map(
-                      (list) => html`
-                        <div class="list-item">
-                          <div class="list-title">${list.title}</div>
-                          <md-checkbox
-                            .checked=${this.membership[list.id] ?? false}
-                            @change=${() => this._toggleMembership(list.id)}
-                          ></md-checkbox>
-                        </div>
-                      `
-                    )}
-                  </div>
-                `}
+          ${
+            this.errorMessage
+              ? html`<div class="error">${this.errorMessage}</div>`
+              : nothing
+          }
+          ${
+            this.loading
+              ? html`<div class="empty">${msg('Loading lists...')}</div>`
+              : this.lists.length === 0
+                ? html` <div class="empty">${msg('No lists yet.')}</div> `
+                : html`
+                    <div class="list">
+                      ${this.lists.map(
+                        (list) => html`
+                          <div class="list-item">
+                            <div class="list-title">${list.title}</div>
+                            <md-checkbox
+                              .checked=${this.membership[list.id] ?? false}
+                              @change=${() => this._toggleMembership(list.id)}
+                            ></md-checkbox>
+                          </div>
+                        `
+                      )}
+                    </div>
+                  `
+          }
         </div>
 
         <div slot="footer" class="footer-actions">

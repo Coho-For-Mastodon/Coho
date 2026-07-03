@@ -291,24 +291,30 @@ export class MediaEditDialog extends LitElement {
         @md-dialog-show="${this.handleDialogShow}"
       >
         <div class="preview-container">
-          ${!this.imageLoaded
-            ? html`<md-skeleton width="100%" height="200px"></md-skeleton>`
-            : ''}
-          ${currentPreview
-            ? html`<img
-                src="${currentPreview}"
-                alt="Preview"
-                @load="${this.handleImageLoad}"
-                style="${this.imageLoaded ? '' : 'display: none;'}"
-              />`
-            : ''}
-          ${this.isProcessing
-            ? html`<div class="processing-overlay">
-                <span class="processing-text"
-                  >${msg('Applying filter...')}</span
-                >
-              </div>`
-            : ''}
+          ${
+            !this.imageLoaded
+              ? html`<md-skeleton width="100%" height="200px"></md-skeleton>`
+              : ''
+          }
+          ${
+            currentPreview
+              ? html`<img
+                  src="${currentPreview}"
+                  alt="Preview"
+                  @load="${this.handleImageLoad}"
+                  style="${this.imageLoaded ? '' : 'display: none;'}"
+                />`
+              : ''
+          }
+          ${
+            this.isProcessing
+              ? html`<div class="processing-overlay">
+                  <span class="processing-text"
+                    >${msg('Applying filter...')}</span
+                  >
+                </div>`
+              : ''
+          }
         </div>
 
         <div class="filter-section">
@@ -317,24 +323,26 @@ export class MediaEditDialog extends LitElement {
             ${Object.entries(FILTER_PRESETS).map(
               ([key, filter]) => html`
                 <button
-                  class="filter-preset ${this.selectedFilter === key
-                    ? 'active'
-                    : ''}"
+                  class="filter-preset ${
+                    this.selectedFilter === key ? 'active' : ''
+                  }"
                   @click="${() => this.handleFilterSelect(key)}"
                   ?disabled="${this.isProcessing}"
                 >
-                  ${this.filterThumbnails[key]
-                    ? html`<img
-                        class="filter-preset-image"
-                        src="${this.filterThumbnails[key]}"
-                        alt="${filter.name}"
-                      />`
-                    : html`<div
-                        class="filter-preset-image"
-                        style="display: flex; align-items: center; justify-content: center;"
-                      >
-                        <md-skeleton width="60px" height="60px"></md-skeleton>
-                      </div>`}
+                  ${
+                    this.filterThumbnails[key]
+                      ? html`<img
+                          class="filter-preset-image"
+                          src="${this.filterThumbnails[key]}"
+                          alt="${filter.name}"
+                        />`
+                      : html`<div
+                          class="filter-preset-image"
+                          style="display: flex; align-items: center; justify-content: center;"
+                        >
+                          <md-skeleton width="60px" height="60px"></md-skeleton>
+                        </div>`
+                  }
                   <div class="filter-preset-label">${filter.name}</div>
                 </button>
               `
@@ -360,9 +368,9 @@ export class MediaEditDialog extends LitElement {
             size="small"
             ?disabled="${this.generating || this.isUploading}"
             @click="${this.handleGenerateAlt}"
-            title=${this.promptAPIAvailable
-              ? msg('On-device AI')
-              : msg('Cloud AI')}
+            title=${
+              this.promptAPIAvailable ? msg('On-device AI') : msg('Cloud AI')
+            }
           >
             ${this.generating ? msg('Generating...') : msg('Generate Alt Text')}
           </md-button>
@@ -380,11 +388,13 @@ export class MediaEditDialog extends LitElement {
             @click="${this.handleSave}"
             ?disabled="${this.isProcessing || this.isUploading}"
           >
-            ${this.isUploading
-              ? msg('Uploading...')
-              : this.isProcessing
-                ? msg('Processing...')
-                : msg('Save')}
+            ${
+              this.isUploading
+                ? msg('Uploading...')
+                : this.isProcessing
+                  ? msg('Processing...')
+                  : msg('Save')
+            }
           </md-button>
         </div>
       </md-dialog>

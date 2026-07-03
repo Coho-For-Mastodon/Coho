@@ -37,9 +37,8 @@ export class MdTextArea extends LitElement {
         width: 100%;
         min-height: var(--md-text-area-min-height, 80px);
         padding: var(--md-text-area-padding, 12px 16px);
-        border: none;
-        border-radius: var(--md-sys-shape-corner-extra-small)
-          var(--md-sys-shape-corner-extra-small) 0 0;
+        border: 1px solid var(--md-sys-color-outline, #79747e);
+        border-radius: var(--md-sys-shape-corner-medium);
         background-color: var(
           --md-sys-color-surface-container-highest,
           #e6e0e9
@@ -47,13 +46,9 @@ export class MdTextArea extends LitElement {
         font-size: var(--md-sys-typescale-body-large-font-size);
         font-weight: 400;
         line-height: 24px;
-        letter-spacing: 0.5px;
+        letter-spacing: 0;
         color: var(--md-sys-color-on-surface, #1d1b20);
-        border-bottom: 1px solid var(--md-sys-color-on-surface-variant, #49454f);
-        transition:
-          background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-          border-bottom-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-          border-bottom-width 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: border-color 0.2s ease;
         resize: var(--md-text-area-resize, vertical);
         box-sizing: border-box;
       }
@@ -64,22 +59,12 @@ export class MdTextArea extends LitElement {
       }
 
       textarea:hover:not(:disabled) {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 8%,
-          var(--md-sys-color-surface-container-highest, #e6e0e9)
-        );
+        border-color: var(--md-sys-color-on-surface, #1d1b20);
       }
 
       textarea:focus {
         outline: none;
-        border-bottom-color: var(--md-sys-color-primary, #6750a4);
-        border-bottom-width: 2px;
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 12%,
-          var(--md-sys-color-surface-container-highest, #e6e0e9)
-        );
+        border-color: var(--md-sys-color-primary, #6750a4);
       }
 
       textarea:focus-visible {
@@ -101,7 +86,7 @@ export class MdTextArea extends LitElement {
       textarea.outlined {
         background-color: transparent;
         border: 1px solid var(--md-sys-color-outline, #79747e);
-        border-radius: var(--md-sys-shape-corner-extra-small);
+        border-radius: var(--md-sys-shape-corner-medium);
       }
 
       textarea.outlined:hover:not(:disabled) {
@@ -111,19 +96,15 @@ export class MdTextArea extends LitElement {
 
       textarea.outlined:focus {
         border-color: var(--md-sys-color-primary, #6750a4);
-        border-width: 2px;
         background-color: transparent;
       }
 
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
         textarea {
-          background-color: var(
-            --md-sys-color-surface-container-highest,
-            #49454f
-          );
+          background-color: #333333;
           color: var(--md-sys-color-on-surface, #e6e0e9);
-          border-bottom-color: var(--md-sys-color-outline, #938f99);
+          border-color: var(--md-sys-color-outline, #938f99);
         }
 
         textarea::placeholder {
@@ -131,20 +112,11 @@ export class MdTextArea extends LitElement {
         }
 
         textarea:hover:not(:disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface, #e6e0e9) 8%,
-            var(--md-sys-color-surface-container-highest, #49454f)
-          );
+          border-color: #cccccc;
         }
 
         textarea:focus {
-          border-bottom-color: var(--md-sys-color-primary, #d0bcff);
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface, #e6e0e9) 12%,
-            var(--md-sys-color-surface-container-highest, #49454f)
-          );
+          border-color: var(--md-sys-color-primary, #d0bcff);
         }
 
         textarea:focus-visible {
@@ -153,10 +125,7 @@ export class MdTextArea extends LitElement {
         }
 
         textarea:disabled {
-          background-color: var(
-            --md-sys-color-surface-container-highest,
-            #49454f
-          );
+          background-color: #333333;
         }
 
         textarea.outlined {
@@ -242,13 +211,15 @@ export class MdTextArea extends LitElement {
           @input="${this._handleInput}"
           @change="${this._handleChange}"
         ></textarea>
-        ${this.maxlength && !this.hideCounter
-          ? html`
-              <div class="char-counter">
-                ${this.value.length} / ${this.maxlength}
-              </div>
-            `
-          : ''}
+        ${
+          this.maxlength && !this.hideCounter
+            ? html`
+                <div class="char-counter">
+                  ${this.value.length} / ${this.maxlength}
+                </div>
+              `
+            : ''
+        }
       </div>
     `;
   }

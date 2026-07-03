@@ -114,39 +114,41 @@ export class AppFollowedHashtags extends LitElement {
       <main>
         <h2>${msg('Followed Hashtags')}</h2>
         <ul class="scrollbar-hidden">
-          ${this.loading && this.tags.length === 0
-            ? Array.from({ length: 6 }, () => {
-                return html`
-                  <li class="skeleton-row">
-                    <div class="skeleton-lines">
-                      <md-skeleton width="180px" height="16px"></md-skeleton>
-                    </div>
-                  </li>
-                `;
-              })
-            : this.tags.length === 0
-              ? html`<li class="empty-state">
-                  ${msg('You are not following any hashtags.')}
-                </li>`
-              : this.tags.map((tag) => {
-                  const processing = this._unfollowingNames.has(tag.name);
+          ${
+            this.loading && this.tags.length === 0
+              ? Array.from({ length: 6 }, () => {
                   return html`
-                    <li @click=${() => this._openTag(tag.name)}>
-                      <span class="tag-name">#${tag.name}</span>
-                      <md-button
-                        variant="text"
-                        size="small"
-                        ?disabled=${processing}
-                        @click=${(e: Event) => {
-                          e.stopPropagation();
-                          this._unfollow(tag.name);
-                        }}
-                      >
-                        ${processing ? msg('...') : msg('Unfollow')}
-                      </md-button>
+                    <li class="skeleton-row">
+                      <div class="skeleton-lines">
+                        <md-skeleton width="180px" height="16px"></md-skeleton>
+                      </div>
                     </li>
                   `;
-                })}
+                })
+              : this.tags.length === 0
+                ? html`<li class="empty-state">
+                    ${msg('You are not following any hashtags.')}
+                  </li>`
+                : this.tags.map((tag) => {
+                    const processing = this._unfollowingNames.has(tag.name);
+                    return html`
+                      <li @click=${() => this._openTag(tag.name)}>
+                        <span class="tag-name">#${tag.name}</span>
+                        <md-button
+                          variant="text"
+                          size="small"
+                          ?disabled=${processing}
+                          @click=${(e: Event) => {
+                            e.stopPropagation();
+                            this._unfollow(tag.name);
+                          }}
+                        >
+                          ${processing ? msg('...') : msg('Unfollow')}
+                        </md-button>
+                      </li>
+                    `;
+                  })
+          }
         </ul>
       </main>
     `;

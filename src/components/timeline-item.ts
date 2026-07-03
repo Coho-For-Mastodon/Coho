@@ -1388,8 +1388,7 @@ export class TimelineItem extends LitElement {
   }
 
   private _editHistoryDialog:
-    | import('./post-edit-history-dialog').PostEditHistoryDialog
-    | null = null;
+    import('./post-edit-history-dialog').PostEditHistoryDialog | null = null;
 
   viewSensitive() {
     if (this.tweet) {
@@ -1695,9 +1694,11 @@ export class TimelineItem extends LitElement {
 
     return html`
       ${renderThreadAncestors(state, handlers)}
-      ${this.tweet.reblog
-        ? renderReblog(state, handlers)
-        : renderRegularTweet(state, handlers)}
+      ${
+        this.tweet.reblog
+          ? renderReblog(state, handlers)
+          : renderRegularTweet(state, handlers)
+      }
       ${renderThread(state, handlers)}
 
       <report-dialog

@@ -816,14 +816,16 @@ export class SearchPage extends LitElement {
               @click="${() => this.openAccount(account.id)}"
             >
               <div class="card-header">
-                ${account.header && !account.header.includes('missing')
-                  ? html`<img
-                      class="card-header-image"
-                      src="${account.header}"
-                      alt=""
-                      loading="lazy"
-                    />`
-                  : null}
+                ${
+                  account.header && !account.header.includes('missing')
+                    ? html`<img
+                        class="card-header-image"
+                        src="${account.header}"
+                        alt=""
+                        loading="lazy"
+                      />`
+                    : null
+                }
               </div>
               <img
                 class="card-avatar"
@@ -841,9 +843,11 @@ export class SearchPage extends LitElement {
                         true
                       )}"
                     ></span>
-                    ${account.bot
-                      ? html`<span class="bot-badge">${msg('Bot')}</span>`
-                      : null}
+                    ${
+                      account.bot
+                        ? html`<span class="bot-badge">${msg('Bot')}</span>`
+                        : null
+                    }
                   </p>
                   <p class="card-username">@${account.acct}</p>
                 </div>
@@ -901,101 +905,111 @@ export class SearchPage extends LitElement {
         </md-segmented-button>
 
         <div class="panel ${this.activeSegment === 'for-you' ? 'active' : ''}">
-          ${this.userHasSearched &&
-          this.searchData &&
-          this.searchData.accounts &&
-          this.searchData.accounts.length > 0
-            ? this.renderAccountCards(this.searchData.accounts)
-            : this.suggestionsLoading
-              ? this.renderAccountSkeletons()
-              : this.suggestionsError
-                ? html`<p>${this.suggestionsError}</p>`
-                : this.suggestions && this.suggestions.length > 0
-                  ? this.renderAccountCards(
-                      this.suggestions.map((s) => s.account)
-                    )
-                  : null}
+          ${
+            this.userHasSearched &&
+            this.searchData &&
+            this.searchData.accounts &&
+            this.searchData.accounts.length > 0
+              ? this.renderAccountCards(this.searchData.accounts)
+              : this.suggestionsLoading
+                ? this.renderAccountSkeletons()
+                : this.suggestionsError
+                  ? html`<p>${this.suggestionsError}</p>`
+                  : this.suggestions && this.suggestions.length > 0
+                    ? this.renderAccountCards(
+                        this.suggestions.map((s) => s.account)
+                      )
+                    : null
+          }
         </div>
 
         <div class="panel ${this.activeSegment === 'statuses' ? 'active' : ''}">
           <ul>
-            ${this.searchData && this.searchData.statuses
-              ? this.searchData.statuses.map((status) => {
-                  return html`<li>
-                    <timeline-item
-                      .tweet="${status}"
-                      @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                        this.handleOpenPost(e.detail.tweet)}"
-                    ></timeline-item>
-                  </li>`;
-                })
-              : null}
+            ${
+              this.searchData && this.searchData.statuses
+                ? this.searchData.statuses.map((status) => {
+                    return html`<li>
+                      <timeline-item
+                        .tweet="${status}"
+                        @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                          this.handleOpenPost(e.detail.tweet)}"
+                      ></timeline-item>
+                    </li>`;
+                  })
+                : null
+            }
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'trending' ? 'active' : ''}">
           <ul>
-            ${this.trendingLoading
-              ? html`<li><md-skeleton-card count="5"></md-skeleton-card></li>`
-              : this.trendingError
-                ? html`<li>${this.trendingError}</li>`
-                : this.trending
-                  ? this.trending.map((status) => {
-                      return html`<li>
-                        <timeline-item
-                          .tweet="${status}"
-                          @open="${(e: CustomEvent<{ tweet: Post }>) =>
-                            this.handleOpenPost(e.detail.tweet)}"
-                        ></timeline-item>
-                      </li>`;
-                    })
-                  : null}
+            ${
+              this.trendingLoading
+                ? html`<li><md-skeleton-card count="5"></md-skeleton-card></li>`
+                : this.trendingError
+                  ? html`<li>${this.trendingError}</li>`
+                  : this.trending
+                    ? this.trending.map((status) => {
+                        return html`<li>
+                          <timeline-item
+                            .tweet="${status}"
+                            @open="${(e: CustomEvent<{ tweet: Post }>) =>
+                              this.handleOpenPost(e.detail.tweet)}"
+                          ></timeline-item>
+                        </li>`;
+                      })
+                    : null
+            }
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'news' ? 'active' : ''}">
           <ul id="newsList">
-            ${this.newsLoading
-              ? html`<li><md-skeleton></md-skeleton></li>`
-              : this.newsError
-                ? html`<li>${this.newsError}</li>`
-                : this.trendingLinks
-                  ? this.trendingLinks.map((link) => {
-                      return html` <li>
-                        <img src="${link.image}" alt="${link.description}" />
+            ${
+              this.newsLoading
+                ? html`<li><md-skeleton></md-skeleton></li>`
+                : this.newsError
+                  ? html`<li>${this.newsError}</li>`
+                  : this.trendingLinks
+                    ? this.trendingLinks.map((link) => {
+                        return html` <li>
+                          <img src="${link.image}" alt="${link.description}" />
 
-                        <h3>${link.title}</h3>
-                        <a href="${link.url}" target="_blank">${link.url}</a>
+                          <h3>${link.title}</h3>
+                          <a href="${link.url}" target="_blank">${link.url}</a>
 
-                        <p>${link.description}</p>
-                      </li>`;
-                    })
-                  : null}
+                          <p>${link.description}</p>
+                        </li>`;
+                      })
+                    : null
+            }
           </ul>
         </div>
 
         <div class="panel ${this.activeSegment === 'hashtags' ? 'active' : ''}">
-          ${this.searchData && this.searchData.hashtags
-            ? html`
-                <ul id="hashtagsList" role="list">
-                  ${this.searchData.hashtags.map((hashtag) => {
-                    return html`<li
-                      tabindex="0"
-                      role="button"
-                      @click="${() => this.handleHashtagClick(hashtag.name)}"
-                      @keydown="${(e: KeyboardEvent) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          this.handleHashtagClick(hashtag.name);
-                        }
-                      }}"
-                    >
-                      <div class="account">#${hashtag.name}</div>
-                    </li>`;
-                  })}
-                </ul>
-              `
-            : null}
+          ${
+            this.searchData && this.searchData.hashtags
+              ? html`
+                  <ul id="hashtagsList" role="list">
+                    ${this.searchData.hashtags.map((hashtag) => {
+                      return html`<li
+                        tabindex="0"
+                        role="button"
+                        @click="${() => this.handleHashtagClick(hashtag.name)}"
+                        @keydown="${(e: KeyboardEvent) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            this.handleHashtagClick(hashtag.name);
+                          }
+                        }}"
+                      >
+                        <div class="account">#${hashtag.name}</div>
+                      </li>`;
+                    })}
+                  </ul>
+                `
+              : null
+          }
         </div>
       </section>
 

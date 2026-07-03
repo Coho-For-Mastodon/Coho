@@ -315,32 +315,40 @@ export class CreateAccount extends LitElement {
         ${info.stats.domain_count.toLocaleString()} ${msg('connected servers')}
       </p>
 
-      ${info.short_description
-        ? html`<p class="instance-description">${info.short_description}</p>`
-        : info.description
-          ? html`<p class="instance-description">${info.description}</p>`
-          : null}
-      ${info.rules && info.rules.length > 0
-        ? html`
-            <div class="instance-rules">
-              <h3>${msg('Server Rules')}</h3>
-              <ol>
-                ${info.rules.map((rule) => html`<li>${rule.text}</li>`)}
-              </ol>
-            </div>
-          `
-        : null}
-      ${!registrationsOpen
-        ? html`<div class="registration-closed">
-            ${msg('This server is not accepting new registrations.')}
-          </div>`
-        : html`
-            ${approvalRequired
-              ? html`<div class="approval-notice">
-                  ${msg('This server requires admin approval after sign-up.')}
-                </div>`
-              : null}
-          `}
+      ${
+        info.short_description
+          ? html`<p class="instance-description">${info.short_description}</p>`
+          : info.description
+            ? html`<p class="instance-description">${info.description}</p>`
+            : null
+      }
+      ${
+        info.rules && info.rules.length > 0
+          ? html`
+              <div class="instance-rules">
+                <h3>${msg('Server Rules')}</h3>
+                <ol>
+                  ${info.rules.map((rule) => html`<li>${rule.text}</li>`)}
+                </ol>
+              </div>
+            `
+          : null
+      }
+      ${
+        !registrationsOpen
+          ? html`<div class="registration-closed">
+              ${msg('This server is not accepting new registrations.')}
+            </div>`
+          : html`
+              ${
+                approvalRequired
+                  ? html`<div class="approval-notice">
+                      ${msg('This server requires admin approval after sign-up.')}
+                    </div>`
+                  : null
+              }
+            `
+      }
     `;
   }
 
@@ -350,73 +358,83 @@ export class CreateAccount extends LitElement {
 
       <md-dialog .label="${this.instanceInfo?.title || ''}">
         ${this.renderDialogContent()}
-        ${this.instanceInfo?.registrations
-          ? html`
-              <md-button
-                slot="footer"
-                variant="filled"
-                @click="${this.openSignup}"
-              >
-                ${msg('Create Account on')} ${this.instanceInfo.title}
-              </md-button>
-            `
-          : null}
+        ${
+          this.instanceInfo?.registrations
+            ? html`
+                <md-button
+                  slot="footer"
+                  variant="filled"
+                  @click="${this.openSignup}"
+                >
+                  ${msg('Create Account on')} ${this.instanceInfo.title}
+                </md-button>
+              `
+            : null
+        }
       </md-dialog>
 
       <main>
         <div class="card">
-          ${this.signupStarted
-            ? html`
-                <div class="post-signup">
-                  <h2>${msg('Almost there!')}</h2>
-                  <p>
-                    ${msg(
-                      "Once you've finished creating your account and confirmed your email, come back here to log in."
-                    )}
-                  </p>
-                  <md-button variant="filled" @click="${this.goToLogin}">
-                    ${msg('Login')}
-                  </md-button>
-                </div>
-              `
-            : html`
-                <div class="header">
-                  <h1>${msg('Create Account')}</h1>
-                  <p class="subtitle">
-                    ${msg(
-                      'Choose a Mastodon server to create your account. Each server is independently operated with its own rules and community. After signing up, you can follow anyone on any server.'
-                    )}
-                  </p>
-                </div>
+          ${
+            this.signupStarted
+              ? html`
+                  <div class="post-signup">
+                    <h2>${msg('Almost there!')}</h2>
+                    <p>
+                      ${msg(
+                        "Once you've finished creating your account and confirmed your email, come back here to log in."
+                      )}
+                    </p>
+                    <md-button variant="filled" @click="${this.goToLogin}">
+                      ${msg('Login')}
+                    </md-button>
+                  </div>
+                `
+              : html`
+                  <div class="header">
+                    <h1>${msg('Create Account')}</h1>
+                    <p class="subtitle">
+                      ${msg(
+                        'Choose a Mastodon server to create your account. Each server is independently operated with its own rules and community. After signing up, you can follow anyone on any server.'
+                      )}
+                    </p>
+                  </div>
 
-                <div class="search-section">
-                  <md-autocomplete
-                    .placeholder="${msg(
-                      'Search for a server (e.g. mastodon.social)'
-                    )}"
-                    .value="${this.chosenServer}"
-                    .options="${this.instances}"
-                    .loading="${this.loadingInstances}"
-                    @input="${this.handleServerInput}"
-                    @select="${this.handleServerSelect}"
-                  ></md-autocomplete>
+                  <div class="search-section">
+                    <md-autocomplete
+                      .placeholder="${msg(
+                        'Search for a server (e.g. mastodon.social)'
+                      )}"
+                      .value="${this.chosenServer}"
+                      .options="${this.instances}"
+                      .loading="${this.loadingInstances}"
+                      @input="${this.handleServerInput}"
+                      @select="${this.handleServerSelect}"
+                    ></md-autocomplete>
 
-                  ${this.loadingInfo
-                    ? html`<md-button variant="tonal" disabled>
-                        ${msg('Loading server info...')}
-                      </md-button>`
-                    : null}
-                  ${this.instanceError
-                    ? html`<p class="error-message">${this.instanceError}</p>`
-                    : null}
-                </div>
+                    ${
+                      this.loadingInfo
+                        ? html`<md-button variant="tonal" disabled>
+                            ${msg('Loading server info...')}
+                          </md-button>`
+                        : null
+                    }
+                    ${
+                      this.instanceError
+                        ? html`<p class="error-message">
+                            ${this.instanceError}
+                          </p>`
+                        : null
+                    }
+                  </div>
 
-                <div class="actions">
-                  <md-button @click="${this.goToLogin}" variant="text">
-                    ${msg('Already have an account? Login')}
-                  </md-button>
-                </div>
-              `}
+                  <div class="actions">
+                    <md-button @click="${this.goToLogin}" variant="text">
+                      ${msg('Already have an account? Login')}
+                    </md-button>
+                  </div>
+                `
+          }
         </div>
       </main>
     `;

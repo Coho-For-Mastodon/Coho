@@ -33,12 +33,12 @@ export class MdMenuItem extends LitElement {
         font-size: 14px;
         font-weight: 400;
         line-height: 20px;
-        letter-spacing: 0.25px;
+        letter-spacing: 0;
         color: var(--md-sys-color-on-surface, #1d1b20);
-        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: background-color 0.2s ease;
         position: relative;
         overflow: hidden;
-        border-radius: var(--md-sys-shape-corner-medium);
+        border-radius: var(--md-sys-shape-corner-small);
       }
 
       /* Selected state */
@@ -57,35 +57,19 @@ export class MdMenuItem extends LitElement {
       }
 
       .menu-item:hover:not(.disabled) {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 8%,
-          transparent
-        );
+        background-color: rgba(0, 0, 0, 0.04);
       }
 
       :host([selected]) .menu-item:hover:not(.disabled) {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-secondary-container, #f7d8e8) 100%,
-          var(--md-sys-color-on-secondary-container, #31111d) 8%
-        );
+        filter: brightness(0.95);
       }
 
       .menu-item:active:not(.disabled) {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-on-surface, #1d1b20) 12%,
-          transparent
-        );
+        background-color: rgba(0, 0, 0, 0.06);
       }
 
       :host([selected]) .menu-item:active:not(.disabled) {
-        background-color: color-mix(
-          in srgb,
-          var(--md-sys-color-secondary-container, #f7d8e8) 100%,
-          var(--md-sys-color-on-secondary-container, #31111d) 12%
-        );
+        filter: brightness(0.9);
       }
 
       .menu-item.disabled {
@@ -134,29 +118,7 @@ export class MdMenuItem extends LitElement {
         font-size: 12px;
       }
 
-      /* Ripple effect */
-      .menu-item::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: var(--md-sys-shape-corner-circle);
-        background-color: currentColor;
-        opacity: 0;
-        transform: translate(-50%, -50%);
-        transition:
-          width 0.3s,
-          height 0.3s,
-          opacity 0.3s;
-      }
-
-      .menu-item:active:not(.disabled)::before {
-        width: 100%;
-        height: 100%;
-        opacity: 0.1;
-      }
+      /* Ripple removed */
 
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
@@ -178,35 +140,19 @@ export class MdMenuItem extends LitElement {
         }
 
         .menu-item:hover:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface, #e6e1e5) 8%,
-            transparent
-          );
+          background-color: rgba(255, 255, 255, 0.08);
         }
 
         :host([selected]) .menu-item:hover:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-secondary-container, #4a3045) 100%,
-            var(--md-sys-color-on-secondary-container, #ffd8e8) 8%
-          );
+          filter: brightness(1.1);
         }
 
         .menu-item:active:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface, #e6e1e5) 12%,
-            transparent
-          );
+          background-color: rgba(255, 255, 255, 0.12);
         }
 
         :host([selected]) .menu-item:active:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-secondary-container, #4a3045) 100%,
-            var(--md-sys-color-on-secondary-container, #ffd8e8) 12%
-          );
+          filter: brightness(1.2);
         }
       }
 
@@ -217,19 +163,11 @@ export class MdMenuItem extends LitElement {
         }
 
         .menu-item:hover:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface-light, #1d1b20) 8%,
-            transparent
-          );
+          background-color: rgba(0, 0, 0, 0.04);
         }
 
         .menu-item:active:not(.disabled) {
-          background-color: color-mix(
-            in srgb,
-            var(--md-sys-color-on-surface-light, #1d1b20) 12%,
-            transparent
-          );
+          background-color: rgba(0, 0, 0, 0.06);
         }
       }
 
@@ -283,23 +221,25 @@ export class MdMenuItem extends LitElement {
         @click="${this._handleClick}"
         @keydown="${this._handleKeydown}"
       >
-        ${this.selected
-          ? html`<span class="check-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>`
-          : html`<div class="prefix"><slot name="prefix"></slot></div>`}
+        ${
+          this.selected
+            ? html`<span class="check-icon">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>`
+            : html`<div class="prefix"><slot name="prefix"></slot></div>`
+        }
         <div class="content">
           <slot></slot>
         </div>

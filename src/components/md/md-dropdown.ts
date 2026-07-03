@@ -14,10 +14,7 @@ export class MdDropdown extends LitElement {
   @property({ type: Boolean, attribute: 'close-on-scroll' })
   closeOnScroll = false;
   @property({ type: String }) placement:
-    | 'bottom-start'
-    | 'bottom-end'
-    | 'top-start'
-    | 'top-end' = 'bottom-start';
+    'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' = 'bottom-start';
   @property({ type: Number }) distance = 8;
 
   @query('slot[name="trigger"]') triggerSlot!: HTMLSlotElement;
@@ -55,12 +52,10 @@ export class MdDropdown extends LitElement {
       max-width: calc(100vw - 16px);
       max-height: calc(100vh - 16px);
       opacity: 0;
-      transform: scale(0.95);
-      transform-origin: var(--md-dropdown-origin-y, top)
-        var(--md-dropdown-origin-x, left);
+      transform: translateY(-6px);
       transition:
-        opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
-        transform 0.15s cubic-bezier(0.2, 0, 0, 1),
+        opacity 0.15s ease,
+        transform 0.15s ease,
         display 0.15s allow-discrete,
         overlay 0.15s allow-discrete;
       transition-behavior: allow-discrete;
@@ -68,13 +63,13 @@ export class MdDropdown extends LitElement {
 
     .popup:popover-open {
       opacity: 1;
-      transform: scale(1);
+      transform: translateY(0);
     }
 
     @starting-style {
       .popup:popover-open {
         opacity: 0;
-        transform: scale(0.95);
+        transform: translateY(-6px);
       }
     }
 
@@ -309,8 +304,7 @@ export class MdDropdown extends LitElement {
     this._detachOpenListeners();
 
     const triggerEl = this.triggerSlot?.assignedElements()[0] as
-      | HTMLElement
-      | undefined;
+      HTMLElement | undefined;
     this._scrollTargets = triggerEl
       ? this._collectScrollTargets(triggerEl)
       : [window];

@@ -218,6 +218,15 @@
   </head>
 
   <body>
+    <script>
+      window.onload = function () {
+        var div = document.createElement('div');
+        div.style =
+          'color: white; position: fixed; top: 100px; left: 0; right: 0; z-index: 99999; background: red; padding: 20px; font-size: 16px; word-break: break-all;';
+        div.innerHTML = '<b>URL:</b> ' + window.location.href + '<br><b>Path:</b> ' + window.location.pathname;
+        document.body.appendChild(div);
+      };
+    </script>
     <!--
       Android intent:// bridge for native OAuth callback.
       The Capacitor Android app opens a Chrome Custom Tab with the Mastodon

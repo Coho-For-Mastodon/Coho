@@ -81,20 +81,18 @@ export class MdToast extends LitElement {
         min-width: 280px;
         max-width: min(560px, calc(100vw - 32px));
         padding: 14px 16px;
-        border-radius: var(--md-sys-shape-corner-extra-small);
+        border-radius: var(--md-sys-shape-corner-large);
         background: #313033;
         color: #f5eff7;
-        box-shadow:
-          0px 1px 2px rgba(0, 0, 0, 0.3),
-          0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+        box-shadow: none;
         font-size: var(--md-sys-typescale-body-medium-font-size);
         line-height: 20px;
         font-weight: 400;
         opacity: 0;
         transform: translateY(100px);
         transition:
-          opacity 0.2s cubic-bezier(0, 0, 0.2, 1),
-          transform 0.2s cubic-bezier(0, 0, 0.2, 1);
+          opacity 0.2s ease,
+          transform 0.2s ease;
       }
 
       :host([open]) .toast-container {
@@ -182,8 +180,7 @@ export class MdToast extends LitElement {
         padding: 8px 12px;
         border-radius: var(--md-sys-shape-corner-extra-small);
         cursor: pointer;
-        text-transform: uppercase;
-        transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);
+        transition: opacity 0.15s ease;
         position: relative;
         overflow: hidden;
       }
@@ -195,11 +192,11 @@ export class MdToast extends LitElement {
       }
 
       button:hover {
-        background: color-mix(in srgb, currentColor 8%, transparent);
+        opacity: 0.8;
       }
 
       button:active {
-        background: color-mix(in srgb, currentColor 12%, transparent);
+        opacity: 0.7;
       }
 
       button:focus-visible {
@@ -308,34 +305,40 @@ export class MdToast extends LitElement {
     return html`
       <div class="toast-container" role="status" aria-live="polite">
         <div class="message">${this.message}</div>
-        ${this.actionLabel || this.closable
-          ? html`
-              <div class="actions">
-                ${this.actionLabel
-                  ? html`
-                      <button
-                        class="action-button"
-                        @click=${this.handleActionClick}
-                        aria-label=${this.actionLabel}
-                      >
-                        ${this.actionLabel}
-                      </button>
-                    `
-                  : ''}
-                ${this.closable
-                  ? html`
-                      <button
-                        class="close-button"
-                        @click=${this.handleCloseClick}
-                        aria-label="Close"
-                      >
-                        ✕
-                      </button>
-                    `
-                  : ''}
-              </div>
-            `
-          : ''}
+        ${
+          this.actionLabel || this.closable
+            ? html`
+                <div class="actions">
+                  ${
+                    this.actionLabel
+                      ? html`
+                          <button
+                            class="action-button"
+                            @click=${this.handleActionClick}
+                            aria-label=${this.actionLabel}
+                          >
+                            ${this.actionLabel}
+                          </button>
+                        `
+                      : ''
+                  }
+                  ${
+                    this.closable
+                      ? html`
+                          <button
+                            class="close-button"
+                            @click=${this.handleCloseClick}
+                            aria-label="Close"
+                          >
+                            ✕
+                          </button>
+                        `
+                      : ''
+                  }
+                </div>
+              `
+            : ''
+        }
       </div>
     `;
   }

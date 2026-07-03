@@ -48,10 +48,7 @@ export class AccountSettings extends LitElement {
 
   // Posting defaults
   @state() private defaultPrivacy:
-    | 'public'
-    | 'unlisted'
-    | 'private'
-    | 'direct' = 'public';
+    'public' | 'unlisted' | 'private' | 'direct' = 'public';
   @state() private defaultSensitive = false;
   @state() private defaultLanguage = '';
 

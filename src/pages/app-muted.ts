@@ -220,53 +220,64 @@ export class AppMuted extends LitElement {
             ?disabled=${this._importing}
             @click=${this._openImportPicker}
           >
-            ${this._importing
-              ? this._importProgress
-                ? msg(str`Importing… ${this._importProgress}`)
-                : msg('Importing…')
-              : msg('Import CSV')}
+            ${
+              this._importing
+                ? this._importProgress
+                  ? msg(str`Importing… ${this._importProgress}`)
+                  : msg('Importing…')
+                : msg('Import CSV')
+            }
           </md-button>
         </div>
         <ul class="scrollbar-hidden">
-          ${this.loading && this.accounts.length === 0
-            ? Array.from({ length: 6 }, () => {
-                return html`
-                  <li class="skeleton-row">
-                    <md-skeleton
-                      shape="circle"
-                      width="50px"
-                      height="50px"
-                    ></md-skeleton>
-                    <div class="skeleton-lines">
-                      <md-skeleton width="160px" height="16px"></md-skeleton>
-                      <md-skeleton
-                        width="120px"
-                        height="12px"
-                        style="margin-top: 6px;"
-                      ></md-skeleton>
-                    </div>
-                  </li>
-                `;
-              })
-            : this.accounts.length === 0
-              ? html`<li class="empty-state">${msg('No muted accounts.')}</li>`
-              : this.accounts.map((account) => {
+          ${
+            this.loading && this.accounts.length === 0
+              ? Array.from({ length: 6 }, () => {
                   return html`
-                    <li>
-                      <user-profile list-row .account=${account}></user-profile>
-                      <md-button
-                        variant="text"
-                        size="small"
-                        ?disabled=${this._unmutingIds.has(account.id)}
-                        @click=${() => this._unmute(account)}
-                      >
-                        ${this._unmutingIds.has(account.id)
-                          ? msg('Unmuting...')
-                          : msg('Unmute')}
-                      </md-button>
+                    <li class="skeleton-row">
+                      <md-skeleton
+                        shape="circle"
+                        width="50px"
+                        height="50px"
+                      ></md-skeleton>
+                      <div class="skeleton-lines">
+                        <md-skeleton width="160px" height="16px"></md-skeleton>
+                        <md-skeleton
+                          width="120px"
+                          height="12px"
+                          style="margin-top: 6px;"
+                        ></md-skeleton>
+                      </div>
                     </li>
                   `;
-                })}
+                })
+              : this.accounts.length === 0
+                ? html`<li class="empty-state">
+                    ${msg('No muted accounts.')}
+                  </li>`
+                : this.accounts.map((account) => {
+                    return html`
+                      <li>
+                        <user-profile
+                          list-row
+                          .account=${account}
+                        ></user-profile>
+                        <md-button
+                          variant="text"
+                          size="small"
+                          ?disabled=${this._unmutingIds.has(account.id)}
+                          @click=${() => this._unmute(account)}
+                        >
+                          ${
+                            this._unmutingIds.has(account.id)
+                              ? msg('Unmuting...')
+                              : msg('Unmute')
+                          }
+                        </md-button>
+                      </li>
+                    `;
+                  })
+          }
         </ul>
       </main>
     `;

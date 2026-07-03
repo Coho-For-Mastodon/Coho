@@ -426,17 +426,21 @@ export class ImageGrid extends LitElement {
           style="${cellStyle}"
           @click="${(event: MouseEvent) => this.openInBox(image, event)}"
         >
-          ${blurhashUrl
-            ? html`<img
-                class="blurhash-canvas"
-                src="${blurhashUrl}"
-                aria-hidden="true"
-              />`
-            : null}
+          ${
+            blurhashUrl
+              ? html`<img
+                  class="blurhash-canvas"
+                  src="${blurhashUrl}"
+                  aria-hidden="true"
+                />`
+              : null
+          }
           <img
-            src="${this._slowNetwork && image.preview_url
-              ? image.preview_url
-              : image.url}"
+            src="${
+              this._slowNetwork && image.preview_url
+                ? image.preview_url
+                : image.url
+            }"
             alt="${image.description || msg('Image')}"
             @load="${this.handleImageLoad}"
             width="${ifDefined(
@@ -454,13 +458,15 @@ export class ImageGrid extends LitElement {
     if (image.type === 'video') {
       return html`
         <div class="media-cell" style="${isSingle ? '' : cellStyle}">
-          ${blurhashUrl
-            ? html`<img
-                class="blurhash-canvas"
-                src="${blurhashUrl}"
-                aria-hidden="true"
-              />`
-            : null}
+          ${
+            blurhashUrl
+              ? html`<img
+                  class="blurhash-canvas"
+                  src="${blurhashUrl}"
+                  aria-hidden="true"
+                />`
+              : null
+          }
           <video
             controls
             preload="${this.getVideoPreloadMode()}"
@@ -485,13 +491,15 @@ export class ImageGrid extends LitElement {
     if (image.type === 'gifv') {
       return html`
         <div class="media-cell" style="${isSingle ? '' : cellStyle}">
-          ${blurhashUrl
-            ? html`<img
-                class="blurhash-canvas"
-                src="${blurhashUrl}"
-                aria-hidden="true"
-              />`
-            : null}
+          ${
+            blurhashUrl
+              ? html`<img
+                  class="blurhash-canvas"
+                  src="${blurhashUrl}"
+                  aria-hidden="true"
+                />`
+              : null
+          }
           <video
             ?autoplay="${!this._slowNetwork}"
             ?loop="${!this._slowNetwork}"

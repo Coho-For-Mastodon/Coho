@@ -23,10 +23,7 @@ declare global {
 }
 
 type InstallMethod =
-  | 'web-install-api'
-  | 'beforeinstallprompt'
-  | 'safari'
-  | 'none';
+  'web-install-api' | 'beforeinstallprompt' | 'safari' | 'none';
 
 /**
  * PWA Install Component
@@ -635,14 +632,18 @@ export class PwaInstall extends LitElement {
         <h2 class="install-title">${msg('Install Coho')}</h2>
 
         <p class="install-description">
-          ${this.installMethod === 'safari'
-            ? msg('Add Coho to your home screen for the best experience')
-            : msg('Install Coho for a more immersive experience')}
+          ${
+            this.installMethod === 'safari'
+              ? msg('Add Coho to your home screen for the best experience')
+              : msg('Install Coho for a more immersive experience')
+          }
         </p>
 
-        ${this.installMethod === 'safari'
-          ? this.renderSafariInstructions()
-          : this.renderBenefits()}
+        ${
+          this.installMethod === 'safari'
+            ? this.renderSafariInstructions()
+            : this.renderBenefits()
+        }
         ${this.renderInstallActions()}
       </div>
     `;

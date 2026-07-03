@@ -52,9 +52,11 @@ export class MdCard extends LitElement {
       -webkit-tap-highlight-color: transparent;
       display: flex;
       flex-direction: column;
-      border-radius: var(--md-sys-shape-corner-medium);
+      border-radius: var(
+        --md-sys-shape-corner-large
+      ); /* updated from medium to large per new tokens */
       overflow: hidden;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      transition: all 0.2s ease;
       position: relative;
       color: var(--md-sys-color-on-surface, white);
       min-width: 0;
@@ -102,12 +104,8 @@ export class MdCard extends LitElement {
     }
 
     .card--elevated {
-      background: var(--md-sys-color-surface-container-low, #1d1b20);
-      box-shadow: var(
-        --md-sys-elevation-level1,
-        0px 1px 2px 0px rgba(0, 0, 0, 0.3),
-        0px 1px 3px 1px rgba(0, 0, 0, 0.15)
-      );
+      background: var(--md-sys-color-surface-container-low, #f8f8f8);
+      box-shadow: var(--md-sys-elevation-level1, 0 1px 3px rgba(0, 0, 0, 0.08));
     }
 
     /* Clickable state */
@@ -115,41 +113,14 @@ export class MdCard extends LitElement {
       cursor: pointer;
     }
 
-    .card--clickable.card--filled:not(.card--disabled):hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-surface-container-highest, #36343b) 92%,
-        var(--md-sys-color-on-surface, white) 8%
-      );
-    }
-
-    .card--clickable.card--outlined:not(.card--disabled):hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-surface, #1d1b20) 92%,
-        var(--md-sys-color-on-surface, white) 8%
-      );
-    }
-
+    .card--clickable.card--filled:not(.card--disabled):hover,
+    .card--clickable.card--outlined:not(.card--disabled):hover,
     .card--clickable.card--elevated:not(.card--disabled):hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-surface-container-low, #1d1b20) 92%,
-        var(--md-sys-color-on-surface, white) 8%
-      );
-      box-shadow: var(
-        --md-sys-elevation-level2,
-        0px 1px 2px 0px rgba(0, 0, 0, 0.3),
-        0px 2px 6px 2px rgba(0, 0, 0, 0.15)
-      );
+      filter: brightness(0.98);
     }
 
     .card--clickable:not(.card--disabled):active {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-surface-container-highest, #36343b) 88%,
-        var(--md-sys-color-on-surface, white) 12%
-      );
+      opacity: 0.95;
     }
 
     /* Disabled state */
@@ -217,41 +188,17 @@ export class MdCard extends LitElement {
       }
 
       .card--elevated {
-        background: var(--md-sys-color-surface-container-low, #f7f2f8);
+        background: var(--md-sys-color-surface-container-low, #f8f8f8);
         box-shadow: var(
           --md-sys-elevation-level1,
-          0px 1px 2px 0px rgba(0, 0, 0, 0.3),
-          0px 1px 3px 1px rgba(0, 0, 0, 0.15)
+          0 1px 3px rgba(0, 0, 0, 0.08)
         );
       }
 
-      .card--clickable.card--filled:not(.card--disabled):hover {
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-surface-container-highest, #e6e0e9) 92%,
-          var(--md-sys-color-on-surface, black) 8%
-        );
-      }
-
-      .card--clickable.card--outlined:not(.card--disabled):hover {
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-surface, #ffffff) 92%,
-          var(--md-sys-color-on-surface, black) 8%
-        );
-      }
-
+      .card--clickable.card--filled:not(.card--disabled):hover,
+      .card--clickable.card--outlined:not(.card--disabled):hover,
       .card--clickable.card--elevated:not(.card--disabled):hover {
-        background: color-mix(
-          in srgb,
-          var(--md-sys-color-surface-container-low, #f7f2f8) 92%,
-          var(--md-sys-color-on-surface, black) 8%
-        );
-        box-shadow: var(
-          --md-sys-elevation-level2,
-          0px 1px 2px 0px rgba(0, 0, 0, 0.3),
-          0px 2px 6px 2px rgba(0, 0, 0, 0.15)
-        );
+        filter: brightness(0.98);
       }
 
       .card__header,

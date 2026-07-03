@@ -156,8 +156,10 @@ export class UserProfile extends LitElement {
       >
         <img
           id="avatar"
-          src="${this.account?.avatar_static ||
-          '/assets/icons/new-icons/icon-72x72.png'}"
+          src="${
+            this.account?.avatar_static ||
+            '/assets/icons/new-icons/icon-72x72.png'
+          }"
           loading="eager"
           decoding="async"
           alt="${this.account?.display_name || ''}"

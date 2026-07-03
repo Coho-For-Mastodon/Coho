@@ -110,7 +110,8 @@ export class MdIcon extends LitElement {
         transform 0.15s ease-in-out;
     }
 
-    .icon svg {
+    ::slotted(svg),
+    svg {
       width: 100%;
       height: 100%;
       display: block;
@@ -282,9 +283,11 @@ export class MdIcon extends LitElement {
         aria-hidden="${hasLabel ? 'false' : 'true'}"
         aria-label="${ifDefined(hasLabel ? this.label : undefined)}"
       >
-        ${this.svgContent
-          ? html`<div part="svg">${unsafeSVG(this.svgContent)}</div>`
-          : html`<slot></slot>`}
+        ${
+          this.svgContent
+            ? html`<div part="svg">${unsafeSVG(this.svgContent)}</div>`
+            : html`<slot></slot>`
+        }
       </div>
     `;
   }

@@ -253,30 +253,32 @@ export class EmojiPicker extends LitElement {
           ></md-text-field>
         </div>
         <div class="scroll-area">
-          ${categories.length === 0
-            ? html`<div class="empty">${msg('No emoji found')}</div>`
-            : categories.map(
-                (cat) => html`
-                  <div class="category-title">${cat.name}</div>
-                  <div class="emoji-grid">
-                    ${cat.emojis.map(
-                      (emoji) => html`
-                        <button
-                          class="emoji-tile"
-                          title=":${emoji.shortcode}:"
-                          @click=${() => this._selectEmoji(emoji)}
-                        >
-                          <img
-                            src="${emoji.static_url || emoji.url}"
-                            alt=":${emoji.shortcode}:"
-                            loading="lazy"
-                          />
-                        </button>
-                      `
-                    )}
-                  </div>
-                `
-              )}
+          ${
+            categories.length === 0
+              ? html`<div class="empty">${msg('No emoji found')}</div>`
+              : categories.map(
+                  (cat) => html`
+                    <div class="category-title">${cat.name}</div>
+                    <div class="emoji-grid">
+                      ${cat.emojis.map(
+                        (emoji) => html`
+                          <button
+                            class="emoji-tile"
+                            title=":${emoji.shortcode}:"
+                            @click=${() => this._selectEmoji(emoji)}
+                          >
+                            <img
+                              src="${emoji.static_url || emoji.url}"
+                              alt=":${emoji.shortcode}:"
+                              loading="lazy"
+                            />
+                          </button>
+                        `
+                      )}
+                    </div>
+                  `
+                )
+          }
         </div>
       </div>
     `;

@@ -26,10 +26,7 @@ export class MediaTimeline extends LitElement {
   private _unsubscribeNetworkQuality: (() => void) | null = null;
 
   @property({ type: String }) timelineType:
-    | 'Home'
-    | 'Local'
-    | 'Federated'
-    | 'Media' = 'Home';
+    'Home' | 'Local' | 'Federated' | 'Media' = 'Home';
 
   static styles = [
     css`

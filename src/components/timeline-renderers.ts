@@ -146,9 +146,11 @@ export function renderLinkCard(
         <div class="link-card-content">
           <h4>${card.title}</h4>
           ${card.description ? html`<p>${card.description}</p>` : nothing}
-          ${provider
-            ? html`<span class="link-card-provider">${provider}</span>`
-            : nothing}
+          ${
+            provider
+              ? html`<span class="link-card-provider">${provider}</span>`
+              : nothing
+          }
         </div>
       </a>
     `;
@@ -173,9 +175,11 @@ export function renderLinkCard(
       <div class="link-card-content">
         <h4>${card.title}</h4>
         ${card.description ? html`<p>${card.description}</p>` : nothing}
-        ${provider
-          ? html`<span class="link-card-provider">${provider}</span>`
-          : nothing}
+        ${
+          provider
+            ? html`<span class="link-card-provider">${provider}</span>`
+            : nothing
+        }
       </div>
     </a>
   `;
@@ -352,20 +356,24 @@ function renderPostMediaContent(
   if (post.sensitive) return nothing;
 
   return html`
-    ${post.poll
-      ? (ensurePoll(), html`<timeline-poll .post=${post}></timeline-poll>`)
-      : null}
-    ${post.media_attachments && post.media_attachments.length > 0
-      ? (ensureImageGrid(),
-        html`
-          <image-grid
-            .images="${post.media_attachments}"
-            mediaArtist="${post.account.display_name}"
-            mediaArtwork="${post.account.avatar}"
-          >
-          </image-grid>
-        `)
-      : html``}
+    ${
+      post.poll
+        ? (ensurePoll(), html`<timeline-poll .post=${post}></timeline-poll>`)
+        : null
+    }
+    ${
+      post.media_attachments && post.media_attachments.length > 0
+        ? (ensureImageGrid(),
+          html`
+            <image-grid
+              .images="${post.media_attachments}"
+              mediaArtist="${post.account.display_name}"
+              mediaArtwork="${post.account.avatar}"
+            >
+            </image-grid>
+          `)
+        : html``
+    }
     ${renderLinkCard(
       post.card,
       handlers.openLinkCard,
@@ -382,18 +390,20 @@ function renderSocialActions(config: ActionsConfig): TemplateResult {
   const { post, state, handlers } = config;
 
   return html`
-    ${state.show === true
-      ? html`<md-button
-          variant="text"
-          pill
-          size="small"
-          style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
-          aria-label="${msg('Reply')}"
-          @click="${() => handlers.replies(post)}"
-        >
-          <md-icon slot="suffix" src="/assets/chatbox-outline.svg"></md-icon>
-        </md-button>`
-      : null}
+    ${
+      state.show === true
+        ? html`<md-button
+            variant="text"
+            pill
+            size="small"
+            style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+            aria-label="${msg('Reply')}"
+            @click="${() => handlers.replies(post)}"
+          >
+            <md-icon slot="suffix" src="/assets/chatbox-outline.svg"></md-icon>
+          </md-button>`
+        : null
+    }
     <md-button
       variant="text"
       style="--md-sys-color-primary: ${getActionButtonColor(
@@ -402,9 +412,9 @@ function renderSocialActions(config: ActionsConfig): TemplateResult {
       pill
       size="small"
       aria-pressed="${isBookmarked(post, state) ? 'true' : 'false'}"
-      aria-label="${isBookmarked(post, state)
-        ? msg('Remove bookmark')
-        : msg('Bookmark')}"
+      aria-label="${
+        isBookmarked(post, state) ? msg('Remove bookmark') : msg('Bookmark')
+      }"
       @click="${() => handlers.bookmark(post.id)}"
       ><md-icon slot="suffix" src="/assets/bookmark-outline.svg"></md-icon
     ></md-button>
@@ -416,9 +426,9 @@ function renderSocialActions(config: ActionsConfig): TemplateResult {
       pill
       size="small"
       aria-pressed="${isFavorited(post, state) ? 'true' : 'false'}"
-      aria-label="${isFavorited(post, state)
-        ? msg('Unfavourite')
-        : msg('Favourite')}"
+      aria-label="${
+        isFavorited(post, state) ? msg('Unfavourite') : msg('Favourite')
+      }"
       @click="${() => handlers.favorite(post.id)}"
       >${getActionCount(post, 'favourites_count', state.settings)}
       <md-icon slot="suffix" name="heart"></md-icon
@@ -431,32 +441,38 @@ function renderSocialActions(config: ActionsConfig): TemplateResult {
       pill
       size="small"
       aria-pressed="${isReblogged(post, state) ? 'true' : 'false'}"
-      aria-label="${isReblogged(post, state)
-        ? msg('Undo boost')
-        : msg('Boost')}"
+      aria-label="${
+        isReblogged(post, state) ? msg('Undo boost') : msg('Boost')
+      }"
       @click="${() => handlers.reblog(post.id)}"
       >${getActionCount(post, 'reblogs_count', state.settings)}
       <md-icon slot="suffix" name="repeat"></md-icon
     ></md-button>
-    ${!state.guestMode &&
-    post.quote_approval?.current_user !== 'denied' &&
-    post.quote_approval?.current_user !== 'unknown'
-      ? html`<md-button
-          variant="text"
-          style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
-          pill
-          size="small"
-          aria-label="${post.quote_approval?.current_user === 'manual'
-            ? msg('Request to quote')
-            : msg('Quote')}"
-          title="${post.quote_approval?.current_user === 'manual'
-            ? msg('Author will manually review')
-            : ''}"
-          @click="${() => handlers.quotePost(post)}"
-        >
-          <md-icon slot="suffix" src="/assets/quote-outline.svg"></md-icon>
-        </md-button>`
-      : null}
+    ${
+      !state.guestMode &&
+      post.quote_approval?.current_user !== 'denied' &&
+      post.quote_approval?.current_user !== 'unknown'
+        ? html`<md-button
+            variant="text"
+            style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+            pill
+            size="small"
+            aria-label="${
+              post.quote_approval?.current_user === 'manual'
+                ? msg('Request to quote')
+                : msg('Quote')
+            }"
+            title="${
+              post.quote_approval?.current_user === 'manual'
+                ? msg('Author will manually review')
+                : ''
+            }"
+            @click="${() => handlers.quotePost(post)}"
+          >
+            <md-icon slot="suffix" src="/assets/quote-outline.svg"></md-icon>
+          </md-button>`
+        : null
+    }
   `;
 }
 
@@ -508,28 +524,34 @@ function renderSocialActionsForThread(config: ActionsConfig): TemplateResult {
       >${getActionCount(post, 'reblogs_count', state.settings)}
       <md-icon slot="suffix" name="repeat"></md-icon
     ></md-button>
-    ${!state.guestMode &&
-    post.quote_approval?.current_user !== 'denied' &&
-    post.quote_approval?.current_user !== 'unknown'
-      ? html`<md-button
-          variant="text"
-          style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
-          pill
-          size="small"
-          aria-label="${post.quote_approval?.current_user === 'manual'
-            ? msg('Request to quote')
-            : msg('Quote')}"
-          title="${post.quote_approval?.current_user === 'manual'
-            ? msg('Author will manually review')
-            : ''}"
-          @click="${(e: Event) => {
-            e.stopPropagation();
-            handlers.quotePost(post);
-          }}"
-        >
-          <md-icon slot="suffix" src="/assets/quote-outline.svg"></md-icon>
-        </md-button>`
-      : null}
+    ${
+      !state.guestMode &&
+      post.quote_approval?.current_user !== 'denied' &&
+      post.quote_approval?.current_user !== 'unknown'
+        ? html`<md-button
+            variant="text"
+            style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+            pill
+            size="small"
+            aria-label="${
+              post.quote_approval?.current_user === 'manual'
+                ? msg('Request to quote')
+                : msg('Quote')
+            }"
+            title="${
+              post.quote_approval?.current_user === 'manual'
+                ? msg('Author will manually review')
+                : ''
+            }"
+            @click="${(e: Event) => {
+              e.stopPropagation();
+              handlers.quotePost(post);
+            }}"
+          >
+            <md-icon slot="suffix" src="/assets/quote-outline.svg"></md-icon>
+          </md-button>`
+        : null
+    }
   `;
 }
 
@@ -557,66 +579,75 @@ export function renderReplyContext(
       style="cursor: pointer;"
     >
       <user-profile .account="${state.tweet?.reply_to?.account}"></user-profile>
-      ${state.tweet?.reply_to?.sensitive
-        ? renderSensitiveBlock(
-            state.tweet?.reply_to?.spoiler_text,
-            (e: Event) => {
-              e.stopPropagation();
-              handlers.viewReplySensitive();
-            }
-          )
-        : html`<div
-            @click="${(e: Event) =>
-              handlers.handleContentClick(e, state.tweet?.reply_to)}"
-            @mouseover="${(e: Event) =>
-              handleMentionMouseOver(e, state.tweet?.reply_to)}"
-            @mouseleave="${() => handleMentionMouseLeave()}"
-            .innerHTML="${parseEmojis(
-              state.tweet?.reply_to?.content || '',
-              state.tweet?.reply_to?.emojis || []
-            )}"
-          ></div>`}
-      ${!state.tweet?.reply_to?.sensitive && state.tweet?.reply_to?.poll
-        ? (ensurePoll(),
-          html`<timeline-poll .post=${state.tweet.reply_to}></timeline-poll>`)
-        : null}
-      ${!state.tweet?.reply_to?.sensitive &&
-      state.tweet?.reply_to?.media_attachments &&
-      state.tweet.reply_to.media_attachments.length > 0
-        ? (ensureImageGrid(),
-          html`
-            <image-grid
-              .images="${state.tweet.reply_to.media_attachments}"
-              .mediaArtist="${state.tweet.reply_to.account.display_name}"
-              .mediaArtwork="${state.tweet.reply_to.account.avatar}"
-            >
-            </image-grid>
-          `)
-        : html``}
+      ${
+        state.tweet?.reply_to?.sensitive
+          ? renderSensitiveBlock(
+              state.tweet?.reply_to?.spoiler_text,
+              (e: Event) => {
+                e.stopPropagation();
+                handlers.viewReplySensitive();
+              }
+            )
+          : html`<div
+              @click="${(e: Event) =>
+                handlers.handleContentClick(e, state.tweet?.reply_to)}"
+              @mouseover="${(e: Event) =>
+                handleMentionMouseOver(e, state.tweet?.reply_to)}"
+              @mouseleave="${() => handleMentionMouseLeave()}"
+              .innerHTML="${parseEmojis(
+                state.tweet?.reply_to?.content || '',
+                state.tweet?.reply_to?.emojis || []
+              )}"
+            ></div>`
+      }
+      ${
+        !state.tweet?.reply_to?.sensitive && state.tweet?.reply_to?.poll
+          ? (ensurePoll(),
+            html`<timeline-poll .post=${state.tweet.reply_to}></timeline-poll>`)
+          : null
+      }
+      ${
+        !state.tweet?.reply_to?.sensitive &&
+        state.tweet?.reply_to?.media_attachments &&
+        state.tweet.reply_to.media_attachments.length > 0
+          ? (ensureImageGrid(),
+            html`
+              <image-grid
+                .images="${state.tweet.reply_to.media_attachments}"
+                .mediaArtist="${state.tweet.reply_to.account.display_name}"
+                .mediaArtwork="${state.tweet.reply_to.account.avatar}"
+              >
+              </image-grid>
+            `)
+          : html``
+      }
 
       <div class="actions" slot="footer">
-        ${state.show === true
-          ? html`<md-button
-              variant="text"
-              pill
-              size="small"
-              style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
-              aria-label="Reply"
-              @click="${(e: Event) => {
-                e.stopPropagation();
-                handlers.replies(state.tweet?.reply_to);
-              }}"
-            >
-              <md-icon slot="suffix" name="chatbox"></md-icon>
-            </md-button>`
-          : null}
+        ${
+          state.show === true
+            ? html`<md-button
+                variant="text"
+                pill
+                size="small"
+                style="--md-sys-color-primary: var(--md-sys-color-on-surface-variant)"
+                aria-label="Reply"
+                @click="${(e: Event) => {
+                  e.stopPropagation();
+                  handlers.replies(state.tweet?.reply_to);
+                }}"
+              >
+                <md-icon slot="suffix" name="chatbox"></md-icon>
+              </md-button>`
+            : null
+        }
 
         <md-button
           variant="text"
-          style="--md-sys-color-primary: ${state.isBookmarked ||
-          state.tweet?.reply_to?.bookmarked
-            ? 'var(--sl-color-primary-600)'
-            : 'var(--md-sys-color-on-surface-variant)'}"
+          style="--md-sys-color-primary: ${
+            state.isBookmarked || state.tweet?.reply_to?.bookmarked
+              ? 'var(--sl-color-primary-600)'
+              : 'var(--md-sys-color-on-surface-variant)'
+          }"
           pill
           size="small"
           @click="${(e: Event) => {
@@ -627,37 +658,39 @@ export function renderReplyContext(
         ></md-button>
         <md-button
           variant="text"
-          style="--md-sys-color-primary: ${state.isBoosted ||
-          state.tweet?.reply_to?.favourited
-            ? 'var(--sl-color-primary-600)'
-            : 'var(--md-sys-color-on-surface-variant)'}"
+          style="--md-sys-color-primary: ${
+            state.isBoosted || state.tweet?.reply_to?.favourited
+              ? 'var(--sl-color-primary-600)'
+              : 'var(--md-sys-color-on-surface-variant)'
+          }"
           pill
           size="small"
           @click="${(e: Event) => {
             e.stopPropagation();
             handlers.favorite(state.tweet?.reply_to?.id || '');
           }}"
-          >${state.settings?.wellness
-            ? ''
-            : state.tweet?.reply_to?.favourites_count}
-          <md-icon slot="suffix" name="heart"></md-icon
+          >${
+            state.settings?.wellness
+              ? ''
+              : state.tweet?.reply_to?.favourites_count
+          } <md-icon slot="suffix" name="heart"></md-icon
         ></md-button>
         <md-button
           variant="text"
-          style="--md-sys-color-primary: ${state.isReblogged ||
-          state.tweet?.reply_to?.reblogged
-            ? 'var(--sl-color-primary-600)'
-            : 'var(--md-sys-color-on-surface-variant)'}"
+          style="--md-sys-color-primary: ${
+            state.isReblogged || state.tweet?.reply_to?.reblogged
+              ? 'var(--sl-color-primary-600)'
+              : 'var(--md-sys-color-on-surface-variant)'
+          }"
           pill
           size="small"
           @click="${(e: Event) => {
             e.stopPropagation();
             handlers.reblog(state.tweet?.reply_to?.id || '');
           }}"
-          >${state.settings?.wellness
-            ? ''
-            : state.tweet?.reply_to?.reblogs_count}
-          <md-icon slot="suffix" name="repeat"></md-icon
+          >${
+            state.settings?.wellness ? '' : state.tweet?.reply_to?.reblogs_count
+          } <md-icon slot="suffix" name="repeat"></md-icon
         ></md-button>
       </div>
     </md-card>
@@ -727,9 +760,11 @@ export function renderRegularTweet(
                   ? html`
                       <md-menu-item @click="${() => handlers.togglePin()}">
                         <md-icon slot="prefix" name="bookmark"></md-icon>
-                        ${state.tweet?.pinned
-                          ? msg('Unpin from profile')
-                          : msg('Pin to profile')}
+                        ${
+                          state.tweet?.pinned
+                            ? msg('Unpin from profile')
+                            : msg('Pin to profile')
+                        }
                       </md-menu-item>
                     `
                   : null
@@ -742,13 +777,17 @@ export function renderRegularTweet(
                       >
                         <md-icon
                           slot="prefix"
-                          name="${state.isMuted || state.tweet?.muted
-                            ? 'notifications'
-                            : 'notifications-off'}"
+                          name="${
+                            state.isMuted || state.tweet?.muted
+                              ? 'notifications'
+                              : 'notifications-off'
+                          }"
                         ></md-icon>
-                        ${state.isMuted || state.tweet?.muted
-                          ? msg('Unmute conversation')
-                          : msg('Mute conversation')}
+                        ${
+                          state.isMuted || state.tweet?.muted
+                            ? msg('Unmute conversation')
+                            : msg('Mute conversation')
+                        }
                       </md-menu-item>
                     `
                   : null
@@ -770,21 +809,24 @@ export function renderRegularTweet(
                         <md-icon slot="prefix" name="ban"></md-icon>
                         ${msg(str`Block @${state.tweet?.account.acct}`)}
                       </md-menu-item>
-                      ${state.tweet?.account.acct?.includes('@')
-                        ? html`
-                            <md-menu-item
-                              @click="${() =>
-                                handlers.blockDomain(
-                                  state.tweet?.account.acct?.split('@')[1] || ''
-                                )}"
-                            >
-                              <md-icon slot="prefix" name="ban"></md-icon>
-                              ${msg(
-                                str`Block domain ${state.tweet?.account.acct?.split('@')[1]}`
-                              )}
-                            </md-menu-item>
-                          `
-                        : null}
+                      ${
+                        state.tweet?.account.acct?.includes('@')
+                          ? html`
+                              <md-menu-item
+                                @click="${() =>
+                                  handlers.blockDomain(
+                                    state.tweet?.account.acct?.split('@')[1] ||
+                                      ''
+                                  )}"
+                              >
+                                <md-icon slot="prefix" name="ban"></md-icon>
+                                ${msg(
+                                  str`Block domain ${state.tweet?.account.acct?.split('@')[1]}`
+                                )}
+                              </md-menu-item>
+                            `
+                          : null
+                      }
                       <md-menu-item
                         @click="${() =>
                           handlers.reportUser(
@@ -886,19 +928,21 @@ export function renderThreadContinuation(
             handlers.handleContentClick(e, threadPost, true)}"
         >
           <user-profile .account="${threadPost.account}"></user-profile>
-          ${threadPost.sensitive
-            ? renderSensitiveBlock(threadPost.spoiler_text, (e: Event) => {
-                e.stopPropagation();
-                handlers.viewThreadSensitive(threadPost.id);
-              })
-            : html`<div
-                @click="${(e: Event) =>
-                  handlers.handleContentClick(e, threadPost)}"
-                .innerHTML="${parseEmojis(
-                  threadPost.content || '',
-                  threadPost.emojis || []
-                )}"
-              ></div>`}
+          ${
+            threadPost.sensitive
+              ? renderSensitiveBlock(threadPost.spoiler_text, (e: Event) => {
+                  e.stopPropagation();
+                  handlers.viewThreadSensitive(threadPost.id);
+                })
+              : html`<div
+                  @click="${(e: Event) =>
+                    handlers.handleContentClick(e, threadPost)}"
+                  .innerHTML="${parseEmojis(
+                    threadPost.content || '',
+                    threadPost.emojis || []
+                  )}"
+                ></div>`
+          }
           ${renderPostMediaContent({
             post: threadPost,
             handlers,
@@ -940,8 +984,10 @@ export function renderReblog(
       >
         <md-icon name="repeat"></md-icon>
         <img
-          src="${state.tweet.account.avatar_static ||
-          '/assets/icons/new-icons/icon-72x72.png'}"
+          src="${
+            state.tweet.account.avatar_static ||
+            '/assets/icons/new-icons/icon-72x72.png'
+          }"
           alt="${boosterName}"
         />
         <span
@@ -980,98 +1026,116 @@ export function renderReblog(
               <md-icon slot="prefix" name="language"></md-icon>
               ${msg('Translate')}
             </md-menu-item>
-            ${!state.guestMode &&
-            state.tweet?.reblog?.account &&
-            state.tweet?.reblog?.account.id !== state.currentUser?.id
-              ? html`
-                  <md-menu-item
-                    @click=${() =>
-                      handlers.addToList(state.tweet!.reblog!.account)}
-                  >
-                    <md-icon slot="prefix" name="albums"></md-icon>
-                    ${msg('Add to list')}
-                  </md-menu-item>
-                `
-              : null}
+            ${
+              !state.guestMode &&
+              state.tweet?.reblog?.account &&
+              state.tweet?.reblog?.account.id !== state.currentUser?.id
+                ? html`
+                    <md-menu-item
+                      @click=${() =>
+                        handlers.addToList(state.tweet!.reblog!.account)}
+                    >
+                      <md-icon slot="prefix" name="albums"></md-icon>
+                      ${msg('Add to list')}
+                    </md-menu-item>
+                  `
+                : null
+            }
             <md-menu-item
               @click="${() => handlers.shareStatus(state.tweet || null)}"
             >
               <md-icon slot="prefix" name="share"></md-icon>
               ${msg('Share')}
             </md-menu-item>
-            ${state.canPin
-              ? html`
-                  <md-menu-item @click="${() => handlers.togglePin()}">
-                    <md-icon slot="prefix" name="bookmark"></md-icon>
-                    ${state.tweet?.pinned
-                      ? msg('Unpin from profile')
-                      : msg('Pin to profile')}
-                  </md-menu-item>
-                `
-              : null}
-            ${!state.guestMode
-              ? html`
-                  <md-menu-item @click="${() => handlers.muteConversation()}">
-                    <md-icon
-                      slot="prefix"
-                      name="${state.isMuted || state.tweet?.reblog?.muted
-                        ? 'notifications'
-                        : 'notifications-off'}"
-                    ></md-icon>
-                    ${state.isMuted || state.tweet?.reblog?.muted
-                      ? msg('Unmute conversation')
-                      : msg('Mute conversation')}
-                  </md-menu-item>
-                `
-              : null}
-            ${state.tweet?.reblog?.account.id !== state.currentUser?.id
-              ? html`
-                  <md-menu-item
-                    @click="${() =>
-                      handlers.muteUser(state.tweet?.reblog?.account.id || '')}"
-                  >
-                    <md-icon slot="prefix" name="volume-mute"></md-icon>
-                    ${msg(str`Mute @${state.tweet?.reblog?.account.acct}`)}
-                  </md-menu-item>
-                  <md-menu-item
-                    @click="${() =>
-                      handlers.blockUser(
-                        state.tweet?.reblog?.account.id || ''
-                      )}"
-                  >
-                    <md-icon slot="prefix" name="ban"></md-icon>
-                    ${msg(str`Block @${state.tweet?.reblog?.account.acct}`)}
-                  </md-menu-item>
-                  ${state.tweet?.reblog?.account.acct?.includes('@')
-                    ? html`
-                        <md-menu-item
-                          @click="${() =>
-                            handlers.blockDomain(
-                              state.tweet?.reblog?.account.acct?.split(
-                                '@'
-                              )[1] || ''
-                            )}"
-                        >
-                          <md-icon slot="prefix" name="ban"></md-icon>
-                          ${msg(
-                            str`Block domain ${state.tweet?.reblog?.account.acct?.split('@')[1]}`
-                          )}
-                        </md-menu-item>
-                      `
-                    : null}
-                  <md-menu-item
-                    @click="${() =>
-                      handlers.reportUser(
-                        state.tweet?.reblog?.account.id || '',
-                        state.tweet?.reblog?.account.acct || '',
-                        state.tweet?.reblog?.id
-                      )}"
-                  >
-                    <md-icon slot="prefix" name="flag"></md-icon>
-                    ${msg(str`Report @${state.tweet?.reblog?.account.acct}`)}
-                  </md-menu-item>
-                `
-              : null}
+            ${
+              state.canPin
+                ? html`
+                    <md-menu-item @click="${() => handlers.togglePin()}">
+                      <md-icon slot="prefix" name="bookmark"></md-icon>
+                      ${
+                        state.tweet?.pinned
+                          ? msg('Unpin from profile')
+                          : msg('Pin to profile')
+                      }
+                    </md-menu-item>
+                  `
+                : null
+            }
+            ${
+              !state.guestMode
+                ? html`
+                    <md-menu-item @click="${() => handlers.muteConversation()}">
+                      <md-icon
+                        slot="prefix"
+                        name="${
+                          state.isMuted || state.tweet?.reblog?.muted
+                            ? 'notifications'
+                            : 'notifications-off'
+                        }"
+                      ></md-icon>
+                      ${
+                        state.isMuted || state.tweet?.reblog?.muted
+                          ? msg('Unmute conversation')
+                          : msg('Mute conversation')
+                      }
+                    </md-menu-item>
+                  `
+                : null
+            }
+            ${
+              state.tweet?.reblog?.account.id !== state.currentUser?.id
+                ? html`
+                    <md-menu-item
+                      @click="${() =>
+                        handlers.muteUser(
+                          state.tweet?.reblog?.account.id || ''
+                        )}"
+                    >
+                      <md-icon slot="prefix" name="volume-mute"></md-icon>
+                      ${msg(str`Mute @${state.tweet?.reblog?.account.acct}`)}
+                    </md-menu-item>
+                    <md-menu-item
+                      @click="${() =>
+                        handlers.blockUser(
+                          state.tweet?.reblog?.account.id || ''
+                        )}"
+                    >
+                      <md-icon slot="prefix" name="ban"></md-icon>
+                      ${msg(str`Block @${state.tweet?.reblog?.account.acct}`)}
+                    </md-menu-item>
+                    ${
+                      state.tweet?.reblog?.account.acct?.includes('@')
+                        ? html`
+                            <md-menu-item
+                              @click="${() =>
+                                handlers.blockDomain(
+                                  state.tweet?.reblog?.account.acct?.split(
+                                    '@'
+                                  )[1] || ''
+                                )}"
+                            >
+                              <md-icon slot="prefix" name="ban"></md-icon>
+                              ${msg(
+                                str`Block domain ${state.tweet?.reblog?.account.acct?.split('@')[1]}`
+                              )}
+                            </md-menu-item>
+                          `
+                        : null
+                    }
+                    <md-menu-item
+                      @click="${() =>
+                        handlers.reportUser(
+                          state.tweet?.reblog?.account.id || '',
+                          state.tweet?.reblog?.account.acct || '',
+                          state.tweet?.reblog?.id
+                        )}"
+                    >
+                      <md-icon slot="prefix" name="flag"></md-icon>
+                      ${msg(str`Report @${state.tweet?.reblog?.account.acct}`)}
+                    </md-menu-item>
+                  `
+                : null
+            }
           </md-menu>
         </md-dropdown>
       </div>
@@ -1121,18 +1185,20 @@ export function renderThreadAncestors(
                 .account="${threadPost.account}"
               ></user-profile>
             </div>
-            ${threadPost.sensitive
-              ? renderSensitiveBlock(threadPost.spoiler_text, () =>
-                  handlers.viewThreadSensitive(threadPost.id)
-                )
-              : html`<div
-                  @click="${(e: Event) =>
-                    handlers.handleContentClick(e, threadPost)}"
-                  .innerHTML="${parseEmojis(
-                    threadPost.content || '',
-                    threadPost.emojis || []
-                  )}"
-                ></div>`}
+            ${
+              threadPost.sensitive
+                ? renderSensitiveBlock(threadPost.spoiler_text, () =>
+                    handlers.viewThreadSensitive(threadPost.id)
+                  )
+                : html`<div
+                    @click="${(e: Event) =>
+                      handlers.handleContentClick(e, threadPost)}"
+                    .innerHTML="${parseEmojis(
+                      threadPost.content || '',
+                      threadPost.emojis || []
+                    )}"
+                  ></div>`
+            }
             ${renderPostMediaContent({
               post: threadPost,
               handlers,
@@ -1165,18 +1231,20 @@ export function renderThread(
                 .account="${threadPost.account}"
               ></user-profile>
             </div>
-            ${threadPost.sensitive
-              ? renderSensitiveBlock(threadPost.spoiler_text, () =>
-                  handlers.viewThreadSensitive(threadPost.id)
-                )
-              : html`<div
-                  @click="${(e: Event) =>
-                    handlers.handleContentClick(e, threadPost)}"
-                  .innerHTML="${parseEmojis(
-                    threadPost.content || '',
-                    threadPost.emojis || []
-                  )}"
-                ></div>`}
+            ${
+              threadPost.sensitive
+                ? renderSensitiveBlock(threadPost.spoiler_text, () =>
+                    handlers.viewThreadSensitive(threadPost.id)
+                  )
+                : html`<div
+                    @click="${(e: Event) =>
+                      handlers.handleContentClick(e, threadPost)}"
+                    .innerHTML="${parseEmojis(
+                      threadPost.content || '',
+                      threadPost.emojis || []
+                    )}"
+                  ></div>`
+            }
             ${renderPostMediaContent({
               post: threadPost,
               handlers,

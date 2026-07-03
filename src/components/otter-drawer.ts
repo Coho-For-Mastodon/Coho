@@ -247,24 +247,25 @@ export class OtterDrawer extends LitElement {
       ></div>
 
       <div
-        class="drawer ${this.placement} ${this.open ? 'open' : ''} ${this
-          .dragging
-          ? 'dragging'
-          : ''}"
+        class="drawer ${this.placement} ${this.open ? 'open' : ''} ${
+          this.dragging ? 'dragging' : ''
+        }"
         part="base"
         role="dialog"
         aria-modal="true"
         aria-label="${this.label}"
       >
-        ${this.placement === 'bottom'
-          ? html`<div
-              class="handle"
-              part="handle"
-              @pointerdown=${this.onDragStart}
-            >
-              <div class="handle-bar"></div>
-            </div>`
-          : null}
+        ${
+          this.placement === 'bottom'
+            ? html`<div
+                class="handle"
+                part="handle"
+                @pointerdown=${this.onDragStart}
+              >
+                <div class="handle-bar"></div>
+              </div>`
+            : null
+        }
 
         <div
           class="header"

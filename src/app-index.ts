@@ -64,7 +64,25 @@ export class AppIndex extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
     perfMark('app-bootstrap-start');
+    // Initialize performance observer
     initPerfObserver();
+
+    // Disable View Transitions on Capacitor iOS to prevent severe simulator rendering lag
+    if (isCapacitorNative()) {
+      document.startViewTransition = () => {
+        throw new Error('disabled for capacitor');
+      };
+    }
+
+    // Normalize Capacitor iOS initial route which loads index.html directly
+    // or loads without a trailing slash (capacitor://localhost), which breaks
+    // URLPattern pathname matching in web-router.
+    if (
+      window.location.pathname === '/index.html' ||
+      window.location.href === 'capacitor://localhost'
+    ) {
+      history.replaceState(null, '', '/');
+    }
 
     // Register route-changed listener synchronously — must be in place before
     // router.init() to avoid missing the initial event in browsers with native
@@ -130,10 +148,14 @@ export class AppIndex extends LitElement {
     await this.handleNativeLaunchCallback();
   }
 
-  /** Load URLPattern polyfill if the browser needs it. */
+  /** Load URLPattern and Navigation API polyfills if the browser needs them. */
   private async _loadPolyfills() {
     if (typeof URLPattern === 'undefined') {
       await import('urlpattern-polyfill');
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof (globalThis as any).navigation === 'undefined') {
+      await import('@virtualstate/navigation/polyfill');
     }
   }
 
@@ -174,7 +196,7 @@ export class AppIndex extends LitElement {
     const deviceColor = await getAndroidDynamicColor();
     if (deviceColor) {
       localStorage.setItem('coho-theme-color', deviceColor);
-      applyThemeColor(deviceColor, { useIdleCallback: true });
+      applyThemeColor(deviceColor);
       return;
     }
 
@@ -185,13 +207,13 @@ export class AppIndex extends LitElement {
       if (!localStorage.getItem('coho-theme-color')) {
         localStorage.setItem('coho-theme-color', potentialColor);
       }
-      applyThemeColor(potentialColor, { useIdleCallback: true });
+      applyThemeColor(potentialColor);
     } else {
       // get css variable color
       const color = getComputedStyle(document.body).getPropertyValue(
         '--sl-color-primary-600'
       );
-      applyThemeColor(color, { useIdleCallback: true });
+      applyThemeColor(color);
     }
   }
 

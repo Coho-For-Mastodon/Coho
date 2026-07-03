@@ -234,46 +234,52 @@ export class ThreadBranch extends LitElement {
               .account=${post.account}
             ></user-profile>
 
-            ${post.sensitive
-              ? html`
-                  <div
-                    class="sensitive"
-                    role="group"
-                    aria-label="${msg('Sensitive Content')}"
-                  >
-                    <div class="sensitive-icon" aria-hidden="true">
-                      <md-icon name="eye-off"></md-icon>
-                    </div>
-                    <div class="sensitive-title">
-                      ${msg('Sensitive Content')}
-                    </div>
-                    <p
-                      class="sensitive-text ${post.spoiler_text
-                        ? ''
-                        : 'sensitive-text--muted'}"
+            ${
+              post.sensitive
+                ? html`
+                    <div
+                      class="sensitive"
+                      role="group"
+                      aria-label="${msg('Sensitive Content')}"
                     >
-                      ${post.spoiler_text || msg('No spoiler text provided')}
-                    </p>
-                  </div>
-                `
-              : html`<div
-                  .innerHTML=${parseEmojis(
-                    post.content || '',
-                    post.emojis || []
-                  )}
-                ></div>`}
-            ${!post.sensitive && post.poll
-              ? html`<timeline-poll .post=${post}></timeline-poll>`
-              : nothing}
-            ${!post.sensitive &&
-            post.media_attachments &&
-            post.media_attachments.length > 0
-              ? html`<image-grid
-                  .images=${post.media_attachments}
-                  .mediaArtist="${post.account.display_name}"
-                  .mediaArtwork="${post.account.avatar}"
-                ></image-grid>`
-              : nothing}
+                      <div class="sensitive-icon" aria-hidden="true">
+                        <md-icon name="eye-off"></md-icon>
+                      </div>
+                      <div class="sensitive-title">
+                        ${msg('Sensitive Content')}
+                      </div>
+                      <p
+                        class="sensitive-text ${
+                          post.spoiler_text ? '' : 'sensitive-text--muted'
+                        }"
+                      >
+                        ${post.spoiler_text || msg('No spoiler text provided')}
+                      </p>
+                    </div>
+                  `
+                : html`<div
+                    .innerHTML=${parseEmojis(
+                      post.content || '',
+                      post.emojis || []
+                    )}
+                  ></div>`
+            }
+            ${
+              !post.sensitive && post.poll
+                ? html`<timeline-poll .post=${post}></timeline-poll>`
+                : nothing
+            }
+            ${
+              !post.sensitive &&
+              post.media_attachments &&
+              post.media_attachments.length > 0
+                ? html`<image-grid
+                    .images=${post.media_attachments}
+                    .mediaArtist="${post.account.display_name}"
+                    .mediaArtwork="${post.account.avatar}"
+                  ></image-grid>`
+                : nothing
+            }
 
             <div class="actions" slot="footer">
               <md-button
@@ -291,25 +297,27 @@ export class ThreadBranch extends LitElement {
             </div>
           </md-card>
 
-          ${children.length > 0
-            ? this._deepRepliesExpanded
-              ? html`<div class="children">
-                  ${this.renderChildren(children)}
-                </div>`
-              : html`
-                  <md-button
-                    class="continue-thread"
-                    variant="text"
-                    @click=${(e: Event) => {
-                      e.stopPropagation();
-                      this._deepRepliesExpanded = true;
-                    }}
-                  >
-                    <md-icon slot="prefix" name="arrow-forward"></md-icon>
-                    ${msg('Continue this thread')}
-                  </md-button>
-                `
-            : nothing}
+          ${
+            children.length > 0
+              ? this._deepRepliesExpanded
+                ? html`<div class="children">
+                    ${this.renderChildren(children)}
+                  </div>`
+                : html`
+                    <md-button
+                      class="continue-thread"
+                      variant="text"
+                      @click=${(e: Event) => {
+                        e.stopPropagation();
+                        this._deepRepliesExpanded = true;
+                      }}
+                    >
+                      <md-icon slot="prefix" name="arrow-forward"></md-icon>
+                      ${msg('Continue this thread')}
+                    </md-button>
+                  `
+              : nothing
+          }
         </div>
       `;
     }
@@ -322,41 +330,49 @@ export class ThreadBranch extends LitElement {
             .account=${post.account}
           ></user-profile>
 
-          ${post.sensitive
-            ? html`
-                <div
-                  class="sensitive"
-                  role="group"
-                  aria-label="${msg('Sensitive Content')}"
-                >
-                  <div class="sensitive-icon" aria-hidden="true">
-                    <md-icon name="eye-off"></md-icon>
-                  </div>
-                  <div class="sensitive-title">${msg('Sensitive Content')}</div>
-                  <p
-                    class="sensitive-text ${post.spoiler_text
-                      ? ''
-                      : 'sensitive-text--muted'}"
+          ${
+            post.sensitive
+              ? html`
+                  <div
+                    class="sensitive"
+                    role="group"
+                    aria-label="${msg('Sensitive Content')}"
                   >
-                    ${post.spoiler_text || msg('No spoiler text provided')}
-                  </p>
-                </div>
-              `
-            : html`<div
-                .innerHTML=${parseEmojis(post.content || '', post.emojis || [])}
-              ></div>`}
-          ${!post.sensitive && post.poll
-            ? html`<timeline-poll .post=${post}></timeline-poll>`
-            : nothing}
-          ${!post.sensitive &&
-          post.media_attachments &&
-          post.media_attachments.length > 0
-            ? html`<image-grid
-                .images=${post.media_attachments}
-                mediaArtist="${post.account.display_name}"
-                mediaArtwork="${post.account.avatar}"
-              ></image-grid>`
-            : nothing}
+                    <div class="sensitive-icon" aria-hidden="true">
+                      <md-icon name="eye-off"></md-icon>
+                    </div>
+                    <div class="sensitive-title">
+                      ${msg('Sensitive Content')}
+                    </div>
+                    <p
+                      class="sensitive-text ${
+                        post.spoiler_text ? '' : 'sensitive-text--muted'
+                      }"
+                    >
+                      ${post.spoiler_text || msg('No spoiler text provided')}
+                    </p>
+                  </div>
+                `
+              : html`<div
+                  .innerHTML=${parseEmojis(post.content || '', post.emojis || [])}
+                ></div>`
+          }
+          ${
+            !post.sensitive && post.poll
+              ? html`<timeline-poll .post=${post}></timeline-poll>`
+              : nothing
+          }
+          ${
+            !post.sensitive &&
+            post.media_attachments &&
+            post.media_attachments.length > 0
+              ? html`<image-grid
+                  .images=${post.media_attachments}
+                  mediaArtist="${post.account.display_name}"
+                  mediaArtwork="${post.account.avatar}"
+                ></image-grid>`
+              : nothing
+          }
 
           <div class="actions" slot="footer">
             <md-button
@@ -374,9 +390,13 @@ export class ThreadBranch extends LitElement {
           </div>
         </md-card>
 
-        ${children.length > 0
-          ? html` <div class="children">${this.renderChildren(children)}</div> `
-          : nothing}
+        ${
+          children.length > 0
+            ? html`
+                <div class="children">${this.renderChildren(children)}</div>
+              `
+            : nothing
+        }
       </div>
     `;
   }
@@ -395,33 +415,37 @@ export class ThreadBranch extends LitElement {
           ?guestMode=${this.guestMode}
           @open=${(e: CustomEvent) => this.handlePostClick(e.detail.tweet)}
         ></thread-branch>
-        ${this._collapsedChildrenExpanded
-          ? remainingChildren.map(
-              (child) => html`
-                <thread-branch
-                  .node=${child}
-                  ?guestMode=${this.guestMode}
-                  @open=${(e: CustomEvent) =>
-                    this.handlePostClick(e.detail.tweet)}
-                ></thread-branch>
+        ${
+          this._collapsedChildrenExpanded
+            ? remainingChildren.map(
+                (child) => html`
+                  <thread-branch
+                    .node=${child}
+                    ?guestMode=${this.guestMode}
+                    @open=${(e: CustomEvent) =>
+                      this.handlePostClick(e.detail.tweet)}
+                  ></thread-branch>
+                `
+              )
+            : html`
+                <md-button
+                  class="more-replies"
+                  variant="text"
+                  size="small"
+                  @click=${(e: Event) => {
+                    e.stopPropagation();
+                    this._collapsedChildrenExpanded = true;
+                  }}
+                >
+                  <md-icon slot="prefix" name="chatbubbles"></md-icon>
+                  ${
+                    remainingCount === 1
+                      ? msg('1 more reply')
+                      : msg(str`${remainingCount} more replies`)
+                  }
+                </md-button>
               `
-            )
-          : html`
-              <md-button
-                class="more-replies"
-                variant="text"
-                size="small"
-                @click=${(e: Event) => {
-                  e.stopPropagation();
-                  this._collapsedChildrenExpanded = true;
-                }}
-              >
-                <md-icon slot="prefix" name="chatbubbles"></md-icon>
-                ${remainingCount === 1
-                  ? msg('1 more reply')
-                  : msg(str`${remainingCount} more replies`)}
-              </md-button>
-            `}
+        }
       `;
     }
 

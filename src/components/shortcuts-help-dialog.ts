@@ -133,9 +133,9 @@ export class ShortcutsHelpDialog extends LitElement {
           ${keys.map(
             (key, index) => html`
               <kbd>${key}</kbd>
-              ${index < keys.length - 1
-                ? html`<span class="plus">+</span>`
-                : ''}
+              ${
+                index < keys.length - 1 ? html`<span class="plus">+</span>` : ''
+              }
             `
           )}
         </span>
