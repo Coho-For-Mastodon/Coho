@@ -29,8 +29,8 @@ export class MdBadge extends LitElement {
         font-size: var(--md-sys-typescale-label-large-font-size);
         font-weight: 500;
         line-height: 20px;
-        letter-spacing: 0;
-        transition: all 0.2s ease;
+        letter-spacing: 0.1px;
+        transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
         user-select: none;
         height: 1em;
         min-width: 98px;
@@ -59,15 +59,25 @@ export class MdBadge extends LitElement {
       }
 
       .badge.clickable:hover {
-        /* No shadow on hover */
+        box-shadow:
+          0 1px 2px 0 rgba(0, 0, 0, 0.3),
+          0 1px 3px 1px rgba(0, 0, 0, 0.15);
       }
 
       .badge.clickable.filled:hover {
-        filter: brightness(0.92);
+        background-color: color-mix(
+          in srgb,
+          var(--md-sys-color-primary, var(--sl-color-primary-600, #6750a4)) 92%,
+          white
+        );
       }
 
       .badge.clickable.outlined:hover {
-        background-color: rgba(0, 0, 0, 0.04);
+        background-color: color-mix(
+          in srgb,
+          var(--md-sys-color-primary, var(--sl-color-primary-600, #6750a4)) 8%,
+          transparent
+        );
       }
 
       .badge.clickable:focus-visible {
@@ -102,11 +112,21 @@ export class MdBadge extends LitElement {
         }
 
         .badge.clickable.filled:hover {
-          filter: brightness(1.1);
+          background-color: color-mix(
+            in srgb,
+            var(--md-sys-color-primary, var(--sl-color-primary-600, #d0bcff))
+              92%,
+            black
+          );
         }
 
         .badge.clickable.outlined:hover {
-          background-color: rgba(255, 255, 255, 0.08);
+          background-color: color-mix(
+            in srgb,
+            var(--md-sys-color-primary, var(--sl-color-primary-600, #d0bcff))
+              12%,
+            transparent
+          );
         }
       }
     `,

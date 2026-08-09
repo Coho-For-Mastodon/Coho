@@ -7,6 +7,9 @@ import { initPerfObserver, perfMark, perfMeasure } from './utils/perf-observer';
 // Initialize localization (must be imported early)
 import './config/localization.js';
 
+import { applyThemeColor } from './utils/theme-color.js';
+import { getAndroidDynamicColor } from './utils/dynamic-theme.js';
+
 /** Lightweight native-platform check that avoids importing @capacitor/core on web. */
 function isCapacitorNative(): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -186,34 +189,37 @@ export class AppIndex extends LitElement {
   }
 
   async handleInitTheme() {
-    const { getSettings } = await import('./services/settings');
-    const settings = await getSettings();
+    try {
+      const { getSettings } = await import('./services/settings');
+      const settings = await getSettings();
 
-    const { applyThemeColor } = await import('./utils/theme-color');
+      const potentialColor = settings.primary_color;
+      const deviceColor = await getAndroidDynamicColor();
 
-    // On Android Capacitor, always use the device's Material You accent color
-    const { getAndroidDynamicColor } = await import('./utils/dynamic-theme');
-    const deviceColor = await getAndroidDynamicColor();
-    if (deviceColor) {
-      localStorage.setItem('coho-theme-color', deviceColor);
-      applyThemeColor(deviceColor);
-      return;
-    }
-
-    const potentialColor = settings.primary_color;
-
-    if (potentialColor) {
-      // Sync to localStorage for instant theme on next load (migration for existing users)
-      if (!localStorage.getItem('coho-theme-color')) {
-        localStorage.setItem('coho-theme-color', potentialColor);
+      if (!potentialColor || potentialColor === 'device') {
+        if (deviceColor) {
+          localStorage.setItem('coho-theme-color', deviceColor);
+          applyThemeColor(deviceColor);
+        } else {
+          // get css variable color fallback
+          const color =
+            getComputedStyle(document.body).getPropertyValue(
+              '--sl-color-primary-600'
+            ) || '#5171a5';
+          applyThemeColor(color);
+        }
+      } else {
+        // Sync to localStorage for instant theme on next load (migration for existing users)
+        if (
+          !localStorage.getItem('coho-theme-color') ||
+          localStorage.getItem('coho-theme-color') !== potentialColor
+        ) {
+          localStorage.setItem('coho-theme-color', potentialColor);
+        }
+        applyThemeColor(potentialColor);
       }
-      applyThemeColor(potentialColor);
-    } else {
-      // get css variable color
-      const color = getComputedStyle(document.body).getPropertyValue(
-        '--sl-color-primary-600'
-      );
-      applyThemeColor(color);
+    } catch (error) {
+      console.error('[App] Failed to initialize theme:', error);
     }
   }
 
@@ -259,11 +265,12 @@ export class AppIndex extends LitElement {
     // Check initial authentication state
     await this.checkAuthenticationState();
 
+    // Initialize theme immediately for all users (including unauthenticated users on the login page)
+    this.handleInitTheme();
+
     if (this.isAuthenticated) {
       // Sync localStorage credentials to IndexedDB for service worker access
       this.syncCredentialsToIndexedDB();
-
-      this.handleInitTheme();
 
       // Sync server-side user preferences (default visibility, language, etc.)
       this.syncServerPreferences();

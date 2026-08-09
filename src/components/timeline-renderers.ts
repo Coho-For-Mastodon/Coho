@@ -477,6 +477,157 @@ function renderSocialActions(config: ActionsConfig): TemplateResult {
 }
 
 /**
+ * Renders the three-dots dropdown menu for a post
+ */
+function renderPostDropdown(
+  post: Post,
+  state: TimelineItemState,
+  handlers: TimelineItemHandlers,
+  shareTarget: Post | null = post
+): TemplateResult {
+  return html`
+    <div class="actions-right">
+      <md-dropdown placement="bottom-end" close-on-scroll>
+        <md-icon-button
+          slot="trigger"
+          name="ellipsis-vertical"
+          label="${msg('More options')}"
+          size="small"
+        ></md-icon-button>
+        <md-menu>
+          <md-menu-item
+            @click="${() => handlers.translatePost(post.content || null, post.id)}"
+            title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}
+          >
+            <md-icon slot="prefix" name="language"></md-icon>
+            ${msg('Translate')}
+          </md-menu-item>
+          ${
+            !state.guestMode &&
+            post.account &&
+            post.account.id !== state.currentUser?.id
+              ? html`
+                  <md-menu-item
+                    @click=${() => handlers.addToList(post.account)}
+                  >
+                    <md-icon slot="prefix" name="albums"></md-icon>
+                    ${msg('Add to list')}
+                  </md-menu-item>
+                `
+              : null
+          }
+          <md-menu-item @click="${() => handlers.shareStatus(shareTarget)}">
+            <md-icon slot="prefix" name="share"></md-icon>
+            ${msg('Share')}
+          </md-menu-item>
+          ${
+            post.edited_at
+              ? html`
+                  <md-menu-item
+                    @click="${() => handlers.viewEditHistory(post.id)}"
+                  >
+                    <md-icon slot="prefix" name="time"></md-icon>
+                    ${msg('View edit history')}
+                  </md-menu-item>
+                `
+              : null
+          }
+          ${
+            state.canPin && post === state.tweet
+              ? html`
+                  <md-menu-item @click="${() => handlers.togglePin()}">
+                    <md-icon slot="prefix" name="bookmark"></md-icon>
+                    ${post.pinned ? msg('Unpin from profile') : msg('Pin to profile')}
+                  </md-menu-item>
+                `
+              : null
+          }
+          ${
+            !state.guestMode && post === state.tweet
+              ? html`
+                  <md-menu-item @click="${() => handlers.muteConversation()}">
+                    <md-icon
+                      slot="prefix"
+                      name="${
+                        state.isMuted || post.muted
+                          ? 'notifications'
+                          : 'notifications-off'
+                      }"
+                    ></md-icon>
+                    ${
+                      state.isMuted || post.muted
+                        ? msg('Unmute conversation')
+                        : msg('Mute conversation')
+                    }
+                  </md-menu-item>
+                `
+              : null
+          }
+          ${
+            post.account.id !== state.currentUser?.id
+              ? html`
+                  <md-menu-item
+                    @click="${() => handlers.muteUser(post.account.id)}"
+                  >
+                    <md-icon slot="prefix" name="volume-mute"></md-icon>
+                    ${msg(str`Mute @${post.account.acct}`)}
+                  </md-menu-item>
+                  <md-menu-item
+                    @click="${() => handlers.blockUser(post.account.id)}"
+                  >
+                    <md-icon slot="prefix" name="ban"></md-icon>
+                    ${msg(str`Block @${post.account.acct}`)}
+                  </md-menu-item>
+                  ${
+                    post.account.acct?.includes('@')
+                      ? html`
+                          <md-menu-item
+                            @click="${() =>
+                              handlers.blockDomain(
+                                post.account.acct?.split('@')[1] || ''
+                              )}"
+                          >
+                            <md-icon slot="prefix" name="ban"></md-icon>
+                            ${msg(str`Block domain ${post.account.acct?.split('@')[1]}`)}
+                          </md-menu-item>
+                        `
+                      : null
+                  }
+                  <md-menu-item
+                    @click="${() =>
+                      handlers.reportUser(
+                        post.account.id,
+                        post.account.acct,
+                        post.id
+                      )}"
+                  >
+                    <md-icon slot="prefix" name="flag"></md-icon>
+                    ${msg(str`Report @${post.account.acct}`)}
+                  </md-menu-item>
+                `
+              : null
+          }
+          ${
+            post.account.acct === state.currentUser?.acct
+              ? html`
+                  <md-menu-item @click="${() => handlers.initEditStatus()}">
+                    <md-icon slot="prefix" name="brush"></md-icon>
+                    ${msg('Edit')}
+                  </md-menu-item>
+                  <md-menu-item @click="${() => handlers.deleteStatus()}">
+                    <md-icon slot="prefix" name="trash"></md-icon>
+                    ${msg('Delete')}
+                  </md-menu-item>
+                `
+              : null
+          }
+        </md-menu>
+      </md-dropdown>
+    </div>
+  `;
+}
+
+/**
  * Renders social action buttons for thread continuation posts (no reply button).
  */
 function renderSocialActionsForThread(config: ActionsConfig): TemplateResult {
@@ -578,7 +729,12 @@ export function renderReplyContext(
       @click="${() => handlers.openParentPost()}"
       style="cursor: pointer;"
     >
-      <user-profile .account="${state.tweet?.reply_to?.account}"></user-profile>
+      <div class="header-block" slot="header">
+        <user-profile
+          .account="${state.tweet?.reply_to?.account}"
+        ></user-profile>
+        ${renderPostDropdown(state.tweet.reply_to!, state, handlers)}
+      </div>
       ${
         state.tweet?.reply_to?.sensitive
           ? renderSensitiveBlock(
@@ -715,150 +871,8 @@ export function renderRegularTweet(
     >
       <div class="header-actions-block" slot="header">
         <user-profile .account="${state.tweet?.account}"></user-profile>
-
-        <div class="actions-right">
-          <md-dropdown placement="bottom-end" close-on-scroll>
-            <md-icon-button slot="trigger" name="ellipsis-vertical" label="${msg('More options')}" size="small"></md-icon-button>
-            <md-menu>
-              <md-menu-item @click="${() => handlers.translatePost(state.tweet?.content || null, state.tweet?.id)}" title=${ifDefined(state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined)}>
-                <md-icon slot="prefix" name="language"></md-icon>
-                ${msg('Translate')}
-              </md-menu-item>
-              ${
-                !state.guestMode &&
-                state.tweet?.account &&
-                state.tweet?.account.id !== state.currentUser?.id
-                  ? html`
-                      <md-menu-item
-                        @click=${() => handlers.addToList(state.tweet!.account)}
-                      >
-                        <md-icon slot="prefix" name="albums"></md-icon>
-                        ${msg('Add to list')}
-                      </md-menu-item>
-                    `
-                  : null
-              }
-              <md-menu-item @click="${() => handlers.shareStatus(state.tweet || null)}">
-                <md-icon slot="prefix" name="share"></md-icon>
-                ${msg('Share')}
-              </md-menu-item>
-              ${
-                state.tweet?.edited_at
-                  ? html`
-                      <md-menu-item
-                        @click="${() =>
-                          handlers.viewEditHistory(state.tweet?.id || '')}"
-                      >
-                        <md-icon slot="prefix" name="time"></md-icon>
-                        ${msg('View edit history')}
-                      </md-menu-item>
-                    `
-                  : null
-              }
-              ${
-                state.canPin
-                  ? html`
-                      <md-menu-item @click="${() => handlers.togglePin()}">
-                        <md-icon slot="prefix" name="bookmark"></md-icon>
-                        ${
-                          state.tweet?.pinned
-                            ? msg('Unpin from profile')
-                            : msg('Pin to profile')
-                        }
-                      </md-menu-item>
-                    `
-                  : null
-              }
-              ${
-                !state.guestMode
-                  ? html`
-                      <md-menu-item
-                        @click="${() => handlers.muteConversation()}"
-                      >
-                        <md-icon
-                          slot="prefix"
-                          name="${
-                            state.isMuted || state.tweet?.muted
-                              ? 'notifications'
-                              : 'notifications-off'
-                          }"
-                        ></md-icon>
-                        ${
-                          state.isMuted || state.tweet?.muted
-                            ? msg('Unmute conversation')
-                            : msg('Mute conversation')
-                        }
-                      </md-menu-item>
-                    `
-                  : null
-              }
-              ${
-                state.tweet?.account.id !== state.currentUser?.id
-                  ? html`
-                      <md-menu-item
-                        @click="${() =>
-                          handlers.muteUser(state.tweet?.account.id || '')}"
-                      >
-                        <md-icon slot="prefix" name="volume-mute"></md-icon>
-                        ${msg(str`Mute @${state.tweet?.account.acct}`)}
-                      </md-menu-item>
-                      <md-menu-item
-                        @click="${() =>
-                          handlers.blockUser(state.tweet?.account.id || '')}"
-                      >
-                        <md-icon slot="prefix" name="ban"></md-icon>
-                        ${msg(str`Block @${state.tweet?.account.acct}`)}
-                      </md-menu-item>
-                      ${
-                        state.tweet?.account.acct?.includes('@')
-                          ? html`
-                              <md-menu-item
-                                @click="${() =>
-                                  handlers.blockDomain(
-                                    state.tweet?.account.acct?.split('@')[1] ||
-                                      ''
-                                  )}"
-                              >
-                                <md-icon slot="prefix" name="ban"></md-icon>
-                                ${msg(
-                                  str`Block domain ${state.tweet?.account.acct?.split('@')[1]}`
-                                )}
-                              </md-menu-item>
-                            `
-                          : null
-                      }
-                      <md-menu-item
-                        @click="${() =>
-                          handlers.reportUser(
-                            state.tweet?.account.id || '',
-                            state.tweet?.account.acct || '',
-                            state.tweet?.id
-                          )}"
-                      >
-                        <md-icon slot="prefix" name="flag"></md-icon>
-                        ${msg(str`Report @${state.tweet?.account.acct}`)}
-                      </md-menu-item>
-                    `
-                  : null
-              }
-              ${
-                state.tweet?.account.acct === state.currentUser?.acct
-                  ? html`
-                      <md-menu-item @click="${() => handlers.initEditStatus()}">
-                        <md-icon slot="prefix" name="brush"></md-icon>
-                        ${msg('Edit')}
-                      </md-menu-item>
-                      <md-menu-item @click="${() => handlers.deleteStatus()}">
-                        <md-icon slot="prefix" name="trash"></md-icon>
-                        ${msg('Delete')}
-                      </md-menu-item>
-                    `
-                  : null
-              }
-            </md-menu>
-          </md-dropdown>
-        </div>
-        </div>
+        ${renderPostDropdown(state.tweet!, state, handlers)}
+      </div>
       </div>
 
       <div
@@ -927,7 +941,10 @@ export function renderThreadContinuation(
           @click="${(e: Event) =>
             handlers.handleContentClick(e, threadPost, true)}"
         >
-          <user-profile .account="${threadPost.account}"></user-profile>
+          <div class="header-block" slot="header">
+            <user-profile .account="${threadPost.account}"></user-profile>
+            ${renderPostDropdown(threadPost, state, handlers)}
+          </div>
           ${
             threadPost.sensitive
               ? renderSensitiveBlock(threadPost.spoiler_text, (e: Event) => {
@@ -1005,139 +1022,7 @@ export function renderReblog(
           ?small="${true}"
           .account="${state.tweet.reblog.account}"
         ></user-profile>
-        <md-dropdown placement="bottom-end" close-on-scroll>
-          <md-icon-button
-            slot="trigger"
-            name="ellipsis-vertical"
-            label="${msg('More options')}"
-            size="small"
-          ></md-icon-button>
-          <md-menu>
-            <md-menu-item
-              @click="${() =>
-                handlers.translatePost(
-                  state.tweet?.reblog?.content || null,
-                  state.tweet?.reblog?.id
-                )}"
-              title=${ifDefined(
-                state.isOnDeviceTranslateAvailable ? 'On-device AI' : undefined
-              )}
-            >
-              <md-icon slot="prefix" name="language"></md-icon>
-              ${msg('Translate')}
-            </md-menu-item>
-            ${
-              !state.guestMode &&
-              state.tweet?.reblog?.account &&
-              state.tweet?.reblog?.account.id !== state.currentUser?.id
-                ? html`
-                    <md-menu-item
-                      @click=${() =>
-                        handlers.addToList(state.tweet!.reblog!.account)}
-                    >
-                      <md-icon slot="prefix" name="albums"></md-icon>
-                      ${msg('Add to list')}
-                    </md-menu-item>
-                  `
-                : null
-            }
-            <md-menu-item
-              @click="${() => handlers.shareStatus(state.tweet || null)}"
-            >
-              <md-icon slot="prefix" name="share"></md-icon>
-              ${msg('Share')}
-            </md-menu-item>
-            ${
-              state.canPin
-                ? html`
-                    <md-menu-item @click="${() => handlers.togglePin()}">
-                      <md-icon slot="prefix" name="bookmark"></md-icon>
-                      ${
-                        state.tweet?.pinned
-                          ? msg('Unpin from profile')
-                          : msg('Pin to profile')
-                      }
-                    </md-menu-item>
-                  `
-                : null
-            }
-            ${
-              !state.guestMode
-                ? html`
-                    <md-menu-item @click="${() => handlers.muteConversation()}">
-                      <md-icon
-                        slot="prefix"
-                        name="${
-                          state.isMuted || state.tweet?.reblog?.muted
-                            ? 'notifications'
-                            : 'notifications-off'
-                        }"
-                      ></md-icon>
-                      ${
-                        state.isMuted || state.tweet?.reblog?.muted
-                          ? msg('Unmute conversation')
-                          : msg('Mute conversation')
-                      }
-                    </md-menu-item>
-                  `
-                : null
-            }
-            ${
-              state.tweet?.reblog?.account.id !== state.currentUser?.id
-                ? html`
-                    <md-menu-item
-                      @click="${() =>
-                        handlers.muteUser(
-                          state.tweet?.reblog?.account.id || ''
-                        )}"
-                    >
-                      <md-icon slot="prefix" name="volume-mute"></md-icon>
-                      ${msg(str`Mute @${state.tweet?.reblog?.account.acct}`)}
-                    </md-menu-item>
-                    <md-menu-item
-                      @click="${() =>
-                        handlers.blockUser(
-                          state.tweet?.reblog?.account.id || ''
-                        )}"
-                    >
-                      <md-icon slot="prefix" name="ban"></md-icon>
-                      ${msg(str`Block @${state.tweet?.reblog?.account.acct}`)}
-                    </md-menu-item>
-                    ${
-                      state.tweet?.reblog?.account.acct?.includes('@')
-                        ? html`
-                            <md-menu-item
-                              @click="${() =>
-                                handlers.blockDomain(
-                                  state.tweet?.reblog?.account.acct?.split(
-                                    '@'
-                                  )[1] || ''
-                                )}"
-                            >
-                              <md-icon slot="prefix" name="ban"></md-icon>
-                              ${msg(
-                                str`Block domain ${state.tweet?.reblog?.account.acct?.split('@')[1]}`
-                              )}
-                            </md-menu-item>
-                          `
-                        : null
-                    }
-                    <md-menu-item
-                      @click="${() =>
-                        handlers.reportUser(
-                          state.tweet?.reblog?.account.id || '',
-                          state.tweet?.reblog?.account.acct || '',
-                          state.tweet?.reblog?.id
-                        )}"
-                    >
-                      <md-icon slot="prefix" name="flag"></md-icon>
-                      ${msg(str`Report @${state.tweet?.reblog?.account.acct}`)}
-                    </md-menu-item>
-                  `
-                : null
-            }
-          </md-menu>
-        </md-dropdown>
+        ${renderPostDropdown(state.tweet.reblog, state, handlers, state.tweet)}
       </div>
 
       <div
@@ -1184,6 +1069,7 @@ export function renderThreadAncestors(
                 ?small="${true}"
                 .account="${threadPost.account}"
               ></user-profile>
+              ${renderPostDropdown(threadPost, state, handlers)}
             </div>
             ${
               threadPost.sensitive
@@ -1230,6 +1116,7 @@ export function renderThread(
                 ?small="${true}"
                 .account="${threadPost.account}"
               ></user-profile>
+              ${renderPostDropdown(threadPost, state, handlers)}
             </div>
             ${
               threadPost.sensitive

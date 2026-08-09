@@ -52,10 +52,12 @@ export class MdDropdown extends LitElement {
       max-width: calc(100vw - 16px);
       max-height: calc(100vh - 16px);
       opacity: 0;
-      transform: translateY(-6px);
+      transform: scale(0.95);
+      transform-origin: var(--md-dropdown-origin-y, top)
+        var(--md-dropdown-origin-x, left);
       transition:
-        opacity 0.15s ease,
-        transform 0.15s ease,
+        opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.15s cubic-bezier(0.2, 0, 0, 1),
         display 0.15s allow-discrete,
         overlay 0.15s allow-discrete;
       transition-behavior: allow-discrete;
@@ -63,13 +65,13 @@ export class MdDropdown extends LitElement {
 
     .popup:popover-open {
       opacity: 1;
-      transform: translateY(0);
+      transform: scale(1);
     }
 
     @starting-style {
       .popup:popover-open {
         opacity: 0;
-        transform: translateY(-6px);
+        transform: scale(0.95);
       }
     }
 

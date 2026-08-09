@@ -2,6 +2,62 @@
  * Theme color utilities for applying and managing app theme colors
  * Used by both app-index.ts and app-theme.ts
  */
+import {
+  themeFromSourceColor,
+  applyTheme,
+  argbFromHex,
+} from '@material/material-color-utilities';
+
+/**
+ * Parse any color format (hex, rgb, rgba) to RGB components
+ */
+export function parseColor(color: string): { r: number; g: number; b: number } {
+  color = color.trim();
+
+  // Handle rgb/rgba format: rgb(r, g, b) or rgb(r g b)
+  const rgbMatch = color.match(/rgba?\s*\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  if (rgbMatch) {
+    return {
+      r: parseInt(rgbMatch[1], 10),
+      g: parseInt(rgbMatch[2], 10),
+      b: parseInt(rgbMatch[3], 10),
+    };
+  }
+
+  // Handle hex format
+  let hex = color.replace('#', '');
+  // Handle shorthand hex (#abc -> #aabbcc)
+  if (hex.length === 3) {
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  }
+  return {
+    r: parseInt(hex.substring(0, 2), 16),
+    g: parseInt(hex.substring(2, 4), 16),
+    b: parseInt(hex.substring(4, 6), 16),
+  };
+}
+
+/**
+ * Mix two colors in sRGB color space
+ * @param color1 First color (hex or rgb format)
+ * @param color2 Second color (hex or rgb format)
+ * @param weight Weight of color1 (0-100)
+ */
+export function mixColors(
+  color1: string,
+  color2: string,
+  weight: number
+): string {
+  const c1 = parseColor(color1);
+  const c2 = parseColor(color2);
+  const w = weight / 100;
+
+  const r = Math.round(c1.r * w + c2.r * (1 - w));
+  const g = Math.round(c1.g * w + c2.g * (1 - w));
+  const b = Math.round(c1.b * w + c2.b * (1 - w));
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 /**
  * Adjust color brightness by a given amount
@@ -33,11 +89,72 @@ export function adjustColorBrightness(col: string, amt: number): string {
 }
 
 /**
+ * Update the theme-color meta tags with tinted background colors
+ * This affects the Window Controls Overlay / titlebar area
+ */
+export function updateThemeMetaTags(primaryColor: string): void {
+  // Calculate tinted backgrounds matching CSS: color-mix(in srgb, primary X%, base)
+  // These match --md-sys-color-background from md-tokens.css:
+  // Dark: color-mix(in srgb, var(--md-sys-color-primary) 5%, #141314)
+  // Light: color-mix(in srgb, var(--md-sys-color-primary) 10%, #ffffff)
+  const lightBackground = mixColors(primaryColor, '#ffffff', 10);
+  const darkBackground = mixColors(primaryColor, '#141314', 5);
+
+  // Find and update the meta tags
+  const darkMeta = document.querySelector(
+    'meta[name="theme-color"][media="(prefers-color-scheme: dark)"]'
+  );
+  const lightMeta = document.querySelector(
+    'meta[name="theme-color"][media="(prefers-color-scheme: light)"]'
+  );
+
+  if (darkMeta) {
+    darkMeta.setAttribute('content', darkBackground);
+  }
+  if (lightMeta) {
+    lightMeta.setAttribute('content', lightBackground);
+  }
+}
+
+let currentColor = '#5171a5';
+let themeListenerAdded = false;
+
+/**
  * Apply theme color to both Shoelace and MD3 design tokens
  * @param color Primary color in hex format
+ * @param options Options for applying the theme
  */
-export function applyThemeColor(color: string): void {
+export function applyThemeColor(
+  color: string,
+  options: { updateMetaTags?: boolean; useIdleCallback?: boolean } = {}
+): void {
+  currentColor = color;
+  const { updateMetaTags = true, useIdleCallback = false } = options;
+
   const root = document.documentElement;
+
+  // Setup listener for dark mode changes if not already set
+  if (!themeListenerAdded) {
+    window
+      .matchMedia('(prefers-color-scheme: dark)')
+      .addEventListener('change', () => {
+        applyThemeColor(currentColor, {
+          updateMetaTags: true,
+          useIdleCallback: false,
+        });
+      });
+    themeListenerAdded = true;
+  }
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  try {
+    // Generate and apply M3 Theme
+    const theme = themeFromSourceColor(argbFromHex(color));
+    applyTheme(theme, { target: root, dark: isDark });
+  } catch (e) {
+    console.error('Failed to generate M3 theme', e);
+  }
 
   // Shoelace tokens
   root.style.setProperty('--sl-color-primary-600', color);
@@ -50,12 +167,24 @@ export function applyThemeColor(color: string): void {
   root.style.setProperty('--sl-color-primary-500', lighterVariant);
   root.style.setProperty('--sl-color-primary-700', darkerVariant);
 
-  // MD3 tokens - primary color (set on :root for highest priority)
-  root.style.setProperty('--md-sys-color-primary', color);
-  root.style.setProperty('--md-sys-color-outline', color);
-
   // Also update body for legacy support
   document.body.style.setProperty('--sl-color-primary-600', color);
-  document.body.style.setProperty('--md-sys-color-primary', color);
-  document.body.style.setProperty('--md-sys-color-outline', color);
+
+  // Update theme-color meta tags with tinted background
+  // Skip on desktop in light mode to keep default white titlebar
+  if (updateMetaTags) {
+    const isLightMode = !window.matchMedia('(prefers-color-scheme: dark)')
+      .matches;
+    const isDesktop = window.innerWidth > 820;
+
+    if (!(isLightMode && isDesktop)) {
+      if (useIdleCallback) {
+        requestIdleCallback(() => updateThemeMetaTags(color), {
+          timeout: 8000,
+        });
+      } else {
+        updateThemeMetaTags(color);
+      }
+    }
+  }
 }

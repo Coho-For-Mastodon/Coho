@@ -4,16 +4,13 @@ export const mdSharedStyles = css`
   :host {
     font-family: var(
       --md-font-family,
+      'Roboto',
       system-ui,
       -apple-system,
       BlinkMacSystemFont,
       'Segoe UI',
-      Roboto,
-      'Helvetica Neue',
       sans-serif
     );
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 
   :host * {

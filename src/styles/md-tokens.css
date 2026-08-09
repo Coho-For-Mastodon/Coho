@@ -1,15 +1,14 @@
 /**
- * Design Tokens
- * Centralized color system — single source of truth for all color tokens.
- * Generic flat design, inspired by modern cross-platform aesthetics.
- * Shoelace primary scale + design tokens are defined here only.
+ * Material Design 3 Design Tokens
+ * Centralized MD3 color system — single source of truth for all color tokens.
+ * Shoelace primary scale + MD3 tokens are defined here only.
  */
 
 :root {
-  /* Shoelace Primary Color Scale (single source of truth) — Pastel Pink */
-  --sl-color-primary-500: hsl(340 55% 70%);
-  --sl-color-primary-600: hsl(340 55% 65%);
-  --sl-color-primary-700: hsl(340 55% 55%);
+  /* Shoelace Primary Color Scale (single source of truth) */
+  --sl-color-primary-500: hsl(330 70% 55%);
+  --sl-color-primary-600: hsl(330 70% 55%);
+  --sl-color-primary-700: hsl(330 70% 45%);
 
   /* Primary Colors - dynamically updated by theme system */
   --md-sys-color-primary: var(--sl-color-primary-600);
@@ -46,50 +45,74 @@
   );
 
   /* Error Colors */
-  --md-sys-color-error: #e5484d;
+  --md-sys-color-error: #b3261e;
   --md-sys-color-on-error: #ffffff;
-  --md-sys-color-error-container: #ffe5e5;
-  --md-sys-color-on-error-container: #6e1116;
+  --md-sys-color-error-container: #f9dedc;
+  --md-sys-color-on-error-container: #410e0b;
 
-  /* Surface Colors — clean neutrals, no primary tinting */
+  /* Surface Colors */
   --md-sys-color-surface: #ffffff;
-  --md-sys-color-on-surface: #1a1a1a;
-  --md-sys-color-surface-variant: #f5f5f5;
-  --md-sys-color-on-surface-variant: #6e6e6e;
+  --md-sys-color-on-surface: #1d1b20;
+  --md-sys-color-surface-variant: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 8%,
+    #f5f5f5
+  );
+  --md-sys-color-on-surface-variant: #49454f;
 
-  /* Surface Container Variants — neutral gray hierarchy */
-  --md-sys-color-surface-container-low: #f8f8f8;
-  --md-sys-color-surface-container: #f2f2f2;
-  --md-sys-color-surface-container-high: #ececec;
-  --md-sys-color-surface-container-highest: #e6e6e6;
+  /* Surface Container Variants - derived from primary */
+  --md-sys-color-surface-container-low: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 4%,
+    #ffffff
+  );
+  --md-sys-color-surface-container: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 6%,
+    #ffffff
+  );
+  --md-sys-color-surface-container-high: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 8%,
+    #ffffff
+  );
+  --md-sys-color-surface-container-highest: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 11%,
+    #ffffff
+  );
 
-  /* Outline Colors — neutral, not primary-tinted */
-  --md-sys-color-outline: #d0d0d0;
-  --md-sys-color-outline-variant: #e8e8e8;
+  /* Outline Colors */
+  --md-sys-color-outline: var(--sl-color-primary-600);
+  --md-sys-color-outline-variant: color-mix(
+    in srgb,
+    var(--md-sys-color-primary) 20%,
+    #d0d0d0
+  );
 
   /* Inverse Colors */
-  --md-sys-color-inverse-surface: #2a2a2a;
-  --md-sys-color-inverse-on-surface: #f5f5f5;
+  --md-sys-color-inverse-surface: #313033;
+  --md-sys-color-inverse-on-surface: #f5eff7;
 
   /* Background Colors (for full-page surfaces) */
   --md-sys-color-background: #ffffff;
-  --md-sys-color-on-background: #1a1a1a;
+  --md-sys-color-on-background: #1d1b20;
 }
 
-/* Dark Mode Tokens */
+/* Dark Mode MD3 Tokens */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Shoelace Primary Color Scale — Pastel Pink (lighter for dark mode) */
-    --sl-color-primary-500: hsl(340 60% 75%);
-    --sl-color-primary-600: hsl(340 60% 72%);
-    --sl-color-primary-700: hsl(340 60% 80%);
+    /* Shoelace Primary Color Scale (single source of truth) */
+    --sl-color-primary-500: hsl(330 80% 78%);
+    --sl-color-primary-600: hsl(330 80% 78%);
+    --sl-color-primary-700: hsl(330 80% 85%);
 
     /* Primary Colors - dynamically updated by theme system */
     --md-sys-color-primary: var(--sl-color-primary-600);
-    --md-sys-color-on-primary: #2a1018;
+    --md-sys-color-on-primary: #3d0d24;
     --md-sys-color-primary-container: color-mix(
       in srgb,
-      var(--md-sys-color-primary) 25%,
+      var(--md-sys-color-primary) 30%,
       #2a2a2a
     );
     --md-sys-color-on-primary-container: color-mix(
@@ -100,7 +123,7 @@
 
     /* Secondary Colors - derived from primary for theming */
     --md-sys-color-secondary: var(--sl-color-primary-600);
-    --md-sys-color-on-secondary: #2a1a20;
+    --md-sys-color-on-secondary: #3d2131;
     --md-sys-color-secondary-container: var(--sl-color-primary-800);
     --md-sys-color-on-secondary-container: var(--sl-color-primary-100);
 
@@ -113,7 +136,7 @@
     --md-sys-color-on-tertiary: #1a1a1a;
     --md-sys-color-tertiary-container: color-mix(
       in srgb,
-      var(--md-sys-color-primary) 25%,
+      var(--md-sys-color-primary) 30%,
       #2a2a2a
     );
     --md-sys-color-on-tertiary-container: color-mix(
@@ -123,34 +146,46 @@
     );
 
     /* Error Colors */
-    --md-sys-color-error: #ff8589;
+    --md-sys-color-error: #f2b8b5;
     --md-sys-color-on-error: #601410;
-    --md-sys-color-error-container: #5c1d1a;
-    --md-sys-color-on-error-container: #ffdad6;
+    --md-sys-color-error-container: #8c1d18;
+    --md-sys-color-on-error-container: #f9dedc;
 
-    /* Surface Colors — neutral darks */
-    --md-sys-color-surface: #1a1a1a;
-    --md-sys-color-on-surface: #f0f0f0;
-    --md-sys-color-surface-variant: #333333;
-    --md-sys-color-on-surface-variant: #999999;
+    /* Surface Colors */
+    --md-sys-color-surface: color-mix(
+      in srgb,
+      var(--md-sys-color-primary) 8%,
+      #202124
+    );
+    --md-sys-color-on-surface: #e6e0e9;
+    --md-sys-color-surface-variant: #49454f;
+    --md-sys-color-on-surface-variant: #cac4d0;
 
-    /* Surface Container Variants — graduated dark grays */
-    --md-sys-color-surface-container-low: #1e1e1e;
-    --md-sys-color-surface-container: #222222;
-    --md-sys-color-surface-container-high: #2a2a2a;
-    --md-sys-color-surface-container-highest: #333333;
+    /* Surface Container Variants */
+    --md-sys-color-surface-container-low: #1d1b20;
+    --md-sys-color-surface-container: color-mix(
+      in srgb,
+      var(--md-sys-color-primary) 8%,
+      #211f26
+    );
+    --md-sys-color-surface-container-high: #2b2930;
+    --md-sys-color-surface-container-highest: #36343b;
 
     /* Outline Colors */
-    --md-sys-color-outline: #444444;
-    --md-sys-color-outline-variant: #333333;
+    --md-sys-color-outline: var(--sl-color-primary-600);
+    --md-sys-color-outline-variant: #49454f;
 
     /* Inverse Colors */
-    --md-sys-color-inverse-surface: #f0f0f0;
-    --md-sys-color-inverse-on-surface: #1a1a1a;
+    --md-sys-color-inverse-surface: #e6e0e9;
+    --md-sys-color-inverse-on-surface: #313033;
 
     /* Background Colors */
-    --md-sys-color-background: #111111;
-    --md-sys-color-on-background: #f0f0f0;
+    --md-sys-color-background: color-mix(
+      in srgb,
+      var(--md-sys-color-primary) 5%,
+      #141314
+    );
+    --md-sys-color-on-background: #e6e0e9;
   }
 }
 
@@ -191,46 +226,46 @@
   }
 }
 
-/* Typography Scale */
+/* Typography Scale (MD3) */
 :root {
   /* Display */
   --md-sys-typescale-display-large-font-size: 57px;
   --md-sys-typescale-display-large-line-height: 64px;
-  --md-sys-typescale-display-large-font-weight: 600;
+  --md-sys-typescale-display-large-font-weight: 400;
 
   --md-sys-typescale-display-medium-font-size: 45px;
   --md-sys-typescale-display-medium-line-height: 52px;
-  --md-sys-typescale-display-medium-font-weight: 600;
+  --md-sys-typescale-display-medium-font-weight: 400;
 
   --md-sys-typescale-display-small-font-size: 36px;
   --md-sys-typescale-display-small-line-height: 44px;
-  --md-sys-typescale-display-small-font-weight: 600;
+  --md-sys-typescale-display-small-font-weight: 400;
 
   /* Headline */
   --md-sys-typescale-headline-large-font-size: 32px;
   --md-sys-typescale-headline-large-line-height: 40px;
-  --md-sys-typescale-headline-large-font-weight: 600;
+  --md-sys-typescale-headline-large-font-weight: 400;
 
   --md-sys-typescale-headline-medium-font-size: 28px;
   --md-sys-typescale-headline-medium-line-height: 36px;
-  --md-sys-typescale-headline-medium-font-weight: 600;
+  --md-sys-typescale-headline-medium-font-weight: 400;
 
   --md-sys-typescale-headline-small-font-size: 24px;
   --md-sys-typescale-headline-small-line-height: 32px;
-  --md-sys-typescale-headline-small-font-weight: 600;
+  --md-sys-typescale-headline-small-font-weight: 400;
 
   /* Title */
   --md-sys-typescale-title-large-font-size: 22px;
   --md-sys-typescale-title-large-line-height: 28px;
-  --md-sys-typescale-title-large-font-weight: 600;
+  --md-sys-typescale-title-large-font-weight: 400;
 
   --md-sys-typescale-title-medium-font-size: 16px;
   --md-sys-typescale-title-medium-line-height: 24px;
-  --md-sys-typescale-title-medium-font-weight: 600;
+  --md-sys-typescale-title-medium-font-weight: 500;
 
   --md-sys-typescale-title-small-font-size: 14px;
   --md-sys-typescale-title-small-line-height: 20px;
-  --md-sys-typescale-title-small-font-weight: 600;
+  --md-sys-typescale-title-small-font-weight: 500;
 
   /* Body */
   --md-sys-typescale-body-large-font-size: 16px;
@@ -259,31 +294,33 @@
   --md-sys-typescale-label-small-font-weight: 500;
 }
 
-/* Elevation Tokens — minimal, flat */
+/* Elevation Tokens (MD3) */
 :root {
-  --md-sys-elevation-level1: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --md-sys-elevation-level2: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --md-sys-elevation-level1:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level2:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
 }
 
-/* Shape Tokens — compressed, consistent scale */
+/* Shape Tokens (MD3) */
 :root {
   --md-sys-shape-corner-none: 0px;
-  --md-sys-shape-corner-extra-small: 6px;
+  --md-sys-shape-corner-extra-small: 4px;
   --md-sys-shape-corner-small: 8px;
-  --md-sys-shape-corner-medium: 10px;
-  --md-sys-shape-corner-large: 12px;
-  --md-sys-shape-corner-extra-large: 14px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
   --md-sys-shape-corner-full: 9999px;
   --md-sys-shape-corner-circle: 50%;
 }
 
-/* Motion Tokens — clean ease */
+/* Motion Tokens (MD3) */
 :root {
-  --md-sys-motion-easing-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --md-sys-motion-duration-short3: 180ms;
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-duration-short3: 150ms;
 }
 
-/* Scrollbar Tokens — subtle */
+/* Scrollbar Tokens (MD3) - Subtle scrollbars for light mode */
 :root {
   --md-sys-scrollbar-width: 8px;
   --md-sys-scrollbar-height: 8px;
@@ -293,7 +330,7 @@
   --md-sys-scrollbar-thumb-radius: 4px;
 }
 
-/* Dark mode scrollbar overrides */
+/* Dark mode scrollbar overrides - Subtle scrollbars for dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
     --md-sys-scrollbar-thumb-color: rgba(255, 255, 255, 0.15);

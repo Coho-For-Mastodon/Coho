@@ -24,7 +24,7 @@ public class DynamicThemeBridge extends Plugin {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             int colorInt = ContextCompat.getColor(
-                    getContext(), android.R.color.system_accent1_500);
+                    getActivity(), android.R.color.system_accent1_500);
             String hex = String.format("#%06X", (0xFFFFFF & colorInt));
             result.put("color", hex);
             result.put("supported", true);

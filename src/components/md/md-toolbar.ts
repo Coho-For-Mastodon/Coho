@@ -23,7 +23,7 @@ export class MdToolbar extends LitElement {
       padding: 8px 16px;
       gap: 8px;
       color: var(--md-sys-color-on-surface, #1d1b20);
-      transition: background-color 0.2s ease;
+      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
     }
 
     .toolbar.position-top {
@@ -32,7 +32,10 @@ export class MdToolbar extends LitElement {
       left: 0;
       right: 0;
       z-index: 10;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      box-shadow:
+        0 2px 4px -1px rgba(0, 0, 0, 0.2),
+        0 4px 5px 0 rgba(0, 0, 0, 0.14),
+        0 1px 10px 0 rgba(0, 0, 0, 0.12);
     }
 
     .toolbar.position-bottom {
@@ -41,7 +44,10 @@ export class MdToolbar extends LitElement {
       left: 0;
       right: 0;
       z-index: 10;
-      border-top: 1px solid var(--md-sys-color-outline-variant);
+      box-shadow:
+        0 -2px 4px -1px rgba(0, 0, 0, 0.2),
+        0 -4px 5px 0 rgba(0, 0, 0, 0.14),
+        0 -1px 10px 0 rgba(0, 0, 0, 0.12);
     }
 
     .toolbar.align-start {

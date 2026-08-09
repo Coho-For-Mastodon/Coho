@@ -59,9 +59,9 @@ export class MdCheckbox extends LitElement {
       position: relative;
       width: 18px;
       height: 18px;
-      border: 2px solid #c0c0c0;
-      border-radius: 4px;
-      transition: all 0.15s ease;
+      border: 2px solid var(--md-sys-color-on-surface-variant, #938f99);
+      border-radius: var(--md-sys-shape-corner-extra-small);
+      transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
       background-color: transparent;
       display: flex;
       align-items: center;
@@ -73,11 +73,12 @@ export class MdCheckbox extends LitElement {
       border-color: var(--md-sys-color-primary, #6750a4);
     }
 
+    .checkmark {
       width: 12px;
       height: 12px;
       opacity: 0;
       transform: scale(0);
-      transition: all 0.12s ease;
+      transition: all 0.12s cubic-bezier(0.2, 0, 0, 1);
     }
 
     :host([checked]) .checkmark {
@@ -100,18 +101,38 @@ export class MdCheckbox extends LitElement {
 
     /* Hover state layer */
     @media (hover: hover) {
-      :host(:not([disabled])) .wrapper:hover .control {
-        border-color: #999999;
+      :host(:not([disabled])) .wrapper:hover .state-layer {
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, #1d1b20) 8%,
+          transparent
+        );
       }
 
-      :host([checked]:not([disabled])) .wrapper:hover .control {
-        filter: brightness(0.92);
+      :host([checked]:not([disabled])) .wrapper:hover .state-layer {
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-primary, #6750a4) 8%,
+          transparent
+        );
       }
     }
 
     /* Active/pressed state */
-    :host(:not([disabled])) .wrapper:active .control {
-      opacity: 0.7;
+    :host(:not([disabled])) .wrapper:active .state-layer {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-on-surface, #1d1b20) 12%,
+        transparent
+      );
+    }
+
+    :host([checked]:not([disabled])) .wrapper:active .state-layer {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-primary, #6750a4) 12%,
+        transparent
+      );
     }
 
     .label {
@@ -126,7 +147,7 @@ export class MdCheckbox extends LitElement {
 
     @media (prefers-color-scheme: dark) {
       .control {
-        border-color: #555555;
+        border-color: var(--md-sys-color-on-surface-variant, #cac4d0);
       }
 
       .label {
@@ -172,6 +193,7 @@ export class MdCheckbox extends LitElement {
         @keydown=${this._onKeyDown}
       >
         <div class="control-wrapper">
+          <div class="state-layer"></div>
           <div class="control" aria-hidden="true">
             <svg class="checkmark" viewBox="0 0 12 12">
               ${svg`<path d="M2 6 L5 9 L10 3" />`}

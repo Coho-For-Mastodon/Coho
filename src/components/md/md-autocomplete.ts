@@ -63,16 +63,16 @@ export class MdAutocomplete extends LitElement {
       width: 100%;
       min-height: 40px;
       padding: 12px 16px;
-      border: 1px solid var(--md-sys-color-outline, #79747e);
-      border-radius: var(--md-sys-shape-corner-medium);
+      border: none;
+      border-radius: 52px;
       background-color: var(--_surface-container-highest);
       font-family: inherit;
       font-size: var(--md-sys-typescale-body-large-font-size);
       font-weight: 400;
       line-height: 24px;
-      letter-spacing: 0;
+      letter-spacing: 0.5px;
       color: var(--_on-surface);
-      transition: border-color 0.2s ease;
+      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
       box-sizing: border-box;
     }
 
@@ -82,7 +82,11 @@ export class MdAutocomplete extends LitElement {
     }
 
     input:hover {
-      border-color: var(--_on-surface);
+      background-color: color-mix(
+        in srgb,
+        var(--_on-surface) 8%,
+        var(--_surface-container-highest)
+      );
     }
 
     input:focus-visible {
@@ -92,7 +96,11 @@ export class MdAutocomplete extends LitElement {
 
     input:focus {
       outline: none;
-      border-color: var(--md-sys-color-primary, #6750a4);
+      background-color: color-mix(
+        in srgb,
+        var(--_on-surface) 12%,
+        var(--_surface-container-highest)
+      );
     }
 
     .dropdown {
@@ -107,19 +115,21 @@ export class MdAutocomplete extends LitElement {
       max-height: 300px;
       overflow-y: auto;
       background-color: var(--_surface-container);
-      border-radius: var(--md-sys-shape-corner-large);
-      box-shadow: var(--md-sys-elevation-level2);
+      border-radius: 12px;
+      box-shadow:
+        0 2px 6px 2px rgba(0, 0, 0, 0.15),
+        0 1px 2px rgba(0, 0, 0, 0.3);
       opacity: 0;
-      transform: translateY(-6px);
+      transform: scaleY(0.95);
       transform-origin: var(--md-autocomplete-origin-y, top) left;
       transition:
-        opacity 0.15s ease,
-        transform 0.15s ease;
+        opacity 0.15s cubic-bezier(0.2, 0, 0, 1),
+        transform 0.15s cubic-bezier(0.2, 0, 0, 1);
     }
 
     .dropdown:popover-open {
       opacity: 1;
-      transform: translateY(0);
+      transform: scaleY(1);
     }
 
     .dropdown::backdrop {
@@ -132,23 +142,24 @@ export class MdAutocomplete extends LitElement {
       gap: 2px;
       padding: 12px 16px;
       cursor: pointer;
-      transition: background-color 0.15s ease;
+      transition: background-color 0.15s cubic-bezier(0.2, 0, 0, 1);
     }
 
     .dropdown-item:hover,
     .dropdown-item.highlighted {
-      background-color: rgba(0, 0, 0, 0.06); /* Default light mode */
+      background-color: color-mix(
+        in srgb,
+        var(--_on-surface) 8%,
+        var(--_surface-container)
+      );
     }
 
     .dropdown-item:active {
-      opacity: 0.7;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .dropdown-item:hover,
-      .dropdown-item.highlighted {
-        background-color: rgba(255, 255, 255, 0.08);
-      }
+      background-color: color-mix(
+        in srgb,
+        var(--_on-surface) 12%,
+        var(--_surface-container)
+      );
     }
 
     .dropdown-item:last-child {
@@ -365,24 +376,24 @@ export class MdAutocomplete extends LitElement {
                 (option, index) => html`
                   <div
                     class="dropdown-item ${
-                      index === this._highlightedIndex ? 'highlighted' : ''
-                    }"
+                    index === this._highlightedIndex ? 'highlighted' : ''
+                  }"
                     id="${this._listboxId}-opt-${index}"
                     role="option"
                     aria-selected="${
-                      index === this._highlightedIndex ? 'true' : 'false'
-                    }"
+                    index === this._highlightedIndex ? 'true' : 'false'
+                  }"
                     @click="${() => this._selectOption(option)}"
                     @mouseenter="${() => (this._highlightedIndex = index)}"
                   >
                     <div class="item-label">${option.label}</div>
                     ${
-                      option.description
-                        ? html`<div class="item-description">
-                            ${option.description}
-                          </div>`
-                        : null
-                    }
+                    option.description
+                      ? html`<div class="item-description">
+                          ${option.description}
+                        </div>`
+                      : null
+                  }
                   </div>
                 `
               )

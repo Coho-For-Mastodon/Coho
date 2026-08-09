@@ -11,6 +11,7 @@ import { getAndroidDynamicColor } from '../utils/dynamic-theme';
 @customElement('app-theme')
 export class AppTheme extends LitElement {
   @state() primary_color: string = '#5171a5';
+  @state() device_color: string | null = null;
   @state() font_size: string = '16px';
 
   settings: Settings | undefined;
@@ -144,28 +145,25 @@ export class AppTheme extends LitElement {
 
     this.settings = await getSettings();
 
-    // On Android Capacitor, device color always wins
-    const deviceColor = await getAndroidDynamicColor();
-    if (deviceColor) {
-      this.primary_color = deviceColor;
-      applyThemeColor(deviceColor);
-    } else {
-      const potentialColor = this.settings.primary_color;
+    this.device_color = await getAndroidDynamicColor();
+    const potentialColor = this.settings.primary_color;
 
-      if (potentialColor) {
-        this.primary_color = potentialColor;
-        applyThemeColor(potentialColor);
+    if (!potentialColor || potentialColor === 'device') {
+      if (this.device_color) {
+        this.primary_color = this.device_color;
+        applyThemeColor(this.device_color);
       } else {
-        // get css variable color
-        const color = getComputedStyle(document.body).getPropertyValue(
-          '--sl-color-primary-600'
-        );
+        // fallback to default or css variable color
+        const color =
+          getComputedStyle(document.body).getPropertyValue(
+            '--sl-color-primary-600'
+          ) || '#5171a5';
         this.primary_color = color;
-
-        document
-          .querySelector('html')!
-          .style.setProperty('--primary-color', color);
+        applyThemeColor(color);
       }
+    } else {
+      this.primary_color = potentialColor;
+      applyThemeColor(potentialColor);
     }
 
     const potentialFontSize = this.settings.font_size;
@@ -185,7 +183,17 @@ export class AppTheme extends LitElement {
   }
 
   chooseColor(color: string) {
-    this.primary_color = color;
+    if (color === 'device') {
+      if (this.device_color) {
+        this.primary_color = this.device_color;
+        localStorage.setItem('coho-theme-color', this.device_color);
+        applyThemeColor(this.device_color);
+      }
+    } else {
+      this.primary_color = color;
+      localStorage.setItem('coho-theme-color', color);
+      applyThemeColor(color);
+    }
 
     setSettings({
       primary_color: color,
@@ -194,9 +202,6 @@ export class AppTheme extends LitElement {
       wellness: this.settings!.wellness,
       focus: this.settings!.focus,
     });
-
-    // Apply to both Shoelace and MD3 design tokens
-    applyThemeColor(color);
   }
 
   changeFontSize(size: string) {
@@ -278,8 +283,23 @@ export class AppTheme extends LitElement {
             ></div>
 
             ${
+              this.device_color
+                ? html`<md-button
+                    circle
+                    @click="${() => this.chooseColor('device')}"
+                    title="Device Theme"
+                  >
+                    <md-icon src="/assets/sparkles-outline.svg"></md-icon>
+                  </md-button>`
+                : null
+            }
+            ${
               'EyeDropper' in window
-                ? html`<md-button circle @click="${() => this.customColor()}">
+                ? html`<md-button
+                    circle
+                    @click="${() => this.customColor()}"
+                    title="Custom Color"
+                  >
                     <md-icon src="/assets/add-outline.svg"></md-icon>
                   </md-button>`
                 : null

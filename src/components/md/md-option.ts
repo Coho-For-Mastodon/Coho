@@ -31,23 +31,36 @@ export class MdOption extends LitElement {
         font-size: var(--md-sys-typescale-body-large-font-size);
         font-weight: 400;
         line-height: 24px;
-        letter-spacing: 0;
+        letter-spacing: 0.5px;
         color: var(--md-sys-color-on-surface, #1d1b20);
-        transition: background-color 0.2s ease;
+        transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
         position: relative;
         overflow: hidden;
       }
 
       .option:hover:not(.disabled) {
-        background-color: rgba(0, 0, 0, 0.04);
+        background-color: var(--md-sys-color-on-surface, #1d1b20);
+        background-color: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, #1d1b20) 8%,
+          transparent
+        );
       }
 
       .option:active:not(.disabled) {
-        background-color: rgba(0, 0, 0, 0.06);
+        background-color: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, #1d1b20) 12%,
+          transparent
+        );
       }
 
       .option.selected {
-        background-color: var(--md-sys-color-secondary-container, #f3edf7);
+        background-color: color-mix(
+          in srgb,
+          var(--md-sys-color-primary, #6750a4) 12%,
+          transparent
+        );
         font-weight: 500;
       }
 
@@ -68,15 +81,36 @@ export class MdOption extends LitElement {
         height: 24px;
         fill: var(--md-sys-color-primary, #6750a4);
         opacity: 0;
-        transition: opacity 0.15s ease;
-        transition: opacity 0.15s;
+        transition: opacity 0.15s cubic-bezier(0.2, 0, 0, 1);
       }
 
       .option.selected .checkmark {
         opacity: 1;
       }
 
-      /* Ripple removed */
+      /* Ripple effect */
+      .option::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: var(--md-sys-shape-corner-circle);
+        background-color: currentColor;
+        opacity: 0;
+        transform: translate(-50%, -50%);
+        transition:
+          width 0.3s,
+          height 0.3s,
+          opacity 0.3s;
+      }
+
+      .option:active:not(.disabled)::before {
+        width: 100%;
+        height: 100%;
+        opacity: 0.1;
+      }
 
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
@@ -85,15 +119,27 @@ export class MdOption extends LitElement {
         }
 
         .option:hover:not(.disabled) {
-          background-color: rgba(255, 255, 255, 0.08);
+          background-color: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface, #e6e1e5) 8%,
+            transparent
+          );
         }
 
         .option:active:not(.disabled) {
-          background-color: rgba(255, 255, 255, 0.12);
+          background-color: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface, #e6e1e5) 12%,
+            transparent
+          );
         }
 
         .option.selected {
-          background-color: var(--md-sys-color-secondary-container, #4a3045);
+          background-color: color-mix(
+            in srgb,
+            var(--md-sys-color-primary, #d0bcff) 12%,
+            transparent
+          );
         }
 
         .checkmark {
@@ -108,11 +154,19 @@ export class MdOption extends LitElement {
         }
 
         .option:hover:not(.disabled) {
-          background-color: rgba(0, 0, 0, 0.04);
+          background-color: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface-light, #1d1b20) 8%,
+            transparent
+          );
         }
 
         .option:active:not(.disabled) {
-          background-color: rgba(0, 0, 0, 0.06);
+          background-color: color-mix(
+            in srgb,
+            var(--md-sys-color-on-surface-light, #1d1b20) 12%,
+            transparent
+          );
         }
       }
     `,

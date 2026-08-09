@@ -24,10 +24,9 @@ export class MdMenu extends LitElement {
         background-color: var(--md-sys-color-surface-container, #f3edf7);
         color: var(--md-sys-color-on-surface, #1d1b20);
         border-radius: var(--md-sys-shape-corner-large);
-        box-shadow: var(
-          --md-sys-elevation-level2,
-          0 4px 12px rgba(0, 0, 0, 0.1)
-        );
+        box-shadow:
+          0 1px 3px 1px rgba(0, 0, 0, 0.15),
+          0 1px 2px 0 rgba(0, 0, 0, 0.3);
         overflow: hidden;
       }
 
@@ -40,13 +39,12 @@ export class MdMenu extends LitElement {
         .menu {
           background-color: var(
             --md-sys-color-surface-container-highest,
-            #222222
+            #49454f
           );
-          color: var(--md-sys-color-on-surface, #f0f0f0);
-          box-shadow: var(
-            --md-sys-elevation-level2,
-            0 4px 12px rgba(0, 0, 0, 0.3)
-          );
+          color: var(--md-sys-color-on-surface, #e6e1e5);
+          box-shadow:
+            0 2px 6px 2px rgba(0, 0, 0, 0.25),
+            0 1px 2px 0 rgba(0, 0, 0, 0.35);
         }
       }
 

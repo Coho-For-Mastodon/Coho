@@ -13,7 +13,6 @@ export class MdDialog extends LitElement {
   @property({ type: Boolean }) fullscreen = false;
   @property({ type: Boolean, attribute: 'no-backdrop-close' }) noBackdropClose =
     false;
-  @property({ type: String }) type: 'dialog' | 'sheet' = 'dialog';
 
   @query('dialog') dialog!: HTMLDialogElement;
 
@@ -34,7 +33,10 @@ export class MdDialog extends LitElement {
         max-height: calc(100vh - 48px);
         background-color: var(--md-sys-color-surface-container-high, #ece6f0);
         color: var(--md-sys-color-on-surface, #1d1b20);
-        box-shadow: var(--md-sys-elevation-level2);
+        box-shadow:
+          0 8px 10px 1px rgba(0, 0, 0, 0.14),
+          0 3px 14px 2px rgba(0, 0, 0, 0.12),
+          0 5px 5px -3px rgba(0, 0, 0, 0.2);
         overflow: hidden;
         transform-origin: var(--md-dialog-origin-x, 50%)
           var(--md-dialog-origin-y, 50%);
@@ -54,7 +56,7 @@ export class MdDialog extends LitElement {
       }
 
       dialog::backdrop {
-        background-color: rgba(0, 0, 0, 0.4);
+        background-color: rgba(0, 0, 0, 0.32);
         backdrop-filter: blur(4px);
       }
 
@@ -111,7 +113,11 @@ export class MdDialog extends LitElement {
       }
 
       .close-btn:hover {
-        background-color: rgba(0, 0, 0, 0.05);
+        background-color: color-mix(
+          in srgb,
+          var(--md-sys-color-on-surface, #1d1b20) 8%,
+          transparent
+        );
       }
 
       .close-btn:focus-visible {
@@ -135,10 +141,6 @@ export class MdDialog extends LitElement {
 
         dialog::backdrop {
           background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .close-btn:hover {
-          background-color: rgba(255, 255, 255, 0.08);
         }
 
         .dialog-body::-webkit-scrollbar-thumb {
@@ -171,28 +173,21 @@ export class MdDialog extends LitElement {
         }
       }
 
+      /* Animation */
       dialog[open] {
-        animation: dialog-show 0.3s ease;
-      }
-
-      dialog.sheet[open] {
-        animation: sheet-show 0.3s cubic-bezier(0.2, 0, 0, 1);
+        animation: dialog-show 0.3s cubic-bezier(0.2, 0, 0, 1);
       }
 
       dialog.closing {
-        animation: dialog-hide 0.2s ease forwards;
-      }
-
-      dialog.sheet.closing {
-        animation: sheet-hide 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+        animation: dialog-hide 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
       }
 
       dialog[open]::backdrop {
-        animation: backdrop-show 0.3s ease;
+        animation: backdrop-show 0.3s cubic-bezier(0.2, 0, 0, 1);
       }
 
       dialog.closing::backdrop {
-        animation: backdrop-hide 0.2s ease forwards;
+        animation: backdrop-hide 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
       }
 
       @keyframes dialog-show {
@@ -234,34 +229,6 @@ export class MdDialog extends LitElement {
           opacity: 0;
         }
       }
-
-      /* Sheet Type Styles */
-      dialog.sheet {
-        margin: auto auto 0 auto;
-        width: 100vw;
-        max-width: 100vw;
-        max-height: calc(100dvh - 20px);
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-      }
-
-      @keyframes sheet-show {
-        from {
-          transform: translateY(100%);
-        }
-        to {
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes sheet-hide {
-        from {
-          transform: translateY(0);
-        }
-        to {
-          transform: translateY(100%);
-        }
-      }
     `,
   ];
 
@@ -271,7 +238,7 @@ export class MdDialog extends LitElement {
     return html`
       <dialog
         part="dialog"
-        class="${this.fullscreen ? 'fullscreen' : ''} ${this.type === 'sheet' ? 'sheet' : ''}"
+        class="${this.fullscreen ? 'fullscreen' : ''}"
         aria-labelledby="${this._titleId}"
         @close="${this._handleClose}"
         @cancel="${this._handleCancel}"
@@ -332,7 +299,7 @@ export class MdDialog extends LitElement {
         this.dialog.showModal();
         this.open = true;
 
-        if (this.openOrigin && this.type !== 'sheet') {
+        if (this.openOrigin) {
           const rect = this.dialog.getBoundingClientRect();
           const originX = this.openOrigin.x - rect.left;
           const originY = this.openOrigin.y - rect.top;

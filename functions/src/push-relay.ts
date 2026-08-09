@@ -392,6 +392,14 @@ export const pushRelayPush = onRequest(
             tag: `coho_${notificationType || 'general'}`,
           },
         },
+        apns: {
+          payload: {
+            aps: {
+              'mutable-content': 1,
+              'category': notificationType || 'general',
+            },
+          },
+        },
       });
 
       logger.info('Push relayed to FCM', {
