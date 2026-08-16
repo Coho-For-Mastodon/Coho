@@ -354,3 +354,187 @@ export function renderDraftPickerDialog(
     </md-dialog>
   `;
 }
+
+// --- Actions Toolbar ---
+
+export interface ActionsToolbarRenderProps {
+  compact: boolean;
+  visibility: string;
+  visibilityIconSrc: string;
+  visibilityDisplayLabel: string;
+  sensitive: boolean;
+  emojiPickerOpen: boolean;
+  emojiAnchorElement: HTMLElement | null;
+  pollEnabled: boolean;
+  scheduleEnabled: boolean;
+  proofreaderAvailable: boolean;
+  proofreading: boolean;
+  speechToTextAvailable: boolean;
+  isRecording: boolean;
+  isTranscribing: boolean;
+  hasStatus: boolean;
+  hasAttachments: boolean;
+  hasQuotedPost: boolean;
+  maxAttachmentsReached: boolean;
+  onVisibilityChange: (value: string) => void;
+  onToggleSensitive: () => void;
+  onToggleEmojiPicker: () => void;
+  onEmojiSelect: (e: CustomEvent<{ shortcode: string; url: string }>) => void;
+  onEmojiPickerClose: () => void;
+  onAttachFile: () => void;
+  onToggleSchedule: () => void;
+  onTogglePoll: () => void;
+  onDoProofread: () => void;
+  onToggleRecording: () => void;
+}
+
+export function renderActionsToolbar(
+  p: ActionsToolbarRenderProps
+): TemplateResult {
+  return html`
+    <div class="actions-row">
+      <!-- Visibility selector -->
+      ${
+        !p.compact
+          ? html`
+              <md-select
+                .value=${p.visibility}
+                .placeholder=${msg('Post visibility')}
+                .iconSrc=${p.visibilityIconSrc}
+                .iconLabel=${msg('Post visibility')}
+                @change=${(e: CustomEvent<{ value: string }>) =>
+                  p.onVisibilityChange(e.detail.value)}
+                title=${p.visibilityDisplayLabel}
+                variant="filled"
+                icon-only
+              >
+                <md-option value="public">${msg('Public')}</md-option>
+                <md-option value="unlisted">${msg('Unlisted')}</md-option>
+                <md-option value="private">${msg('Followers Only')}</md-option>
+                <md-option value="direct">${msg('Direct')}</md-option>
+              </md-select>
+            `
+          : nothing
+      }
+
+      <md-icon-button
+        class="mobile-icon-button"
+        label=${msg('Content Warning')}
+        src="/assets/eye-outline.svg"
+        .variant=${p.sensitive ? 'filled-tonal' : 'standard'}
+        @click="${() => p.onToggleSensitive()}"
+      ></md-icon-button>
+
+      <md-icon-button
+        id="emoji-trigger"
+        class="mobile-icon-button"
+        label=${msg('Emoji')}
+        src="/assets/happy-outline.svg"
+        .variant=${p.emojiPickerOpen ? 'filled-tonal' : 'standard'}
+        @click="${() => p.onToggleEmojiPicker()}"
+      ></md-icon-button>
+      <emoji-picker
+        .open=${p.emojiPickerOpen}
+        .anchorElement=${p.emojiAnchorElement}
+        @emoji-select=${(e: CustomEvent<{ shortcode: string; url: string }>) =>
+          p.onEmojiSelect(e)}
+        @emoji-picker-close=${() => p.onEmojiPickerClose()}
+      ></emoji-picker>
+
+      <md-icon-button
+        class="mobile-icon-button"
+        label=${msg('Attach Media')}
+        src="/assets/attach-outline.svg"
+        @click="${() => p.onAttachFile()}"
+        ?disabled=${p.pollEnabled || p.hasQuotedPost || p.maxAttachmentsReached}
+      ></md-icon-button>
+
+      <!-- Overflow menu -->
+      <md-dropdown id="more-options-dropdown" placement="bottom-end">
+        <md-icon-button
+          slot="trigger"
+          name="ellipsis-vertical"
+          .label=${msg('More options')}
+        ></md-icon-button>
+        <md-menu>
+          ${
+            !p.compact
+              ? html`
+                  <md-menu-item
+                    .selected=${p.scheduleEnabled}
+                    @click=${() => p.onToggleSchedule()}
+                  >
+                    <md-icon
+                      slot="prefix"
+                      src="/assets/calendar-outline.svg"
+                    ></md-icon>
+                    ${
+                      p.scheduleEnabled
+                        ? msg('Edit scheduled time')
+                        : msg('Schedule post')
+                    }
+                  </md-menu-item>
+                `
+              : nothing
+          }
+
+          <md-menu-item
+            .selected=${p.pollEnabled}
+            ?disabled=${p.hasAttachments || p.hasQuotedPost}
+            @click=${() => p.onTogglePoll()}
+          >
+            <md-icon slot="prefix" src="/assets/chatbox-outline.svg"></md-icon>
+            ${p.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
+          </md-menu-item>
+
+          ${
+            p.proofreaderAvailable
+              ? html`
+                  <md-menu-item
+                    ?disabled=${!p.hasStatus || p.proofreading}
+                    @click=${() => p.onDoProofread()}
+                    title=${p.proofreading ? '' : 'On-device AI'}
+                  >
+                    <md-icon
+                      slot="prefix"
+                      src="/assets/sparkles-outline.svg"
+                    ></md-icon>
+                    ${p.proofreading ? msg('Checking...') : msg('Proofread')}
+                  </md-menu-item>
+                `
+              : nothing
+          }
+          ${
+            p.speechToTextAvailable
+              ? html`
+                  <md-menu-item
+                    ?disabled=${p.isTranscribing}
+                    @click=${() => p.onToggleRecording()}
+                    title=${
+                      p.isRecording || p.isTranscribing ? '' : 'On-device AI'
+                    }
+                  >
+                    <md-icon
+                      slot="prefix"
+                      src="${
+                        p.isRecording
+                          ? '/assets/stop-circle-outline.svg'
+                          : '/assets/mic-outline.svg'
+                      }"
+                    ></md-icon>
+                    ${
+                      p.isRecording
+                        ? msg('Stop recording')
+                        : p.isTranscribing
+                          ? msg('Transcribing...')
+                          : msg('Voice input')
+                    }
+                  </md-menu-item>
+                `
+              : nothing
+          }
+        </md-menu>
+      </md-dropdown>
+    </div>
+  `;
+}
