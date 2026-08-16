@@ -71,15 +71,15 @@
   <target>Teilen</target>
 </trans-unit>
 <trans-unit id="s9736d9cd7c6cb9fe">
-  <source>Mute @<x id="0" equiv-text="${state.tweet?.account.acct}"/></source>
+  <source>Mute @<x id="0" equiv-text="${post.account.acct}"/></source>
   <target>Stummschalten @<x id="0" equiv-text="${state.tweet?.account.acct}"/></target>
 </trans-unit>
 <trans-unit id="s402e22fc7dccc104">
-  <source>Block @<x id="0" equiv-text="${state.tweet?.account.acct}"/></source>
+  <source>Block @<x id="0" equiv-text="${post.account.acct}"/></source>
   <target>Blockieren @<x id="0" equiv-text="${state.tweet?.account.acct}"/></target>
 </trans-unit>
 <trans-unit id="s2c0d4dce62441b87">
-  <source>Report @<x id="0" equiv-text="${state.tweet?.account.acct}"/></source>
+  <source>Report @<x id="0" equiv-text="${post.account.acct}"/></source>
   <target>Melden @<x id="0" equiv-text="${state.tweet?.account.acct}"/></target>
 </trans-unit>
 <trans-unit id="sf650656c5aaddb3d">
@@ -1887,7 +1887,7 @@
   <source>Hashtags you follow appear in your home timeline.</source>
 </trans-unit>
 <trans-unit id="s99c2b6afffda35c0">
-  <source>Block domain <x id="0" equiv-text="${state.tweet?.account.acct?.split('@')[1]}"/></source>
+  <source>Block domain <x id="0" equiv-text="${post.account.acct?.split('@')[1]}"/></source>
 </trans-unit>
 <trans-unit id="s1efb5caef274c1e9">
   <source>Exported domain block list.</source>
