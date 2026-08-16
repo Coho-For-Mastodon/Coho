@@ -58,6 +58,15 @@ import type {
   OpenAccountSwitcherEvent,
 } from '../types/events';
 
+import { HomePwaInstallController } from './app-home/pwa-install-controller';
+import { HomeSettingsController } from './app-home/home-settings-controller';
+import {
+  renderRightClickMenu,
+  renderInstallOverlay,
+  renderSettingsDrawer,
+  renderRepliesDrawer,
+} from './app-home/home-overlays';
+
 @localized()
 @customElement('app-home')
 export class AppHome extends LitElement {
@@ -70,9 +79,7 @@ export class AppHome extends LitElement {
   @state() hapticsEnabled: boolean = true;
 
   @state() summary: string = '';
-
   @state() hasNewNotifications: boolean = false;
-
   @state() trendingTags: TrendingTag[] = [];
   @state() trendingTagsLoading: boolean = true;
 
@@ -101,7 +108,6 @@ export class AppHome extends LitElement {
   @state() listMembershipAccount: Account | null = null;
 
   // Lazy overlay manager for dialogs/drawers/toasts
-  // This keeps overlays out of DOM until they're needed
   private overlays = new LazyOverlayManager(this, [
     'settings-drawer',
     'replies-drawer',
@@ -140,6 +146,40 @@ export class AppHome extends LitElement {
   @query('scheduled-statuses-dialog')
   private scheduledStatusesDialog!: ScheduledStatusesDialog;
 
+  private _shareCleanup: (() => void) | undefined;
+
+  private pwaController = new HomePwaInstallController({
+    getState: () => ({
+      showInstallPrompt: this.showInstallPrompt,
+      pwaInstallLoaded: this.pwaInstallLoaded,
+    }),
+    setState: (patch) => Object.assign(this, patch),
+    getPwaInstall: () => this.pwaInstall,
+    getInstallDialog: () => this.installDialog,
+    showOverlay: (name) => this.overlays.show(name),
+    hideOverlay: (name) => this.overlays.hide(name),
+    updateComplete: this.updateComplete,
+  });
+
+  private settingsController = new HomeSettingsController({
+    getState: () => ({
+      wellnessMode: this.wellnessMode,
+      dataSaverMode: this.dataSaverMode,
+      hapticsEnabled: this.hapticsEnabled,
+    }),
+    setState: (patch) => Object.assign(this, patch),
+    showErrorToast: async (message: string, variant?: string) => {
+      await import('../components/md/md-toast');
+      await this.overlays.show('error-toast');
+      if (this.errorToast) {
+        this.errorToast.message = message;
+        this.errorToast.variant =
+          (variant as 'error' | 'warning' | 'info' | 'success') || 'error';
+        this.errorToast.show();
+      }
+    },
+  });
+
   private getHeaderAccountIdentity(): { avatar: string; label: string } {
     const activeAccount = getActiveAccount();
 
@@ -166,8 +206,6 @@ export class AppHome extends LitElement {
       import('../components/home-sidebar');
     }
 
-    // Restore sidebar data synchronously from sessionStorage
-    // so the first render already has content — no skeleton flash.
     const cachedUser = getSidebarUser();
     if (cachedUser) {
       this.user = cachedUser;
@@ -185,7 +223,6 @@ export class AppHome extends LitElement {
       requestAnimationFrame(() => perfMarkRouteReady('home'))
     );
 
-    // Check if in guest mode
     const { isGuestMode: checkGuestMode } =
       await import('../services/auth-state');
     this.isGuestMode = checkGuestMode();
@@ -194,19 +231,14 @@ export class AppHome extends LitElement {
       import('../components/guest-login-banner');
     }
 
-    // Detect mobile for conditional sidebar rendering
     this.isMobile = window.matchMedia('(max-width: 820px)').matches;
 
-    // Listen for keyboard shortcut tab switches
     window.addEventListener('switch-tab', this._handleSwitchTab);
-
-    // Listen for keyboard shortcut to open new post dialog
     window.addEventListener('open-post-dialog', this._handleOpenPostDialog);
 
     const effectiveParams = new URLSearchParams(window.location.search);
 
-    // Set up global toast listener for error notifications
-    this.setupGlobalToastListener();
+    this.settingsController.setupGlobalToastListener();
 
     const hasWebShare = effectiveParams.has('name');
     const { isNativePlatform } = await import('../utils/platform');
@@ -255,26 +287,20 @@ export class AppHome extends LitElement {
     }
 
     window.requestIdleCallback(async () => {
-      // Import and init key shortcuts
       const { init } = await import('../utils/key-shortcuts');
       init();
     });
 
-    // Reset pagination state (non-blocking - internally synchronous)
     import('../services/timeline').then(({ resetLastPageID }) => {
       resetLastPageID();
     });
 
-    // Eagerly fetch and cache the instance's custom emojis
     if (!this.isGuestMode) {
       import('../services/custom-emojis').then(({ initCustomEmojis }) => {
         initCustomEmojis();
       });
     }
 
-    // Refresh trending tags in the background (stale-while-revalidate).
-    // If we already restored from cache in connectedCallback the UI is
-    // already populated — this just silently updates the data.
     window.requestIdleCallback(async () => {
       try {
         const { getTrendingTags } = await import('../services/timeline');
@@ -290,18 +316,8 @@ export class AppHome extends LitElement {
 
     window.requestIdleCallback(
       async () => {
-        const { getSettings } = await import('../services/settings');
-        const settings = await getSettings();
+        await this.settingsController.init();
 
-        if (settings) {
-          this.handleWellnessMode(settings.wellness || false);
-
-          this.handleDataSaverMode(settings.data_saver || false);
-
-          this.handleHapticsMode(settings.haptics !== false);
-        }
-
-        // Only check notifications for authenticated users
         if (!this.isGuestMode) {
           const { checkNewNotifications } =
             await import('../services/notifications');
@@ -312,19 +328,16 @@ export class AppHome extends LitElement {
     );
 
     const tabData = effectiveParams.get('tab');
-
-    // Restore tab from sessionStorage if no URL param override
     let tabToOpen = tabData;
     if (!tabToOpen) {
       try {
         tabToOpen = sessionStorage.getItem('coho:activeTab');
       } catch {
-        // sessionStorage may be unavailable in some privacy contexts; ignore.
+        // Ignore storage errors
       }
     }
 
     if (tabToOpen) {
-      // Skip auth-required tabs for guests
       const authRequiredTabs = [
         'bookmarks',
         'faves',
@@ -335,15 +348,11 @@ export class AppHome extends LitElement {
         tabToOpen = 'general';
       }
 
-      // Preload the component for the requested tab
       await this.loadTabComponent(tabToOpen);
-
-      // Wait for the component to be ready before switching tabs
       await this.updateComplete;
       this.tabController.openATab(tabToOpen);
     }
 
-    // Defer right-click menu and install prompt check - not needed immediately
     window.requestIdleCallback(async () => {
       this.loadRightClick();
       await import('../components/pwa-install');
@@ -353,16 +362,12 @@ export class AppHome extends LitElement {
     window.requestIdleCallback(() => {
       if (this.shadowRoot) {
         const newPost = effectiveParams.get('newPost');
-
         if (newPost) {
           this.openNewDialog();
         }
       }
     });
 
-    // Only load user for authenticated users.
-    // If we already restored from the sidebar cache the avatar is visible
-    // immediately — this background refresh silently picks up changes.
     if (!this.isGuestMode) {
       const { getCurrentUser } = await import('../services/account');
       getCurrentUser().then((user) => {
@@ -380,35 +385,8 @@ export class AppHome extends LitElement {
     }
   }
 
-  /**
-   * Set up listener for global toast events from optimistic updates
-   */
-  private setupGlobalToastListener() {
-    window.addEventListener('app-toast', async (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        message: string;
-        variant: string;
-      }>;
-      if (customEvent.detail) {
-        await import('../components/md/md-toast');
-        // Add toast to DOM first
-        await this.overlays.show('error-toast');
-        // Then configure and show it
-        if (this.errorToast) {
-          this.errorToast.message = customEvent.detail.message;
-          this.errorToast.variant = customEvent.detail.variant as
-            'error' | 'warning' | 'info' | 'success';
-          this.errorToast.show();
-        }
-      }
-    });
-  }
-
-  private _shareCleanup: (() => void) | undefined;
-
   handlePrimaryColor(color: string) {
-    document.documentElement.style.setProperty('--sl-color-primary-600', color);
-    localStorage.setItem('primary_color', color);
+    this.settingsController.handlePrimaryColor(color);
   }
 
   private _originFromEvent(
@@ -420,10 +398,6 @@ export class AppHome extends LitElement {
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }
 
-  /**
-   * Lazily load the post-dialog component and add it to the DOM.
-   * Returns the dialog instance (or null).
-   */
   private async _ensurePostDialog(): Promise<PostDialog | null> {
     if (!this.postDialogLoaded) {
       if (await lazyLoad('postDialog', componentLoaders.postDialog)) {
@@ -454,13 +428,10 @@ export class AppHome extends LitElement {
       import('../components/otter-drawer'),
       import('../components/settings-drawer-content'),
     ]);
-    // Add drawer to DOM first
     await this.overlays.show('settings-drawer');
-    // Then show it (triggers animation)
     await this.settingsDrawer?.show();
 
     const { getInstanceInfo } = await import('../services/account');
-
     this.instanceInfo = await getInstanceInfo();
   }
 
@@ -485,45 +456,24 @@ export class AppHome extends LitElement {
 
   async handleReplies(replies: Post[], _id: string) {
     this.replies = replies;
-
-    // Lazy-load drawer and timeline-item for replies
-    await Promise.all([
-      import('../components/otter-drawer'),
-      // import('../components/timeline-item'),
-    ]);
-    // Add drawer to DOM first
+    await import('../components/otter-drawer');
     await this.overlays.show('replies-drawer');
-    // Then show it (triggers animation)
     await this.repliesDrawer?.show();
   }
 
   async handleWellnessMode(check: boolean) {
-    this.wellnessMode = check;
-
-    const { setSettings } = await import('../services/settings');
-    setSettings({ wellness: check });
+    await this.settingsController.handleWellnessMode(check);
   }
 
   async handleDataSaverMode(mode: boolean) {
-    this.dataSaverMode = mode;
-
-    const { setSettings } = await import('../services/settings');
-    setSettings({ data_saver: mode });
+    await this.settingsController.handleDataSaverMode(mode);
   }
 
   async handleHapticsMode(enabled: boolean) {
-    this.hapticsEnabled = enabled;
-
-    const { setHapticsEnabled } = await import('../utils/haptics');
-    setHapticsEnabled(enabled);
-
-    const { setSettings } = await import('../services/settings');
-    setSettings({ haptics: enabled });
+    await this.settingsController.handleHapticsMode(enabled);
   }
 
   async handleTabChange(event: TabChangeEvent) {
-    // Determine the load callback:
-    // If we were passed a panel, we might need simple loading
     await this.tabController.handleTabChange(event, (name) =>
       this.loadTabComponent(name)
     );
@@ -531,10 +481,8 @@ export class AppHome extends LitElement {
 
   async handleReload() {
     const { clearTimelineCache } = await import('../services/timeline-cache');
-    // Clear cache to ensure fresh timeline after posting
     clearTimelineCache();
-
-    this.homeTimeline?.refreshTimeline(true); // Pass true to skip saving stale cache
+    this.homeTimeline?.refreshTimeline(true);
   }
 
   private async loadLists() {
@@ -556,9 +504,6 @@ export class AppHome extends LitElement {
     this.lists = event.detail.lists;
   };
 
-  /**
-   * Shared helper: import a component, add its overlay to the DOM, and wait for it to be ready.
-   */
   private async _openOverlay(
     overlayId: string,
     importFn: () => Promise<unknown>,
@@ -640,7 +585,6 @@ export class AppHome extends LitElement {
     const summary = $event.detail.data;
     this.summary = summary;
 
-    // Hide translation toast if it's open
     if (
       this.overlays.isVisible('translation-toast') &&
       this.translationToast?.open
@@ -650,14 +594,11 @@ export class AppHome extends LitElement {
     }
 
     await import('../components/md/md-dialog');
-    // Add dialog to DOM first
     await this.overlays.show('summary-dialog');
-    // Then show it (triggers animation)
     this.summaryDialog?.show();
   }
 
   async handleOpenTweet(tweet: Post) {
-    // Lazy load post-detail-dialog component
     if (!this.postDetailDialogLoaded) {
       if (
         await lazyLoad('postDetailDialog', componentLoaders.postDetailDialog)
@@ -666,14 +607,8 @@ export class AppHome extends LitElement {
       }
     }
 
-    // Add dialog to DOM
     await this.overlays.show('post-detail-dialog');
-
-    // Wait for Lit to update the DOM
     await this.updateComplete;
-
-    // Open post in a fullscreen dialog instead of navigating to a new page
-    // The dialog handles history state so back button closes it
     this.postDetailDialog?.open(tweet);
   }
 
@@ -685,7 +620,6 @@ export class AppHome extends LitElement {
   async disconnectedCallback() {
     super.disconnectedCallback();
 
-    // Persist sidebar data so the next mount restores instantly
     if (this.user) {
       saveSidebarUser(this.user);
     }
@@ -693,13 +627,9 @@ export class AppHome extends LitElement {
       saveSidebarTrending(this.trendingTags);
     }
 
-    // Remove keyboard shortcut tab switch listener
     window.removeEventListener('switch-tab', this._handleSwitchTab);
-
-    // Remove keyboard shortcut new post dialog listener
     window.removeEventListener('open-post-dialog', this._handleOpenPostDialog);
-
-    // Remove native share intent listener
+    this.settingsController.destroy();
     this._shareCleanup?.();
   }
 
@@ -708,10 +638,7 @@ export class AppHome extends LitElement {
     const tabName = customEvent.detail?.tab;
     if (!tabName) return;
 
-    // Preload the component for the requested tab
     await this.loadTabComponent(tabName);
-
-    // Wait for the component to be ready before switching tabs
     await this.updateComplete;
     this.tabController.openATab(tabName, (n) => this.loadTabComponent(n));
   };
@@ -737,7 +664,6 @@ export class AppHome extends LitElement {
     dialog?.openQuoteDialog(post);
   };
 
-  // Tab name to loader key
   private static readonly tabConfig: Record<
     string,
     {
@@ -753,16 +679,11 @@ export class AppHome extends LitElement {
     messages: { loaderKey: 'messages' },
   };
 
-  /**
-   * Unified method to lazy-load a tab's component
-   */
   private async loadTabComponent(tabName: string): Promise<void> {
-    // Handle specific side effects (like notifications) here or in controller callback
     if (tabName === 'notifications') {
       await this.handleNotificationsSideEffects();
     }
 
-    // Tabs that reuse an already-loaded component (app-timeline) — just mark as loaded
     if (tabName === 'media' || tabName === 'custom') {
       if (!this.loadedTabs.has(tabName)) {
         this.loadedTabs = new Set(this.loadedTabs).add(tabName);
@@ -773,7 +694,6 @@ export class AppHome extends LitElement {
     const config = AppHome.tabConfig[tabName];
     if (!config) return;
 
-    // Avoid reloading if already handled (though lazyLoad handles this too, the Set is for UI rendering)
     if (this.loadedTabs.has(tabName)) return;
 
     const loader = componentLoaders[config.loaderKey];
@@ -787,9 +707,6 @@ export class AppHome extends LitElement {
     }
   }
 
-  /**
-   * Handle notification-specific side effects when switching to notifications tab
-   */
   private async handleNotificationsSideEffects(): Promise<void> {
     this.hasNewNotifications = false;
     const { markNotificationsRead } = await import('../services/notifications');
@@ -798,7 +715,6 @@ export class AppHome extends LitElement {
       navigator.clearAppBadge();
     }
 
-    // Check for new notifications when re-selecting the tab
     this.notificationsComponent?.checkForNewNotifications();
   }
 
@@ -808,7 +724,6 @@ export class AppHome extends LitElement {
     });
   }
 
-  // Lazy loading methods for drawer components
   async loadAppTheme() {
     if (await lazyLoad('appTheme', componentLoaders.appTheme)) {
       this.appThemeLoaded = true;
@@ -829,67 +744,25 @@ export class AppHome extends LitElement {
     }
   }
 
-  // PWA Install methods
   async checkInstallPrompt() {
-    // Skip install prompt entirely when running inside Capacitor native shell
-    const { isNativePlatform } = await import('../utils/platform');
-    if (isNativePlatform()) return;
-
-    // Wait a moment for the pwa-install component to initialize
-    await this.updateComplete;
-
-    // Don't show if already installed
-    if (
-      this.pwaInstall &&
-      (window.matchMedia('(display-mode: standalone)').matches ||
-        window.matchMedia('(display-mode: window-controls-overlay)').matches)
-    ) {
-      return;
-    }
-
-    const isMobile = window.matchMedia('(max-width: 820px)').matches;
-
-    // On desktop with Web Install API, always show (ignore dismissal)
-    if (!isMobile && this.pwaInstall?.hasWebInstallAPI) {
-      this.showInstallPrompt = true;
-      this.pwaInstallLoaded = true;
-      return;
-    }
-
-    // Otherwise, check if install can be shown (respects dismissal)
-    if (this.pwaInstall?.canShow || this.pwaInstall?.hasInstallMethod) {
-      this.showInstallPrompt = true;
-      this.pwaInstallLoaded = true;
-    }
+    await this.pwaController.checkInstallPrompt();
   }
 
   async openInstallDialog() {
-    // Add dialog to DOM first
-    await import('../components/md/md-dialog');
-    await this.overlays.show('install-dialog');
-    // Then show it (triggers animation)
-    this.installDialog?.show();
+    await this.pwaController.openInstallDialog();
   }
 
   async handleInstallDismiss() {
-    this.showInstallPrompt = false;
-    await this.installDialog?.hide();
-    // Remove from DOM after close animation
-    this.overlays.hide('install-dialog');
+    await this.pwaController.handleInstallDismiss();
   }
 
   async handleInstallSuccess() {
-    this.showInstallPrompt = false;
-    await this.installDialog?.hide();
-    // Remove from DOM after close animation
-    this.overlays.hide('install-dialog');
+    await this.pwaController.handleInstallSuccess();
   }
 
   async handleTranslating(_event: HandleTranslatingEvent) {
     await import('../components/md/md-toast');
-    // Add toast to DOM first
     await this.overlays.show('translation-toast');
-    // Show translation toast
     if (this.translationToast) {
       this.translationToast.show();
     }
@@ -899,66 +772,12 @@ export class AppHome extends LitElement {
     const headerAccount = this.getHeaderAccountIdentity();
 
     return html`
-      ${
-        this.rightClickLoaded
-          ? html`
-              <right-click>
-                <md-menu>
-                  <md-menu-item @menu-item-click=${() => this.openNewDialog()}>
-                    <md-icon slot="prefix" name="add"></md-icon>
-                    ${msg('New Post')}
-                  </md-menu-item>
-
-                  <md-menu-item
-                    @click="${() =>
-                      this.tabController.openATab('search', (n) =>
-                        this.loadTabComponent(n)
-                      )}"
-                  >
-                    <md-icon slot="prefix" name="search"></md-icon>
-                    ${msg('Explore')}
-                  </md-menu-item>
-                  <md-menu-item
-                    @click="${() =>
-                      this.tabController.openATab('notifications', (n) =>
-                        this.loadTabComponent(n)
-                      )}"
-                  >
-                    <md-icon slot="prefix" name="notifications"></md-icon>
-                    ${msg('Notifications')}
-                  </md-menu-item>
-                  <md-menu-item
-                    @click="${() =>
-                      this.tabController.openATab('messages', (n) =>
-                        this.loadTabComponent(n)
-                      )}"
-                  >
-                    <md-icon slot="prefix" name="chatbox"></md-icon>
-                    ${msg('Messages')}
-                  </md-menu-item>
-                  <md-menu-item
-                    @click="${() =>
-                      this.tabController.openATab('bookmarks', (n) =>
-                        this.loadTabComponent(n)
-                      )}"
-                  >
-                    <md-icon slot="prefix" name="bookmark"></md-icon>
-                    ${msg('Saved')}
-                  </md-menu-item>
-                  <md-menu-item
-                    @click="${() =>
-                      this.tabController.openATab('faves', (n) =>
-                        this.loadTabComponent(n)
-                      )}"
-                  >
-                    <md-icon slot="prefix" name="heart"></md-icon>
-                    ${msg('Favorites')}
-                  </md-menu-item>
-                </md-menu>
-              </right-click>
-            `
-          : null
-      }
+      ${renderRightClickMenu({
+        rightClickLoaded: this.rightClickLoaded,
+        onNewPost: () => this.openNewDialog(),
+        onOpenTab: (name) =>
+          this.tabController.openATab(name, (n) => this.loadTabComponent(n)),
+      })}
 
       <app-header
         @open-bot-drawer="${() => this.openBotDrawer()}"
@@ -975,36 +794,14 @@ export class AppHome extends LitElement {
       >
       </app-header>
 
-      <!-- Offline status notifications -->
       <offline-notify></offline-notify>
 
-      <!-- PWA Install - component always in DOM for install detection, dialog is lazy -->
-      ${
-        this.overlays.isVisible('install-dialog')
-          ? html`
-              <md-dialog
-                id="install-dialog"
-                .label="${msg('Install Coho')}"
-                @md-dialog-hide="${() => this.overlays.hide('install-dialog')}"
-              >
-                <pwa-install
-                  @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
-                  @pwa-install-success="${() => this.handleInstallSuccess()}"
-                  @pwa-installed="${() => this.handleInstallSuccess()}"
-                ></pwa-install>
-              </md-dialog>
-            `
-          : html`
-              <pwa-install
-                style="display: none;"
-                @pwa-install-dismiss="${() => this.handleInstallDismiss()}"
-                @pwa-install-success="${() => this.handleInstallSuccess()}"
-                @pwa-installed="${() => this.handleInstallSuccess()}"
-              ></pwa-install>
-            `
-      }
-
-      <!-- Summary Dialog - only in DOM when needed -->
+      ${renderInstallOverlay({
+        isDialogVisible: this.overlays.isVisible('install-dialog'),
+        onHide: () => this.overlays.hide('install-dialog'),
+        onDismiss: () => this.handleInstallDismiss(),
+        onSuccess: () => this.handleInstallSuccess(),
+      })}
       ${this.overlays.render(
         'account-switcher-dialog',
         () => html`
@@ -1030,8 +827,6 @@ export class AppHome extends LitElement {
           </md-dialog>
         `
       )}
-
-      <!-- Post Dialog - only in DOM when needed -->
       ${this.overlays.render(
         'post-dialog',
         () => html`
@@ -1042,8 +837,6 @@ export class AppHome extends LitElement {
           ></post-dialog>
         `
       )}
-
-      <!-- Lists Dialog - only in DOM when needed -->
       ${this.overlays.render(
         'lists-dialog',
         () => html`
@@ -1053,8 +846,6 @@ export class AppHome extends LitElement {
           ></lists-dialog>
         `
       )}
-
-      <!-- List Membership Dialog - only in DOM when needed -->
       ${this.overlays.render(
         'list-membership-dialog',
         () => html`
@@ -1067,8 +858,6 @@ export class AppHome extends LitElement {
           ></list-membership-dialog>
         `
       )}
-
-      <!-- Filters Dialog - only in DOM when needed -->
       ${this.overlays.render(
         'filters-dialog',
         () => html`
@@ -1078,8 +867,6 @@ export class AppHome extends LitElement {
           ></filters-dialog>
         `
       )}
-
-      <!-- Scheduled Posts Dialog - only in DOM when needed -->
       ${this.overlays.render(
         'scheduled-statuses-dialog',
         () => html`
@@ -1089,70 +876,29 @@ export class AppHome extends LitElement {
           ></scheduled-statuses-dialog>
         `
       )}
-
-      <!-- Settings Drawer - only in DOM when needed -->
-      ${this.overlays.render(
-        'settings-drawer',
-        () => html`
-          <otter-drawer
-            id="settings-drawer"
-            placement="end"
-            .label="${msg('Settings')}"
-            @otter-hide="${() => this.overlays.hide('settings-drawer')}"
-          >
-            <settings-drawer-content
-              .user="${this.user}"
-              .instanceInfo="${this.instanceInfo}"
-              .wellnessMode="${this.wellnessMode}"
-              .dataSaverMode="${this.dataSaverMode}"
-              .hapticsEnabled="${this.hapticsEnabled}"
-              .appThemeLoaded="${this.appThemeLoaded}"
-              @wellness-change="${(e: CustomEvent<{ checked: boolean }>) =>
-                this.handleWellnessMode(e.detail.checked)}"
-              @data-saver-change="${(e: CustomEvent<{ checked: boolean }>) =>
-                this.handleDataSaverMode(e.detail.checked)}"
-              @haptics-change="${(e: CustomEvent<{ checked: boolean }>) =>
-                this.handleHapticsMode(e.detail.checked)}"
-              @open-filters="${() => this.openFiltersDialog()}"
-              @open-scheduled-statuses="${() =>
-                this.openScheduledStatusesDialog()}"
-              @color-chosen="${($event: ColorChosenEvent) =>
-                this.handlePrimaryColor($event.detail.color)}"
-            ></settings-drawer-content>
-          </otter-drawer>
-        `
+      ${this.overlays.render('settings-drawer', () =>
+        renderSettingsDrawer({
+          user: this.user,
+          instanceInfo: this.instanceInfo,
+          wellnessMode: this.wellnessMode,
+          dataSaverMode: this.dataSaverMode,
+          hapticsEnabled: this.hapticsEnabled,
+          appThemeLoaded: this.appThemeLoaded,
+          onHide: () => this.overlays.hide('settings-drawer'),
+          onWellnessChange: (checked) => this.handleWellnessMode(checked),
+          onDataSaverChange: (checked) => this.handleDataSaverMode(checked),
+          onHapticsChange: (checked) => this.handleHapticsMode(checked),
+          onOpenFilters: () => this.openFiltersDialog(),
+          onOpenScheduledStatuses: () => this.openScheduledStatusesDialog(),
+          onColorChosen: (e: ColorChosenEvent) =>
+            this.handlePrimaryColor(e.detail.color),
+        })
       )}
-
-      <!-- Replies Drawer - only in DOM when needed -->
-      ${this.overlays.render(
-        'replies-drawer',
-        () => html`
-          <otter-drawer
-            id="replies-drawer"
-            placement="end"
-            .label="${msg('Comments')}"
-            @otter-hide="${() => this.overlays.hide('replies-drawer')}"
-          >
-            ${
-              this.replies.length > 0
-                ? html`<ul>
-                    ${this.replies.map((reply) => {
-                      return html`
-                        <timeline-item
-                          ?show="${false}"
-                          .tweet="${reply}"
-                        ></timeline-item>
-                      `;
-                    })}
-                  </ul>`
-                : html`
-                    <div id="no-replies">
-                      <p>${msg('No comments yet.')}</p>
-                    </div>
-                  `
-            }
-          </otter-drawer>
-        `
+      ${this.overlays.render('replies-drawer', () =>
+        renderRepliesDrawer({
+          replies: this.replies,
+          onHide: () => this.overlays.hide('replies-drawer'),
+        })
       )}
 
       <main>
@@ -1317,8 +1063,6 @@ export class AppHome extends LitElement {
           ? html`<guest-login-banner></guest-login-banner>`
           : nothing
       }
-
-      <!-- Translation Toast - only in DOM when needed -->
       ${this.overlays.render(
         'translation-toast',
         () => html`
@@ -1333,8 +1077,6 @@ export class AppHome extends LitElement {
           </md-toast>
         `
       )}
-
-      <!-- Error Toast - only in DOM when needed -->
       ${this.overlays.render(
         'error-toast',
         () => html`
@@ -1350,8 +1092,6 @@ export class AppHome extends LitElement {
           </md-toast>
         `
       )}
-
-      <!-- Post Detail Dialog - fullscreen dialog for viewing posts, only in DOM when needed -->
       ${this.overlays.render(
         'post-detail-dialog',
         () => html`<post-detail-dialog></post-detail-dialog>`
