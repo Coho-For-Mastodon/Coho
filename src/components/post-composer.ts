@@ -34,21 +34,18 @@ import {
   PostComposerPublishOrchestrator,
   type PublishOrchestratorState,
 } from './post-composer/publish-orchestrator';
+import { PostComposerVoiceController } from './post-composer/voice-controller';
+import { PostComposerPollController } from './post-composer/poll-controller';
+import { PostComposerScheduleController } from './post-composer/schedule-controller';
 
 import { getInstanceInfo } from '../services/account';
 import {
   proofread,
   isProofreaderAvailable,
-  isAudioTranscriptionAvailable,
-  transcribeAudio,
   isHandwritingRecognitionAvailable,
 } from '../services/ai';
 import { showInfoToast } from '../utils/optimistic-updates';
 import { type DraftPost } from '../services/drafts';
-import {
-  getDefaultScheduleDateTime,
-  resolveScheduledAtForSubmission,
-} from './post-composer/schedule';
 
 import type {
   PollRenderProps,
@@ -194,6 +191,7 @@ export class PostComposer extends LitElement {
   @state() isRecording: boolean = false;
   @state() isTranscribing: boolean = false;
   @state() speechToTextAvailable: boolean = false;
+  useNativeSpeech: boolean = false;
 
   // Handwriting recognition state
   @state() handwritingAvailable: boolean = false;
@@ -223,21 +221,16 @@ export class PostComposer extends LitElement {
   // Snapshot of status text at the time a draft was loaded/saved, used to detect changes
   private lastSavedStatusText: string = '';
 
-  // MediaRecorder for speech-to-text
-  private mediaRecorder: MediaRecorder | null = null;
-  private audioChunks: Blob[] = [];
-
-  // Native speech recognition (Android)
-  private useNativeSpeech: boolean = false;
-  private nativeSpeechPromise: Promise<string> | null = null;
-  private nativeSpeechPartialCleanup: (() => void) | null = null;
-
   private mediaEditDialogLoaded = false;
-
   private _features:
     typeof import('./post-composer/render-features.js') | null = null;
-
   private draftKey: string | null = null;
+
+  @query('md-text-area') private textArea!: MdTextArea;
+  @query('#emoji-trigger') private _emojiButton!: HTMLElement;
+  @query('#more-options-dropdown') private _moreOptionsDropdown?: MdDropdown;
+
+  static styles = postComposerStyles;
 
   private mentionController = new PostComposerMentionController({
     getState: () => ({
@@ -285,17 +278,53 @@ export class PostComposer extends LitElement {
     },
   });
 
+  private voiceController = new PostComposerVoiceController({
+    getState: () => ({
+      isRecording: this.isRecording,
+      isTranscribing: this.isTranscribing,
+      speechToTextAvailable: this.speechToTextAvailable,
+      useNativeSpeech: this.useNativeSpeech,
+    }),
+    setState: (patch) => Object.assign(this, patch),
+    getNativeTextArea: () => this._getNativeTextArea(),
+    getStatusText: () => this.statusText,
+    setStatusText: (text) => this._setStatusText(text),
+    getMoreOptionsDropdown: () => this._moreOptionsDropdown,
+  });
+
+  private pollController = new PostComposerPollController({
+    getState: () => ({
+      pollEnabled: this.pollEnabled,
+      pollOptions: this.pollOptions,
+      pollDurationSeconds: this.pollDurationSeconds,
+      pollMultiple: this.pollMultiple,
+      pollError: this.pollError,
+    }),
+    setState: (patch) => Object.assign(this, patch),
+    hasAttachments: () => this.attachments.length > 0,
+    hasQuotedPost: () => this.quotedPost != null,
+  });
+
+  private scheduleController = new PostComposerScheduleController({
+    getState: () => ({
+      scheduleEnabled: this.scheduleEnabled,
+      scheduleDate: this.scheduleDate,
+      scheduleTime: this.scheduleTime,
+      scheduleError: this.scheduleError,
+    }),
+    setState: (patch) => Object.assign(this, patch),
+    dispatchOpenScheduledStatuses: () => {
+      this.dispatchEvent(
+        new CustomEvent('open-scheduled-statuses', {
+          bubbles: true,
+          composed: true,
+        })
+      );
+    },
+  });
+
   private draftManager = this._createDraftManager();
-
   private publishOrchestrator = this._createPublishOrchestrator();
-
-  @query('md-text-area') private textArea!: MdTextArea;
-  // @query('media-edit-dialog')
-  // private mediaEditDialog!: import('./media-edit-dialog').MediaEditDialog;
-  @query('#emoji-trigger') private _emojiButton!: HTMLElement;
-  @query('#more-options-dropdown') private _moreOptionsDropdown?: MdDropdown;
-
-  static styles = postComposerStyles;
 
   protected async firstUpdated() {
     // Get instance limits
@@ -332,22 +361,10 @@ export class PostComposer extends LitElement {
       }
     }
 
-    // Check if AI features are available
+    // Check if AI & Voice features are available
     this.proofreaderAvailable = await isProofreaderAvailable();
-    this.speechToTextAvailable = isAudioTranscriptionAvailable();
     this.handwritingAvailable = await isHandwritingRecognitionAvailable();
-
-    // Check for native Android speech recognition
-    try {
-      const { isNativeSpeechRecognitionAvailable } =
-        await import('../services/native-ai.js');
-      this.useNativeSpeech = await isNativeSpeechRecognitionAvailable();
-      if (this.useNativeSpeech) {
-        this.speechToTextAvailable = true;
-      }
-    } catch {
-      // Not on native Android, use web fallback
-    }
+    await this.voiceController.init();
 
     // Add event listeners
     this.addEventListener('keydown', this._handleKeydown);
@@ -364,7 +381,6 @@ export class PostComposer extends LitElement {
     }
 
     this._loadDraftForContext();
-
     this._loadFeatures();
   }
 
@@ -412,11 +428,7 @@ export class PostComposer extends LitElement {
     this.attachmentManager.destroy();
     this.draftManager.destroy();
     this.publishOrchestrator.destroy();
-
-    // Stop any active recording
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
-    }
+    this.voiceController.destroy();
   }
 
   // Public API methods
@@ -538,22 +550,24 @@ export class PostComposer extends LitElement {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        this._moveMentionSelection(1);
+        this.mentionController.moveSelection(1);
         break;
       case 'ArrowUp':
         event.preventDefault();
-        this._moveMentionSelection(-1);
+        this.mentionController.moveSelection(-1);
         break;
       case 'Enter':
       case 'Tab':
         if (this.mentionActiveIndex >= 0) {
           event.preventDefault();
-          this._applyMention(this.mentionResults[this.mentionActiveIndex]);
+          this.mentionController.applyMention(
+            this.mentionResults[this.mentionActiveIndex]
+          );
         }
         break;
       case 'Escape':
         event.preventDefault();
-        this._closeMentionPicker();
+        this.mentionController.close();
         break;
     }
   };
@@ -587,7 +601,7 @@ export class PostComposer extends LitElement {
         const file = item.getAsFile();
         if (!file) continue;
 
-        this._addFileAttachment(file);
+        this.attachmentManager.addFileAttachment(file);
       }
     }
   };
@@ -639,7 +653,7 @@ export class PostComposer extends LitElement {
           );
           return;
         }
-        this._addFileAttachment(file);
+        this.attachmentManager.addFileAttachment(file);
       }
     }
   };
@@ -659,7 +673,7 @@ export class PostComposer extends LitElement {
       nativeTextArea?.value.length ??
       value.length;
 
-    this._updateMentionSuggestions(value, cursor, nativeTextArea);
+    this.mentionController.updateSuggestions(value, cursor, nativeTextArea);
   }
 
   private _setStatusText(value: string) {
@@ -721,7 +735,7 @@ export class PostComposer extends LitElement {
   private _createDraftManager() {
     return new PostComposerDraftManager({
       getState: () => this._getDraftManagerState(),
-      setState: (patch) => this._applyDraftManagerPatch(patch),
+      setState: (patch) => Object.assign(this, patch),
       syncComposerValue: (value) => this._syncComposerValueAndWait(value),
       clearAttachments: () => this.attachmentManager.clearAttachments(),
       restorePendingAttachment: (file, description) =>
@@ -733,11 +747,11 @@ export class PostComposer extends LitElement {
   private _createPublishOrchestrator() {
     return new PostComposerPublishOrchestrator({
       getState: () => this._getPublishOrchestratorState(),
-      setState: (patch) => this._applyPublishOrchestratorPatch(patch),
+      setState: (patch) => Object.assign(this, patch),
       getStatus: () => this._getComposerValue(),
-      getPollPayload: () => this._getPollPayload(),
+      getPollPayload: () => this.pollController.getPayload(),
       resolveScheduledAtForSubmission: () =>
-        this._resolveScheduledAtForSubmission(),
+        this.scheduleController.resolveScheduledAtForSubmission(),
       resetComposer: () => this._resetState(),
       dispatchSubmit: (detail) => this._dispatchSubmit(detail),
       dispatchPublished: (detail) => this._dispatchPublished(detail),
@@ -773,10 +787,6 @@ export class PostComposer extends LitElement {
     };
   }
 
-  private _applyDraftManagerPatch(patch: Partial<DraftManagerState>) {
-    Object.assign(this, patch);
-  }
-
   private async _syncComposerValueAndWait(value: string) {
     this._syncComposerValue(value);
     await this.updateComplete;
@@ -810,12 +820,6 @@ export class PostComposer extends LitElement {
     };
   }
 
-  private _applyPublishOrchestratorPatch(
-    patch: Partial<PublishOrchestratorState>
-  ) {
-    Object.assign(this, patch);
-  }
-
   private _dispatchSubmit(detail: ComposerSubmitEvent) {
     this.dispatchEvent(
       new CustomEvent('submit', {
@@ -840,31 +844,7 @@ export class PostComposer extends LitElement {
     );
   }
 
-  private _updateMentionSuggestions(
-    value: string,
-    cursor: number,
-    nativeTextArea: HTMLTextAreaElement | null
-  ) {
-    this.mentionController.updateSuggestions(value, cursor, nativeTextArea);
-  }
-
-  private _moveMentionSelection(step: number) {
-    this.mentionController.moveSelection(step);
-  }
-
-  private _applyMention(account: MastodonAccount) {
-    this.mentionController.applyMention(account);
-  }
-
-  private _closeMentionPicker() {
-    this.mentionController.close();
-  }
-
   // File attachment methods
-
-  private _addFileAttachment(file: File) {
-    this.attachmentManager.addFileAttachment(file);
-  }
 
   async attachFile() {
     this.attaching = true;
@@ -893,31 +873,6 @@ export class PostComposer extends LitElement {
     await this.attachmentManager.handleMediaSave(e.detail);
   }
 
-  // Poll methods
-
-  private _togglePoll() {
-    if (!this.pollEnabled && this.attachments.length > 0) {
-      showInfoToast(msg('Remove media attachments before adding a poll.'));
-      return;
-    }
-
-    this.pollEnabled = !this.pollEnabled;
-    this.pollError = null;
-
-    if (!this.pollEnabled) {
-      this.pollOptions = ['', ''];
-      this.pollDurationSeconds = 60 * 60;
-      this.pollMultiple = false;
-    }
-  }
-
-  private _setPollOption(index: number, value: string) {
-    const next = [...this.pollOptions];
-    next[index] = String(value ?? '');
-    this.pollOptions = next;
-    this.pollError = null;
-  }
-
   private _readInputEventValue(e: Event): string {
     const detailValue = (e as CustomEvent<{ value?: string }>).detail?.value;
     if (typeof detailValue === 'string') return detailValue;
@@ -931,114 +886,6 @@ export class PostComposer extends LitElement {
     return '';
   }
 
-  private _addPollOption() {
-    if (this.pollOptions.length >= 4) return;
-    this.pollOptions = [...this.pollOptions, ''];
-    this.pollError = null;
-  }
-
-  private _removePollOption(index: number) {
-    if (this.pollOptions.length <= 2) return;
-    this.pollOptions = this.pollOptions.filter((_, i) => i !== index);
-    this.pollError = null;
-  }
-
-  private _getPollPayload(): {
-    options: string[];
-    expiresIn: number;
-    multiple: boolean;
-  } | null {
-    if (!this.pollEnabled) return null;
-
-    const options = this.pollOptions
-      .map((o) => String(o ?? '').trim())
-      .filter(Boolean);
-    if (options.length < 2 || options.length > 4) {
-      this.pollError = msg('Add between 2 and 4 options.');
-      return null;
-    }
-
-    const normalized = options.map((o) => o.toLowerCase());
-    const unique = new Set(normalized);
-    if (unique.size !== normalized.length) {
-      this.pollError = msg('Poll options must be unique.');
-      return null;
-    }
-
-    if (
-      !Number.isFinite(this.pollDurationSeconds) ||
-      this.pollDurationSeconds <= 0
-    ) {
-      this.pollError = msg('Choose a valid poll duration.');
-      return null;
-    }
-
-    return {
-      options,
-      expiresIn: this.pollDurationSeconds,
-      multiple: this.pollMultiple,
-    };
-  }
-
-  // Scheduling
-
-  private _toggleSchedule() {
-    this.scheduleEnabled = !this.scheduleEnabled;
-    this.scheduleError = null;
-
-    if (this.scheduleEnabled && (!this.scheduleDate || !this.scheduleTime)) {
-      const nextSchedule = getDefaultScheduleDateTime();
-      this.scheduleDate = nextSchedule.date;
-      this.scheduleTime = nextSchedule.time;
-    }
-  }
-
-  private _openScheduledStatuses() {
-    this.dispatchEvent(
-      new CustomEvent('open-scheduled-statuses', {
-        bubbles: true,
-        composed: true,
-      })
-    );
-  }
-
-  private _setScheduleDate(value: string) {
-    this.scheduleDate = value;
-    this.scheduleError = null;
-  }
-
-  private _setScheduleTime(value: string) {
-    this.scheduleTime = value;
-    this.scheduleError = null;
-  }
-
-  private _resolveScheduledAtForSubmission(): string | null {
-    const result = resolveScheduledAtForSubmission({
-      scheduleEnabled: this.scheduleEnabled,
-      scheduleDate: this.scheduleDate,
-      scheduleTime: this.scheduleTime,
-    });
-
-    switch (result.error) {
-      case null:
-        this.scheduleError = null;
-        return result.scheduledAt;
-      case 'missing':
-        this.scheduleError = msg('Choose a date and time.');
-        return null;
-      case 'invalid':
-        this.scheduleError = msg('Choose a valid date and time.');
-        return null;
-      case 'tooSoon':
-        this.scheduleError = msg(
-          'Schedule your post at least 5 minutes in the future.'
-        );
-        return null;
-      default:
-        return null;
-    }
-  }
-
   // AI feature methods
 
   async doProofread() {
@@ -1046,217 +893,47 @@ export class PostComposer extends LitElement {
     if (!text || text.trim().length === 0) return;
 
     this.proofreading = true;
-    this.proofreadResult = null;
-
-    // Keep the dropdown open so the "Checking..." loading state is visible
-    if (this._moreOptionsDropdown) {
-      this._moreOptionsDropdown.keepOpen = true;
-    }
-
     try {
-      const result = await proofread(text);
-      this.proofreadResult = result;
+      this.proofreadResult = await proofread(text);
     } catch (error) {
       console.error('Proofreading failed:', error);
     } finally {
       this.proofreading = false;
-      // Re-enable auto-close and hide the dropdown now that result is ready
       if (this._moreOptionsDropdown) {
-        this._moreOptionsDropdown.keepOpen = false;
         this._moreOptionsDropdown.hide();
       }
     }
-  }
-
-  applyCorrections() {
-    if (!this.proofreadResult) return;
-
-    if (this.textArea) {
-      this.textArea.value = this.proofreadResult.correctedInput;
-      this._setStatusText(this.proofreadResult.correctedInput);
-    }
-
-    this.proofreadResult = null;
   }
 
   dismissProofread() {
     this.proofreadResult = null;
   }
 
-  // Speech-to-text methods
+  applyCorrections() {
+    if (!this.proofreadResult) return;
+
+    const corrected = this.proofreadResult.correctedInput;
+
+    if (this.textArea) {
+      this.textArea.value = corrected;
+    }
+
+    this._setStatusText(corrected);
+    this.proofreadResult = null;
+  }
+
+  // Voice methods (delegates to voiceController)
 
   async toggleRecording() {
-    if (this.isRecording) {
-      await this.stopRecording();
-    } else {
-      await this.startRecording();
-    }
+    await this.voiceController.toggleRecording();
   }
 
   async startRecording() {
-    try {
-      // Keep the dropdown open while recording is active
-      if (this._moreOptionsDropdown) {
-        this._moreOptionsDropdown.keepOpen = true;
-      }
-
-      // Use native ML Kit speech recognition on Android
-      if (this.useNativeSpeech) {
-        const { nativeStartSpeechRecognition, addNativeSpeechPartialListener } =
-          await import('../services/native-ai.js');
-        this.isRecording = true;
-
-        // Subscribe to live partial text so the user sees recognition in real-time
-        const baseText = this.textArea?.value ?? '';
-        addNativeSpeechPartialListener((partial) => {
-          if (this.textArea) {
-            const nextValue =
-              baseText.trim().length > 0 ? baseText + ' ' + partial : partial;
-            this.textArea.value = nextValue;
-            this._setStatusText(nextValue);
-          }
-        }).then((cleanup) => {
-          this.nativeSpeechPartialCleanup = cleanup;
-        });
-
-        this.nativeSpeechPromise = nativeStartSpeechRecognition();
-        // The promise resolves when stopSpeechRecognition is called
-        this.nativeSpeechPromise
-          .then((text) => {
-            this.nativeSpeechPartialCleanup?.();
-            this.nativeSpeechPartialCleanup = null;
-            this.isRecording = false;
-            this.nativeSpeechPromise = null;
-            if (this._moreOptionsDropdown) {
-              this._moreOptionsDropdown.keepOpen = false;
-              this._moreOptionsDropdown.hide();
-            }
-            if (text && this.textArea) {
-              const currentText = baseText;
-              const nextValue =
-                currentText.trim().length > 0 ? currentText + ' ' + text : text;
-              this.textArea.value = nextValue;
-              this._setStatusText(nextValue);
-            }
-          })
-          .catch((err) => {
-            console.error('Native speech recognition failed:', err);
-            this.nativeSpeechPartialCleanup?.();
-            this.nativeSpeechPartialCleanup = null;
-            this.isRecording = false;
-            this.nativeSpeechPromise = null;
-            if (this._moreOptionsDropdown) {
-              this._moreOptionsDropdown.keepOpen = false;
-              this._moreOptionsDropdown.hide();
-            }
-          });
-        return;
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, sampleRate: 16000 },
-      });
-
-      this.audioChunks = [];
-
-      const mimeTypes = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/ogg;codecs=opus',
-        'audio/mp4',
-      ];
-
-      let selectedMimeType = '';
-      for (const mimeType of mimeTypes) {
-        if (MediaRecorder.isTypeSupported(mimeType)) {
-          selectedMimeType = mimeType;
-          break;
-        }
-      }
-
-      const options: MediaRecorderOptions = selectedMimeType
-        ? { mimeType: selectedMimeType }
-        : {};
-
-      this.mediaRecorder = new MediaRecorder(stream, options);
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.audioChunks.push(event.data);
-        }
-      };
-
-      this.mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach((track) => track.stop());
-
-        const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
-        const audioBlob = new Blob(this.audioChunks, { type: mimeType });
-        await this.handleTranscription(audioBlob);
-      };
-
-      this.mediaRecorder.start(250);
-      this.isRecording = true;
-    } catch (error) {
-      // If recording failed to start, release keepOpen
-      if (this._moreOptionsDropdown) {
-        this._moreOptionsDropdown.keepOpen = false;
-      }
-      console.error('Failed to start recording:', error);
-    }
+    await this.voiceController.startRecording();
   }
 
   async stopRecording() {
-    // Native Android path
-    if (this.useNativeSpeech && this.nativeSpeechPromise) {
-      try {
-        const { nativeStopSpeechRecognition } =
-          await import('../services/native-ai.js');
-        await nativeStopSpeechRecognition();
-      } catch (err) {
-        console.error('Failed to stop native speech recognition:', err);
-        this.nativeSpeechPartialCleanup?.();
-        this.nativeSpeechPartialCleanup = null;
-        if (this._moreOptionsDropdown) {
-          this._moreOptionsDropdown.keepOpen = false;
-          this._moreOptionsDropdown.hide();
-        }
-      }
-      this.isRecording = false;
-      return;
-    }
-
-    // Web path
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
-      this.isRecording = false;
-    }
-  }
-
-  async handleTranscription(audioBlob: Blob) {
-    this.isTranscribing = true;
-
-    try {
-      const transcribedText = await transcribeAudio(audioBlob);
-
-      if (transcribedText && this.textArea) {
-        const currentText = this.textArea.value;
-        const nextValue =
-          currentText.trim().length > 0
-            ? currentText + ' ' + transcribedText
-            : transcribedText;
-
-        this.textArea.value = nextValue;
-        this._setStatusText(nextValue);
-      }
-    } catch (error) {
-      console.error('Transcription failed:', error);
-    } finally {
-      this.isTranscribing = false;
-      if (this._moreOptionsDropdown) {
-        this._moreOptionsDropdown.keepOpen = false;
-        this._moreOptionsDropdown.hide();
-      }
-    }
+    await this.voiceController.stopRecording();
   }
 
   // Handwriting
@@ -1264,9 +941,7 @@ export class PostComposer extends LitElement {
   async openHandwritingDialog() {
     await import('./handwriting-dialog.js');
     this.handwritingDialogLoaded = true;
-
     await this.updateComplete;
-
     this.handwritingDialogOpen = true;
   }
 
@@ -1305,6 +980,8 @@ export class PostComposer extends LitElement {
 
   private _resetState() {
     this.attachmentManager.reset();
+    this.pollController.reset();
+    this.scheduleController.reset();
     this.charCount = 0;
     this.hasStatus = false;
     this.sensitive = false;
@@ -1322,23 +999,7 @@ export class PostComposer extends LitElement {
     this.editingPost = null;
     this.quotedPost = null;
 
-    this.pollEnabled = false;
-    this.pollOptions = ['', ''];
-    this.pollDurationSeconds = 60 * 60;
-    this.pollMultiple = false;
-    this.pollError = null;
-    this.scheduleEnabled = false;
-    this.scheduleDate = '';
-    this.scheduleTime = '';
-    this.scheduleError = null;
-
-    this._closeMentionPicker();
-
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
-    }
-    this.mediaRecorder = null;
-    this.audioChunks = [];
+    this.mentionController.close();
 
     if (this.textArea) {
       this.textArea.value = '';
@@ -1471,7 +1132,7 @@ export class PostComposer extends LitElement {
                       }}
                       @mousedown=${(event: MouseEvent) => {
                         event.preventDefault();
-                        this._applyMention(account);
+                        this.mentionController.applyMention(account);
                       }}
                     >
                       <img class="mention-avatar" src="${avatar}" alt="" />
@@ -1499,7 +1160,7 @@ export class PostComposer extends LitElement {
         <md-text-area
           @change="${(e: Event) => this._handleStatusChange(e)}"
           @input="${(e: Event) => this._handleStatusChange(e)}"
-          @focusout="${() => this._closeMentionPicker()}"
+          @focusout="${() => this.mentionController.close()}"
           .value=${this.statusText}
           autofocus
           placeholder=${placeholderText}
@@ -1550,17 +1211,6 @@ export class PostComposer extends LitElement {
     this.emojiPickerOpen = false;
   }
 
-  private _renderEmojiPicker() {
-    return html`
-      <emoji-picker
-        .open=${this.emojiPickerOpen}
-        .anchorElement=${this._emojiButton ?? null}
-        @emoji-select=${(e: CustomEvent) => this._onEmojiSelect(e)}
-        @emoji-picker-close=${() => (this.emojiPickerOpen = false)}
-      ></emoji-picker>
-    `;
-  }
-
   private _getVisibilityDisplayLabel(): string {
     switch (this.visibility) {
       case 'unlisted':
@@ -1590,161 +1240,40 @@ export class PostComposer extends LitElement {
   }
 
   private _renderActions() {
-    if (this.hideActions) return nothing;
+    if (this.hideActions || !this._features) return nothing;
 
     return html`
-      <div class="actions-row">
-        <!-- Visibility selector -->
-        ${
-          !this.compact
-            ? html`
-                <md-select
-                  .value=${this.visibility}
-                  .placeholder=${msg('Post visibility')}
-                  .iconSrc=${this._getVisibilityIconSrc()}
-                  .iconLabel=${msg('Post visibility')}
-                  @change=${(e: CustomEvent<{ value: string }>) =>
-                    (this.visibility = e.detail.value)}
-                  title=${this._getVisibilityDisplayLabel()}
-                  variant="filled"
-                  icon-only
-                >
-                  <md-option value="public">${msg('Public')}</md-option>
-                  <md-option value="unlisted">${msg('Unlisted')}</md-option>
-                  <md-option value="private"
-                    >${msg('Followers Only')}</md-option
-                  >
-                  <md-option value="direct">${msg('Direct')}</md-option>
-                </md-select>
-              `
-            : nothing
-        }
-
-        <md-icon-button
-          class="mobile-icon-button"
-          label=${msg('Content Warning')}
-          src="/assets/eye-outline.svg"
-          .variant=${this.sensitive ? 'filled-tonal' : 'standard'}
-          @click="${() => this.markAsSensitive()}"
-        ></md-icon-button>
-
-        <md-icon-button
-          id="emoji-trigger"
-          class="mobile-icon-button"
-          label=${msg('Emoji')}
-          src="/assets/happy-outline.svg"
-          .variant=${this.emojiPickerOpen ? 'filled-tonal' : 'standard'}
-          @click="${() => this._toggleEmojiPicker()}"
-        ></md-icon-button>
-        ${this._renderEmojiPicker()}
-
-        <md-icon-button
-          class="mobile-icon-button"
-          label=${msg('Attach Media')}
-          src="/assets/attach-outline.svg"
-          @click="${() => this.attachFile()}"
-          ?disabled=${
-            this.pollEnabled ||
-            this.quotedPost != null ||
-            this.attachments.length >= this.maxMediaAttachments
-          }
-        ></md-icon-button>
-
-        <!-- Overflow menu -->
-        <md-dropdown id="more-options-dropdown" placement="bottom-end">
-          <md-icon-button
-            slot="trigger"
-            name="ellipsis-vertical"
-            .label=${msg('More options')}
-          ></md-icon-button>
-          <md-menu>
-            ${
-              !this.compact
-                ? html`
-                    <md-menu-item
-                      .selected=${this.scheduleEnabled}
-                      @click=${() => this._toggleSchedule()}
-                    >
-                      <md-icon
-                        slot="prefix"
-                        src="/assets/calendar-outline.svg"
-                      ></md-icon>
-                      ${
-                        this.scheduleEnabled
-                          ? msg('Edit scheduled time')
-                          : msg('Schedule post')
-                      }
-                    </md-menu-item>
-                  `
-                : nothing
-            }
-
-            <md-menu-item
-              .selected=${this.pollEnabled}
-              ?disabled=${
-                this.attachments.length > 0 || this.quotedPost != null
-              }
-              @click=${() => this._togglePoll()}
-            >
-              <md-icon
-                slot="prefix"
-                src="/assets/chatbox-outline.svg"
-              ></md-icon>
-              ${this.pollEnabled ? msg('Remove Poll') : msg('Add Poll')}
-            </md-menu-item>
-
-            ${
-              this.proofreaderAvailable
-                ? html`
-                    <md-menu-item
-                      ?disabled=${!this.hasStatus || this.proofreading}
-                      @click=${() => this.doProofread()}
-                      title=${this.proofreading ? '' : 'On-device AI'}
-                    >
-                      <md-icon
-                        slot="prefix"
-                        src="/assets/sparkles-outline.svg"
-                      ></md-icon>
-                      ${this.proofreading ? msg('Checking...') : msg('Proofread')}
-                    </md-menu-item>
-                  `
-                : nothing
-            }
-            ${
-              this.speechToTextAvailable
-                ? html`
-                    <md-menu-item
-                      ?disabled=${this.isTranscribing}
-                      @click=${() => this.toggleRecording()}
-                      title=${
-                        this.isRecording || this.isTranscribing
-                          ? ''
-                          : 'On-device AI'
-                      }
-                    >
-                      <md-icon
-                        slot="prefix"
-                        src="${
-                          this.isRecording
-                            ? '/assets/stop-circle-outline.svg'
-                            : '/assets/mic-outline.svg'
-                        }"
-                      ></md-icon>
-                      ${
-                        this.isRecording
-                          ? msg('Stop recording')
-                          : this.isTranscribing
-                            ? msg('Transcribing...')
-                            : msg('Voice input')
-                      }
-                    </md-menu-item>
-                  `
-                : nothing
-            }
-          </md-menu>
-        </md-dropdown>
-      </div>
-      <!-- Proofread result (below actions row, full-width) -->
+      ${this._features.renderActionsToolbar({
+        compact: this.compact,
+        visibility: this.visibility,
+        visibilityIconSrc: this._getVisibilityIconSrc(),
+        visibilityDisplayLabel: this._getVisibilityDisplayLabel(),
+        sensitive: this.sensitive,
+        emojiPickerOpen: this.emojiPickerOpen,
+        emojiAnchorElement: this._emojiButton ?? null,
+        pollEnabled: this.pollEnabled,
+        scheduleEnabled: this.scheduleEnabled,
+        proofreaderAvailable: this.proofreaderAvailable,
+        proofreading: this.proofreading,
+        speechToTextAvailable: this.speechToTextAvailable,
+        isRecording: this.isRecording,
+        isTranscribing: this.isTranscribing,
+        hasStatus: this.hasStatus,
+        hasAttachments: this.attachments.length > 0,
+        hasQuotedPost: this.quotedPost != null,
+        maxAttachmentsReached:
+          this.attachments.length >= this.maxMediaAttachments,
+        onVisibilityChange: (v) => (this.visibility = v),
+        onToggleSensitive: () => this.markAsSensitive(),
+        onToggleEmojiPicker: () => this._toggleEmojiPicker(),
+        onEmojiSelect: (e) => this._onEmojiSelect(e),
+        onEmojiPickerClose: () => (this.emojiPickerOpen = false),
+        onAttachFile: () => this.attachFile(),
+        onToggleSchedule: () => this.scheduleController.toggle(),
+        onTogglePoll: () => this.pollController.toggle(),
+        onDoProofread: () => this.doProofread(),
+        onToggleRecording: () => this.voiceController.toggleRecording(),
+      })}
       ${this.proofreaderAvailable ? this._renderProofreadResult() : nothing}
     `;
   }
@@ -1784,11 +1313,11 @@ export class PostComposer extends LitElement {
       pollDurationSeconds: this.pollDurationSeconds,
       pollMultiple: this.pollMultiple,
       pollError: this.pollError,
-      onSetOption: (idx, val) => this._setPollOption(idx, val),
-      onAddOption: () => this._addPollOption(),
-      onRemoveOption: (idx) => this._removePollOption(idx),
-      onSetDuration: (s) => (this.pollDurationSeconds = s),
-      onSetMultiple: (v) => (this.pollMultiple = v),
+      onSetOption: (idx, val) => this.pollController.setOption(idx, val),
+      onAddOption: () => this.pollController.addOption(),
+      onRemoveOption: (idx) => this.pollController.removeOption(idx),
+      onSetDuration: (s) => this.pollController.setDuration(s),
+      onSetMultiple: (v) => this.pollController.setMultiple(v),
       readInputValue: (e) => this._readInputEventValue(e),
     } satisfies PollRenderProps);
   }
@@ -1806,9 +1335,10 @@ export class PostComposer extends LitElement {
       scheduleDate: this.scheduleDate,
       scheduleTime: this.scheduleTime,
       scheduleError: this.scheduleError,
-      onDateChange: (v) => this._setScheduleDate(v),
-      onTimeChange: (v) => this._setScheduleTime(v),
-      onOpenScheduledStatuses: () => this._openScheduledStatuses(),
+      onDateChange: (v) => this.scheduleController.setDate(v),
+      onTimeChange: (v) => this.scheduleController.setTime(v),
+      onOpenScheduledStatuses: () =>
+        this.scheduleController.openScheduledStatuses(),
       readInputValue: (e) => this._readInputEventValue(e),
     } satisfies ScheduleRenderProps);
   }
