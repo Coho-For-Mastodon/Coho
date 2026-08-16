@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
 import android.util.Log;
+import android.content.pm.PackageManager;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -45,42 +46,22 @@ import java.util.concurrent.Executors;
 public class AiBridge extends Plugin {
 
     private static final String TAG = "AiBridge";
-    private static final ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    // ── Language Detection (ML Kit) ─────────────────────────────────────
-
-    @PluginMethod
-    public void detectLanguage(PluginCall call) {
-        String text = call.getString("text");
-        if (text == null || text.isEmpty()) {
-            call.reject("text is required");
-            return;
+    private boolean isAiCoreInstalled() {
+        try {
+            getContext().getPackageManager().getPackageInfo("com.google.android.aicore", 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
         }
-
-        LanguageIdentifier identifier = LanguageIdentification.getClient();
-        identifier.identifyLanguage(text)
-                .addOnSuccessListener(languageCode -> {
-                    JSObject result = new JSObject();
-                    // ML Kit returns "und" for undetermined
-                    result.put("language", "und".equals(languageCode) ? "en" : languageCode);
-                    call.resolve(result);
-                    identifier.close();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Language detection failed", e);
-                    JSObject result = new JSObject();
-                    result.put("language", "en");
-                    call.resolve(result);
-                    identifier.close();
-                });
     }
 
-    // ── Translation (ML Kit) ──────────────────────────────────────────────
+    // ── Translation ───────────────────────────────────────────────────────
 
     @PluginMethod
     public void translate(PluginCall call) {
         String text = call.getString("text");
-        String sourceLang = call.getString("sourceLanguage", "en");
         String targetLang = call.getString("targetLanguage", "en");
 
         if (text == null || text.isEmpty()) {
@@ -88,25 +69,26 @@ public class AiBridge extends Plugin {
             return;
         }
 
-        String sourceTag = mapToMlKitLanguage(sourceLang);
-        String targetTag = mapToMlKitLanguage(targetLang);
+        executor.execute(() -> {
+            LanguageIdentifier languageIdentifier = LanguageIdentification.getClient();
+            languageIdentifier.identifyLanguage(text)
+                .addOnSuccessListener(sourceLang -> {
+                    if (sourceLang.equals("und")) {
+                        call.reject("Could not identify source language");
+                        return;
+                    }
 
-        if (sourceTag == null || targetTag == null) {
-            call.reject("Unsupported language pair: " + sourceLang + " -> " + targetLang);
-            return;
-        }
+                    TranslatorOptions options = new TranslatorOptions.Builder()
+                            .setSourceLanguage(TranslateLanguage.fromLanguageTag(sourceLang))
+                            .setTargetLanguage(TranslateLanguage.fromLanguageTag(targetLang))
+                            .build();
 
-        TranslatorOptions options = new TranslatorOptions.Builder()
-                .setSourceLanguage(sourceTag)
-                .setTargetLanguage(targetTag)
-                .build();
+                    Translator translator = Translation.getClient(options);
 
-        Translator translator = Translation.getClient(options);
-
-        // Ensure models are downloaded, then translate
-        translator.downloadModelIfNeeded()
-                .addOnSuccessListener(unused ->
-                        translator.translate(text)
+                    // Ensure models are downloaded, then translate
+                    translator.downloadModelIfNeeded()
+                        .addOnSuccessListener(v -> {
+                            translator.translate(text)
                                 .addOnSuccessListener(translatedText -> {
                                     JSObject result = new JSObject();
                                     result.put("translatedText", translatedText);
@@ -117,19 +99,30 @@ public class AiBridge extends Plugin {
                                     Log.e(TAG, "Translation failed", e);
                                     call.reject("Translation failed: " + e.getMessage());
                                     translator.close();
-                                })
-                )
+                                });
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Model download failed", e);
+                            call.reject("Failed to download translation model");
+                            translator.close();
+                        });
+                })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Model download failed", e);
-                    call.reject("Translation model download failed: " + e.getMessage());
-                    translator.close();
+                    Log.e(TAG, "Language identification failed", e);
+                    call.reject("Language identification failed");
                 });
+        });
     }
 
     // ── Alt Text Generation (ML Kit GenAI Image Description) ─────────────
 
     @PluginMethod
     public void generateAltText(PluginCall call) {
+        if (!isAiCoreInstalled()) {
+            call.reject("Image description not available on this device");
+            return;
+        }
+
         String imageBase64 = call.getString("imageBase64");
 
         if (imageBase64 == null || imageBase64.isEmpty()) {
@@ -170,17 +163,17 @@ public class AiBridge extends Plugin {
                     JSObject result = new JSObject();
                     result.put("altText", description != null ? description.trim() : "");
                     call.resolve(result);
-                } catch (Exception e) {
-                    Log.e(TAG, "Alt text generation failed", e);
-                    call.reject("Alt text generation failed: " + e.getMessage());
+                } catch (Throwable t) {
+                    Log.e(TAG, "Alt text generation failed", t);
+                    call.reject("Alt text generation failed: " + t.getMessage());
                 } finally {
                     if (describer != null) describer.close();
                 }
             });
 
-        } catch (Exception e) {
-            Log.e(TAG, "Alt text generation error", e);
-            call.reject("Alt text generation error: " + e.getMessage());
+        } catch (Throwable t) {
+            Log.e(TAG, "Alt text generation error", t);
+            call.reject("Alt text generation error: " + t.getMessage());
         }
     }
 
@@ -188,6 +181,11 @@ public class AiBridge extends Plugin {
 
     @PluginMethod
     public void proofread(PluginCall call) {
+        if (!isAiCoreInstalled()) {
+            call.reject("Proofreading not available on this device");
+            return;
+        }
+
         String text = call.getString("text");
 
         if (text == null || text.isEmpty()) {
@@ -224,9 +222,9 @@ public class AiBridge extends Plugin {
                 // ML Kit returns whole-text suggestions, not granular corrections
                 result.put("corrections", new JSArray());
                 call.resolve(result);
-            } catch (Exception e) {
-                Log.e(TAG, "Proofreading failed", e);
-                call.reject("Proofreading failed: " + e.getMessage());
+            } catch (Throwable t) {
+                Log.e(TAG, "Proofreading failed", t);
+                call.reject("Proofreading failed: " + t.getMessage());
             } finally {
                 if (proofreader != null) proofreader.close();
             }
@@ -241,43 +239,47 @@ public class AiBridge extends Plugin {
             boolean altTextAvailable = false;
             boolean proofreadingAvailable = false;
 
-            // Check image description availability
-            ImageDescriber describer = null;
-            try {
-                ImageDescriberOptions idOptions = ImageDescriberOptions.builder(getContext()).build();
-                describer = ImageDescription.getClient(idOptions);
-                int status = describer.checkFeatureStatus().get();
-                Log.i(TAG, "Image description feature status: " + status
-                        + " (AVAILABLE=" + FeatureStatus.AVAILABLE
-                        + ", DOWNLOADABLE=" + FeatureStatus.DOWNLOADABLE
-                        + ", DOWNLOADING=" + FeatureStatus.DOWNLOADING
-                        + ", UNAVAILABLE=" + FeatureStatus.UNAVAILABLE + ")");
-                altTextAvailable = (status != FeatureStatus.UNAVAILABLE);
-            } catch (Exception e) {
-                Log.e(TAG, "Image description check failed", e);
-            } finally {
-                if (describer != null) describer.close();
-            }
+            if (isAiCoreInstalled()) {
+                // Check image description availability
+                ImageDescriber describer = null;
+                try {
+                    ImageDescriberOptions idOptions = ImageDescriberOptions.builder(getContext()).build();
+                    describer = ImageDescription.getClient(idOptions);
+                    int status = describer.checkFeatureStatus().get();
+                    Log.i(TAG, "Image description feature status: " + status
+                            + " (AVAILABLE=" + FeatureStatus.AVAILABLE
+                            + ", DOWNLOADABLE=" + FeatureStatus.DOWNLOADABLE
+                            + ", DOWNLOADING=" + FeatureStatus.DOWNLOADING
+                            + ", UNAVAILABLE=" + FeatureStatus.UNAVAILABLE + ")");
+                    altTextAvailable = (status != FeatureStatus.UNAVAILABLE);
+                } catch (Throwable t) {
+                    Log.e(TAG, "Image description check failed", t);
+                } finally {
+                    if (describer != null) describer.close();
+                }
 
-            // Check proofreading availability
-            Proofreader proofreader = null;
-            try {
-                ProofreaderOptions prOptions = ProofreaderOptions.builder(getContext())
-                        .setInputType(ProofreaderOptions.InputType.KEYBOARD)
-                        .setLanguage(ProofreaderOptions.Language.ENGLISH)
-                        .build();
-                proofreader = Proofreading.getClient(prOptions);
-                int status = proofreader.checkFeatureStatus().get();
-                Log.i(TAG, "Proofreading feature status: " + status
-                        + " (AVAILABLE=" + FeatureStatus.AVAILABLE
-                        + ", DOWNLOADABLE=" + FeatureStatus.DOWNLOADABLE
-                        + ", DOWNLOADING=" + FeatureStatus.DOWNLOADING
-                        + ", UNAVAILABLE=" + FeatureStatus.UNAVAILABLE + ")");
-                proofreadingAvailable = (status != FeatureStatus.UNAVAILABLE);
-            } catch (Exception e) {
-                Log.e(TAG, "Proofreading check failed", e);
-            } finally {
-                if (proofreader != null) proofreader.close();
+                // Check proofreading availability
+                Proofreader proofreader = null;
+                try {
+                    ProofreaderOptions prOptions = ProofreaderOptions.builder(getContext())
+                            .setInputType(ProofreaderOptions.InputType.KEYBOARD)
+                            .setLanguage(ProofreaderOptions.Language.ENGLISH)
+                            .build();
+                    proofreader = Proofreading.getClient(prOptions);
+                    int status = proofreader.checkFeatureStatus().get();
+                    Log.i(TAG, "Proofreading feature status: " + status
+                            + " (AVAILABLE=" + FeatureStatus.AVAILABLE
+                            + ", DOWNLOADABLE=" + FeatureStatus.DOWNLOADABLE
+                            + ", DOWNLOADING=" + FeatureStatus.DOWNLOADING
+                            + ", UNAVAILABLE=" + FeatureStatus.UNAVAILABLE + ")");
+                    proofreadingAvailable = (status != FeatureStatus.UNAVAILABLE);
+                } catch (Throwable t) {
+                    Log.e(TAG, "Proofreading check failed", t);
+                } finally {
+                    if (proofreader != null) proofreader.close();
+                }
+            } else {
+                Log.i(TAG, "AICore not installed, skipping GenAI availability checks");
             }
 
             Log.i(TAG, "AI capabilities: translation=true, altText=" + altTextAvailable
@@ -289,78 +291,5 @@ public class AiBridge extends Plugin {
             result.put("proofreading", proofreadingAvailable);
             call.resolve(result);
         });
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────
-
-    /**
-     * Map a BCP-47 language tag (or common shorthand) to an ML Kit
-     * TranslateLanguage constant. Returns null if unsupported.
-     */
-    private String mapToMlKitLanguage(String langCode) {
-        if (langCode == null) return null;
-        // Normalize: take first segment, lowercase
-        String code = langCode.split("-")[0].toLowerCase();
-        switch (code) {
-            case "af": return TranslateLanguage.AFRIKAANS;
-            case "ar": return TranslateLanguage.ARABIC;
-            case "be": return TranslateLanguage.BELARUSIAN;
-            case "bg": return TranslateLanguage.BULGARIAN;
-            case "bn": return TranslateLanguage.BENGALI;
-            case "ca": return TranslateLanguage.CATALAN;
-            case "cs": return TranslateLanguage.CZECH;
-            case "cy": return TranslateLanguage.WELSH;
-            case "da": return TranslateLanguage.DANISH;
-            case "de": return TranslateLanguage.GERMAN;
-            case "el": return TranslateLanguage.GREEK;
-            case "en": return TranslateLanguage.ENGLISH;
-            case "eo": return TranslateLanguage.ESPERANTO;
-            case "es": return TranslateLanguage.SPANISH;
-            case "et": return TranslateLanguage.ESTONIAN;
-            case "fa": return TranslateLanguage.PERSIAN;
-            case "fi": return TranslateLanguage.FINNISH;
-            case "fr": return TranslateLanguage.FRENCH;
-            case "ga": return TranslateLanguage.IRISH;
-            case "gl": return TranslateLanguage.GALICIAN;
-            case "gu": return TranslateLanguage.GUJARATI;
-            case "he": return TranslateLanguage.HEBREW;
-            case "hi": return TranslateLanguage.HINDI;
-            case "hr": return TranslateLanguage.CROATIAN;
-            case "hu": return TranslateLanguage.HUNGARIAN;
-            case "id": return TranslateLanguage.INDONESIAN;
-            case "is": return TranslateLanguage.ICELANDIC;
-            case "it": return TranslateLanguage.ITALIAN;
-            case "ja": return TranslateLanguage.JAPANESE;
-            case "ka": return TranslateLanguage.GEORGIAN;
-            case "kn": return TranslateLanguage.KANNADA;
-            case "ko": return TranslateLanguage.KOREAN;
-            case "lt": return TranslateLanguage.LITHUANIAN;
-            case "lv": return TranslateLanguage.LATVIAN;
-            case "mk": return TranslateLanguage.MACEDONIAN;
-            case "mr": return TranslateLanguage.MARATHI;
-            case "ms": return TranslateLanguage.MALAY;
-            case "mt": return TranslateLanguage.MALTESE;
-            case "nl": return TranslateLanguage.DUTCH;
-            case "no": return TranslateLanguage.NORWEGIAN;
-            case "pl": return TranslateLanguage.POLISH;
-            case "pt": return TranslateLanguage.PORTUGUESE;
-            case "ro": return TranslateLanguage.ROMANIAN;
-            case "ru": return TranslateLanguage.RUSSIAN;
-            case "sk": return TranslateLanguage.SLOVAK;
-            case "sl": return TranslateLanguage.SLOVENIAN;
-            case "sq": return TranslateLanguage.ALBANIAN;
-            case "sv": return TranslateLanguage.SWEDISH;
-            case "sw": return TranslateLanguage.SWAHILI;
-            case "ta": return TranslateLanguage.TAMIL;
-            case "te": return TranslateLanguage.TELUGU;
-            case "th": return TranslateLanguage.THAI;
-            case "tl": return TranslateLanguage.TAGALOG;
-            case "tr": return TranslateLanguage.TURKISH;
-            case "uk": return TranslateLanguage.UKRAINIAN;
-            case "ur": return TranslateLanguage.URDU;
-            case "vi": return TranslateLanguage.VIETNAMESE;
-            case "zh": return TranslateLanguage.CHINESE;
-            default: return null;
-        }
     }
 }

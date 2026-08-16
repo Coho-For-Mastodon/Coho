@@ -131,7 +131,7 @@ export class AppProfile extends LitElement {
         background-size: cover;
         background-position: center;
         position: relative;
-        margin-top: calc(40px + env(safe-area-inset-top, 0px));
+        margin-top: calc(56px + env(safe-area-inset-top, 0px));
         overflow: hidden;
         view-timeline-name: --banner-timeline;
         view-timeline-axis: block;

@@ -1378,6 +1378,7 @@ export const authenticate = onRequest(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'Coho/1.0 (https://coho.place)',
         },
         body: JSON.stringify({
           client_name: 'Coho',
@@ -1386,6 +1387,29 @@ export const authenticate = onRequest(
           website: 'https://coho.place',
         }),
       });
+
+      if (!apiResponse.ok) {
+        const text = await apiResponse.text().catch(() => '');
+        logger.error('Mastodon API error in authenticate', {
+          status: apiResponse.status,
+          text,
+        });
+
+        let errorMessage = `Mastodon server returned HTTP ${apiResponse.status}`;
+        try {
+          const errJson = JSON.parse(text);
+          if (errJson.error) errorMessage = errJson.error;
+          else if (errJson.error_description)
+            errorMessage = errJson.error_description;
+        } catch {
+          // not json, could be cloudflare html
+        }
+
+        response
+          .status(apiResponse.status === 429 ? 429 : 500)
+          .json({ error: errorMessage });
+        return;
+      }
 
       const data = (await apiResponse.json()) as {
         client_id: string;
@@ -1414,8 +1438,11 @@ export const authenticate = onRequest(
 
       response.json({ url: authResponseURL });
     } catch (error) {
-      logger.error('Authentication init failed', { error, serverURL });
-      response.status(500).json({ error: 'Authentication init failed' });
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.error('Authentication init failed', { error: errMsg, serverURL });
+      response
+        .status(500)
+        .json({ error: 'Authentication init failed: ' + errMsg });
     }
   }
 );
@@ -1478,9 +1505,33 @@ export const getClient = onRequest(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'Coho/1.0 (https://coho.place)',
         },
         body: JSON.stringify(tokenBody),
       });
+
+      if (!apiResponse.ok) {
+        const text = await apiResponse.text().catch(() => '');
+        logger.error('Mastodon API error in getClient', {
+          status: apiResponse.status,
+          text,
+        });
+
+        let errorMessage = `Mastodon server returned HTTP ${apiResponse.status}`;
+        try {
+          const errJson = JSON.parse(text);
+          if (errJson.error) errorMessage = errJson.error;
+          else if (errJson.error_description)
+            errorMessage = errJson.error_description;
+        } catch {
+          // not json
+        }
+
+        response
+          .status(apiResponse.status === 429 ? 429 : 500)
+          .json({ error: errorMessage });
+        return;
+      }
 
       const data = (await apiResponse.json()) as { access_token?: string };
 
@@ -1499,8 +1550,11 @@ export const getClient = onRequest(
           .json({ error: 'Failed to get access token', details: data });
       }
     } catch (error) {
-      logger.error('Get client token failed', { error });
-      response.status(500).json({ error: 'Get client token failed' });
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.error('Get client token failed', { error: errMsg });
+      response
+        .status(500)
+        .json({ error: 'Get client token failed: ' + errMsg });
     }
   }
 );

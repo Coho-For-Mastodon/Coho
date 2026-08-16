@@ -14,7 +14,7 @@ const compat = new FlatCompat({
 
 export default tseslint.config(
   {
-    ignores: ['dist/', 'node_modules/', 'public/', 'functions/lib/'],
+    ignores: ['dist/', 'node_modules/', 'public/', 'functions/lib/', 'src/generated/'],
   },
   pluginJs.configs.recommended,
   ...tseslint.configs.strict,

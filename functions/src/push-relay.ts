@@ -289,7 +289,11 @@ export const pushRelayPush = onRequest(
 
     // Extract registrationId from the URL path
     const pathParts = request.path.split('/').filter(Boolean);
-    const registrationId = pathParts[pathParts.length - 1];
+    const lastPart = pathParts[pathParts.length - 1];
+    const registrationId =
+      lastPart && lastPart !== 'pushRelayPush'
+        ? lastPart
+        : (request.query.registrationId as string);
 
     if (!registrationId) {
       response.status(400).send('Missing registrationId');
@@ -299,7 +303,14 @@ export const pushRelayPush = onRequest(
     try {
       const doc = await db.collection(COLLECTION).doc(registrationId).get();
       if (!doc.exists) {
-        response.status(404).send('Registration not found');
+        // RFC 8030: Return 410 Gone so Mastodon permanently removes the dead subscription
+        logger.info(
+          'Push received for non-existent registration, returning 410 Gone',
+          {
+            registrationId,
+          }
+        );
+        response.status(410).send('Registration not found');
         return;
       }
 
@@ -334,8 +345,11 @@ export const pushRelayPush = onRequest(
           request.headers['crypto-key'] as string | undefined
         );
       } catch (decryptError) {
-        logger.error('Failed to decrypt push payload', { decryptError });
-        response.status(201).send('Accepted (decrypt failed)');
+        logger.warn('Failed to decrypt push payload', {
+          decryptError,
+          registrationId,
+        });
+        response.status(202).send('Accepted (decrypt failed)');
         return;
       }
 
@@ -343,10 +357,11 @@ export const pushRelayPush = onRequest(
       try {
         payload = JSON.parse(decryptedJson);
       } catch {
-        logger.error('Decrypted payload is not valid JSON', {
+        logger.warn('Decrypted payload is not valid JSON', {
           decryptedJson: decryptedJson.substring(0, 200),
+          registrationId,
         });
-        response.status(201).send('Accepted (invalid JSON)');
+        response.status(202).send('Accepted (invalid JSON)');
         return;
       }
 
@@ -376,49 +391,79 @@ export const pushRelayPush = onRequest(
       fcmData.title = title;
       fcmData.body = body;
 
-      await messaging.send({
-        token: fcmToken,
-        notification: {
-          title,
-          body,
-        },
-        data: fcmData,
-        android: {
-          priority: 'high',
+      try {
+        await messaging.send({
+          token: fcmToken,
           notification: {
-            channelId,
-            icon: 'ic_stat_name',
-            color: '#d6325c',
-            tag: `coho_${notificationType || 'general'}`,
+            title,
+            body,
           },
-        },
-        apns: {
-          payload: {
-            aps: {
-              'mutable-content': 1,
-              'category': notificationType || 'general',
+          data: fcmData,
+          android: {
+            priority: 'high',
+            notification: {
+              channelId,
+              icon: 'ic_stat_name',
+              color: '#d6325c',
+              tag: `coho_${notificationType || 'general'}`,
             },
           },
-        },
-      });
+          apns: {
+            payload: {
+              aps: {
+                'mutable-content': 1,
+                'category': notificationType || 'general',
+              },
+            },
+          },
+        });
 
-      logger.info('Push relayed to FCM', {
-        registrationId,
-        type: payload.notification_type,
-      });
-      response.status(201).send('Created');
-    } catch (error) {
-      logger.error('Push relay delivery failed', { error });
+        logger.info('Push relayed to FCM', {
+          registrationId,
+          type: payload.notification_type,
+        });
+        response.status(201).send('Created');
+      } catch (fcmError: unknown) {
+        const err = fcmError as { code?: string; message?: string };
+        const errorCode = String(err?.code || '').toLowerCase();
+        const errorMessage = String(err?.message || '').toLowerCase();
 
-      if (
-        error instanceof Error &&
-        (error.message.includes('not-registered') ||
-          error.message.includes('invalid-registration-token'))
-      ) {
-        await db.collection(COLLECTION).doc(registrationId).delete();
-        logger.info('Cleaned up stale registration', { registrationId });
+        const isUnregisteredToken =
+          errorCode === 'messaging/registration-token-not-registered' ||
+          errorCode === 'messaging/invalid-registration-token' ||
+          errorCode === 'messaging/mismatched-credential' ||
+          errorCode.includes('not-registered') ||
+          errorCode.includes('invalid-registration-token') ||
+          errorMessage.includes('notregistered') ||
+          errorMessage.includes('not-registered') ||
+          errorMessage.includes('invalidregistration') ||
+          errorMessage.includes('invalid-registration-token') ||
+          errorMessage.includes('requested entity was not found');
+
+        if (isUnregisteredToken) {
+          logger.info(
+            'FCM token is unregistered/expired; cleaning up registration and returning 410 Gone',
+            {
+              registrationId,
+              errorCode: fcmError?.code,
+              errorMessage: fcmError?.message,
+            }
+          );
+
+          await db.collection(COLLECTION).doc(registrationId).delete();
+          // HTTP 410 (Gone) tells Mastodon that the subscription is permanently dead and to remove it
+          response.status(410).send('Subscription Gone');
+          return;
+        }
+
+        logger.error('Push relay FCM delivery failed', {
+          error: fcmError,
+          registrationId,
+        });
+        response.status(500).send('Relay failed');
       }
-
+    } catch (error) {
+      logger.error('Push relay delivery failed', { error, registrationId });
       response.status(500).send('Relay failed');
     }
   }

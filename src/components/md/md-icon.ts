@@ -114,19 +114,12 @@ export class MdIcon extends LitElement {
       width: 100%;
       height: 100%;
       display: block;
-      fill: currentColor;
-      stroke: currentColor;
     }
 
-    /* Ensure SVG paths inherit color */
+    /* Ensure SVG inherits text color */
     .icon ::slotted(svg),
     .icon svg {
-      fill: currentColor;
-    }
-
-    .icon ::slotted(svg) path,
-    .icon svg path {
-      fill: currentColor;
+      color: inherit;
     }
 
     /* Error state */

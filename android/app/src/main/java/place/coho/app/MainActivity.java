@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.webkit.WebView;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.core.view.WindowCompat;
 
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
@@ -24,6 +25,9 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SpeechBridge.class);
         registerPlugin(WearSyncBridge.class);
         super.onCreate(savedInstanceState);
+
+        // Enable edge-to-edge rendering for modern Material 3 system bars
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
         // If launched from a shortcut (ACTION_VIEW with localhost data),
         // navigate the WebView to the shortcut's target path.
@@ -69,9 +73,12 @@ public class MainActivity extends BridgeActivity {
         String action = intent.getAction();
         if (Intent.ACTION_SEND.equals(action) || Intent.ACTION_SEND_MULTIPLE.equals(action)) {
             // Notify the web layer that new shared content arrived
-            ShareTargetBridge plugin = (ShareTargetBridge) getBridge().getPlugin("ShareTargetBridge").getInstance();
-            if (plugin != null) {
-                plugin.notifyShareIntent();
+            com.getcapacitor.PluginHandle pluginHandle = getBridge().getPlugin("ShareTargetBridge");
+            if (pluginHandle != null) {
+                ShareTargetBridge shareBridge = (ShareTargetBridge) pluginHandle.getInstance();
+                if (shareBridge != null) {
+                    shareBridge.notifyShareIntent();
+                }
             }
         } else if (Intent.ACTION_VIEW.equals(action)) {
             // Handle shortcut taps when the app is already running

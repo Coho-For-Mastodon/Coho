@@ -71,16 +71,6 @@ export const homeStyles = css`
     z-index: 10;
   }
 
-  @media (prefers-color-scheme: dark) {
-    md-tab {
-      --md-sys-color-on-surface-variant: #c4c6cf;
-    }
-
-    .tab-label {
-      color: #c4c6cf;
-    }
-  }
-
   md-menu-item {
     --neutral-fill-stealth-hover: #141314;
     color: white;
@@ -221,7 +211,7 @@ export const homeStyles = css`
       height: 100%;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding-top: calc(50px + env(safe-area-inset-top, 0px));
+      padding-top: calc(56px + env(safe-area-inset-top, 0px));
       scrollbar-color: var(--md-sys-scrollbar-thumb-color)
         var(--md-sys-color-background);
     }

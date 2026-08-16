@@ -153,9 +153,21 @@ export class MdTab extends LitElement {
         color: var(--md-sys-color-primary, var(--sl-color-primary-600));
       }
 
+      :host([active][data-stacked]) .tab-inner {
+        color: var(--md-sys-color-on-surface);
+        font-weight: 600;
+      }
+
       /* Active icon fill */
       :host([active]) ::slotted([slot='icon']) {
         color: var(--md-sys-color-primary, var(--sl-color-primary-600));
+      }
+
+      :host([active][data-stacked]) ::slotted([slot='icon']) {
+        color: var(
+          --md-sys-color-on-secondary-container,
+          var(--md-sys-color-primary)
+        );
       }
 
       /* Disabled state */
@@ -289,6 +301,9 @@ export class MdTab extends LitElement {
 
   private _handleClick() {
     if (this.disabled) return;
+    import('../../utils/haptics')
+      .then((m) => m.hapticSelection())
+      .catch(() => {});
     this.dispatchEvent(
       new CustomEvent('tab-selected', {
         detail: { panel: this.panel },

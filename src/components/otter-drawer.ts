@@ -31,24 +31,27 @@ export class OtterDrawer extends LitElement {
     :host {
       --drawer-width: 400px;
       --drawer-height: 50vh;
-      --overlay-bg: rgba(0, 0, 0, 0.5);
-      --drawer-bg: var(--sl-panel-background-color, #fff);
-      --drawer-border: var(--sl-panel-border-color, #e0e0e0);
+      --overlay-bg: rgba(0, 0, 0, 0.32);
+      --drawer-bg: var(--md-sys-color-surface-container-low, #f7f2fa);
+      --drawer-border: var(--md-sys-color-outline-variant, #e0e0e0);
       --header-height: 60px;
       --footer-height: auto;
       --transition-speed: 0.3s;
-      --drawer-radius: 18px;
+      --drawer-radius: 28px;
       --drawer-body-padding: 1.5rem;
       --drawer-header-padding: 1rem 1.5rem;
       --drawer-footer-padding: 1rem 1.5rem;
-      --drawer-handle-width: 44px;
+      --drawer-handle-width: 32px;
       --drawer-handle-height: 4px;
-      --drawer-handle-bg: rgba(120, 120, 120, 0.35);
+      --drawer-handle-bg: var(
+        --md-sys-color-on-surface-variant,
+        rgba(120, 120, 120, 0.4)
+      );
     }
 
     @media (prefers-color-scheme: dark) {
       .drawer {
-        --drawer-bg: var(--md-sys-color-background);
+        --drawer-bg: var(--md-sys-color-surface-container-low, #1d1b20);
       }
     }
 
@@ -183,13 +186,13 @@ export class OtterDrawer extends LitElement {
 
     .header h2 {
       margin: 0;
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--sl-color-neutral-900, #000);
+      font-size: var(--md-sys-typescale-title-large-font-size, 22px);
+      font-weight: 500;
+      color: var(--md-sys-color-on-surface, #000);
     }
 
-    .close-button {
-      /* positioning handled by md-icon-button */
+    .drawer.bottom .close-button {
+      display: none;
     }
 
     .body {

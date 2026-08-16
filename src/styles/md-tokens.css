@@ -376,6 +376,33 @@
   -ms-overflow-style: none;
 }
 
+/* Touch and selection rules for native Android feel */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+[role="tab"],
+[role="switch"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+header,
+nav,
+md-tab,
+md-icon,
+md-icon-button,
+md-button,
+md-switch,
+md-segmented-button,
+.boost-indicator,
+.actions {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,

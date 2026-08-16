@@ -39,11 +39,13 @@ export class MdSegmentedButton extends LitElement {
 
     .container {
       display: flex;
-      background: var(--md-sys-color-surface-container, #f3edf7);
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      padding: 4px;
+      background: transparent;
+      border: 1px solid var(--md-sys-color-outline, #79747e);
+      border-radius: var(--md-sys-shape-corner-full, 9999px);
+      padding: 0;
       gap: 0;
       overflow-x: auto;
+      overflow-y: hidden;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
@@ -55,12 +57,20 @@ export class MdSegmentedButton extends LitElement {
     ::slotted(md-segment) {
       flex: 1;
       min-width: fit-content;
+      border-right: 1px solid var(--md-sys-color-outline, #79747e);
+    }
+
+    ::slotted(md-segment:last-child) {
+      border-right: none;
     }
 
     /* Dark mode */
     @media (prefers-color-scheme: dark) {
       .container {
-        background: var(--md-sys-color-surface-container, #1d1b20);
+        border-color: var(--md-sys-color-outline, #938f99);
+      }
+      ::slotted(md-segment) {
+        border-right-color: var(--md-sys-color-outline, #938f99);
       }
     }
   `;
@@ -183,7 +193,7 @@ export class MdSegment extends LitElement {
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 10px 24px;
+      padding: 10px 20px;
       border: none;
       background: transparent;
       color: var(--md-sys-color-on-surface-variant, #49454f);
@@ -191,7 +201,7 @@ export class MdSegment extends LitElement {
       font-size: var(--md-sys-typescale-label-large-font-size, 14px);
       font-weight: 500;
       cursor: pointer;
-      border-radius: var(--md-sys-shape-corner-extra-large);
+      border-radius: 0;
       transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
       white-space: nowrap;
       width: 100%;
@@ -206,8 +216,8 @@ export class MdSegment extends LitElement {
 
     button:focus-visible {
       outline: 2px solid
-        var(--sl-color-primary-600, var(--md-sys-color-primary, #6750a4));
-      outline-offset: 2px;
+        var(--md-sys-color-primary, var(--sl-color-primary-600, #6750a4));
+      outline-offset: -2px;
     }
 
     button:active:not(:disabled) {
@@ -220,15 +230,14 @@ export class MdSegment extends LitElement {
 
     :host([selected]) button {
       background: var(
-        --sl-color-primary-600,
-        var(--md-sys-color-primary, #6750a4)
+        --md-sys-color-secondary-container,
+        var(--sl-color-primary-100, #e8def8)
       );
-      color: white;
-    }
-
-    :host([selected]) button:focus-visible {
-      outline: 2px solid white;
-      outline-offset: -4px;
+      color: var(
+        --md-sys-color-on-secondary-container,
+        var(--sl-color-primary-900, #1d192b)
+      );
+      font-weight: 600;
     }
 
     :host([disabled]) button {
@@ -248,17 +257,17 @@ export class MdSegment extends LitElement {
       }
 
       :host([selected]) button {
-        background: var(
-          --sl-color-primary-600,
-          var(--md-sys-color-primary, #6750a4)
-        );
-        color: white;
+        background: var(--md-sys-color-secondary-container, #4a4458);
+        color: var(--md-sys-color-on-secondary-container, #e8def8);
       }
     }
   `;
 
   private _handleClick() {
     if (this.disabled) return;
+    import('../../utils/haptics')
+      .then((m) => m.hapticSelection())
+      .catch(() => {});
 
     this.dispatchEvent(
       new CustomEvent('segment-selected', {

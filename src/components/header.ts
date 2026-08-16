@@ -36,15 +36,15 @@ export class AppHeader extends LitElement {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: white;
-        padding-right: 5px;
+        color: var(--md-sys-color-on-surface, white);
+        padding-right: 8px;
         position: fixed;
         left: env(titlebar-area-x, 0);
         top: env(titlebar-area-y, env(safe-area-inset-top, 0));
         right: 0;
         app-region: drag;
 
-        width: env(titlebar-area-width, intitial);
+        width: env(titlebar-area-width, 100%);
         padding-top: 4px;
         padding-left: 12px;
 
@@ -54,9 +54,9 @@ export class AppHeader extends LitElement {
         z-index: 99999;
 
         backdrop-filter: unset;
-        background: var(--md-sys-color-background);
-        height: calc(env(titlebar-area-height, 33px) - 4px);
+        height: 56px;
         background: transparent;
+        box-sizing: border-box;
       }
 
       #actions {
@@ -217,27 +217,11 @@ export class AppHeader extends LitElement {
           ${
             this.enableBack
               ? html`<md-icon-button
+                  name="arrow-back"
                   @click="${() => this.goBack()}"
                   title=${msg('back')}
                   label=${msg('back')}
-                  size="small"
-                  pill
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="ionicon"
-                    viewBox="0 0 512 512"
-                  >
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="48"
-                      d="M328 112L184 256l144 144"
-                    />
-                  </svg>
-                </md-icon-button>`
+                ></md-icon-button>`
               : html`<img
                   src="/assets/icons/new-icons/icon-48x48.png"
                   alt="App Icon"

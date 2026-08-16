@@ -313,31 +313,31 @@ export class MdToast extends LitElement {
             ? html`
                 <div class="actions">
                   ${
-                  this.actionLabel
-                    ? html`
-                        <button
-                          class="action-button"
-                          @click=${this.handleActionClick}
-                          aria-label=${this.actionLabel}
-                        >
-                          ${this.actionLabel}
-                        </button>
-                      `
-                    : ''
-                }
+                    this.actionLabel
+                      ? html`
+                          <button
+                            class="action-button"
+                            @click=${this.handleActionClick}
+                            aria-label=${this.actionLabel}
+                          >
+                            ${this.actionLabel}
+                          </button>
+                        `
+                      : ''
+                  }
                   ${
-                  this.closable
-                    ? html`
-                        <button
-                          class="close-button"
-                          @click=${this.handleCloseClick}
-                          aria-label="Close"
-                        >
-                          ✕
-                        </button>
-                      `
-                    : ''
-                }
+                    this.closable
+                      ? html`
+                          <button
+                            class="close-button"
+                            @click=${this.handleCloseClick}
+                            aria-label="Close"
+                          >
+                            ✕
+                          </button>
+                        `
+                      : ''
+                  }
                 </div>
               `
             : ''

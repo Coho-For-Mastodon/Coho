@@ -1,6 +1,7 @@
 package place.coho.app
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.util.Log
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
@@ -59,12 +60,29 @@ class SpeechBridge : Plugin() {
         return builder.build()
     }
 
+    private fun isAiCoreInstalled(): Boolean {
+        return try {
+            context.packageManager.getPackageInfo("com.google.android.aicore", 0)
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
     /**
      * Check whether speech recognition is available on this device.
      * Returns { available: boolean, mode: "advanced" | "basic" | "unavailable" }
      */
     @PluginMethod
     fun checkSpeechStatus(call: PluginCall) {
+        if (!isAiCoreInstalled()) {
+            call.resolve(JSObject().apply {
+                put("available", false)
+                put("mode", "unavailable")
+            })
+            return
+        }
+
         scope.launch {
             try {
                 // Try Advanced first
@@ -101,8 +119,8 @@ class SpeechBridge : Plugin() {
                     put("available", false)
                     put("mode", "unavailable")
                 })
-            } catch (e: Exception) {
-                Log.e(TAG, "checkSpeechStatus failed", e)
+            } catch (t: Throwable) {
+                Log.e(TAG, "checkSpeechStatus failed", t)
                 call.resolve(JSObject().apply {
                     put("available", false)
                     put("mode", "unavailable")
@@ -118,6 +136,11 @@ class SpeechBridge : Plugin() {
      */
     @PluginMethod
     fun startSpeechRecognition(call: PluginCall) {
+        if (!isAiCoreInstalled()) {
+            call.reject("Speech recognition is not available on this device")
+            return
+        }
+
         if (getPermissionState("microphone") != PermissionState.GRANTED) {
             requestPermissionForAlias("microphone", call, "micPermissionCallback")
             return
@@ -209,9 +232,9 @@ class SpeechBridge : Plugin() {
 
                 recognizer.close()
                 speechRecognizer = null
-            } catch (e: Exception) {
-                Log.e(TAG, "Speech recognition failed", e)
-                call.reject("Speech recognition failed: ${e.message}")
+            } catch (t: Throwable) {
+                Log.e(TAG, "Speech recognition failed", t)
+                call.reject("Speech recognition failed: ${t.message}")
                 speechRecognizer?.close()
                 speechRecognizer = null
             }
@@ -228,9 +251,9 @@ class SpeechBridge : Plugin() {
             try {
                 speechRecognizer?.stopRecognition()
                 call.resolve(JSObject().apply { put("stopped", true) })
-            } catch (e: Exception) {
-                Log.e(TAG, "stopSpeechRecognition failed", e)
-                call.reject("Failed to stop recognition: ${e.message}")
+            } catch (t: Throwable) {
+                Log.e(TAG, "stopSpeechRecognition failed", t)
+                call.reject("Failed to stop recognition: ${t.message}")
             }
         }
     }

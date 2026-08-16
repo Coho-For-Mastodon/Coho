@@ -121,9 +121,11 @@ public class ShareTargetBridge extends Plugin {
                 fileObj.put("path", destFile.getAbsolutePath());
                 fileObj.put("size", destFile.length());
                 filesArray.put(fileObj);
-            } catch (IOException e) {
-                // Skip files that fail to copy
-                System.err.println("[ShareTargetBridge] Failed to copy shared file: " + e.getMessage());
+            } catch (Exception e) {
+                // Catch Exception instead of just IOException to prevent SecurityException 
+                // or IllegalArgumentException (from malformed intents sent by other apps) 
+                // from crashing our background thread and the entire app.
+                System.err.println("[ShareTargetBridge] Failed to process shared file: " + e.getMessage());
             }
         }
 

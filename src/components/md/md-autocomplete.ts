@@ -376,24 +376,24 @@ export class MdAutocomplete extends LitElement {
                 (option, index) => html`
                   <div
                     class="dropdown-item ${
-                    index === this._highlightedIndex ? 'highlighted' : ''
-                  }"
+                      index === this._highlightedIndex ? 'highlighted' : ''
+                    }"
                     id="${this._listboxId}-opt-${index}"
                     role="option"
                     aria-selected="${
-                    index === this._highlightedIndex ? 'true' : 'false'
-                  }"
+                      index === this._highlightedIndex ? 'true' : 'false'
+                    }"
                     @click="${() => this._selectOption(option)}"
                     @mouseenter="${() => (this._highlightedIndex = index)}"
                   >
                     <div class="item-label">${option.label}</div>
                     ${
-                    option.description
-                      ? html`<div class="item-description">
-                          ${option.description}
-                        </div>`
-                      : null
-                  }
+                      option.description
+                        ? html`<div class="item-description">
+                            ${option.description}
+                          </div>`
+                        : null
+                    }
                   </div>
                 `
               )

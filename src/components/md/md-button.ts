@@ -140,10 +140,13 @@ export class MdButton extends LitElement {
       /* FAB (Floating Action Button) variant */
       button.fab {
         background: var(
-          --md-sys-color-primary,
-          var(--sl-color-primary-600, #6750a4)
+          --md-sys-color-primary-container,
+          var(--md-sys-color-primary, #6750a4)
         );
-        color: var(--md-sys-color-on-primary, #ffffff);
+        color: var(
+          --md-sys-color-on-primary-container,
+          var(--md-sys-color-on-primary, #ffffff)
+        );
         box-shadow:
           0 1px 3px rgba(0, 0, 0, 0.3),
           0 4px 8px 3px rgba(0, 0, 0, 0.15);
@@ -237,6 +240,12 @@ export class MdButton extends LitElement {
     if (this.disabled) {
       e.preventDefault();
       e.stopPropagation();
+      return;
+    }
+    if (this.variant === 'fab') {
+      import('../../utils/haptics')
+        .then((m) => m.hapticSelection())
+        .catch(() => {});
     }
   }
 

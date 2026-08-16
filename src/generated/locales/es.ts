@@ -3,6 +3,9 @@
 
 import { str } from '@lit/localize';
 
+/* eslint-disable no-irregular-whitespace */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export const templates = {
   s02891b5712eb3c40: `Agregar Campo`,
   s0379fc73608ab971: `Hecho`,
