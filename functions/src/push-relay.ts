@@ -445,8 +445,8 @@ export const pushRelayPush = onRequest(
             'FCM token is unregistered/expired; cleaning up registration and returning 410 Gone',
             {
               registrationId,
-              errorCode: fcmError?.code,
-              errorMessage: fcmError?.message,
+              errorCode: err?.code,
+              errorMessage: err?.message,
             }
           );
 

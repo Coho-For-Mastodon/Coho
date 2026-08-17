@@ -199,7 +199,6 @@ customPlugins.push({
         'vendor-idb-keyval',
         'vendor-web-router',
         'firebase',
-        'app-home',
         'api-client',
       ];
       const preloadLinks: string[] = [];
@@ -263,11 +262,10 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,
-    polyfillModulePreload: false,
     assetsDir: 'code',
     cssCodeSplit: true,
     minify: 'terser',
-    modulePreload: { polyfill: false },
+    modulePreload: false,
     target: 'esnext',
     terserOptions: {
       module: true,

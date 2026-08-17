@@ -972,6 +972,50 @@ export class PostComposer extends LitElement {
     this.sensitive = !this.sensitive;
   }
 
+  // Poll helpers
+
+  _togglePoll() {
+    this.pollController.toggle();
+  }
+
+  _setPollOption(index: number, value: string) {
+    this.pollController.setOption(index, value);
+  }
+
+  _addPollOption() {
+    this.pollController.addOption();
+  }
+
+  _removePollOption(index: number) {
+    this.pollController.removeOption(index);
+  }
+
+  _getPollPayload() {
+    return this.pollController.getPayload();
+  }
+
+  // Schedule helpers
+
+  _toggleSchedule() {
+    this.scheduleController.toggle();
+  }
+
+  _openScheduledStatuses() {
+    this.scheduleController.openScheduledStatuses();
+  }
+
+  _setScheduleDate(value: string) {
+    this.scheduleController.setDate(value);
+  }
+
+  _setScheduleTime(value: string) {
+    this.scheduleController.setTime(value);
+  }
+
+  _resolveScheduledAtForSubmission(): string | null {
+    return this.scheduleController.resolveScheduledAtForSubmission();
+  }
+
   // Submit / Publish
 
   private async _handleSubmit() {
