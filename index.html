@@ -23,8 +23,28 @@
     <script>
       (function () {
         var c = localStorage.getItem('coho-theme-color');
-        if (c) {
-          var s = document.documentElement.style;
+        var s = document.documentElement.style;
+        if (c === 'device') {
+          try {
+            var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var schemeStr = localStorage.getItem(isDark ? 'coho-device-scheme-dark' : 'coho-device-scheme-light');
+            if (schemeStr) {
+              var scheme = JSON.parse(schemeStr);
+              for (var k in scheme) {
+                if (scheme[k]) {
+                  var cssKey = '--md-sys-color-' + k.replace(/([A-Z])/g, '-$1').toLowerCase();
+                  s.setProperty(cssKey, scheme[k]);
+                }
+              }
+              if (scheme.primary) {
+                s.setProperty('--sl-color-primary-600', scheme.primary);
+                s.setProperty('--sl-color-primary-500', scheme.primaryContainer || scheme.primary);
+                s.setProperty('--sl-color-primary-700', scheme.onPrimaryContainer || scheme.primary);
+                s.setProperty('--primary-color', scheme.primary);
+              }
+            }
+          } catch (e) {}
+        } else if (c) {
           s.setProperty('--sl-color-primary-600', c);
           s.setProperty('--sl-color-primary-500', c);
           s.setProperty('--sl-color-primary-700', c);

@@ -7,8 +7,8 @@ import { initPerfObserver, perfMark, perfMeasure } from './utils/perf-observer';
 // Initialize localization (must be imported early)
 import './config/localization.js';
 
-import { applyThemeColor } from './utils/theme-color.js';
-import { getAndroidDynamicColor } from './utils/dynamic-theme.js';
+import { applyThemeColor, applyDynamicPalette } from './utils/theme-color.js';
+import { getAndroidDynamicPalette } from './utils/dynamic-theme.js';
 
 /** Lightweight native-platform check that avoids importing @capacitor/core on web. */
 function isCapacitorNative(): boolean {
@@ -194,12 +194,14 @@ export class AppIndex extends LitElement {
       const settings = await getSettings();
 
       const potentialColor = settings.primary_color;
-      const deviceColor = await getAndroidDynamicColor();
+      const devicePalette = await getAndroidDynamicPalette();
 
       if (!potentialColor || potentialColor === 'device') {
-        if (deviceColor) {
-          localStorage.setItem('coho-theme-color', deviceColor);
-          applyThemeColor(deviceColor);
+        if (devicePalette?.supported && devicePalette.schemes) {
+          applyDynamicPalette(devicePalette);
+        } else if (devicePalette?.accentColor) {
+          localStorage.setItem('coho-theme-color', devicePalette.accentColor);
+          applyThemeColor(devicePalette.accentColor);
         } else {
           // get css variable color fallback
           const color =
