@@ -19,6 +19,11 @@ export class PostDialog extends LitElement {
   @state() isMobile: boolean = false;
   @state() private dialogMode: 'new' | 'reply' | 'quote' | 'edit' = 'new';
 
+  @state() private composerCanPublish: boolean = false;
+  @state() private composerIsPublishing: boolean = false;
+  @state() private composerPublishSuccess: boolean = false;
+  @state() private composerPrimaryLabel: string = 'Publish';
+
   @query('#notify-dialog') private notifyDialog!: MdDialog;
   @query('post-composer') private composer!: PostComposer;
 
@@ -172,6 +177,10 @@ export class PostDialog extends LitElement {
       this.composer.reset();
     }
     this.dialogMode = 'new';
+    this.composerCanPublish = false;
+    this.composerIsPublishing = false;
+    this.composerPublishSuccess = false;
+    this.composerPrimaryLabel = 'Publish';
   }
 
   private get dialogLabel() {
@@ -208,7 +217,38 @@ export class PostDialog extends LitElement {
     );
   }
 
+  private _handleComposerState(e: CustomEvent) {
+    this.composerCanPublish = e.detail.canPublish;
+    this.composerIsPublishing = e.detail.isPublishing;
+    this.composerPublishSuccess = e.detail.publishSuccess;
+    this.composerPrimaryLabel = e.detail.primaryLabel;
+  }
+
+  private _submitComposer() {
+    if (this.composer) {
+      this.composer.submit();
+    }
+  }
+
   render() {
+    const publishButtonLabel = this.composerPublishSuccess
+      ? html`<span
+          class="publish-label"
+          style="display: flex; align-items: center; gap: 6px;"
+          ><span class="publish-success-icon">✓</span> ${msg('Posted!')}</span
+        >`
+      : this.composerIsPublishing
+        ? html`<span
+            class="publish-label"
+            style="display: flex; align-items: center; gap: 6px;"
+            ><span
+              class="publish-spinner"
+              style="width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"
+            ></span>
+            ${msg('Publishing...')}</span
+          >`
+        : this.composerPrimaryLabel;
+
     return html`
       <md-dialog
         id="notify-dialog"
@@ -217,12 +257,28 @@ export class PostDialog extends LitElement {
         ?no-backdrop-close=${this.isMobile}
         @close=${this._handleDialogClose}
       >
+        ${
+          this.isMobile
+            ? html`
+                <md-button
+                  slot="header-actions"
+                  ?disabled=${!this.composerCanPublish}
+                  pill
+                  variant="filled"
+                  @click=${this._submitComposer}
+                >
+                  ${publishButtonLabel}
+                </md-button>
+              `
+            : ''
+        }
         <post-composer
           dialog-mode
           @published=${this._handlePublished}
           @draft-saved=${this._handleDraftSaved}
           @open-scheduled-statuses=${(event: Event) =>
             this._handleOpenScheduledStatuses(event)}
+          @composer-state-changed=${this._handleComposerState}
           .rows=${this.composerRows}
         ></post-composer>
       </md-dialog>

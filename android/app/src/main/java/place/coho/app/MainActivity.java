@@ -24,6 +24,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(AiBridge.class);
         registerPlugin(SpeechBridge.class);
         registerPlugin(WearSyncBridge.class);
+        registerPlugin(RichHapticsBridge.class);
         super.onCreate(savedInstanceState);
 
         // Enable edge-to-edge rendering for modern Material 3 system bars

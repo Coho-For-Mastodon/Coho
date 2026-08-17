@@ -13,7 +13,8 @@ export class MdTextArea extends LitElement {
   @property({ type: String }) placeholder = '';
   @property({ type: Boolean }) disabled = false;
   @property({ type: Boolean }) autofocus = false;
-  @property({ type: String }) variant: 'filled' | 'outlined' = 'filled';
+  @property({ type: String }) variant: 'filled' | 'outlined' | 'borderless' =
+    'filled';
   @property({ type: Number }) rows = 4;
   @property({ type: Number }) maxlength?: number;
   @property({ type: Boolean, attribute: 'hide-counter' }) hideCounter = false;
@@ -113,6 +114,26 @@ export class MdTextArea extends LitElement {
         border-color: var(--md-sys-color-primary, #6750a4);
         border-width: 2px;
         background-color: transparent;
+      }
+
+      /* Borderless variant */
+      textarea.borderless {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+      }
+
+      textarea.borderless:hover:not(:disabled) {
+        background-color: transparent;
+      }
+
+      textarea.borderless:focus {
+        background-color: transparent;
+        border: none;
+      }
+
+      textarea.borderless:focus-visible {
+        outline: none;
       }
 
       /* Dark mode support */
@@ -233,12 +254,12 @@ export class MdTextArea extends LitElement {
       <div class="text-area-container" part="container">
         <textarea
           part="textarea"
+          class="${this.variant}"
           .value="${this.value}"
           placeholder="${this.placeholder}"
           ?disabled="${this.disabled}"
           rows="${this.rows}"
           maxlength="${this.maxlength || ''}"
-          class="${this.variant}"
           @input="${this._handleInput}"
           @change="${this._handleChange}"
         ></textarea>

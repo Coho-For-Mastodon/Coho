@@ -266,7 +266,7 @@ export class MdSegment extends LitElement {
   private _handleClick() {
     if (this.disabled) return;
     import('../../utils/haptics')
-      .then((m) => m.hapticSelection())
+      .then((m) => m.hapticSegmentTick())
       .catch(() => {});
 
     this.dispatchEvent(

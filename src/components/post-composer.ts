@@ -38,6 +38,7 @@ import { PostComposerVoiceController } from './post-composer/voice-controller';
 import { PostComposerPollController } from './post-composer/poll-controller';
 import { PostComposerScheduleController } from './post-composer/schedule-controller';
 
+import { getActiveAccount } from '../services/auth-session';
 import { getInstanceInfo } from '../services/account';
 import {
   proofread,
@@ -164,6 +165,8 @@ export class PostComposer extends LitElement {
   // Instance media limits (fetched in firstUpdated)
   @state() imageSizeLimit: number = 10 * 1024 * 1024; // 10 MB default
   @state() videoSizeLimit: number = 40 * 1024 * 1024; // 40 MB default
+
+  @state() avatarUrl: string | null = null;
 
   // Mention picker state
   @state() mentionOpen: boolean = false;
@@ -361,6 +364,11 @@ export class PostComposer extends LitElement {
       }
     }
 
+    const account = getActiveAccount();
+    if (account) {
+      this.avatarUrl = account.avatar;
+    }
+
     // Check if AI & Voice features are available
     this.proofreaderAvailable = await isProofreaderAvailable();
     this.handwritingAvailable = await isHandwritingRecognitionAvailable();
@@ -407,6 +415,29 @@ export class PostComposer extends LitElement {
     if (changedProperties.has('editingPost') && this.editingPost) {
       this._initEditMode();
     }
+
+    this.dispatchEvent(
+      new CustomEvent('composer-state-changed', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          canPublish: !(
+            (!this.hasStatus && !this.publishSuccess) ||
+            this.attaching ||
+            this.attachments.some((a) => a.pending) ||
+            this.isPublishing ||
+            this.publishSuccess
+          ),
+          isPublishing: this.isPublishing,
+          publishSuccess: this.publishSuccess,
+          primaryLabel: this.replyTo
+            ? 'Reply'
+            : this.scheduleEnabled
+              ? 'Schedule'
+              : 'Publish',
+        },
+      })
+    );
   }
 
   disconnectedCallback() {
@@ -463,6 +494,13 @@ export class PostComposer extends LitElement {
    */
   reset() {
     this._resetState();
+  }
+
+  /**
+   * Submit the composer programmatically.
+   */
+  public submit() {
+    this._handleSubmit();
   }
 
   /**
@@ -1202,6 +1240,7 @@ export class PostComposer extends LitElement {
     return html`
       <div class="text-area-wrapper ${this.draftLoaded ? 'draft-loaded' : ''}">
         <md-text-area
+          variant="borderless"
           @change="${(e: Event) => this._handleStatusChange(e)}"
           @input="${(e: Event) => this._handleStatusChange(e)}"
           @focusout="${() => this.mentionController.close()}"
@@ -1495,6 +1534,7 @@ export class PostComposer extends LitElement {
             pill
             variant="filled"
             @click="${() => this._handleSubmit()}"
+            style="${this.dialogMode && window.matchMedia('(max-width: 820px)').matches ? 'display: none;' : ''}"
           >
             ${publishButtonLabel}
           </md-button>
@@ -1519,12 +1559,24 @@ export class PostComposer extends LitElement {
 
   render() {
     return html`
-      <div class="composer-wrapper">
+      <div class="composer-wrapper" @dragenter=${this._handleDragOver}>
         ${this._renderReplyIndicator()} ${this._renderQuoteIndicator()}
-        ${this._renderTextArea()} ${this._renderQuotePreview()}
-        ${this._renderActions()} ${this._renderSensitiveWarning()}
+        <div class="composer-main-content">
+          ${
+            this.avatarUrl && !this.hideActions
+              ? html`<img
+                  class="author-avatar"
+                  src="${this.avatarUrl}"
+                  alt="Author avatar"
+                />`
+              : nothing
+          }
+          ${this._renderTextArea()}
+        </div>
+        ${this._renderQuotePreview()} ${this._renderSensitiveWarning()}
         ${this._renderPoll()} ${this._renderSchedule()}
-        ${this._renderAttachments()} ${this._renderFooter()}
+        ${this._renderAttachments()} ${this._renderActions()}
+        ${this._renderFooter()}
       </div>
 
       ${this._renderDraftPickerDialog()}

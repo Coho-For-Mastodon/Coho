@@ -89,6 +89,7 @@ export class PostComposerAttachmentManager {
       mediaType === 'video' ? state.videoSizeLimit : state.imageSizeLimit;
 
     if (file.size > sizeLimit) {
+      import('../../utils/haptics').then(({ hapticReject }) => hapticReject());
       showErrorToast(
         msg(
           str`File exceeds the server limit of ${this.formatBytes(sizeLimit)}.`
@@ -96,6 +97,8 @@ export class PostComposerAttachmentManager {
       );
       return;
     }
+
+    import('../../utils/haptics').then(({ hapticConfirm }) => hapticConfirm());
 
     const tempId = `temp-${Date.now()}-${Math.random()}`;
     const previewUrl = URL.createObjectURL(file);

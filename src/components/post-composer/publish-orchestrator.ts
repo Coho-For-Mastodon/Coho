@@ -220,6 +220,7 @@ export class PostComposerPublishOrchestrator {
         return;
       }
 
+      import('../../utils/haptics').then(({ hapticReject }) => hapticReject());
       this.finishWorker(worker, { isPublishing: false });
       return;
     }
@@ -235,8 +236,8 @@ export class PostComposerPublishOrchestrator {
 
     this.finishWorker(worker, { isPublishing: false, publishSuccess: true });
 
-    void import('../../utils/haptics').then(({ hapticNotification }) =>
-      hapticNotification('success')
+    void import('../../utils/haptics').then(({ hapticConfirm }) =>
+      hapticConfirm()
     );
 
     if (this.publishSuccessTimer) {

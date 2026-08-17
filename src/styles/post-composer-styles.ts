@@ -15,8 +15,26 @@ export const postComposerStyles = [
       gap: 8px;
     }
 
+    .composer-main-content {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .author-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--md-sys-shape-corner-full, 50%);
+      object-fit: cover;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
     .text-area-wrapper {
       position: relative;
+      flex: 1;
+      min-width: 0;
       anchor-name: --composer-text-area;
     }
 

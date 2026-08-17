@@ -118,7 +118,26 @@ export class UserProfile extends LitElement {
     `,
   ];
 
-  async openUser() {
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener('click', this._handleHostClick);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener('click', this._handleHostClick);
+  }
+
+  private _handleHostClick = (event: Event) => {
+    event.stopPropagation();
+  };
+
+  async openUser(event?: Event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     // Set viewTransitionName for cross-document view transition
     // @ts-expect-error - viewTransitionName not yet in CSSStyleDeclaration types
     this.shadowRoot!.querySelector('.headerBlock')!.viewTransitionName =
@@ -145,13 +164,13 @@ export class UserProfile extends LitElement {
   render() {
     return html`
       <button
-        @click="${() => this.openUser()}"
+        type="button"
+        @click="${(e: Event) => this.openUser(e)}"
         class=${classMap({
           small: this.small === true,
           headerBlock: true,
           boosted: this.boosted,
         })}
-        slot="header"
         style="background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; width: 100%;"
       >
         <img
