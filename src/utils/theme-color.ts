@@ -7,6 +7,11 @@ import {
   applyTheme,
   argbFromHex,
 } from '@material/material-color-utilities';
+import {
+  DynamicThemePalette,
+  M3ColorScheme,
+  getAndroidDynamicPalette,
+} from './dynamic-theme.js';
 
 /**
  * Parse any color format (hex, rgb, rgba) to RGB components
@@ -116,35 +121,160 @@ export function updateThemeMetaTags(primaryColor: string): void {
   }
 }
 
+/**
+ * Update theme-color meta tags directly from native M3 scheme surfaces
+ */
+export function updateThemeMetaTagsFromScheme(
+  lightScheme: M3ColorScheme,
+  darkScheme: M3ColorScheme
+): void {
+  const darkMeta = document.querySelector(
+    'meta[name="theme-color"][media="(prefers-color-scheme: dark)"]'
+  );
+  const lightMeta = document.querySelector(
+    'meta[name="theme-color"][media="(prefers-color-scheme: light)"]'
+  );
+
+  if (darkMeta && darkScheme.background) {
+    darkMeta.setAttribute('content', darkScheme.background);
+  }
+  if (lightMeta && lightScheme.background) {
+    lightMeta.setAttribute('content', lightScheme.background);
+  }
+}
+
 let currentColor = '#5171a5';
+let activeDynamicPalette: DynamicThemePalette | null = null;
 let themeListenerAdded = false;
 
 /**
+ * Apply scheme CSS custom properties directly to document root
+ */
+export function applySchemeTokens(
+  scheme: M3ColorScheme,
+  root: HTMLElement = document.documentElement
+): void {
+  for (const [key, value] of Object.entries(scheme)) {
+    if (!value) continue;
+    const cssKey =
+      '--md-sys-color-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+    root.style.setProperty(cssKey, value);
+  }
+
+  if (scheme.primary) {
+    root.style.setProperty('--sl-color-primary-600', scheme.primary);
+    root.style.setProperty('--primary-color', scheme.primary);
+    document.body.style.setProperty('--sl-color-primary-600', scheme.primary);
+  }
+  if (scheme.primaryContainer) {
+    root.style.setProperty('--sl-color-primary-500', scheme.primaryContainer);
+  }
+  if (scheme.onPrimaryContainer) {
+    root.style.setProperty('--sl-color-primary-700', scheme.onPrimaryContainer);
+  }
+}
+
+/**
+ * Apply a full native Android Material You dynamic palette
+ */
+export function applyDynamicPalette(
+  palette: DynamicThemePalette,
+  options: { updateMetaTags?: boolean } = {}
+): void {
+  if (!palette.supported || !palette.schemes) {
+    if (palette.accentColor) {
+      applyThemeColor(palette.accentColor, options);
+    }
+    return;
+  }
+
+  activeDynamicPalette = palette;
+  currentColor = 'device';
+  const { updateMetaTags = true } = options;
+
+  // Persist schemes for instant startup restoration in index.html
+  try {
+    localStorage.setItem('coho-theme-color', 'device');
+    localStorage.setItem(
+      'coho-device-scheme-light',
+      JSON.stringify(palette.schemes.light)
+    );
+    localStorage.setItem(
+      'coho-device-scheme-dark',
+      JSON.stringify(palette.schemes.dark)
+    );
+    if (palette.accentColor) {
+      localStorage.setItem('coho-device-accent-color', palette.accentColor);
+    }
+  } catch {
+    // LocalStorage quota or privacy mode
+  }
+
+  // Setup listener for dark mode changes if not already set
+  ensureThemeListener();
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const activeScheme = isDark ? palette.schemes.dark : palette.schemes.light;
+
+  applySchemeTokens(activeScheme);
+
+  if (updateMetaTags) {
+    updateThemeMetaTagsFromScheme(palette.schemes.light, palette.schemes.dark);
+  }
+}
+
+function ensureThemeListener(): void {
+  if (themeListenerAdded) return;
+  themeListenerAdded = true;
+
+  window
+    .matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', () => {
+      if (currentColor === 'device' && activeDynamicPalette) {
+        applyDynamicPalette(activeDynamicPalette, { updateMetaTags: true });
+      } else if (currentColor !== 'device') {
+        applyThemeColor(currentColor, {
+          updateMetaTags: true,
+          useIdleCallback: false,
+        });
+      }
+    });
+}
+
+/**
  * Apply theme color to both Shoelace and MD3 design tokens
- * @param color Primary color in hex format
+ * @param color Primary color in hex format or 'device'
  * @param options Options for applying the theme
  */
 export function applyThemeColor(
   color: string,
   options: { updateMetaTags?: boolean; useIdleCallback?: boolean } = {}
 ): void {
+  if (color === 'device') {
+    if (activeDynamicPalette) {
+      applyDynamicPalette(activeDynamicPalette, options);
+      return;
+    }
+
+    getAndroidDynamicPalette().then((palette) => {
+      if (palette?.supported && palette.schemes) {
+        applyDynamicPalette(palette, options);
+      } else {
+        // Fallback to default
+        applyThemeColor('#5171a5', options);
+      }
+    });
+    return;
+  }
+
+  activeDynamicPalette = null;
   currentColor = color;
   const { updateMetaTags = true, useIdleCallback = false } = options;
 
   const root = document.documentElement;
 
   // Setup listener for dark mode changes if not already set
-  if (!themeListenerAdded) {
-    window
-      .matchMedia('(prefers-color-scheme: dark)')
-      .addEventListener('change', () => {
-        applyThemeColor(currentColor, {
-          updateMetaTags: true,
-          useIdleCallback: false,
-        });
-      });
-    themeListenerAdded = true;
-  }
+  ensureThemeListener();
 
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 

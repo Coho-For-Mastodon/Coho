@@ -5,8 +5,12 @@ import './md/md-button.js';
 import './md/md-icon.js';
 
 import { getSettings, setSettings, Settings } from '../services/settings';
-import { applyThemeColor } from '../utils/theme-color';
-import { getAndroidDynamicColor } from '../utils/dynamic-theme';
+import { applyThemeColor, applyDynamicPalette } from '../utils/theme-color';
+import {
+  getAndroidDynamicPalette,
+  getAndroidDynamicColor,
+  DynamicThemePalette,
+} from '../utils/dynamic-theme';
 
 @customElement('app-theme')
 export class AppTheme extends LitElement {
@@ -140,16 +144,23 @@ export class AppTheme extends LitElement {
     `,
   ];
 
+  device_palette: DynamicThemePalette | null = null;
+
   async connectedCallback(): Promise<void> {
     super.connectedCallback();
 
     this.settings = await getSettings();
 
-    this.device_color = await getAndroidDynamicColor();
+    this.device_palette = await getAndroidDynamicPalette();
+    this.device_color =
+      this.device_palette?.accentColor || (await getAndroidDynamicColor());
     const potentialColor = this.settings.primary_color;
 
     if (!potentialColor || potentialColor === 'device') {
-      if (this.device_color) {
+      if (this.device_palette?.supported && this.device_palette.schemes) {
+        this.primary_color = this.device_color || '#5171a5';
+        applyDynamicPalette(this.device_palette);
+      } else if (this.device_color) {
         this.primary_color = this.device_color;
         applyThemeColor(this.device_color);
       } else {
@@ -182,9 +193,12 @@ export class AppTheme extends LitElement {
     }
   }
 
-  chooseColor(color: string) {
+  async chooseColor(color: string) {
     if (color === 'device') {
-      if (this.device_color) {
+      if (this.device_palette?.supported && this.device_palette.schemes) {
+        this.primary_color = this.device_color || '#5171a5';
+        applyDynamicPalette(this.device_palette);
+      } else if (this.device_color) {
         this.primary_color = this.device_color;
         localStorage.setItem('coho-theme-color', this.device_color);
         applyThemeColor(this.device_color);

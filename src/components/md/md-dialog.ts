@@ -11,12 +11,17 @@ export class MdDialog extends LitElement {
   @property({ type: String }) label = '';
   @property({ type: Boolean }) open = false;
   @property({ type: Boolean }) fullscreen = false;
+  @property({ type: Boolean }) sheet = false;
   @property({ type: Boolean, attribute: 'no-backdrop-close' }) noBackdropClose =
     false;
 
   @query('dialog') dialog!: HTMLDialogElement;
 
   private openOrigin: { x: number; y: number } | null = null;
+  private _dragStartY: number = 0;
+  private _currentDragY: number = 0;
+  private _dragStartTime: number = 0;
+  private _isDragging: boolean = false;
 
   static styles = [
     mdSharedStyles,
@@ -55,6 +60,22 @@ export class MdDialog extends LitElement {
         border-radius: var(--md-sys-shape-corner-none);
       }
 
+      dialog.sheet {
+        margin-bottom: 0;
+        margin-top: auto;
+        border-radius: var(--md-sys-shape-corner-extra-large)
+          var(--md-sys-shape-corner-extra-large) 0 0;
+        max-width: 100vw;
+        width: 100vw;
+        max-height: calc(100vh - 48px);
+        transform-origin: bottom center;
+        transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+      }
+
+      dialog.sheet.dragging {
+        transition: none;
+      }
+
       dialog::backdrop {
         background-color: rgba(0, 0, 0, 0.32);
         backdrop-filter: blur(4px);
@@ -67,6 +88,21 @@ export class MdDialog extends LitElement {
         padding: 24px 24px 16px 24px;
         gap: 16px;
         flex-shrink: 0;
+        position: relative;
+      }
+
+      .drag-handle {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 32px;
+        height: 4px;
+        border-radius: 2px;
+        background-color: var(
+          --md-sys-color-outline-variant,
+          rgba(0, 0, 0, 0.2)
+        );
       }
 
       .dialog-title {
@@ -212,6 +248,41 @@ export class MdDialog extends LitElement {
         }
       }
 
+      @keyframes sheet-show {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes sheet-hide {
+        from {
+          transform: translateY(var(--md-sheet-drag-offset, 0));
+        }
+        to {
+          transform: translateY(100%);
+        }
+      }
+
+      dialog.sheet[open] {
+        animation: sheet-show 0.3s cubic-bezier(0.2, 0, 0, 1);
+      }
+
+      dialog.sheet.closing {
+        animation: sheet-hide 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+        transition: none;
+      }
+
+      dialog.sheet {
+        transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+      }
+
+      dialog.sheet.dragging {
+        transition: none;
+      }
+
       @keyframes backdrop-show {
         from {
           opacity: 0;
@@ -235,16 +306,22 @@ export class MdDialog extends LitElement {
   private _titleId = `md-dialog-title-${Math.random().toString(36).slice(2, 9)}`;
 
   render() {
+    const classes = [];
+    if (this.fullscreen) classes.push('fullscreen');
+    if (this.sheet) classes.push('sheet');
+    if (this._isDragging) classes.push('dragging');
+
     return html`
       <dialog
         part="dialog"
-        class="${this.fullscreen ? 'fullscreen' : ''}"
+        class="${classes.join(' ')}"
         aria-labelledby="${this._titleId}"
         @close="${this._handleClose}"
         @cancel="${this._handleCancel}"
         @click="${this._handleBackdropClick}"
       >
-        <div class="dialog-header">
+        <div class="dialog-header" @touchstart="${this._handleTouchStart}">
+          ${this.sheet ? html`<div class="drag-handle"></div>` : ''}
           <h2 class="dialog-title" id="${this._titleId}">${this.label}</h2>
           <slot name="header-actions"></slot>
           <button
@@ -377,6 +454,65 @@ export class MdDialog extends LitElement {
 
   private _hasFooterSlot(): boolean {
     return this.querySelector('[slot="footer"]') !== null;
+  }
+
+  private _boundHandleTouchMove = this._handleTouchMove.bind(this);
+  private _boundHandleTouchEnd = this._handleTouchEnd.bind(this);
+
+  private _handleTouchStart(e: TouchEvent) {
+    if (!this.sheet) return;
+    this._dragStartY = e.touches[0].clientY;
+    this._dragStartTime = performance.now();
+    this._currentDragY = 0;
+    this._isDragging = true;
+    this.dialog?.classList.add('dragging');
+    window.addEventListener('touchmove', this._boundHandleTouchMove, {
+      passive: false,
+    });
+    window.addEventListener('touchend', this._boundHandleTouchEnd);
+    window.addEventListener('touchcancel', this._boundHandleTouchEnd);
+    this.requestUpdate();
+  }
+
+  private _handleTouchMove(e: TouchEvent) {
+    if (!this.sheet || !this._isDragging) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - this._dragStartY;
+
+    // Only allow dragging downwards
+    if (deltaY > 0) {
+      this._currentDragY = deltaY;
+      this.dialog.style.transform = `translateY(${deltaY}px)`;
+      e.preventDefault(); // Prevent page scroll
+    }
+  }
+
+  private _handleTouchEnd() {
+    window.removeEventListener('touchmove', this._boundHandleTouchMove);
+    window.removeEventListener('touchend', this._boundHandleTouchEnd);
+    window.removeEventListener('touchcancel', this._boundHandleTouchEnd);
+
+    if (!this.sheet || !this._isDragging) return;
+    this._isDragging = false;
+    this.dialog?.classList.remove('dragging');
+
+    const dragDuration = performance.now() - this._dragStartTime;
+    const velocity = this._currentDragY / Math.max(dragDuration, 1);
+    const dismissThreshold = 50; // pixels
+
+    if (this._currentDragY > dismissThreshold || velocity > 0.4) {
+      this.dialog.style.setProperty(
+        '--md-sheet-drag-offset',
+        `${this._currentDragY}px`
+      );
+      this.dialog.style.transform = '';
+      this.hide();
+    } else {
+      // Snap back
+      this.dialog.style.transform = '';
+      this._currentDragY = 0;
+    }
+    this.requestUpdate();
   }
 }
 

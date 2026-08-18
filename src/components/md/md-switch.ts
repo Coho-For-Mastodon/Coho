@@ -114,7 +114,7 @@ export class MdSwitch extends LitElement {
     if (this.disabled) return;
     this.checked = !this.checked;
     import('../../utils/haptics')
-      .then((m) => m.hapticSelection())
+      .then((m) => m.hapticToggle(this.checked))
       .catch(() => {});
     this._emitChange(e);
   }
@@ -125,7 +125,7 @@ export class MdSwitch extends LitElement {
       e.preventDefault();
       this.checked = !this.checked;
       import('../../utils/haptics')
-        .then((m) => m.hapticSelection())
+        .then((m) => m.hapticToggle(this.checked))
         .catch(() => {});
       this._emitChange(e);
     }

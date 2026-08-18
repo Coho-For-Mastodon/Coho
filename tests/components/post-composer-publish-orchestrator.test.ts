@@ -27,7 +27,8 @@ const hoisted = vi.hoisted(() => {
     showInfoToast: vi.fn(),
     perfMark: vi.fn(),
     perfMeasure: vi.fn(),
-    hapticNotification: vi.fn(),
+    hapticConfirm: vi.fn(),
+    hapticReject: vi.fn(),
     MarkdownWorker: vi.fn(MarkdownWorker),
     workerInstances,
   };
@@ -50,7 +51,8 @@ vi.mock('../../src/utils/perf-observer', () => ({
 }));
 
 vi.mock('../../src/utils/haptics', () => ({
-  hapticNotification: hoisted.hapticNotification,
+  hapticConfirm: hoisted.hapticConfirm,
+  hapticReject: hoisted.hapticReject,
 }));
 
 vi.mock('../../src/utils/markdown-worker?worker', () => ({
@@ -137,7 +139,8 @@ describe('PostComposerPublishOrchestrator', () => {
     hoisted.showInfoToast.mockReset();
     hoisted.perfMark.mockReset();
     hoisted.perfMeasure.mockReset();
-    hoisted.hapticNotification.mockReset();
+    hoisted.hapticConfirm.mockReset();
+    hoisted.hapticReject.mockReset();
     hoisted.MarkdownWorker.mockClear();
     hoisted.workerInstances.length = 0;
     vi.stubGlobal('navigator', { onLine: true });
@@ -221,7 +224,7 @@ describe('PostComposerPublishOrchestrator', () => {
     );
     expect(host.getState().isPublishing).toBe(false);
     expect(host.getState().publishSuccess).toBe(true);
-    expect(hoisted.hapticNotification).toHaveBeenCalledWith('success');
+    expect(hoisted.hapticConfirm).toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(600);
 
@@ -231,6 +234,19 @@ describe('PostComposerPublishOrchestrator', () => {
       scheduledAt: null,
       edited: false,
     });
+    expect(host.getState().publishSuccess).toBe(false);
+  });
+
+  it('triggers hapticReject when publishing fails while online', async () => {
+    hoisted.publishPost.mockRejectedValue(new Error('Network error'));
+    const host = createHost();
+
+    await host.orchestrator.submit();
+    await flushPromises();
+    await vi.dynamicImportSettled();
+
+    expect(hoisted.hapticReject).toHaveBeenCalled();
+    expect(host.getState().isPublishing).toBe(false);
     expect(host.getState().publishSuccess).toBe(false);
   });
 

@@ -73,22 +73,28 @@ export async function toggleStatusAction(options: ToggleOptions) {
     return;
   }
 
-  import('./haptics').then(({ hapticImpact }) => hapticImpact('light'));
-
   if (isActive) {
-    // UNDO
+    // UNDO: subtle toggle off tick
+    import('./haptics').then(({ hapticToggle }) => hapticToggle(false));
     await withOptimisticUpdate(
       () => onOptimisticUpdate(false),
       undoApiCall,
-      onRollback,
+      () => {
+        import('./haptics').then(({ hapticReject }) => hapticReject());
+        onRollback();
+      },
       { errorMessage: errorMessageUndo }
     );
   } else {
-    // DO
+    // DO: crisp confirmation pop
+    import('./haptics').then(({ hapticConfirm }) => hapticConfirm());
     await withOptimisticUpdate(
       () => onOptimisticUpdate(true),
       doApiCall,
-      onRollback,
+      () => {
+        import('./haptics').then(({ hapticReject }) => hapticReject());
+        onRollback();
+      },
       { errorMessage: errorMessageDo }
     );
   }
@@ -107,9 +113,17 @@ export async function performOneWayAction(
     return;
   }
 
-  import('./haptics').then(({ hapticImpact }) => hapticImpact('light'));
+  import('./haptics').then(({ hapticConfirm }) => hapticConfirm());
 
-  await withOptimisticUpdate(onOptimisticUpdate, apiCall, onRollback, {
-    errorMessage,
-  });
+  await withOptimisticUpdate(
+    onOptimisticUpdate,
+    apiCall,
+    () => {
+      import('./haptics').then(({ hapticReject }) => hapticReject());
+      onRollback();
+    },
+    {
+      errorMessage,
+    }
+  );
 }

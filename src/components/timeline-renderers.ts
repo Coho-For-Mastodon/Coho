@@ -486,7 +486,7 @@ function renderPostDropdown(
   shareTarget: Post | null = post
 ): TemplateResult {
   return html`
-    <div class="actions-right">
+    <div class="actions-right" @click="${(e: Event) => e.stopPropagation()}">
       <md-dropdown placement="bottom-end" close-on-scroll>
         <md-icon-button
           slot="trigger"
@@ -873,7 +873,6 @@ export function renderRegularTweet(
         <user-profile .account="${state.tweet?.account}"></user-profile>
         ${renderPostDropdown(state.tweet!, state, handlers)}
       </div>
-      </div>
 
       <div
         @click="${(e: Event) =>
@@ -896,7 +895,6 @@ export function renderRegularTweet(
             </button>`
           : null
       }
-
       ${renderPostMediaContent({
         post: state.tweet!,
         handlers,
