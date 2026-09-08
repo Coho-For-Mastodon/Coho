@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
+import { localized, msg } from '@lit/localize';
 import { Post } from '../interfaces/Post';
 
 import './md/md-icon';
@@ -10,6 +11,7 @@ import '../pages/post-detail';
  * Fullscreen dialog for displaying post details.
  * Integrates with browser history so the back button closes the dialog.
  */
+@localized()
 @customElement('post-detail-dialog')
 export class PostDetailDialog extends LitElement {
   @property({ type: Object }) post: Post | null = null;
@@ -312,20 +314,11 @@ export class PostDetailDialog extends LitElement {
         <div class="dialog-header">
           <md-icon-button
             class="back-button"
+            name="arrow-back"
             @click="${() => this.close()}"
-            title="Close"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="48"
-                d="M328 112L184 256l144 144"
-              />
-            </svg>
-          </md-icon-button>
+            title=${msg('back')}
+            label=${msg('back')}
+          ></md-icon-button>
           <md-icon-button
             class="close-button"
             @click="${() => this.close()}"

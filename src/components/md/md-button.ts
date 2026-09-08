@@ -57,7 +57,8 @@ export class MdButton extends LitElement {
       }
 
       button:focus-visible {
-        outline: 2px solid var(--md-sys-color-primary, #6750a4);
+        outline: 2px solid
+          var(--md-sys-color-primary, var(--sl-color-primary-600, #6750a4));
         outline-offset: 2px;
       }
 
@@ -93,7 +94,10 @@ export class MdButton extends LitElement {
 
       /* Filled variant (default) */
       button.filled {
-        background: var(--md-sys-color-primary, #6750a4);
+        background: var(
+          --md-sys-color-primary,
+          var(--sl-color-primary-600, #6750a4)
+        );
         color: var(--md-sys-color-on-primary, #ffffff);
         box-shadow:
           0 1px 2px rgba(0, 0, 0, 0.3),
@@ -117,7 +121,10 @@ export class MdButton extends LitElement {
       /* Outlined variant */
       button.outlined {
         background: transparent;
-        color: var(--md-sys-color-primary, #6750a4);
+        color: var(
+          --md-sys-color-primary,
+          var(--sl-color-primary-600, #6750a4)
+        );
         border: 1px solid var(--md-sys-color-outline, #79747e);
       }
 
@@ -128,7 +135,10 @@ export class MdButton extends LitElement {
       /* Text variant */
       button.text {
         background: transparent;
-        color: var(--md-sys-color-primary, #6750a4);
+        color: var(
+          --md-sys-color-primary,
+          var(--sl-color-primary-600, #6750a4)
+        );
       }
 
       /* Tonal variant */
@@ -141,7 +151,7 @@ export class MdButton extends LitElement {
       button.fab {
         background: var(
           --md-sys-color-primary-container,
-          var(--md-sys-color-primary, #6750a4)
+          var(--md-sys-color-primary, var(--sl-color-primary-600, #6750a4))
         );
         color: var(
           --md-sys-color-on-primary-container,

@@ -312,7 +312,6 @@ export const timelineStyles = css`
   }
 
   #new-posts-button md-button {
-    --md-sys-color-primary: var(--md-sys-color-primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 

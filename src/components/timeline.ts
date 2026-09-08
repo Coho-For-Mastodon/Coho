@@ -1278,6 +1278,7 @@ export class Timeline extends LitElement {
               <div id="new-posts-button">
                 <md-button
                   variant="filled"
+                  pill
                   @click="${() => this.showPendingPosts()}"
                 >
                   <md-icon
