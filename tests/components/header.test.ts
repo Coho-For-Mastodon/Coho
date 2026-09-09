@@ -60,4 +60,43 @@ describe('app-header', () => {
 
     expect(settingsHandler).toHaveBeenCalledTimes(1);
   });
+
+  it('applies scrolled class when content is scrolled past threshold', async () => {
+    const el = await fixture<AppHeader>(html`<app-header></app-header>`);
+    await elementUpdated(el);
+
+    const header = el.shadowRoot?.querySelector('header');
+    expect(header?.classList.contains('scrolled')).toBe(false);
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    Object.defineProperty(container, 'scrollHeight', {
+      value: 1000,
+      configurable: true,
+    });
+    Object.defineProperty(container, 'clientHeight', {
+      value: 500,
+      configurable: true,
+    });
+    Object.defineProperty(container, 'scrollTop', {
+      value: 30,
+      configurable: true,
+    });
+
+    container.dispatchEvent(new Event('scroll'));
+    await elementUpdated(el);
+
+    expect(header?.classList.contains('scrolled')).toBe(true);
+
+    // Scroll back to top
+    Object.defineProperty(container, 'scrollTop', {
+      value: 0,
+      configurable: true,
+    });
+    container.dispatchEvent(new Event('scroll'));
+    await elementUpdated(el);
+
+    expect(header?.classList.contains('scrolled')).toBe(false);
+    container.remove();
+  });
 });

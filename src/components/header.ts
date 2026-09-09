@@ -1,5 +1,5 @@
 import { LitElement, css, html, nothing } from 'lit';
-import { property, customElement } from 'lit/decorators.js';
+import { property, customElement, state } from 'lit/decorators.js';
 import { localized, msg } from '@lit/localize';
 
 import './md/md-icon.js';
@@ -30,6 +30,8 @@ export class AppHeader extends LitElement {
 
   @property({ type: String }) currentAccountLabel: string = '';
 
+  @state() private _isScrolled = false;
+
   static get styles() {
     return css`
       header {
@@ -49,14 +51,37 @@ export class AppHeader extends LitElement {
         padding-left: 12px;
 
         view-transition-name: full-embed;
-        contain: layout;
-
         z-index: 99999;
 
-        backdrop-filter: unset;
         height: 56px;
         background: transparent;
         box-sizing: border-box;
+
+        border-bottom: 1px solid transparent;
+        transition:
+          background-color 0.2s ease,
+          border-bottom-color 0.2s ease;
+      }
+
+      header.scrolled {
+        background-color: color-mix(
+          in srgb,
+          var(--md-sys-color-surface, #141314) 75%,
+          transparent
+        );
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom-color: color-mix(
+          in srgb,
+          var(--md-sys-color-outline-variant, rgba(128, 128, 128, 0.3)) 20%,
+          transparent
+        );
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        header {
+          transition: none;
+        }
       }
 
       #actions {
@@ -210,9 +235,95 @@ export class AppHeader extends LitElement {
     >`;
   }
 
+  private _observedRoots = new Set<EventTarget>();
+
+  private _scrollHandler = (e: Event) => {
+    const target = e.target as HTMLElement | Document | Window;
+    let scrollTop = 0;
+
+    if (target === window || target === document) {
+      scrollTop = window.scrollY;
+    } else if (target instanceof HTMLElement) {
+      if (target.scrollHeight > target.clientHeight) {
+        scrollTop = target.scrollTop;
+      } else {
+        return;
+      }
+    } else {
+      return;
+    }
+
+    const scrolled = scrollTop > 10;
+    if (this._isScrolled !== scrolled) {
+      this._isScrolled = scrolled;
+    }
+  };
+
+  private _observeRoots = () => {
+    const root = this.getRootNode() as ShadowRoot | Document;
+    if (!root) return;
+
+    if (!this._observedRoots.has(root)) {
+      this._observedRoots.add(root);
+      root.addEventListener('scroll', this._scrollHandler, {
+        capture: true,
+        passive: true,
+      });
+    }
+
+    if ('querySelectorAll' in root) {
+      const allElements = root.querySelectorAll('*');
+      for (const el of allElements) {
+        if (el.shadowRoot && !this._observedRoots.has(el.shadowRoot)) {
+          this._observedRoots.add(el.shadowRoot);
+          el.shadowRoot.addEventListener('scroll', this._scrollHandler, {
+            capture: true,
+            passive: true,
+          });
+        }
+      }
+    }
+  };
+
+  private _tabChangeHandler = () => {
+    requestAnimationFrame(() => {
+      this._observeRoots();
+      this._isScrolled = false;
+    });
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    window.addEventListener('scroll', this._scrollHandler, {
+      capture: true,
+      passive: true,
+    });
+    window.addEventListener('tab-change', this._tabChangeHandler);
+    this._observeRoots();
+  }
+
+  protected firstUpdated(changedProps: Map<string, unknown>) {
+    super.firstUpdated(changedProps);
+    this._observeRoots();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener('scroll', this._scrollHandler, {
+      capture: true,
+    });
+    window.removeEventListener('tab-change', this._tabChangeHandler);
+    for (const r of this._observedRoots) {
+      r.removeEventListener('scroll', this._scrollHandler, {
+        capture: true,
+      });
+    }
+    this._observedRoots.clear();
+  }
+
   render() {
     return html`
-      <header>
+      <header class="${this._isScrolled ? 'scrolled' : ''}">
         <div id="back-button-block">
           ${
             this.enableBack
