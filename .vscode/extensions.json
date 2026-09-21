@@ -1,7 +1,6 @@
 {
   "recommendations": [
     "esbenp.prettier-vscode",
-    "ms-azuretools.vscode-azurefunctions",
     "eg2.vscode-npm-script",
     "christian-kohler.npm-intellisense",
     "ms-edgedevtools.vscode-edge-devtools",

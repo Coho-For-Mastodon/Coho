@@ -14,7 +14,7 @@
     "no-unknown-css-property": "off"
   },
   "[typescript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   },
   "[javascript]": {
@@ -43,10 +43,5 @@
     "MD025": {
       "front_matter_title": ""
     }
-  },
-  "azureFunctions.deploySubpath": "api",
-  "azureFunctions.postDeployTask": "npm install (functions)",
-  "azureFunctions.projectLanguage": "TypeScript",
-  "azureFunctions.projectRuntime": "~4",
-  "azureFunctions.preDeployTask": "npm prune (functions)",
+  }
 }

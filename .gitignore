@@ -17,6 +17,12 @@ build
 
 coverage/
 
+# Vitest attachments (failed test screenshots)
+.vitest-attachments/
+
+# Playwright output
+output/
+
 # Environment variables
 .env
 .env.local
@@ -32,7 +38,13 @@ stats.html
 # Service worker build artifact (generated from src/sw.ts)
 public/sw.js
 
+# AI assistant state
+.claude/
+
 # Capacitor native build artifacts (projects themselves are committed)
 android/app/build/
 android/.gradle/
 android/build/
+ios/App/Pods/
+ios/App/build/
+ios/App/App.xcworkspace/xcuserdata/

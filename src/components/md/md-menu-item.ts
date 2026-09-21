@@ -26,8 +26,8 @@ export class MdMenuItem extends LitElement {
         display: flex;
         align-items: center;
         gap: 12px;
-        height: 48px;
-        padding: 0 12px;
+        min-height: 48px;
+        padding: 8px 12px;
         cursor: pointer;
         user-select: none;
         font-size: 14px;
@@ -112,8 +112,9 @@ export class MdMenuItem extends LitElement {
 
       .content {
         flex: 1;
-        display: flex;
-        align-items: center;
+        min-width: 0;
+        overflow-wrap: break-word;
+        word-break: break-word;
       }
 
       .suffix {

@@ -27,7 +27,8 @@ export class MdMenu extends LitElement {
         box-shadow:
           0 1px 3px 1px rgba(0, 0, 0, 0.15),
           0 1px 2px 0 rgba(0, 0, 0, 0.3);
-        overflow: hidden;
+        overflow-y: auto;
+        max-height: calc(100vh - 32px);
       }
 
       ::slotted(md-menu-divider) {
