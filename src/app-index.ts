@@ -92,9 +92,8 @@ export class AppIndex extends LitElement {
     // Navigation API + URLPattern support.
     router.addEventListener('route-changed', this._onRouteChanged);
 
-    // Auth bootstrap + native OAuth deep-link handling and polyfill loading are
-    // independent — run them in parallel so neither blocks the other.
-    await Promise.all([this._initAuth(), this._loadPolyfills()]);
+    // Auth bootstrap + native OAuth deep-link handling runs during init.
+    await this._initAuth();
 
     // If the user is already authenticated and sitting on the login page,
     // redirect to /home before the router initializes so <app-login> never
@@ -149,17 +148,6 @@ export class AppIndex extends LitElement {
       console.error('[App] Failed to bootstrap auth session', error);
     }
     await this.handleNativeLaunchCallback();
-  }
-
-  /** Load URLPattern and Navigation API polyfills if the browser needs them. */
-  private async _loadPolyfills() {
-    if (typeof URLPattern === 'undefined') {
-      await import('urlpattern-polyfill');
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof (globalThis as any).navigation === 'undefined') {
-      await import('@virtualstate/navigation/polyfill');
-    }
   }
 
   disconnectedCallback() {

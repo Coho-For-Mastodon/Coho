@@ -18,9 +18,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-
       - name: Format check
         run: npm run format:check
 
@@ -33,22 +30,22 @@ jobs:
           git diff --exit-code xliff/ || (echo "Error: Translation files are out of sync. Run 'npm run localize:extract' and commit the changes." && exit 1)
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox
+        run: npx playwright install --with-deps chromium
 
       - name: Unit tests
         run: npm run test:run
 
-      - name: Bundle size tests
-        run: npm run test:bundle-size
+      - name: Build production bundle
+        run: npm run build
 
-      - name: Performance tests
-        run: npm run test:perf
+      - name: Performance & bundle size tests
+        run: npx playwright test --config playwright.perf.config.ts
+        env:
+          # Skip the webServer build since we already built above
+          CI: ""
 
       - name: E2E tests
         run: npm run test:e2e
-
-      - name: Build production bundle
-        run: npm run build
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

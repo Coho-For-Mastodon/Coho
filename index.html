@@ -59,26 +59,6 @@
     <meta name="apple-mobile-web-app-title" content="Coho" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-    <meta
-      http-equiv="origin-trial"
-      content="AvBOKpImuHaojzQSmhi68lv47g5wpzaIzA21QAf/ThtE1QgNkI+QiT49v3DUkef0N6Qzs80OusaOtwClNY2WQQcAAABUeyJvcmlnaW4iOiJodHRwczovL2NvaG8ucGxhY2U6NDQzIiwiZmVhdHVyZSI6IkFJUHJvb2ZyZWFkZXJBUEkiLCJleHBpcnkiOjE3NzkxNDg4MDB9"
-    />
-
-    <meta
-      http-equiv="origin-trial"
-      content="Aui6c/2LxzWwb71lhjF0/3oHcLDZc6hgHkqJxx3/O1AaskNpmkBC+XQLNZVBSBCGJIrtrIwKQNe8oJpqFq1NeQkAAAByeyJvcmlnaW4iOiJodHRwczovL2NvaG8tbWFzdG9kb24ud2ViLmFwcDo0NDMiLCJmZWF0dXJlIjoiQUlQcm9vZnJlYWRlckFQSSIsImV4cGlyeSI6MTc3OTE0ODgwMCwiaXNTdWJkb21haW4iOnRydWV9"
-    />
-
-    <meta
-      http-equiv="origin-trial"
-      content="AiWTPaZZipcWK8sJW712mUAmDoLhf2WtkGhA1NHNaAICbDUxeRLaZQRnSkvNBls2fcuvn5gUA3lfO4i0YIwoGgMAAABheyJvcmlnaW4iOiJodHRwczovL2NvaG8ucGxhY2U6NDQzIiwiZmVhdHVyZSI6IkZldGNoUmV0cnkiLCJleHBpcnkiOjE3NzQzMTA0MDAsImlzU3ViZG9tYWluIjp0cnVlfQ=="
-    />
-
-    <meta
-      http-equiv="origin-trial"
-      content="AkJdkMlJCKODw0vbp8MXCTaL4XtjxqCqCExhgXYGn6+r2sXY8AiPv7/5tX2pz64dlLmMcN9js3CI453j4zC94AsAAABpeyJvcmlnaW4iOiJodHRwczovL2NvaG8ucGxhY2U6NDQzIiwiZmVhdHVyZSI6IldlYkFwcEluc3RhbGxhdGlvbiIsImV4cGlyeSI6MTc4Mzk4NzIwMCwiaXNTdWJkb21haW4iOnRydWV9"
-    />
-
     <!-- Imports an icon to represent the document. -->
     <link rel="shortcut icon" href="/assets/icons/favicon.ico" type="image/x-icon" />
     <link rel="icon" href="/assets/icons/favicon.ico" type="image/x-icon" />
@@ -273,28 +253,6 @@
         document.body.classList.remove('sl-theme-light', 'sl-theme-dark');
         document.body.classList.add(`sl-theme-${e.matches ? 'dark' : 'light'}`);
       });
-    </script>
-
-    <script>
-      window.requestIdleCallback =
-        window.requestIdleCallback ||
-        function (cb) {
-          return setTimeout(function () {
-            var start = Date.now();
-            cb({
-              didTimeout: false,
-              timeRemaining: function () {
-                return Math.max(0, 50 - (Date.now() - start));
-              },
-            });
-          }, 1);
-        };
-
-      window.cancelIdleCallback =
-        window.cancelIdleCallback ||
-        function (id) {
-          clearTimeout(id);
-        };
     </script>
 
     <!-- register service worker -->

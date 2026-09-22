@@ -1,4 +1,4 @@
-import { fileOpen } from 'browser-fs-access';
+import { fileOpen } from '../utils/file-open';
 import type { Account } from '../mastodon/types/account';
 import { Post, PostPublishResult } from '../interfaces/Post';
 import type { MediaAttachment } from '../mastodon/types/media';

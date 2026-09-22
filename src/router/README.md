@@ -18,14 +18,6 @@ A lightweight, framework-agnostic router built on the [Navigation API](https://d
 npm install nav-router
 ```
 
-### Peer Dependencies
-
-The router has optional peer dependencies for polyfills (only loaded when needed):
-
-```bash
-npm install urlpattern-polyfill @virtualstate/navigation
-```
-
 ## Quick Start
 
 ```typescript
@@ -384,12 +376,12 @@ The router automatically uses the View Transitions API when available. Style you
 
 ## Browser Support
 
-| Browser | Native Support | With Polyfills |
-| ------- | -------------- | -------------- |
-| Chrome  | 102+           | ✅             |
-| Edge    | 102+           | ✅             |
-| Firefox | ❌             | ✅             |
-| Safari  | ❌             | ✅             |
+| Browser | Navigation API |
+| ------- | -------------- |
+| Chrome  | 102+           |
+| Edge    | 102+           |
+| Firefox | ❌ (fallback)  |
+| Safari  | 18.2+          |
 
 ## License
 

@@ -15,7 +15,7 @@ vi.mock('../../src/services/account', () => ({
   editAccount: hoisted.editAccount,
 }));
 
-vi.mock('browser-fs-access', () => ({
+vi.mock('../../src/utils/file-open', () => ({
   fileOpen: hoisted.fileOpen,
 }));
 
@@ -103,8 +103,7 @@ describe('edit-account', () => {
     (el as any).fields = [{ name: 'Site', value: 'https://coho.app' }];
 
     const toast = el.shadowRoot?.querySelector('md-toast') as
-      | (HTMLElement & { show: () => void })
-      | null;
+      (HTMLElement & { show: () => void }) | null;
     if (toast) {
       toast.show = vi.fn();
     }

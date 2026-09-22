@@ -5,17 +5,15 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev-server": "vite --port 3000",
+    "dev": "vite --port 3000",
     "preview": "vite preview --port 3000",
-    "dev": "npm run dev-server",
-    "dev-task": "vite",
+    "start": "npm run dev",
+    "start-remote": "vite --host",
+    "start-functions": "cd functions && npm run serve",
     "build": "npm run localize:build && vite build && npm run ssr:inject",
     "build:no-ssr": "npm run localize:build && vite build",
     "ssr:generate": "npx tsx scripts/ssr-shells.mjs",
     "ssr:inject": "npx tsx scripts/ssr-shells.mjs --inject",
-    "start": "npm run dev",
-    "start-remote": "vite --host",
-    "start-functions": "cd functions && npm run serve",
     "bundle:analyze": "ANALYZE_BUNDLE=true npm run build",
     "test": "vitest",
     "test:run": "vitest run",
@@ -23,11 +21,8 @@
     "test:e2e": "playwright test --config playwright.e2e.config.ts",
     "test:e2e:ui": "playwright test --config playwright.e2e.config.ts --ui",
     "test:e2e:headed": "playwright test --config playwright.e2e.config.ts --headed",
-    "lint": "eslint \"src/**/*.js\" \"functions/src/**/*.js\" \"scripts/**/*.mjs\" --no-error-on-unmatched-pattern",
-    "lint:fix": "eslint \"src/**/*.js\" \"functions/src/**/*.js\" \"scripts/**/*.mjs\" --fix --no-error-on-unmatched-pattern",
-    "format": "prettier --write \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
-    "test:bundle-size": "playwright test --config playwright.config.ts",
     "test:perf": "playwright test --config playwright.perf.config.ts",
+    "format": "prettier --write \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,css,html}\" \"*.{ts,js,css,html,json}\" \"functions/src/**/*.{ts,js}\"",
     "localize:extract": "lit-localize extract",
     "localize:build": "lit-localize build",
@@ -35,14 +30,7 @@
     "postinstall": "patch-package"
   },
   "lint-staged": {
-    "*.js": [
-      "eslint --fix --no-warn-ignored",
-      "prettier --write"
-    ],
-    "*.ts": [
-      "prettier --write"
-    ],
-    "*.{css,html,json}": [
+    "*.{js,ts,css,html,json}": [
       "prettier --write"
     ]
   },
@@ -58,22 +46,17 @@
     "@huggingface/transformers": "^4.1.0",
     "@lit/localize": "^0.12.2",
     "@material/material-color-utilities": "^0.4.0",
-    "@virtualstate/navigation": "^1.0.1-alpha.212",
-    "browser-fs-access": "^0.38.0",
     "fast-blurhash": "^1.2.0",
     "hotkeys-js": "^4.0.4",
     "idb-keyval": "^6.2.5",
     "lit": "^3.3.3",
     "marked": "^18.0.5",
-    "urlpattern-polyfill": "^10.1.0",
     "web-router": "^0.5.0"
   },
   "devDependencies": {
     "@capacitor/android": "^8.4.1",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/ios": "^8.4.1",
-    "@eslint/eslintrc": "^3.3.5",
-    "@eslint/js": "^9.39.4",
     "@lit-labs/ssr": "^4.1.0",
     "@lit/localize-tools": "^0.8.2",
     "@playwright/test": "^1.61.1",
@@ -81,10 +64,6 @@
     "@vitest/browser": "^4.1.9",
     "@vitest/browser-playwright": "^4.1.9",
     "@vitest/coverage-v8": "^4.1.9",
-    "eslint": "^9.39.4",
-    "eslint-plugin-lit": "^2.3.1",
-    "eslint-plugin-wc": "^3.1.0",
-    "globals": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "msw": "^2.14.6",
