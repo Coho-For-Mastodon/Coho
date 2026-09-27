@@ -2,7 +2,6 @@
 node_modules
 dist
 dev-dist
-build
 
 .idea
 .github/workflows/main.yml
