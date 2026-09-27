@@ -1,242 +1,24 @@
-import { defineConfig, build } from 'vite';
+import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
 import wasm from 'vite-plugin-wasm';
 import { visualizer } from 'rollup-plugin-visualizer';
 
-import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import {
+  serviceWorkerPlugin,
+  minifyLitCssPlugin,
+  minifyLitHtmlPlugin,
+  inlineMdTokensPlugin,
+  injectModulepreloadPlugin,
+  htmlMinifierPlugin,
+} from './build/plugins';
 
-const customPlugins = [];
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Build version - shared between main app and service worker
 const BUILD_VERSION = new Date().toISOString();
-
-// Plugin to build the service worker in dev mode
-customPlugins.push({
-  name: 'dev-service-worker',
-  apply: 'serve',
-  async buildStart() {
-    const { build } = await import('vite');
-    console.log('[dev-sw] Building service worker for dev...');
-    await build({
-      configFile: false,
-      build: {
-        emptyOutDir: false,
-        outDir: 'public',
-        lib: {
-          entry: path.resolve(__dirname, 'src/sw.ts'),
-          formats: ['es'],
-          fileName: () => 'sw.js',
-        },
-        rollupOptions: {
-          output: {
-            inlineDynamicImports: true,
-          },
-        },
-        minify: false,
-      },
-      define: {
-        '__APP_VERSION__': JSON.stringify(BUILD_VERSION),
-        'process.env.NODE_ENV': JSON.stringify('development'),
-      },
-    });
-    console.log('[dev-sw] Service worker built successfully');
-  },
-});
-
-// Plugin to build the service worker as a self-contained bundle
-// Service workers need all dependencies inlined to avoid import issues
-customPlugins.push({
-  name: 'build-sw',
-  apply: 'build',
-  async closeBundle() {
-    console.log('[build-sw] Building service worker...');
-    await build({
-      configFile: false,
-      build: {
-        emptyOutDir: false,
-        outDir: 'dist',
-        lib: {
-          entry: path.resolve(__dirname, 'src/sw.ts'),
-          formats: ['es'],
-          fileName: () => 'sw.js',
-        },
-        rollupOptions: {
-          output: {
-            // Inline all imports - critical for service workers
-            inlineDynamicImports: true,
-          },
-        },
-        minify: 'terser',
-        terserOptions: {
-          module: true,
-          compress: {
-            drop_console: false, // Keep console logs in SW for debugging
-            drop_debugger: true,
-          },
-          format: {
-            comments: false,
-          },
-        },
-      },
-      define: {
-        '__APP_VERSION__': JSON.stringify(BUILD_VERSION),
-        'process.env.NODE_ENV': JSON.stringify('production'),
-      },
-    });
-    console.log('[build-sw] Service worker built successfully');
-  },
-});
-// Plugin to minify CSS in Lit component tagged templates
-// Note: This handles any remaining inline css`` templates
-// External .css files are automatically minified by Vite's built-in CSS processing
-customPlugins.push({
-  name: 'minify-lit-css',
-  enforce: 'pre',
-  transform(code: string, id: string) {
-    // Only process TypeScript/JavaScript files
-    if (!/\.(ts|js|tsx|jsx)$/.test(id)) return null;
-
-    // Only process files that likely contain Lit css`` templates
-    if (!code.includes('.styles') && !code.includes('css`')) return null;
-
-    // Minify CSS inside css`` tagged templates
-    const minified = code.replace(/css`([\s\S]*?)`/g, (match, css) => {
-      const minifiedCss = css
-        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
-        .replace(/\n\s*/g, '') // Remove newlines and leading whitespace
-        .replace(/\s*([{}:;,])\s*/g, '$1') // Remove whitespace around CSS syntax
-        .replace(/;\}/g, '}') // Remove last semicolon before closing brace
-        .replace(/\s+/g, ' ') // Collapse multiple spaces
-        .trim();
-      return `css\`${minifiedCss}\``;
-    });
-
-    if (minified !== code) {
-      return { code: minified, map: null };
-    }
-
-    return null;
-  },
-});
-
-// Plugin to minify HTML in Lit component tagged templates
-customPlugins.push({
-  name: 'minify-lit-html',
-  enforce: 'pre',
-  transform(code: string, id: string) {
-    // Only process TypeScript/JavaScript files
-    if (!/\.(ts|js|tsx|jsx)$/.test(id)) return null;
-
-    // Only process files that contain Lit html`` templates
-    if (!code.includes('html`')) return null;
-
-    // Minify HTML inside html`` tagged templates
-    // Be careful to preserve template expressions ${...}
-    const minified = code.replace(/html`([\s\S]*?)`/g, (match, html) => {
-      const minifiedHtml = html
-        .replace(/<!--[\s\S]*?-->/g, '') // Remove HTML comments
-        .replace(/>\s+</g, '><') // Remove whitespace between tags
-        .replace(/\s+/g, ' ') // Collapse multiple whitespace to single space
-        .replace(/>\s+\$/g, '>$') // Remove space before template expressions after >
-        .replace(/\$\s+</g, '$<') // Remove space after template expressions before <
-        .replace(/"\s+>/g, '">') // Remove space before > after attribute value
-        .replace(/'\s+>/g, "'>") // Remove space before > after single-quoted attribute
-        .trim();
-      return `html\`${minifiedHtml}\``;
-    });
-
-    if (minified !== code) {
-      return { code: minified, map: null };
-    }
-
-    return null;
-  },
-});
-
-// Plugin to inline md-tokens.css into the HTML <head> to eliminate a blocking request
-customPlugins.push({
-  name: 'inline-md-tokens',
-  enforce: 'pre',
-  transformIndexHtml(html: string) {
-    const tokensPath = path.resolve(__dirname, 'src/styles/md-tokens.css');
-    const css = readFileSync(tokensPath, 'utf-8');
-    return html.replace(
-      /<!-- md-tokens\.css is inlined by the inline-md-tokens Vite plugin -->/,
-      `<style>${css}</style>`
-    );
-  },
-});
-
-// Plugin to inject modulepreload for critical chunks
-customPlugins.push({
-  name: 'inject-modulepreload',
-  enforce: 'post',
-  apply: 'build',
-  transformIndexHtml: {
-    order: 'post',
-    handler(html: string, { bundle }: { bundle?: Record<string, unknown> }) {
-      if (!bundle) return html;
-
-      const chunksToPreload = [
-        'auth-session',
-        'vendor-idb-keyval',
-        'vendor-web-router',
-        'firebase',
-        'api-client',
-      ];
-      const preloadLinks: string[] = [];
-
-      for (const chunkPattern of chunksToPreload) {
-        const chunk = Object.keys(bundle).find(
-          (name) => name.includes(chunkPattern) && name.endsWith('.js')
-        );
-        if (chunk) {
-          preloadLinks.push(`<link rel="modulepreload" href="/${chunk}" />`);
-        }
-      }
-
-      if (preloadLinks.length > 0) {
-        html = html.replace('<head>', `<head>${preloadLinks.join('')}`);
-      }
-
-      return html;
-    },
-  },
-});
-
-// Plugin to minify HTML
-customPlugins.push({
-  name: 'html-minifier',
-  enforce: 'post',
-  transformIndexHtml(html: string) {
-    // Minify CSS inside <style> tags
-    html = html.replace(
-      /<style>([\s\S]*?)<\/style>/g,
-      (match: string, css: string) => {
-        const minifiedCss = css
-          .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
-          .replace(/\n\s*/g, '') // Remove newlines and leading whitespace
-          .replace(/\s*([{}:;,])\s*/g, '$1') // Remove whitespace around CSS syntax
-          .replace(/;\}/g, '}') // Remove last semicolon before closing brace
-          .replace(/\s+/g, ' ') // Collapse multiple spaces
-          .trim();
-        return `<style>${minifiedCss}</style>`;
-      }
-    );
-
-    // Minify HTML structure
-    return html
-      .replace(/\n\s+/g, '\n') // Remove leading whitespace
-      .replace(/\n+/g, '\n') // Collapse multiple newlines
-      .replace(/>\s+</g, '><') // Remove whitespace between tags
-      .replace(/\s{2,}/g, ' ') // Collapse multiple spaces
-      .trim();
-  },
-});
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -289,8 +71,8 @@ export default defineConfig({
       keep_fnames: false,
     },
 
-    // Create a dedicated vendor chunk for lit so it can be fetched in parallel
-    // Note: Service worker is built separately by the build-sw plugin to ensure all deps are inlined
+    // Create dedicated vendor chunks for parallel fetching and caching.
+    // Service worker is built separately by the service-worker plugin.
     rollupOptions: {
       input: {
         main: 'index.html',
@@ -325,19 +107,18 @@ export default defineConfig({
             if (id.includes('/web-router')) {
               return 'vendor-web-router';
             }
-
-            // Keep tslib in a dedicated chunk so shared TypeScript helper code can
-            // be cached independently instead of being duplicated across vendor bundles.
-            if (id.includes('/node_modules/tslib')) {
-              return 'vendor-tslib';
-            }
           }
         },
       },
     },
   },
   plugins: [
-    ...customPlugins,
+    ...serviceWorkerPlugin(__dirname, BUILD_VERSION),
+    minifyLitCssPlugin(),
+    minifyLitHtmlPlugin(),
+    inlineMdTokensPlugin(__dirname),
+    injectModulepreloadPlugin(),
+    htmlMinifierPlugin(),
     wasm(),
     checker({
       typescript: true,
