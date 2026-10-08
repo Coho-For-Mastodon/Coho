@@ -7,6 +7,8 @@ import { str } from '@lit/localize';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const templates = {
+  se673d4689e55ecdf: `Sprache auswählen`,
+  sc13326f53f8ca55a: `App-Sprache`,
   s02891b5712eb3c40: `Feld hinzufügen`,
   s0379fc73608ab971: `Fertig`,
   s06e80274b5700572: `Option entfernen`,

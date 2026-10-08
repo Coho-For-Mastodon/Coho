@@ -1,7 +1,7 @@
 import { LitElement, html, type PropertyValues } from 'lit';
 import { timelineItemStyles } from '../styles/timeline-item-styles';
 import { customElement, property, state } from 'lit/decorators.js';
-import { msg, str } from '@lit/localize';
+import { localized, msg, str } from '@lit/localize';
 
 import {
   getSettings,
@@ -29,6 +29,7 @@ import {
 import type { ReportSubmitDetail } from './report-dialog';
 import { handleStatusContentClick } from '../utils/content-links';
 
+@localized()
 @customElement('timeline-item')
 export class TimelineItem extends LitElement {
   @property({ type: Object }) tweet: Post | undefined;

@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
-import { msg } from '@lit/localize';
+import { localized, msg } from '@lit/localize';
 import type { Account } from '../mastodon/types/account';
 import { parseEmojis } from '../utils/emoji-parser';
 import { router } from '../router/routes';
@@ -22,6 +22,7 @@ export function getProfileHoverCard(): ProfileHoverCard {
  * Floating profile card that appears when hovering @mention links.
  * Uses the Popover API for top-layer rendering (escapes overflow/stacking).
  */
+@localized()
 @customElement('profile-hover-card')
 export class ProfileHoverCard extends LitElement {
   @property({ type: Object }) account: Account | null = null;

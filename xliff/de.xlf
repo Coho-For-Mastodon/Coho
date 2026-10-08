@@ -2096,6 +2096,14 @@
 <trans-unit id="sae0bdcd353517797">
   <source>Quote Post</source>
 </trans-unit>
+<trans-unit id="sc13326f53f8ca55a">
+  <source>Interface Language</source>
+  <target>App-Sprache</target>
+</trans-unit>
+<trans-unit id="se673d4689e55ecdf">
+  <source>Choose a language</source>
+  <target>Sprache auswählen</target>
+</trans-unit>
 </body>
 </file>
 </xliff>

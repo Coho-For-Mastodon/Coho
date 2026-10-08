@@ -1,6 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { msg } from '@lit/localize';
+import { localized, msg } from '@lit/localize';
 import type { Post } from '../interfaces/Post';
 import { parseEmojis } from '../utils/emoji-parser';
 import { router } from '../router/routes';
@@ -11,6 +11,7 @@ import './user-profile';
  * Renders an embedded quote post card.
  * Max 1 level deep — nested quotes show a placeholder.
  */
+@localized()
 @customElement('quoted-post')
 export class QuotedPost extends LitElement {
   @property({ type: Object }) post: Post | undefined;
