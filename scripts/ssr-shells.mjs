@@ -135,10 +135,8 @@ async function injectIntoDistHtml(loginHtml, homeHtml) {
     if (homeEl) homeEl.style.display = '';
 
     var themeColor = localStorage.getItem('coho-theme-color');
-    if (themeColor && homeEl) {
-      homeEl.style.setProperty('--md-sys-color-primary', themeColor);
-      homeEl.style.setProperty('--md-sys-color-secondary-container',
-        'color-mix(in srgb, ' + themeColor + ' 15%, transparent)');
+    if (themeColor && themeColor !== 'device' && homeEl) {
+      document.documentElement.style.setProperty('--theme-seed', themeColor);
     }
   }
 

@@ -1,6 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { msg, str } from '@lit/localize';
+import { localized, msg, str } from '@lit/localize';
 import { parseEmojis } from '../utils/emoji-parser';
 import type { StatusEdit } from '../mastodon/types/status';
 import { getEditHistory } from '../services/posts';
@@ -9,6 +9,7 @@ import './md/md-dialog';
 import './md/md-skeleton';
 import './md/md-icon';
 
+@localized()
 @customElement('post-edit-history-dialog')
 export class PostEditHistoryDialog extends LitElement {
   @state() private open = false;

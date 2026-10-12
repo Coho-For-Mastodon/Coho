@@ -30,6 +30,9 @@
             var schemeStr = localStorage.getItem(isDark ? 'coho-device-scheme-dark' : 'coho-device-scheme-light');
             if (schemeStr) {
               var scheme = JSON.parse(schemeStr);
+              if (scheme.primary) {
+                s.setProperty('--theme-seed', scheme.primary);
+              }
               for (var k in scheme) {
                 if (scheme[k]) {
                   var cssKey = '--md-sys-color-' + k.replace(/([A-Z])/g, '-$1').toLowerCase();
@@ -45,11 +48,7 @@
             }
           } catch (e) {}
         } else if (c) {
-          s.setProperty('--sl-color-primary-600', c);
-          s.setProperty('--sl-color-primary-500', c);
-          s.setProperty('--sl-color-primary-700', c);
-          s.setProperty('--md-sys-color-primary', c);
-          s.setProperty('--md-sys-color-outline', c);
+          s.setProperty('--theme-seed', c);
         }
       })();
     </script>

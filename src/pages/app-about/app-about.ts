@@ -1,6 +1,6 @@
 import { LitElement, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { msg } from '@lit/localize';
+import { localized, msg } from '@lit/localize';
 
 // You can also import styles from another file
 // if you prefer to keep your CSS seperate from your component
@@ -8,6 +8,7 @@ import { styles } from './about-styles';
 
 import { styles as sharedStyles } from '../../styles/shared-styles';
 
+@localized()
 @customElement('app-about')
 export class AppAbout extends LitElement {
   static styles = [sharedStyles, styles];

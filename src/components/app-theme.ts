@@ -164,13 +164,8 @@ export class AppTheme extends LitElement {
         this.primary_color = this.device_color;
         applyThemeColor(this.device_color);
       } else {
-        // fallback to default or css variable color
-        const color =
-          getComputedStyle(document.body).getPropertyValue(
-            '--sl-color-primary-600'
-          ) || '#5171a5';
-        this.primary_color = color;
-        applyThemeColor(color);
+        this.primary_color = '#5171a5';
+        applyThemeColor(this.primary_color);
       }
     } else {
       this.primary_color = potentialColor;

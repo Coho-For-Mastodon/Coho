@@ -46,8 +46,11 @@ export class HomeSettingsController {
     await setSettings({ haptics: enabled });
   }
 
-  handlePrimaryColor(color: string) {
-    document.documentElement.style.setProperty('--sl-color-primary-600', color);
+  async handlePrimaryColor(color: string) {
+    const { applyThemeColor } = await import('../../utils/theme-color.js');
+    applyThemeColor(color);
+    const { setSettings } = await import('../../services/settings.js');
+    await setSettings({ primary_color: color });
     localStorage.setItem('primary_color', color);
   }
 

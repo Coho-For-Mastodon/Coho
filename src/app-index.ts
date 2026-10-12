@@ -191,12 +191,7 @@ export class AppIndex extends LitElement {
           localStorage.setItem('coho-theme-color', devicePalette.accentColor);
           applyThemeColor(devicePalette.accentColor);
         } else {
-          // get css variable color fallback
-          const color =
-            getComputedStyle(document.body).getPropertyValue(
-              '--sl-color-primary-600'
-            ) || '#5171a5';
-          applyThemeColor(color);
+          applyThemeColor('#5171a5');
         }
       } else {
         // Sync to localStorage for instant theme on next load (migration for existing users)

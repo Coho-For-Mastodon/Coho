@@ -3,11 +3,6 @@
  * Used by both app-index.ts and app-theme.ts
  */
 import {
-  themeFromSourceColor,
-  applyTheme,
-  argbFromHex,
-} from '@material/material-color-utilities';
-import {
   DynamicThemePalette,
   M3ColorScheme,
   getAndroidDynamicPalette,
@@ -62,35 +57,6 @@ export function mixColors(
   const b = Math.round(c1.b * w + c2.b * (1 - w));
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-/**
- * Adjust color brightness by a given amount
- * @param col Color in hex format
- * @param amt Amount to adjust (-255 to 255)
- */
-export function adjustColorBrightness(col: string, amt: number): string {
-  let usePound = false;
-  if (col[0] === '#') {
-    col = col.slice(1);
-    usePound = true;
-  }
-
-  const num = parseInt(col, 16);
-
-  let r = (num >> 16) + amt;
-  if (r > 255) r = 255;
-  else if (r < 0) r = 0;
-
-  let b = ((num >> 8) & 0x00ff) + amt;
-  if (b > 255) b = 255;
-  else if (b < 0) b = 0;
-
-  let g = (num & 0x0000ff) + amt;
-  if (g > 255) g = 255;
-  else if (g < 0) g = 0;
-
-  return (usePound ? '#' : '') + (g | (b << 8) | (r << 16)).toString(16);
 }
 
 /**
@@ -154,6 +120,10 @@ export function applySchemeTokens(
   scheme: M3ColorScheme,
   root: HTMLElement = document.documentElement
 ): void {
+  if (scheme.primary) {
+    root.style.setProperty('--theme-seed', scheme.primary);
+  }
+
   for (const [key, value] of Object.entries(scheme)) {
     if (!value) continue;
     const cssKey =
@@ -216,6 +186,12 @@ export function applyDynamicPalette(
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const activeScheme = isDark ? palette.schemes.dark : palette.schemes.light;
 
+  if (palette.accentColor) {
+    document.documentElement.style.setProperty(
+      '--theme-seed',
+      palette.accentColor
+    );
+  }
   applySchemeTokens(activeScheme);
 
   if (updateMetaTags) {
@@ -276,29 +252,21 @@ export function applyThemeColor(
   // Setup listener for dark mode changes if not already set
   ensureThemeListener();
 
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  try {
-    // Generate and apply M3 Theme
-    const theme = themeFromSourceColor(argbFromHex(color));
-    applyTheme(theme, { target: root, dark: isDark });
-  } catch (e) {
-    console.error('Failed to generate M3 theme', e);
+  // Native Android palettes are restored as inline role tokens. Clear those
+  // overrides when switching back to a user-selected color so the CSS palette
+  // can derive every role from the seed again.
+  for (let i = root.style.length - 1; i >= 0; i--) {
+    const property = root.style.item(i);
+    if (
+      property.startsWith('--md-sys-color-') ||
+      property.startsWith('--sl-color-primary-') ||
+      property === '--primary-color'
+    ) {
+      root.style.removeProperty(property);
+    }
   }
-
-  // Shoelace tokens
-  root.style.setProperty('--sl-color-primary-600', color);
-  root.style.setProperty('--primary-color', color);
-
-  // Generate lighter/darker variants
-  const lighterVariant = adjustColorBrightness(color, 40);
-  const darkerVariant = adjustColorBrightness(color, -40);
-
-  root.style.setProperty('--sl-color-primary-500', lighterVariant);
-  root.style.setProperty('--sl-color-primary-700', darkerVariant);
-
-  // Also update body for legacy support
-  document.body.style.setProperty('--sl-color-primary-600', color);
+  document.body.style.removeProperty('--sl-color-primary-600');
+  root.style.setProperty('--theme-seed', color);
 
   // Update theme-color meta tags with tinted background
   // Skip on desktop in light mode to keep default white titlebar

@@ -15,6 +15,8 @@ import './md/md-button';
 import './md/md-card';
 import './md/md-divider';
 import './md/md-toast';
+import './md/md-select';
+import './md/md-option';
 import './account-settings';
 
 import type { MdToast } from './md/md-toast';
@@ -24,6 +26,7 @@ import type { Account } from '../mastodon/types/account';
 import type { Instance } from '../mastodon/types/instance';
 import type { Announcement } from '../mastodon/types/announcement';
 import { router } from '../router/routes';
+import { getLocale, setAppLocale } from '../config/localization';
 
 declare const __APP_VERSION__: string;
 
@@ -399,6 +402,16 @@ export class SettingsDrawerContent extends LitElement {
     );
   }
 
+  private async handleInterfaceLanguageChange(
+    e: CustomEvent<{ value: string }>
+  ) {
+    try {
+      await setAppLocale(e.detail.value);
+    } catch (error) {
+      console.error('[Settings] Failed to change interface language', error);
+    }
+  }
+
   render() {
     return html`
       <div class="settings-cards">
@@ -487,6 +500,22 @@ export class SettingsDrawerContent extends LitElement {
         <!-- Preferences Card -->
         <md-card variant="filled">
           <h3 slot="header">${msg('Preferences')}</h3>
+          <div class="select-group">
+            <label>${msg('Interface Language')}</label>
+            <md-select
+              .value=${getLocale()}
+              .placeholder=${msg('Choose a language')}
+              @change=${(e: CustomEvent<{ value: string }>) =>
+                this.handleInterfaceLanguageChange(e)}
+            >
+              <md-option value="en">English</md-option>
+              <md-option value="es">Español</md-option>
+              <md-option value="de">Deutsch</md-option>
+            </md-select>
+          </div>
+
+          <md-divider></md-divider>
+
           <div class="setting-row">
             <h4>${msg('Wellness Mode')}</h4>
             <md-switch

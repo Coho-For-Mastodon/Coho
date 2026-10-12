@@ -1000,1101 +1000,1475 @@
 </trans-unit>
 <trans-unit id="sd4d317f1fe40a847">
   <source>Disable the poll to attach media.</source>
+  <target>Desactiva la encuesta para adjuntar archivos multimedia.</target>
 </trans-unit>
 <trans-unit id="see68daede2d8aaa1">
   <source>Maximum <x id="0" equiv-text="${state.maxMediaAttachments}"/> attachments allowed.</source>
+  <target>Se permite un máximo de <x id="0" equiv-text="${state.maxMediaAttachments}"/> archivos adjuntos.</target>
 </trans-unit>
 <trans-unit id="s45e6d0c9b559ac46">
   <source>Failed to upload media</source>
+  <target>No se pudo subir el archivo multimedia.</target>
 </trans-unit>
 <trans-unit id="sa1b93fa7b8ce3f85">
   <source>Remove media attachments before adding a poll.</source>
+  <target>Quita los archivos adjuntos antes de añadir una encuesta.</target>
 </trans-unit>
 <trans-unit id="s9aef4290017e3fcd">
   <source>Add between 2 and 4 options.</source>
+  <target>Añade entre 2 y 4 opciones.</target>
 </trans-unit>
 <trans-unit id="s71f5cfc2bbff06f3">
   <source>Poll options must be unique.</source>
+  <target>Las opciones de la encuesta deben ser únicas.</target>
 </trans-unit>
 <trans-unit id="sa74f7bccdd96faa0">
   <source>Choose a valid poll duration.</source>
+  <target>Elige una duración válida para la encuesta.</target>
 </trans-unit>
 <trans-unit id="s35f6d88e3dccb4c5">
   <source>Remove media attachments before publishing a poll.</source>
+  <target>Quita los archivos adjuntos antes de publicar una encuesta.</target>
 </trans-unit>
 <trans-unit id="s6573065ac52955ac">
   <source>Your post will be published when you're back online</source>
+  <target>Tu publicación se publicará cuando vuelvas a estar en línea.</target>
 </trans-unit>
 <trans-unit id="sf46397f167ec5533">
   <source>Searching...</source>
+  <target>Buscando...</target>
 </trans-unit>
 <trans-unit id="s3a5907d5d552d0af">
   <source>No matching accounts</source>
+  <target>No hay cuentas que coincidan.</target>
 </trans-unit>
 <trans-unit id="s8acee5a69537fbde">
   <source>Unable to update lists for this account. Please try again.</source>
+  <target>No se pudieron actualizar las listas de esta cuenta. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="sa5b903eb773c25ac">
   <source>Add to lists</source>
+  <target>Añadir a las listas</target>
 </trans-unit>
 <trans-unit id="se5d74072f5f79194">
   <source>Choose lists for <x id="0" equiv-text="${displayName}"/></source>
+  <target>Elegir listas para <x id="0" equiv-text="${displayName}"/></target>
 </trans-unit>
 <trans-unit id="sa645dc2d0d79bac9">
   <source>Choose lists for this account</source>
+  <target>Elegir listas para esta cuenta</target>
 </trans-unit>
 <trans-unit id="sc84fecbbff68c425">
   <source>No lists yet.</source>
+  <target>Aún no hay listas.</target>
 </trans-unit>
 <trans-unit id="s31679cf8c4aacbdd">
   <source>Unable to load lists. Please try again.</source>
+  <target>No se pudieron cargar las listas. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="sbf698aa3a40d1d79">
   <source>Followed replies</source>
+  <target>Respuestas seguidas</target>
 </trans-unit>
 <trans-unit id="s0e117811880f3942">
   <source>No replies</source>
+  <target>No hay respuestas</target>
 </trans-unit>
 <trans-unit id="s05d09a8e0f0a5649">
   <source>List replies</source>
+  <target>Listar respuestas</target>
 </trans-unit>
 <trans-unit id="s3ec7ab54f14c1245">
   <source>List name is required.</source>
+  <target>El nombre de la lista es obligatorio.</target>
 </trans-unit>
 <trans-unit id="s4daac8688c1c159c">
   <source>Unable to create list. Please try again.</source>
+  <target>No se pudo crear la lista. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s68c220a1aefa7ea9">
   <source>Unable to update list. Please try again.</source>
+  <target>No se pudo actualizar la lista. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s290fb73de84f355b">
   <source>Unable to delete list. Please try again.</source>
+  <target>No se pudo eliminar la lista. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="se0ff60d1c9b51a67">
   <source>Replies policy</source>
+  <target>Política de respuestas</target>
 </trans-unit>
 <trans-unit id="sb34f92f721500ef7">
   <source>Manage lists</source>
+  <target>Administrar listas</target>
 </trans-unit>
 <trans-unit id="saf458952feffaf42">
   <source>Create a list</source>
+  <target>Crear una lista</target>
 </trans-unit>
 <trans-unit id="sb40ff06d6fe15d38">
   <source>List name</source>
+  <target>Nombre de la lista</target>
 </trans-unit>
 <trans-unit id="s99775221d3003db4">
   <source>Creating...</source>
+  <target>Creando...</target>
 </trans-unit>
 <trans-unit id="s1bfc5d13a351d84f">
   <source>Create list</source>
+  <target>Crear lista</target>
 </trans-unit>
 <trans-unit id="sfa288e022c504e9b">
   <source>Your lists</source>
+  <target>Tus listas</target>
 </trans-unit>
 <trans-unit id="sdf17192a9579f884">
   <source>Loading lists...</source>
+  <target>Cargando listas...</target>
 </trans-unit>
 <trans-unit id="s89fa7b1bb77d0a04">
   <source>No lists yet. Create one above.</source>
+  <target>Aún no hay listas. Crea una arriba.</target>
 </trans-unit>
 <trans-unit id="s717d4a2cd3f7d66f">
   <source>Saving...</source>
+  <target>Guardando...</target>
 </trans-unit>
 <trans-unit id="s64ef2a6c2dd1d3d1">
   <source>Edit</source>
+  <target>Editar</target>
 </trans-unit>
 <trans-unit id="sdc673e73b5c13aea">
   <source>Delete</source>
+  <target>Eliminar</target>
 </trans-unit>
 <trans-unit id="sd5f22d89131b35d7">
   <source>Add to list</source>
+  <target>Añadir a la lista</target>
 </trans-unit>
 <trans-unit id="sf8087cf42c39ed5c">
   <source>Hashtags</source>
+  <target>Etiquetas</target>
 </trans-unit>
 <trans-unit id="s766a38dbb162d7a6">
   <source>Unpin from profile</source>
+  <target>Quitar de los fijados del perfil</target>
 </trans-unit>
 <trans-unit id="s616e22549f37d8c0">
   <source>Pin to profile</source>
+  <target>Fijar en el perfil</target>
 </trans-unit>
 <trans-unit id="s44851a8adf059eef">
   <source>Pinned</source>
+  <target>Fijado</target>
 </trans-unit>
 <trans-unit id="sdfe19437ad125da9">
   <source>Draft loaded</source>
+  <target>Borrador cargado</target>
 </trans-unit>
 <trans-unit id="sd095f475bdee35a6">
   <source>Load draft</source>
+  <target>Cargar borrador</target>
 </trans-unit>
 <trans-unit id="sc0d63d7f492b898b">
   <source>Save draft</source>
+  <target>Guardar borrador</target>
 </trans-unit>
 <trans-unit id="s3099b09746811456">
   <source>Saving draft...</source>
+  <target>Guardando borrador...</target>
 </trans-unit>
 <trans-unit id="s1d38ea159eb7063f">
   <source>Draft saved</source>
+  <target>Borrador guardado</target>
 </trans-unit>
 <trans-unit id="s2cea62b7e6d106e0">
   <source>You have entered offline mode. Coho will still work, including if you close and reopen the app, but some functionality may be limited.</source>
+  <target>Has entrado en el modo sin conexión. Coho seguirá funcionando, incluso si cierras y vuelves a abrir la aplicación, aunque algunas funciones podrían estar limitadas.</target>
 </trans-unit>
 <trans-unit id="sefe7f55f21e4335c">
   <source>You are back online. Coho will resume normal functionality.</source>
+  <target>Has vuelto a estar en línea. Coho reanudará su funcionamiento normal.</target>
 </trans-unit>
 <trans-unit id="s5c1b3310ecdc878c">
   <source>Coho is a Mastodon client that is built with web technologies. It is a progressive web app, which means you can install it on your phone or desktop. It is also open source, and can be found on GitHub.</source>
+  <target>Coho es un cliente de Mastodon creado con tecnologías web. Es una aplicación web progresiva que puedes instalar en tu teléfono o computadora. También es de código abierto y está disponible en GitHub.</target>
 </trans-unit>
 <trans-unit id="seed275e54b072145">
   <source>Home &amp; lists</source>
+  <target>Inicio y listas</target>
 </trans-unit>
 <trans-unit id="seafd0d15887a3170">
   <source>Public timelines</source>
+  <target>Cronologías públicas</target>
 </trans-unit>
 <trans-unit id="s8b60bf2db1580306">
   <source>Threads</source>
+  <target>Hilos</target>
 </trans-unit>
 <trans-unit id="s30ae03472b93dc47">
   <source>Profiles</source>
+  <target>Perfiles</target>
 </trans-unit>
 <trans-unit id="s8b97ea84af17c029">
   <source>Never</source>
+  <target>Nunca</target>
 </trans-unit>
 <trans-unit id="sa6ab28c69299397d">
   <source>12 hours</source>
+  <target>12 horas</target>
 </trans-unit>
 <trans-unit id="sd8bbc6ae6b1e90b8">
   <source>1 week</source>
+  <target>1 semana</target>
 </trans-unit>
 <trans-unit id="s35548ecd94abc693">
   <source>Unable to load filters. Please try again.</source>
+  <target>No se pudieron cargar los filtros. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="scbad3f6f316c1142">
   <source>Filter title is required.</source>
+  <target>El título del filtro es obligatorio.</target>
 </trans-unit>
 <trans-unit id="s42f7d990e73b313f">
   <source>At least one keyword is required.</source>
+  <target>Debes incluir al menos una palabra clave.</target>
 </trans-unit>
 <trans-unit id="sda70d73c1d4d38ba">
   <source>Unable to create filter. Please try again.</source>
+  <target>No se pudo crear el filtro. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s1c8cfe44d04e3577">
   <source>Unable to update filter. Please try again.</source>
+  <target>No se pudo actualizar el filtro. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="sca4196b945294645">
   <source>Unable to delete filter. Please try again.</source>
+  <target>No se pudo eliminar el filtro. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s9df212d89cab196d">
   <source>Hide</source>
+  <target>Ocultar</target>
 </trans-unit>
 <trans-unit id="s88c7a2022d5aa211">
   <source>Warn</source>
+  <target>Mostrar advertencia</target>
 </trans-unit>
 <trans-unit id="sa840b1fe69f52d1c">
   <source>Blur media</source>
+  <target>Difuminar contenido multimedia</target>
 </trans-unit>
 <trans-unit id="s7266c575062a3595">
   <source>Never expires</source>
+  <target>Sin vencimiento</target>
 </trans-unit>
 <trans-unit id="sd923f95605fed7b2">
   <source>Expired</source>
+  <target>Vencido</target>
 </trans-unit>
 <trans-unit id="s0f68a515d412cf25">
   <source>Expires <x id="0" equiv-text="${date.toLocaleDateString()}"/></source>
+  <target>Vence el <x id="0" equiv-text="${date.toLocaleDateString()}"/></target>
 </trans-unit>
 <trans-unit id="s64cef5563313bce1">
   <source>Create filter</source>
+  <target>Crear filtro</target>
 </trans-unit>
 <trans-unit id="sf3bb69f8289e05b2">
   <source>Loading filters...</source>
+  <target>Cargando filtros...</target>
 </trans-unit>
 <trans-unit id="s5a9756b9e0d36e14">
   <source>No filters yet. Create one to curate your timeline.</source>
+  <target>Aún no hay filtros. Crea uno para personalizar tu cronología.</target>
 </trans-unit>
 <trans-unit id="s99f110d27e30b289">
   <source>Title</source>
+  <target>Título</target>
 </trans-unit>
 <trans-unit id="s964cc49338d74d16">
   <source>Filter name</source>
+  <target>Nombre del filtro</target>
 </trans-unit>
 <trans-unit id="sc85d3dd11b7caecf">
   <source>Filter action</source>
+  <target>Acción del filtro</target>
 </trans-unit>
 <trans-unit id="s06c257737a06d908">
   <source>Show warning</source>
+  <target>Mostrar advertencia</target>
 </trans-unit>
 <trans-unit id="sb0620df0802cf543">
   <source>Hide completely</source>
+  <target>Ocultar por completo</target>
 </trans-unit>
 <trans-unit id="se6720b21211c7d20">
   <source>Apply to</source>
+  <target>Aplicar a</target>
 </trans-unit>
 <trans-unit id="sf679b7a62808287e">
   <source>Expiry</source>
+  <target>Vencimiento</target>
 </trans-unit>
 <trans-unit id="sef73fe18e351eb35">
   <source>Keywords</source>
+  <target>Palabras clave</target>
 </trans-unit>
 <trans-unit id="sa47a38d2d759248e">
   <source>Keyword or phrase</source>
+  <target>Palabra o frase</target>
 </trans-unit>
 <trans-unit id="s8262adc8a3f1aff4">
   <source>Whole word</source>
+  <target>Palabra completa</target>
 </trans-unit>
 <trans-unit id="sea4f08110bb8f15d">
   <source>Remove</source>
+  <target>Quitar</target>
 </trans-unit>
 <trans-unit id="s43593aa0cb0fded7">
   <source>Add keyword</source>
+  <target>Añadir palabra clave</target>
 </trans-unit>
 <trans-unit id="s870f7b2f8c27e219">
   <source>Save changes</source>
+  <target>Guardar cambios</target>
 </trans-unit>
 <trans-unit id="s180b42a7fa44fe69">
   <source>Content filters</source>
+  <target>Filtros de contenido</target>
 </trans-unit>
 <trans-unit id="s426ec97ed84f926d">
   <source>Edit filter</source>
+  <target>Editar filtro</target>
 </trans-unit>
 <trans-unit id="sd7696e2a2bbf110d">
   <source>Choose a date and time.</source>
+  <target>Elige una fecha y una hora.</target>
 </trans-unit>
 <trans-unit id="s071f2ef194fbba5b">
   <source>Choose a valid date and time.</source>
+  <target>Elige una fecha y una hora válidas.</target>
 </trans-unit>
 <trans-unit id="sc31ddacdbf2a7142">
   <source>Schedule your post at least 5 minutes in the future.</source>
+  <target>Programa tu publicación para al menos 5 minutos después.</target>
 </trans-unit>
 <trans-unit id="s02a7120f7347f0af">
   <source>Scheduling requires an internet connection.</source>
+  <target>Necesitas conexión a internet para programar publicaciones.</target>
 </trans-unit>
 <trans-unit id="s3e18b9c7faa624d9">
   <source>Could not schedule while offline. Reconnect and try again.</source>
+  <target>No se pudo programar sin conexión. Vuelve a conectarte e inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="sd15851075c069c6d">
   <source>Post scheduled for <x id="0" equiv-text="${formatScheduledDateTime(scheduledAt)}"/>.</source>
+  <target>Publicación programada para el <x id="0" equiv-text="${formatScheduledDateTime(scheduledAt)}"/>.</target>
 </trans-unit>
 <trans-unit id="s264cd9c6b80ca0fb">
   <source>Untitled draft</source>
+  <target>Borrador sin título</target>
 </trans-unit>
 <trans-unit id="s631e99e3378de0e5">
   <source>Post visibility</source>
+  <target>Visibilidad de la publicación</target>
 </trans-unit>
 <trans-unit id="sb9cb95c3c3e5de68">
   <source>Write your content warning here</source>
+  <target>Escribe aquí la advertencia de contenido</target>
 </trans-unit>
 <trans-unit id="s133ae7a2e42ce76e">
   <source>Schedule post</source>
+  <target>Programar publicación</target>
 </trans-unit>
 <trans-unit id="s2fa1fff378499ed5">
   <source>Will publish on <x id="0" equiv-text="${preview}"/></source>
+  <target>Se publicará el <x id="0" equiv-text="${preview}"/></target>
 </trans-unit>
 <trans-unit id="s2859729711f48280">
   <source>Schedule reply</source>
+  <target>Programar respuesta</target>
 </trans-unit>
 <trans-unit id="s3b99edc962b693e5">
   <source>Posted!</source>
+  <target>¡Publicado!</target>
 </trans-unit>
 <trans-unit id="sb6c0ebd56d0e2486">
   <source>Publishing...</source>
+  <target>Publicando...</target>
 </trans-unit>
 <trans-unit id="se908c94a86ec0fa9">
   <source>Choose one of your saved drafts.</source>
+  <target>Elige uno de tus borradores guardados.</target>
 </trans-unit>
 <trans-unit id="s83ab022a1fbb6ba5">
   <source>Select a draft</source>
+  <target>Seleccionar un borrador</target>
 </trans-unit>
 <trans-unit id="s970de9ba0cf07677">
   <source>Searching</source>
+  <target>Buscando</target>
 </trans-unit>
 <trans-unit id="s3d8f0d63cd31d3c9">
   <source>Content Filters</source>
+  <target>Filtros de contenido</target>
 </trans-unit>
 <trans-unit id="s2ca7699f7c5a4996">
   <source>Manage</source>
+  <target>Administrar</target>
 </trans-unit>
 <trans-unit id="s6a48e4c1127da443">
   <source>Filter unwanted content from your timelines by keyword.</source>
+  <target>Filtra contenido no deseado de tus cronologías por palabra clave.</target>
 </trans-unit>
 <trans-unit id="sa0c137a0cde3fd36">
   <source>Filtered: <x id="0" equiv-text="${label}"/></source>
+  <target>Filtrado: <x id="0" equiv-text="${label}"/></target>
 </trans-unit>
 <trans-unit id="s716a6024e3fe999c">
   <source>Show</source>
+  <target>Mostrar</target>
 </trans-unit>
 <trans-unit id="s94257198d8595d43">
   <source>No followers yet.</source>
+  <target>Aún no tienes seguidores.</target>
 </trans-unit>
 <trans-unit id="sf46ff7d67fce5bc7">
   <source>Not following anyone yet.</source>
+  <target>Aún no sigues a nadie.</target>
 </trans-unit>
 <trans-unit id="sf5ceb5dad8a27f99">
   <source>Logging in...</source>
+  <target>Iniciando sesión...</target>
 </trans-unit>
 <trans-unit id="s7e02e628ef928ecf">
   <source>Failed to load conversations</source>
+  <target>No se pudieron cargar las conversaciones</target>
 </trans-unit>
 <trans-unit id="s215ad519258e9d97">
   <source>now</source>
+  <target>ahora</target>
 </trans-unit>
 <trans-unit id="sc592307ea80f16b9">
   <source>Unknown</source>
+  <target>Desconocido</target>
 </trans-unit>
 <trans-unit id="s2c8189544e3ea679">
   <source>Retry</source>
+  <target>Reintentar</target>
 </trans-unit>
 <trans-unit id="sc9e36319670bfb2c">
   <source>No messages yet</source>
+  <target>Aún no hay mensajes</target>
 </trans-unit>
 <trans-unit id="sf170a4da9a67b885">
   <source>Direct messages will appear here. Tap the compose icon to start a conversation.</source>
+  <target>Aquí aparecerán tus mensajes directos. Toca el icono de redactar para iniciar una conversación.</target>
 </trans-unit>
 <trans-unit id="s32998ba9d0bc39cb">
   <source>Start a conversation</source>
+  <target>Iniciar una conversación</target>
 </trans-unit>
 <trans-unit id="s162d73fc5424798a">
   <source>New message</source>
+  <target>Mensaje nuevo</target>
 </trans-unit>
 <trans-unit id="s6d02a619e21e58da">
   <source>To:</source>
+  <target>Para:</target>
 </trans-unit>
 <trans-unit id="sa2e87f0e54c2c2e0">
   <source>Search people</source>
+  <target>Buscar personas</target>
 </trans-unit>
 <trans-unit id="s7135a4322ee70352">
   <source>Search for a user to message</source>
+  <target>Busca a alguien para enviarle un mensaje</target>
 </trans-unit>
 <trans-unit id="sb91c6e55736dcb6e">
   <source>No users found</source>
+  <target>No se encontraron usuarios</target>
 </trans-unit>
 <trans-unit id="s2f35f3eca085ba68">
   <source>Remove conversation</source>
+  <target>Eliminar conversación</target>
 </trans-unit>
 <trans-unit id="s57b3dd13f0361227">
   <source>Conversation not found</source>
+  <target>No se encontró la conversación</target>
 </trans-unit>
 <trans-unit id="scee4e59ff7c056ea">
   <source>No messages in this conversation</source>
+  <target>No hay mensajes en esta conversación</target>
 </trans-unit>
 <trans-unit id="sd92f07e924731806">
   <source>Failed to load conversation</source>
+  <target>No se pudo cargar la conversación</target>
 </trans-unit>
 <trans-unit id="s41b4752c216d0b66">
   <source>Conversation</source>
+  <target>Conversación</target>
 </trans-unit>
 <trans-unit id="s63d040e37887f17e">
   <source>Today</source>
+  <target>Hoy</target>
 </trans-unit>
 <trans-unit id="s5b4abc92ede53bc7">
   <source>Yesterday</source>
+  <target>Ayer</target>
 </trans-unit>
 <trans-unit id="sf900fe612519e672">
   <source>Write a message...</source>
+  <target>Escribe un mensaje...</target>
 </trans-unit>
 <trans-unit id="s7b7163270e57e8b4">
   <source>Refresh</source>
+  <target>Actualizar</target>
 </trans-unit>
 <trans-unit id="s10d6467f818462c7">
   <source>Unable to load trending posts right now.</source>
+  <target>No se pudieron cargar las publicaciones populares en este momento.</target>
 </trans-unit>
 <trans-unit id="s22073b297566cab8">
   <source>Unable to load news right now.</source>
+  <target>No se pudieron cargar las noticias en este momento.</target>
 </trans-unit>
 <trans-unit id="sc74f792a1a3458cb">
   <source>Search emoji...</source>
+  <target>Buscar emojis...</target>
 </trans-unit>
 <trans-unit id="sf50402600c3d5dac">
   <source>No emoji found</source>
+  <target>No se encontraron emojis</target>
 </trans-unit>
 <trans-unit id="se3ed881a961f14bd">
   <source>Emoji</source>
+  <target>Emoji</target>
 </trans-unit>
 <trans-unit id="sf5952f51e4c2435a">
   <source>Manage scheduled posts</source>
+  <target>Administrar publicaciones programadas</target>
 </trans-unit>
 <trans-unit id="s0dc1a5ae9a31057a">
   <source>Unable to load scheduled posts. Please try again.</source>
+  <target>No se pudieron cargar las publicaciones programadas. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s0d5cce2c61d7318d">
   <source>Scheduled post updated.</source>
+  <target>Publicación programada actualizada.</target>
 </trans-unit>
 <trans-unit id="s77692d89c0787787">
   <source>Unable to update this scheduled post.</source>
+  <target>No se pudo actualizar esta publicación programada.</target>
 </trans-unit>
 <trans-unit id="s0f88cae568169469">
   <source>Cancel this scheduled post?</source>
+  <target>¿Cancelar esta publicación programada?</target>
 </trans-unit>
 <trans-unit id="sf7cdcd4102f616b9">
   <source>Scheduled post canceled.</source>
+  <target>Publicación programada cancelada.</target>
 </trans-unit>
 <trans-unit id="sa9da03d25c746d5e">
   <source>Unable to cancel this scheduled post.</source>
+  <target>No se pudo cancelar esta publicación programada.</target>
 </trans-unit>
 <trans-unit id="s04318c2fe8b479ae">
   <source>Followers only</source>
+  <target>Solo seguidores</target>
 </trans-unit>
 <trans-unit id="s42208d2d2a45735f">
   <source>Unknown visibility</source>
+  <target>Visibilidad desconocida</target>
 </trans-unit>
 <trans-unit id="s0e1c5cee67a6e3e3">
   <source>Scheduled posts</source>
+  <target>Publicaciones programadas</target>
 </trans-unit>
 <trans-unit id="s5f77ec8f008cf7ac">
   <source>Review, reschedule, or cancel posts queued for publishing.</source>
+  <target>Revisa, vuelve a programar o cancela publicaciones en cola.</target>
 </trans-unit>
 <trans-unit id="s5ad42257bf59381f">
   <source>Loading scheduled posts...</source>
+  <target>Cargando publicaciones programadas...</target>
 </trans-unit>
 <trans-unit id="s5cf9ab25ed920e8a">
   <source>No scheduled posts right now.</source>
+  <target>No hay publicaciones programadas ahora.</target>
 </trans-unit>
 <trans-unit id="s752bb40387ef4fcc">
   <source>(No text in this scheduled post)</source>
+  <target>(Sin texto en esta publicación programada)</target>
 </trans-unit>
 <trans-unit id="sd685c85b245c6e9f">
   <source>Hide details</source>
+  <target>Ocultar detalles</target>
 </trans-unit>
 <trans-unit id="s4243b0d0a4ac550e">
   <source>View details</source>
+  <target>Ver detalles</target>
 </trans-unit>
 <trans-unit id="s31ace312e180469d">
   <source>Reschedule</source>
+  <target>Volver a programar</target>
 </trans-unit>
 <trans-unit id="s6b89fd1e633e72f1">
   <source>Canceling...</source>
+  <target>Cancelando...</target>
 </trans-unit>
 <trans-unit id="s459a86150d59dd33">
   <source>Cancel post</source>
+  <target>Cancelar publicación</target>
 </trans-unit>
 <trans-unit id="seb414dd9e6fe563a">
   <source>Content warning</source>
+  <target>Advertencia de contenido</target>
 </trans-unit>
 <trans-unit id="sb3217ad33681cfb7">
   <source><x id="0" equiv-text="${mediaCount}"/> attachments</source>
+  <target><x id="0" equiv-text="${mediaCount}"/> archivos adjuntos</target>
 </trans-unit>
 <trans-unit id="s9a37b4c553f89dab">
   <source>Poll (<x id="0" equiv-text="${pollCount}"/> options)</source>
+  <target>Encuesta (<x id="0" equiv-text="${pollCount}"/> opciones)</target>
 </trans-unit>
 <trans-unit id="sac8252732f2edb19">
   <source>Date</source>
+  <target>Fecha</target>
 </trans-unit>
 <trans-unit id="s48e186fb300e5464">
   <source>Time</source>
+  <target>Hora</target>
 </trans-unit>
 <trans-unit id="s3d346935bf8703d6">
   <source>Keep current time</source>
+  <target>Mantener la hora actual</target>
 </trans-unit>
 <trans-unit id="s2b5047d39b9baf3d">
   <source>Preferences</source>
+  <target>Preferencias</target>
 </trans-unit>
 <trans-unit id="saab875d8cfcfe712">
   <source>Theme</source>
+  <target>Tema</target>
 </trans-unit>
 <trans-unit id="s0d29a53a04e80406">
   <source>Content &amp; Safety</source>
+  <target>Contenido y seguridad</target>
 </trans-unit>
 <trans-unit id="s5b73e272683db8de">
   <source>Muted &amp; Blocked Accounts</source>
+  <target>Cuentas silenciadas y bloqueadas</target>
 </trans-unit>
 <trans-unit id="s926932a6033194d0">
   <source>Muted</source>
+  <target>Silenciadas</target>
 </trans-unit>
 <trans-unit id="sf59d9197d2e50c93">
   <source>Blocked</source>
+  <target>Bloqueadas</target>
 </trans-unit>
 <trans-unit id="s85b8c9d502510c46">
   <source>Review and manage accounts you have muted or blocked.</source>
+  <target>Revisa y administra las cuentas que has silenciado o bloqueado.</target>
 </trans-unit>
 <trans-unit id="sf5ea7de31631a983">
   <source>Scheduled Posts</source>
+  <target>Publicaciones programadas</target>
 </trans-unit>
 <trans-unit id="s6965c9e1827dcb0d">
   <source>View, reschedule, or cancel queued posts.</source>
+  <target>Ver, reprogramar o cancelar publicaciones en cola.</target>
 </trans-unit>
 <trans-unit id="s7751724b5f4ebbe7">
   <source>Failed to unblock account. Please try again.</source>
+  <target>No se pudo desbloquear la cuenta. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s64e2c158044febf1">
   <source>Blocked Accounts</source>
+  <target>Cuentas bloqueadas</target>
 </trans-unit>
 <trans-unit id="sddf7ac26b9a1c348">
   <source>No blocked accounts.</source>
+  <target>No hay cuentas bloqueadas.</target>
 </trans-unit>
 <trans-unit id="s74b85485e9f998fd">
   <source>Unblocking...</source>
+  <target>Desbloqueando...</target>
 </trans-unit>
 <trans-unit id="s865b6f4c6920e17f">
   <source>Unblock</source>
+  <target>Desbloquear</target>
 </trans-unit>
 <trans-unit id="sda6e82996081344f">
   <source>Failed to unmute account. Please try again.</source>
+  <target>No se pudo quitar el silencio de la cuenta. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s8dea2906744bda34">
   <source>Muted Accounts</source>
+  <target>Cuentas silenciadas</target>
 </trans-unit>
 <trans-unit id="sdbb898e02c89c4f3">
   <source>No muted accounts.</source>
+  <target>No hay cuentas silenciadas.</target>
 </trans-unit>
 <trans-unit id="s317475498d85b812">
   <source>Unmuting...</source>
+  <target>Quitando el silencio...</target>
 </trans-unit>
 <trans-unit id="sc07837c309cc699b">
   <source>Unmute</source>
+  <target>Quitar silencio</target>
 </trans-unit>
 <trans-unit id="s08e6bd98452e6bb9">
   <source>Audio</source>
+  <target>Audio</target>
 </trans-unit>
 <trans-unit id="s86723627c116f82a">
   <source>Failed to load notification preferences.</source>
+  <target>No se pudieron cargar las preferencias de notificaciones.</target>
 </trans-unit>
 <trans-unit id="sbfdfd594b652f867">
   <source>Failed to save notification preferences.</source>
+  <target>No se pudieron guardar las preferencias de notificaciones.</target>
 </trans-unit>
 <trans-unit id="s5261000c68eafb43">
   <source>Push notifications are not enabled.</source>
+  <target>Las notificaciones push no están activadas.</target>
 </trans-unit>
 <trans-unit id="s8a7ac0256191b086">
   <source>Turn on push notifications using the toggle above to configure alert preferences.</source>
+  <target>Activa las notificaciones push con el interruptor de arriba para configurar las alertas.</target>
 </trans-unit>
 <trans-unit id="s16227649db798f83">
   <source>Notification Types</source>
+  <target>Tipos de notificación</target>
 </trans-unit>
 <trans-unit id="sb7f6f966350c12d7">
   <source>Someone mentions you in a post</source>
+  <target>Alguien te menciona en una publicación</target>
 </trans-unit>
 <trans-unit id="sf210a41207160956">
   <source>New Followers</source>
+  <target>Nuevos seguidores</target>
 </trans-unit>
 <trans-unit id="s50d72e1a654b4dfe">
   <source>Someone follows you</source>
+  <target>Alguien te sigue</target>
 </trans-unit>
 <trans-unit id="s9910976093f22606">
   <source>Follow Requests</source>
+  <target>Solicitudes de seguimiento</target>
 </trans-unit>
 <trans-unit id="s36f37570b6d3e012">
   <source>Someone requests to follow you</source>
+  <target>Alguien quiere seguirte</target>
 </trans-unit>
 <trans-unit id="s45844294fbfc626d">
   <source>Boosts</source>
+  <target>Impulsos</target>
 </trans-unit>
 <trans-unit id="sca02f0552eebeaba">
   <source>Someone boosts your post</source>
+  <target>Alguien impulsa tu publicación</target>
 </trans-unit>
 <trans-unit id="s47d37fbd40733715">
   <source>Favourites</source>
+  <target>Favoritos</target>
 </trans-unit>
 <trans-unit id="s29df48917a2bdf0a">
   <source>Someone favourites your post</source>
+  <target>A alguien le gusta tu publicación</target>
 </trans-unit>
 <trans-unit id="sa3890696dcf6e3d1">
   <source>Polls</source>
+  <target>Encuestas</target>
 </trans-unit>
 <trans-unit id="sa312088a182fe8d6">
   <source>A poll you voted in or created has ended</source>
+  <target>Ha terminado una encuesta en la que participaste o que creaste</target>
 </trans-unit>
 <trans-unit id="sec596f94d95d3042">
   <source>New Posts</source>
+  <target>Nuevas publicaciones</target>
 </trans-unit>
 <trans-unit id="s9c35f2f477371c16">
   <source>Someone you subscribed to posts</source>
+  <target>Alguien a quien sigues publicó algo</target>
 </trans-unit>
 <trans-unit id="sad144cb181c9ac06">
   <source>Post Edits</source>
+  <target>Ediciones de publicaciones</target>
 </trans-unit>
 <trans-unit id="sf66168cf7970831e">
   <source>A post you interacted with was edited</source>
+  <target>Se editó una publicación con la que interactuaste</target>
 </trans-unit>
 <trans-unit id="s8ac22fc51e88882a">
   <source>Receive Notifications From</source>
+  <target>Recibir notificaciones de</target>
 </trans-unit>
 <trans-unit id="s51a1dec7855d81f8">
   <source>Everyone</source>
+  <target>Todas las personas</target>
 </trans-unit>
 <trans-unit id="sfa1c4cdb3e5b9ac2">
   <source>People you follow</source>
+  <target>Personas a las que sigues</target>
 </trans-unit>
 <trans-unit id="sf5474d1649a244a1">
   <source>Your followers</source>
+  <target>Tus seguidores</target>
 </trans-unit>
 <trans-unit id="s05a351a51219b0fe">
   <source>Nobody</source>
+  <target>Nadie</target>
 </trans-unit>
 <trans-unit id="s5ded3d58db157140">
   <source>Notification Preferences</source>
+  <target>Preferencias de notificaciones</target>
 </trans-unit>
 <trans-unit id="s5470f559b6b73e57">
   <source>Notification settings</source>
+  <target>Configuración de notificaciones</target>
 </trans-unit>
 <trans-unit id="s92e92a0e6f54832a">
   <source>Unmute conversation</source>
+  <target>Dejar de silenciar la conversación</target>
 </trans-unit>
 <trans-unit id="s4b372c8344c2e55b">
   <source>Mute conversation</source>
+  <target>Silenciar conversación</target>
 </trans-unit>
 <trans-unit id="sd94ca8ae60ddd3e0">
   <source>Unable to load suggestions right now.</source>
+  <target>No se pudieron cargar las sugerencias en este momento.</target>
 </trans-unit>
 <trans-unit id="se48bd9e6c2a3109d">
   <source>Accounts</source>
+  <target>Cuentas</target>
 </trans-unit>
 <trans-unit id="s8201c70d584c2910">
   <source>File exceeds the server limit of <x id="0" equiv-text="${this.formatBytes(sizeLimit)}"/>.</source>
+  <target>El archivo supera el límite del servidor de <x id="0" equiv-text="${this.formatBytes(sizeLimit)}"/>.</target>
 </trans-unit>
 <trans-unit id="s060f62c250a1042e">
   <source>Waiting for media to finish uploading…</source>
+  <target>Esperando a que termine de subirse el contenido multimedia…</target>
 </trans-unit>
 <trans-unit id="s7b160218e24ae4b8">
   <source>Locked Account</source>
+  <target>Cuenta privada</target>
 </trans-unit>
 <trans-unit id="sd35b199162dbbb57">
   <source>Manually approve who can follow you</source>
+  <target>Aprobar manualmente quién puede seguirte</target>
 </trans-unit>
 <trans-unit id="sd3758479f6049bd5">
   <source>Bot Account</source>
+  <target>Cuenta automatizada</target>
 </trans-unit>
 <trans-unit id="sf2778fd73b4a15a7">
   <source>Mark this account as an automated bot</source>
+  <target>Marcar esta cuenta como un bot automatizado</target>
 </trans-unit>
 <trans-unit id="s46aa6a90ce014902">
   <source>Discoverable</source>
+  <target>Visible en recomendaciones</target>
 </trans-unit>
 <trans-unit id="s7e2754b85c67ce0e">
   <source>Show profile in directory and recommendations</source>
+  <target>Mostrar el perfil en el directorio y en las recomendaciones</target>
 </trans-unit>
 <trans-unit id="s4ab860c3356705c7">
   <source>Hide Follower Counts</source>
+  <target>Ocultar el número de seguidores</target>
 </trans-unit>
 <trans-unit id="s4875a50e88d984e8">
   <source>Don't show follower and following counts publicly</source>
+  <target>No mostrar públicamente el número de seguidores ni de cuentas seguidas</target>
 </trans-unit>
 <trans-unit id="s50177df820346217">
   <source>Indexable</source>
+  <target>Indexable</target>
 </trans-unit>
 <trans-unit id="s070c6e8aba0fd171">
   <source>Allow public posts to appear in search results</source>
+  <target>Permitir que las publicaciones públicas aparezcan en los resultados de búsqueda</target>
 </trans-unit>
 <trans-unit id="s7dea482ee13292e4">
   <source>Default Post Privacy</source>
+  <target>Privacidad predeterminada de las publicaciones</target>
 </trans-unit>
 <trans-unit id="s1b14e129782d270e">
   <source>Mentioned Only</source>
+  <target>Solo personas mencionadas</target>
 </trans-unit>
 <trans-unit id="s58105151eda13674">
   <source>Mark media as sensitive by default</source>
+  <target>Marcar el contenido multimedia como sensible de forma predeterminada</target>
 </trans-unit>
 <trans-unit id="s70dbcf49cc261e8e">
   <source>Default Post Language</source>
+  <target>Idioma predeterminado de las publicaciones</target>
 </trans-unit>
 <trans-unit id="s64a08ea7e5de1afa">
   <source>Account &amp; Privacy</source>
+  <target>Cuenta y privacidad</target>
 </trans-unit>
 <trans-unit id="sef8b008b85e8d725">
   <source>Posting Defaults</source>
+  <target>Preferencias de publicación</target>
 </trans-unit>
 <trans-unit id="sd54d5d1c28c310de">
   <source>Add up to 4 custom fields to display on your profile.</source>
+  <target>Añade hasta 4 campos personalizados para mostrar en tu perfil.</target>
 </trans-unit>
 <trans-unit id="s8e114dd98aeedf91">
   <source>Switch</source>
+  <target>Cambiar</target>
 </trans-unit>
 <trans-unit id="s6e2ab159a07b1f2f">
   <source>Switch the active account, add another one, or remove a saved account.</source>
+  <target>Cambia la cuenta activa, añade otra o elimina una cuenta guardada.</target>
 </trans-unit>
 <trans-unit id="sb61732bec9606086">
   <source>No saved accounts yet. Add one below to sign in.</source>
+  <target>Aún no hay cuentas guardadas. Añade una abajo para iniciar sesión.</target>
 </trans-unit>
 <trans-unit id="s9a11da2be3993dd3">
   <source>Add account</source>
+  <target>Añadir cuenta</target>
 </trans-unit>
 <trans-unit id="s626c98f49c83a793">
   <source>Search for a Mastodon server</source>
+  <target>Buscar un servidor de Mastodon</target>
 </trans-unit>
 <trans-unit id="s6d83773bf37278f8">
   <source>Starting OAuth...</source>
+  <target>Iniciando OAuth...</target>
 </trans-unit>
 <trans-unit id="sddd265e80aabafea">
   <source>Audio player</source>
+  <target>Reproductor de audio</target>
 </trans-unit>
 <trans-unit id="s061cc20e3432dead">
   <source>Pause</source>
+  <target>Pausar</target>
 </trans-unit>
 <trans-unit id="scd105819b5a10243">
   <source>Play</source>
+  <target>Reproducir</target>
 </trans-unit>
 <trans-unit id="s5788d924d55d3ff1">
   <source>Seek</source>
+  <target>Avanzar</target>
 </trans-unit>
 <trans-unit id="sdb47c9175c2af7b0">
   <source>Saved accounts</source>
+  <target>Cuentas guardadas</target>
 </trans-unit>
 <trans-unit id="s2bcebb0b6a6517b6">
   <source>Search for your server to connect another Mastodon account.</source>
+  <target>Busca tu servidor para conectar otra cuenta de Mastodon.</target>
 </trans-unit>
 <trans-unit id="s1dbc50b9bbfadfcf">
   <source>Switch accounts</source>
+  <target>Cambiar de cuenta</target>
 </trans-unit>
 <trans-unit id="s73e2a28a396e8a06">
   <source>requested to follow you</source>
+  <target>solicitó seguirte</target>
 </trans-unit>
 <trans-unit id="sf7d93e17ec4b1219">
   <source>...</source>
+  <target>...</target>
 </trans-unit>
 <trans-unit id="s13be1af9766661e9">
   <source>Accept</source>
+  <target>Aceptar</target>
 </trans-unit>
 <trans-unit id="s123da0f92f97dd86">
   <source>Reject</source>
+  <target>Rechazar</target>
 </trans-unit>
 <trans-unit id="s8f83b5cb52f62fd3">
   <source>Requests</source>
+  <target>Solicitudes</target>
 </trans-unit>
 <trans-unit id="s9093a095ac3a73b4">
   <source>No pending follow requests</source>
+  <target>No hay solicitudes de seguimiento pendientes</target>
 </trans-unit>
 <trans-unit id="sbaf2dbcb41ca49a9">
   <source>(edited)</source>
+  <target>(editada)</target>
 </trans-unit>
 <trans-unit id="s798bd37a29caf058">
   <source>Continue this thread</source>
+  <target>Continuar este hilo</target>
 </trans-unit>
 <trans-unit id="sf3a3a78aee5035f1">
   <source>1 more reply</source>
+  <target>1 respuesta más</target>
 </trans-unit>
 <trans-unit id="s2c214ff1327cceb6">
   <source><x id="0" equiv-text="${remainingCount}"/> more replies</source>
+  <target><x id="0" equiv-text="${remainingCount}"/> respuestas más</target>
 </trans-unit>
 <trans-unit id="sf18a42912f62bf8a">
   <source>Current account avatar</source>
+  <target>Avatar de la cuenta actual</target>
 </trans-unit>
 <trans-unit id="s288fdb61a9ecaffb">
   <source>Synced to watch</source>
+  <target>Sincronizado con el reloj</target>
 </trans-unit>
 <trans-unit id="s804676468ea1af74">
   <source>No credentials to sync</source>
+  <target>No hay credenciales para sincronizar</target>
 </trans-unit>
 <trans-unit id="sfa39c2b9c0dd0c02">
   <source>Failed to sync to watch</source>
+  <target>No se pudo sincronizar con el reloj</target>
 </trans-unit>
 <trans-unit id="s5ddb4ae6884197c4">
   <source>Sync to Watch</source>
+  <target>Sincronizar con el reloj</target>
 </trans-unit>
 <trans-unit id="s36c13bb456523146">
   <source>Synced ✓</source>
+  <target>Sincronizado ✓</target>
 </trans-unit>
 <trans-unit id="s9cd4984f1a746b40">
   <source>Syncing…</source>
+  <target>Sincronizando…</target>
 </trans-unit>
 <trans-unit id="s05073d2537b45d1a">
   <source>Sync</source>
+  <target>Sincronizar</target>
 </trans-unit>
 <trans-unit id="s0c61be2ad8538497">
   <source>Send your account credentials to your Wear OS watch.</source>
+  <target>Envía las credenciales de tu cuenta a tu reloj Wear OS.</target>
 </trans-unit>
 <trans-unit id="s93c8f5aaa2f14fb6">
   <source>Back to login</source>
+  <target>Volver al inicio de sesión</target>
 </trans-unit>
 <trans-unit id="s59169c4e8fbcdccf">
   <source>Signing in…</source>
+  <target>Iniciando sesión…</target>
 </trans-unit>
 <trans-unit id="s399b2152de758495">
   <source>Haptic Feedback</source>
+  <target>Respuesta háptica</target>
 </trans-unit>
 <trans-unit id="s1210a6c6ad65d97b">
   <source>Vibrate on actions like likes, boosts, and publishing.</source>
+  <target>Vibrar al dar me gusta, impulsar o publicar.</target>
 </trans-unit>
 <trans-unit id="scdf74b34332eaf3d">
   <source>Edit history</source>
+  <target>Historial de ediciones</target>
 </trans-unit>
 <trans-unit id="s7af16ebfc7bccfe5">
   <source>No edit history available.</source>
+  <target>No hay historial de ediciones disponible.</target>
 </trans-unit>
 <trans-unit id="s06f6c6f99db6b552">
   <source>Original</source>
+  <target>Original</target>
 </trans-unit>
 <trans-unit id="s358e08de4fbebf51">
   <source>Version <x id="0" equiv-text="${versionNum}"/></source>
+  <target>Versión <x id="0" equiv-text="${versionNum}"/></target>
 </trans-unit>
 <trans-unit id="s0801f2a8114692af">
   <source>Sensitive</source>
+  <target>Sensible</target>
 </trans-unit>
 <trans-unit id="s6f4c4fce2e03e1d0">
   <source>Review pending requests from people who want to follow you.</source>
+  <target>Revisa las solicitudes pendientes de las personas que quieren seguirte.</target>
 </trans-unit>
 <trans-unit id="s0e38e1fef7b4e2b4">
   <source>View edit history</source>
+  <target>Ver historial de ediciones</target>
 </trans-unit>
 <trans-unit id="sbcae6b4673c35110">
   <source>Failed to authorize follow request.</source>
+  <target>No se pudo aceptar la solicitud de seguimiento.</target>
 </trans-unit>
 <trans-unit id="s422dcc81f722ef06">
   <source>Failed to reject follow request.</source>
+  <target>No se pudo rechazar la solicitud de seguimiento.</target>
 </trans-unit>
 <trans-unit id="se54d7853a7526eae">
   <source>No pending follow requests.</source>
+  <target>No hay solicitudes de seguimiento pendientes.</target>
 </trans-unit>
 <trans-unit id="s1712cf608ea8a507">
   <source>Exported account list.</source>
+  <target>Lista de cuentas exportada.</target>
 </trans-unit>
 <trans-unit id="s768b65ec1e907de3">
   <source>Import finished: <x id="0" equiv-text="${result.imported}"/> imported, <x id="1" equiv-text="${result.skipped}"/> skipped, <x id="2" equiv-text="${result.failed}"/> failed.</source>
+  <target>Importación terminada: <x id="0" equiv-text="${result.imported}"/> importadas, <x id="1" equiv-text="${result.skipped}"/> omitidas, <x id="2" equiv-text="${result.failed}"/> fallidas.</target>
 </trans-unit>
 <trans-unit id="s2dcb9d30da3783e2">
   <source>Import failed. Please try again.</source>
+  <target>No se pudo importar. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="sdc550810808f6dc7">
   <source>Export or import a list of account addresses as CSV (one column: Account address). Import resolves each handle on your server and may take a while.</source>
+  <target>Exporta o importa una lista de direcciones de cuentas en CSV (una columna: dirección de la cuenta). La importación busca cada nombre en tu servidor y puede tardar un poco.</target>
 </trans-unit>
 <trans-unit id="s8b409dc1f261b173">
   <source>Export CSV</source>
+  <target>Exportar CSV</target>
 </trans-unit>
 <trans-unit id="saaab7315866aa324">
   <source>Importing… <x id="0" equiv-text="${this._importProgress}"/></source>
+  <target>Importando… <x id="0" equiv-text="${this._importProgress}"/></target>
 </trans-unit>
 <trans-unit id="s99d05b52dd4b3346">
   <source>Importing…</source>
+  <target>Importando…</target>
 </trans-unit>
 <trans-unit id="s147a601e02e7abe4">
   <source>Import CSV</source>
+  <target>Importar CSV</target>
 </trans-unit>
 <trans-unit id="s81b134d8e31948ba">
   <source>Server announcements</source>
+  <target>Anuncios del servidor</target>
 </trans-unit>
 <trans-unit id="scfd940bdead89c80">
   <source>Could not dismiss announcement.</source>
+  <target>No se pudo descartar el anuncio.</target>
 </trans-unit>
 <trans-unit id="sebd5b231818bbfa8">
   <source>No announcements from your server right now.</source>
+  <target>Tu servidor no tiene anuncios por ahora.</target>
 </trans-unit>
 <trans-unit id="s40044a467a880f82">
   <source>Unread</source>
+  <target>Sin leer</target>
 </trans-unit>
 <trans-unit id="saf439b4c85cb1e19">
   <source>…</source>
+  <target>…</target>
 </trans-unit>
 <trans-unit id="sc41426622aab8b8b">
   <source>View all</source>
+  <target>Ver todo</target>
 </trans-unit>
 <trans-unit id="sbc939600de149de2">
   <source>Blocked Domains</source>
+  <target>Dominios bloqueados</target>
 </trans-unit>
 <trans-unit id="s129d211032cb48dc">
   <source>Block entire servers to hide all content from those domains.</source>
+  <target>Bloquea servidores enteros para ocultar todo el contenido de esos dominios.</target>
 </trans-unit>
 <trans-unit id="s79a80352fbc52976">
   <source>Followed Hashtags</source>
+  <target>Etiquetas seguidas</target>
 </trans-unit>
 <trans-unit id="s45dcd1e5c602a371">
   <source>Hashtags you follow appear in your home timeline.</source>
+  <target>Las etiquetas que sigues aparecen en tu cronología de inicio.</target>
 </trans-unit>
 <trans-unit id="s99c2b6afffda35c0">
   <source>Block domain <x id="0" equiv-text="${post.account.acct?.split('@')[1]}"/></source>
+  <target>Bloquear el dominio <x id="0" equiv-text="${post.account.acct?.split('@')[1]}"/></target>
 </trans-unit>
 <trans-unit id="s1efb5caef274c1e9">
   <source>Exported domain block list.</source>
+  <target>Lista de dominios bloqueados exportada.</target>
 </trans-unit>
 <trans-unit id="sd5418b79c4c93eec">
   <source>Failed to unblock domain. Please try again.</source>
+  <target>No se pudo desbloquear el dominio. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s9dbec9b5bad9ddfd">
   <source>Export or import a list of blocked domains as CSV. Blocking a domain hides all content from that server.</source>
+  <target>Exporta o importa una lista de dominios bloqueados en CSV. Bloquear un dominio oculta todo el contenido de ese servidor.</target>
 </trans-unit>
 <trans-unit id="s51b0619017c1a577">
   <source>No blocked domains.</source>
+  <target>No hay dominios bloqueados.</target>
 </trans-unit>
 <trans-unit id="saee78fdad4eb79ef">
   <source>You are not following any hashtags.</source>
+  <target>No sigues ninguna etiqueta.</target>
 </trans-unit>
 <trans-unit id="s30e732532eecc809">
   <source>Failed to unfollow hashtag.</source>
+  <target>No se pudo dejar de seguir la etiqueta.</target>
 </trans-unit>
 <trans-unit id="sf158af9c0c6e4e84">
   <source>Failed to follow hashtag.</source>
+  <target>No se pudo seguir la etiqueta.</target>
 </trans-unit>
 <trans-unit id="s7f6c9aa6ca96b7c7">
   <source>Unfollow</source>
+  <target>Dejar de seguir</target>
 </trans-unit>
 <trans-unit id="s43d9b11080e3a9b0">
   <source>Opening conversation…</source>
+  <target>Abriendo conversación…</target>
 </trans-unit>
 <trans-unit id="saa38ac14eb5b622d">
   <source>Notification filters</source>
+  <target>Filtros de notificaciones</target>
 </trans-unit>
 <trans-unit id="s0621fbc662f668f2">
   <source>Remove attachment</source>
+  <target>Quitar archivo adjunto</target>
 </trans-unit>
 <trans-unit id="s9491c05a7ecf766e">
   <source>Edit attachment</source>
+  <target>Editar archivo adjunto</target>
 </trans-unit>
 <trans-unit id="s4a10a115049fac4b">
   <source>Remove bookmark</source>
+  <target>Quitar de guardados</target>
 </trans-unit>
 <trans-unit id="scc448565c2d96859">
   <source>Unfavourite</source>
+  <target>Quitar de favoritos</target>
 </trans-unit>
 <trans-unit id="scf8e7ff24f98b064">
   <source>Favourite</source>
+  <target>Marcar como favorito</target>
 </trans-unit>
 <trans-unit id="se9598c6db44bc574">
   <source>Undo boost</source>
+  <target>Deshacer impulso</target>
 </trans-unit>
 <trans-unit id="se54e9d4d0fde357e">
   <source>Followed by</source>
+  <target>Te sigue</target>
 </trans-unit>
 <trans-unit id="se6f79719051ff286">
   <source>and</source>
+  <target>y</target>
 </trans-unit>
 <trans-unit id="s540f97efd95106d7">
   <source>and <x id="0" equiv-text="${othersCount}"/> others</source>
+  <target>y <x id="0" equiv-text="${othersCount}"/> más</target>
 </trans-unit>
 <trans-unit id="scf1d78691f826443">
   <source>Profile content</source>
+  <target>Contenido del perfil</target>
 </trans-unit>
 <trans-unit id="sc1d5befdc2b33c8d">
   <source>Could not fetch server information. Please check the server name and try again.</source>
+  <target>No se pudo obtener la información del servidor. Comprueba el nombre e inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s42288471628c3333">
   <source>users</source>
+  <target>usuarios</target>
 </trans-unit>
 <trans-unit id="scaf63635761eef5c">
   <source>posts</source>
+  <target>publicaciones</target>
 </trans-unit>
 <trans-unit id="s634c567f1c931cf8">
   <source>connected servers</source>
+  <target>servidores conectados</target>
 </trans-unit>
 <trans-unit id="sd506ce88609f7e99">
   <source>Server Rules</source>
+  <target>Reglas del servidor</target>
 </trans-unit>
 <trans-unit id="s02a83d758b7eab61">
   <source>This server is not accepting new registrations.</source>
+  <target>Este servidor no acepta nuevos registros.</target>
 </trans-unit>
 <trans-unit id="sd4a54f9d04dc20f9">
   <source>This server requires admin approval after sign-up.</source>
+  <target>Este servidor requiere la aprobación de un administrador después del registro.</target>
 </trans-unit>
 <trans-unit id="s1b82c95cf5060eff">
   <source>Create Account on</source>
+  <target>Crear una cuenta en</target>
 </trans-unit>
 <trans-unit id="s17ad46ae4871cb5c">
   <source>Almost there!</source>
+  <target>¡Ya casi terminas!</target>
 </trans-unit>
 <trans-unit id="s969cf571be74f0f0">
   <source>Once you've finished creating your account and confirmed your email, come back here to log in.</source>
+  <target>Cuando termines de crear tu cuenta y confirmes tu correo electrónico, vuelve aquí para iniciar sesión.</target>
 </trans-unit>
 <trans-unit id="s17d1078b6e542578">
   <source>Choose a Mastodon server to create your account. Each server is independently operated with its own rules and community. After signing up, you can follow anyone on any server.</source>
+  <target>Elige un servidor de Mastodon para crear tu cuenta. Cada servidor tiene sus propias reglas y comunidad. Después de registrarte, podrás seguir a cualquier persona en cualquier servidor.</target>
 </trans-unit>
 <trans-unit id="sd2f21b91439aa3e9">
   <source>Search for a server (e.g. mastodon.social)</source>
+  <target>Busca un servidor (por ejemplo, mastodon.social)</target>
 </trans-unit>
 <trans-unit id="s8a43219bc7d86354">
   <source>Loading server info...</source>
+  <target>Cargando información del servidor...</target>
 </trans-unit>
 <trans-unit id="s32a8dacf6bdadb4b">
   <source>Already have an account? Login</source>
+  <target>¿Ya tienes una cuenta? Inicia sesión</target>
 </trans-unit>
 <trans-unit id="s5c9d1ed02acbea87">
   <source>Search categories</source>
+  <target>Buscar categorías</target>
 </trans-unit>
 <trans-unit id="s4d22ab02f280b2fa">
   <source>Quoting @<x id="0" equiv-text="${this.quotedPost.account.acct}"/></source>
+  <target>Citando a @<x id="0" equiv-text="${this.quotedPost.account.acct}"/></target>
 </trans-unit>
 <trans-unit id="sb29af0c6d1e99137">
   <source>Edit scheduled time</source>
+  <target>Editar hora programada</target>
 </trans-unit>
 <trans-unit id="sc6505c200d5765bd">
   <source>Quoted post</source>
+  <target>Publicación citada</target>
 </trans-unit>
 <trans-unit id="s9437abb4c77022b3">
   <source>Contains a quote post</source>
+  <target>Contiene una publicación citada</target>
 </trans-unit>
 <trans-unit id="sca1c8b0f0c380a9f">
   <source>Quote pending approval</source>
+  <target>Cita pendiente de aprobación</target>
 </trans-unit>
 <trans-unit id="s1eab2016c70bf51c">
   <source>Quote was rejected</source>
+  <target>Se rechazó la cita</target>
 </trans-unit>
 <trans-unit id="s5877dbdec4dd2cf0">
   <source>Quote was revoked</source>
+  <target>Se revocó la cita</target>
 </trans-unit>
 <trans-unit id="sa4d739e9fe06fc7d">
   <source>Quoted post was deleted</source>
+  <target>Se eliminó la publicación citada</target>
 </trans-unit>
 <trans-unit id="s02270207a1d6273c">
   <source>Hidden due to your filters</source>
+  <target>Oculto por tus filtros</target>
 </trans-unit>
 <trans-unit id="s055621949c43fddb">
   <source>Request to quote</source>
+  <target>Solicitar una cita</target>
 </trans-unit>
 <trans-unit id="s70a5d875c5467e57">
   <source>Quote</source>
+  <target>Citar</target>
 </trans-unit>
 <trans-unit id="s547158dfb16a56e9">
   <source>Author will manually review</source>
+  <target>El autor revisará la solicitud manualmente</target>
 </trans-unit>
 <trans-unit id="sb04cf41e36c8572c">
   <source>Quotes</source>
+  <target>Citas</target>
 </trans-unit>
 <trans-unit id="sbbd21d737194cd91">
   <source>Unable to load list members. Please try again.</source>
+  <target>No se pudieron cargar los miembros de la lista. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s237c0118f767a568">
   <source>Unable to add account. Please try again.</source>
+  <target>No se pudo añadir la cuenta. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="s8d4a38496e0d1503">
   <source>Unable to remove account. Please try again.</source>
+  <target>No se pudo quitar la cuenta. Inténtalo de nuevo.</target>
 </trans-unit>
 <trans-unit id="sf9aee319a006c9b4">
   <source>Add</source>
+  <target>Añadir</target>
 </trans-unit>
 <trans-unit id="s576d021bb8b900eb">
   <source>Edit list</source>
+  <target>Editar lista</target>
 </trans-unit>
 <trans-unit id="s9f5a5f23312798f0">
   <source>Members</source>
+  <target>Miembros</target>
 </trans-unit>
 <trans-unit id="s9b3e08930a773da6">
   <source>Loading members...</source>
+  <target>Cargando miembros...</target>
 </trans-unit>
 <trans-unit id="s339cc6ad232433e3">
   <source>No members yet.</source>
+  <target>Aún no hay miembros.</target>
 </trans-unit>
 <trans-unit id="seac7c7f7c3fe00df">
   <source>Add people</source>
+  <target>Añadir personas</target>
 </trans-unit>
 <trans-unit id="s365a13837f1be602">
   <source>Search for accounts</source>
+  <target>Buscar cuentas</target>
 </trans-unit>
 <trans-unit id="sa81413e2e309b882">
   <source>No results found.</source>
+  <target>No se encontraron resultados.</target>
 </trans-unit>
 <trans-unit id="s022e4d30701b206d">
   <source>View profile</source>
+  <target>Ver perfil</target>
 </trans-unit>
 <trans-unit id="se406d1a28a99f056">
   <source>Turn off post notifications for @<x id="0" equiv-text="${this.user?.acct}"/></source>
+  <target>Desactivar las notificaciones de publicaciones de @<x id="0" equiv-text="${this.user?.acct}"/></target>
 </trans-unit>
 <trans-unit id="s0a56f292264affab">
   <source>Notify me when @<x id="0" equiv-text="${this.user?.acct}"/> posts</source>
+  <target>Avisarme cuando @<x id="0" equiv-text="${this.user?.acct}"/> publique</target>
 </trans-unit>
 <trans-unit id="s8ea9534aa46849f3">
   <source>Turn off post notifications</source>
+  <target>Desactivar las notificaciones de publicaciones</target>
 </trans-unit>
 <trans-unit id="se7e9621444f114c2">
   <source>Notify me when this user posts</source>
+  <target>Avisarme cuando esta persona publique</target>
 </trans-unit>
 <trans-unit id="se0f67eae944f8f94">
   <source>Mute</source>
+  <target>Silenciar</target>
 </trans-unit>
 <trans-unit id="s2b2ae20d26f78ac2">
   <source>Block</source>
+  <target>Bloquear</target>
 </trans-unit>
 <trans-unit id="s9b6b1422027158eb">
   <source>Report</source>
+  <target>Denunciar</target>
 </trans-unit>
 <trans-unit id="s07ba1a869cb2387b">
   <source>View my profile</source>
+  <target>Ver mi perfil</target>
 </trans-unit>
 <trans-unit id="sae0bdcd353517797">
   <source>Quote Post</source>
+  <target>Citar publicación</target>
+</trans-unit>
+<trans-unit id="sc13326f53f8ca55a">
+  <source>Interface Language</source>
+  <target>Idioma de la interfaz</target>
+</trans-unit>
+<trans-unit id="se673d4689e55ecdf">
+  <source>Choose a language</source>
+  <target>Elegir un idioma</target>
 </trans-unit>
 </body>
 </file>
